@@ -3,10 +3,6 @@
   "plugins": ["typescript", "react", "react-hooks", "react-perf", "unicorn"],
   "jsPlugins": [
     {
-      "name": "mobile-pairing",
-      "specifier": "./config/oxlint-plugins/mobile-pairing-qrcode-import.mjs"
-    },
-    {
       "name": "app-store-performance",
       "specifier": "./config/oxlint-plugins/app-store-performance.mjs"
     },
@@ -84,7 +80,6 @@
         ]
       }
     ],
-    "mobile-pairing/no-eager-qrcode-import": "error",
     "no-useless-return": "error",
     "prefer-template": "error",
     "unicorn/consistent-empty-array-spread": "error",

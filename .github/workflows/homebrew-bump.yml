@@ -10,13 +10,8 @@ name: Homebrew Cask Bump
 # new version and hashes, then PRs the result into stablyai/homebrew-orca.
 # Stable tags update Casks/orca.rb; RC tags update Casks/orca@rc.rb.
 #
-# Why no `release.published` trigger: other products shipped from this repo
-# (e.g. mobile under `mobile-v*`) also publish GitHub Releases. A blanket
-# `release.published` trigger would fire this workflow for any of them and
-# attempt to download `orca-macos-*.dmg` from a non-desktop release, at
-# best 404ing and at worst (if the filter were weaker) rewriting the cask
-# to a non-desktop version. The tap is only ever bumped by the desktop
-# release pipeline calling this workflow directly.
+# Why no `release.published` trigger: the desktop release pipeline supplies the
+# exact tag so unrelated repository releases cannot rewrite the cask.
 
 on:
   workflow_call:
@@ -36,7 +31,6 @@ jobs:
   bump-cask:
     runs-on: ubuntu-latest
     # Why: only desktop tags have the macOS DMGs this workflow downloads.
-    # A mobile tag such as `mobile-v0.0.1` must never rewrite either cask.
     if: >
       inputs.tag != '' &&
       startsWith(inputs.tag, 'v')

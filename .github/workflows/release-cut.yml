@@ -338,13 +338,8 @@ jobs:
           # (v1.3.22-rc.2 on 2026-04-27 briefly became "latest" on GitHub and
           # poisoned the math here). Tag format is authoritative.
           #
-          # Why the `^v[0-9]` prefix: other products shipped from this repo
-          # use their own prefixes (e.g. `mobile-v0.0.1`). Without the prefix
-          # gate the latest mobile release would be selected as "latest
-          # stable", then `strip_pre()` would reduce `mobile-v0.0.1` to
-          # `mobile`, `Number("mobile")` → NaN → 0, and a patch-bump would
-          # produce `0.0.1` — exactly the wedge on 2026-05-04 (run
-          # 25304336767). Any non-desktop tag shape must be excluded here.
+          # Why the `^v[0-9]` prefix: non-desktop tag shapes must never enter
+          # desktop semver selection or release arithmetic.
           #
           # Why not `gh release list` order: GitHub can list a newer published
           # stable after older releases. On 2026-06-04, v1.4.44 existed but

@@ -42,7 +42,7 @@ const bundledPluginResources = {
   from: 'resources/plugins/launch',
   to: 'plugins/launch'
 }
-// Why: the main bundle, packaged CLI, SSH paths, and speech worker all execute
+// Why: the main bundle, SSH paths, and speech worker all execute
 // from package directories where pnpm's symlink farm is absent. Copy the exact
 // runtime dependency closure to Resources/node_modules so bare require() calls
 // do not fall through to a developer checkout's node_modules.
@@ -75,7 +75,6 @@ module.exports = {
     '!src{,/**/*}',
     '!config{,/**/*}',
     '!docs{,/**/*}',
-    '!mobile{,/**/*}',
     '!native{,/**/*}',
     '!skills{,/**/*}',
     // Why: guide/stub authoring sources are compiled into runtime artifacts; shipping
@@ -107,36 +106,17 @@ module.exports = {
     '!resources/skills/**',
     // Why: bundled plugins ship via extraResources to resources/plugins/launch;
     // packing the source tree into app.asar would duplicate those exact bytes.
-    '!resources/plugins/launch/**',
-    // Why: the Windows CLI shim ships via extraResources to resources/bin/orca.cmd
-    // (beside the native resources/bin/orca.exe). Packing the source tree into
-    // app.asar too lets asarUnpack:['resources/**'] extract a second copy at
-    // app.asar.unpacked/resources/win32/bin/orca.cmd with no adjacent orca.exe,
-    // which fails to launch the CLI (#7351).
-    '!resources/win32{,/**/*}'
+    '!resources/plugins/launch/**'
   ],
-  // Why: the CLI entry-point lives in out/cli/ but imports shared modules
-  // from out/shared/ and local hook mutators from out/main/. These paths must be
-  // unpacked so that Node's require() can resolve the cross-directory imports
-  // when the CLI runs outside the asar archive.
   // Why: daemon-entry.js is forked as a separate Node.js process and must be
   // accessible on disk (not inside the asar archive) for child_process.fork().
-  // Why: the CLI is compiled by tsc (not bundled), so its runtime imports
-  // resolve at runtime via Node's normal module lookup. The shim launches
-  // the CLI with ELECTRON_RUN_AS_NODE, which bypasses Electron's asar
-  // integration — dependencies inside the asar archive are invisible to
-  // require(). Unpack CLI runtime deps so they resolve from
-  // app.asar.unpacked/node_modules/.
-  // Why: remote runtime connections use WebSocket + E2EE from the packaged CLI
-  // before the GUI process starts, so those deps need the same treatment.
   // Why: out/package.json pins compiled output to CommonJS so parent
-  // package.json files with type=module cannot change the packaged CLI loader.
+  // package.json files with type=module cannot change the packaged loader.
   // Why: sherpa-onnx native bindings (platform-specific subpackages) must be
   // unpacked because they ship .node addons + .dylib/.so files that cannot be
   // dlopen()'d from inside the asar archive.
   asarUnpack: [
     'out/package.json',
-    'out/cli/**',
     'out/shared/**',
     'out/main/agent-hooks/**',
     'out/main/antigravity/**',
@@ -223,7 +203,6 @@ module.exports = {
     // Why: inspect electron-builder's real output so a broken extraResources
     // mapping fails packaging before bundled content reaches users.
     verifyPackagedPluginResources(resourcesDir)
-    chmodUnixCliLaunchers(resourcesDir, context.electronPlatformName)
     chmodMacServeSimHelpers(resourcesDir, context.electronPlatformName)
     for (const filename of readdirSync(resourcesDir)) {
       if (!filename.startsWith('agent-browser-')) {
@@ -253,14 +232,6 @@ module.exports = {
       ...commonExtraResources,
       ...createPackagedRuntimeNodeModuleResources('win32'),
       winSpeechNativeResource,
-      {
-        from: 'resources/win32/bin/orca.cmd',
-        to: 'bin/orca.cmd'
-      },
-      {
-        from: 'native/windows-cli-launcher/.build/orca.exe',
-        to: 'bin/orca.exe'
-      },
       {
         from: 'node_modules/agent-browser/bin/agent-browser-win32-x64.exe',
         to: 'agent-browser-win32-x64.exe'
@@ -317,10 +288,6 @@ module.exports = {
       ...commonExtraResources,
       ...createPackagedRuntimeNodeModuleResources('darwin'),
       macSpeechNativeResource,
-      {
-        from: 'resources/darwin/bin/orca',
-        to: 'bin/orca'
-      },
       {
         from: 'node_modules/agent-browser/bin/agent-browser-darwin-${arch}',
         to: 'agent-browser-darwin-${arch}'
@@ -382,10 +349,6 @@ module.exports = {
       ...createPackagedRuntimeNodeModuleResources('linux'),
       linuxSpeechNativeResource,
       {
-        from: 'resources/linux/bin/orca-ide',
-        to: 'bin/orca-ide'
-      },
-      {
         from: 'node_modules/agent-browser/bin/agent-browser-linux-${arch}',
         to: 'agent-browser-linux-${arch}'
       },
@@ -405,41 +368,27 @@ module.exports = {
   deb: {
     packageName: 'orca-ide',
     artifactName: 'orca-ide_${version}_${arch}.${ext}',
-    // Why: xvfb lets the bundled `orca serve` CLI run browser panes on a headless
-    // Linux host — Chromium needs a display server even for offscreen rendering,
-    // and serve starts Xvfb itself when present (see ensure-virtual-display.ts).
     depends: [
       'python3',
       'python3-gi',
       'gir1.2-atspi-2.0',
       'at-spi2-core',
       'xdotool',
-      'xclip',
-      'xvfb'
+      'xclip'
     ],
-    // Why: symlink the bundled CLI onto PATH at install time so `orca-ide serve`
-    // works on a headless host. The in-app CLI registration (CliInstaller) is
-    // GUI-triggered and can never run on a server, so without this the CLI is
-    // unreachable from the shell on exactly the hosts that need it.
-    afterInstall: 'resources/linux/packaging/after-install.sh',
-    afterRemove: 'resources/linux/packaging/after-remove.sh'
+    afterInstall: 'resources/linux/packaging/after-install.sh'
   },
   rpm: {
     packageName: 'orca-ide',
     artifactName: 'orca-ide-${version}.${arch}.${ext}',
-    // Why: see deb depends. RPM distros ship Xvfb as xorg-x11-server-Xvfb (there
-    // is no `xvfb` package), so the name differs from the deb here.
     depends: [
       'python3',
       'python3-gobject',
       'at-spi2-core',
       'xdotool',
-      'xclip',
-      'xorg-x11-server-Xvfb'
+      'xclip'
     ],
-    // Why: same headless CLI-on-PATH registration as deb; rpm runs these via fpm.
-    afterInstall: 'resources/linux/packaging/after-install.sh',
-    afterRemove: 'resources/linux/packaging/after-remove.sh'
+    afterInstall: 'resources/linux/packaging/after-install.sh'
   },
   beforeBuild: electronBuilderNativeRebuild,
   // Why: must be true so that electron-builder rebuilds native modules
@@ -454,21 +403,6 @@ module.exports = {
     owner: 'stablyai',
     repo: 'orca',
     releaseType: 'release'
-  }
-}
-
-function chmodUnixCliLaunchers(resourcesDir, electronPlatformName) {
-  if (electronPlatformName === 'win32') {
-    return
-  }
-  for (const launcherName of ['orca', 'orca-ide']) {
-    const launcherPath = join(resourcesDir, 'bin', launcherName)
-    if (!existsSync(launcherPath)) {
-      continue
-    }
-    // Why: packaged Unix installs expose these extraResources as public shell
-    // commands, and source/packager mode drift must not ship a non-executable CLI.
-    chmodSync(launcherPath, 0o755)
   }
 }
 

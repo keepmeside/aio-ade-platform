@@ -22,9 +22,8 @@ const PACKAGED_RUNTIME_PACKAGE_ROOTS = [
   'jsonc-parser',
   'node-pty',
   'posthog-node',
-  // serve-sim (for CLI JS entry + closure + state/middleware + to make packaged require('serve-sim') + its internal relatives work; mirrors other runtime JS like ws/yaml/zod. Natives/dylibs still via extraResources + the node_modules/serve-sim copy in resources from builder. Client if added too.
+  // The emulator loads serve-sim state, middleware, native helpers, and camera assets at runtime.
   'serve-sim',
-  'qrcode',
   'ssh2',
   'tweetnacl',
   'ws',

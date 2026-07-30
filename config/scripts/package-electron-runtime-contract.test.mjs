@@ -534,18 +534,6 @@ describe('Electron runtime package contract', () => {
     expect(installStep.run).toBe('node config/scripts/install-electron-package-binary.mjs')
   })
 
-  it('smokes the packaged CLI from outside the checkout in PR checks', () => {
-    const prWorkflow = readFileSync(join(projectDir, '.github/workflows/pr.yml'), 'utf8')
-    const parsedWorkflow = parse(prWorkflow)
-    const smokeStep = parsedWorkflow.jobs.package.steps.find(
-      (step) => step.name === 'Smoke packaged CLI'
-    )
-
-    expect(smokeStep.run).toBe(
-      'node config/scripts/smoke-packaged-cli.mjs --app-dir=dist/linux-unpacked'
-    )
-  })
-
   it('keeps terminal scale perf wired to the report budget gate', () => {
     const packageScripts = packageJson.scripts
     const terminalPerfWorkflow = parse(

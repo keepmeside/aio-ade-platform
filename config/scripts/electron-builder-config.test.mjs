@@ -1,4 +1,4 @@
-import { cp, mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -32,7 +32,6 @@ describe('electron-builder config', () => {
         '!src{,/**/*}',
         '!config{,/**/*}',
         '!docs{,/**/*}',
-        '!mobile{,/**/*}',
         '!native{,/**/*}',
         '!skills{,/**/*}',
         '!skill-guides{,/**/*}',
@@ -107,30 +106,6 @@ describe('electron-builder config', () => {
         expect.objectContaining({
           from: 'native/computer-use-windows/runtime.ps1',
           to: 'computer-use-windows/runtime.ps1'
-        }),
-        expect.objectContaining({
-          from: 'native/windows-cli-launcher/.build/orca.exe',
-          to: 'bin/orca.exe'
-        })
-      ])
-    )
-  })
-
-  // Why: the Windows CLI shim is delivered only via extraResources to
-  // resources/bin/orca.cmd (beside the native resources/bin/orca.exe). If the
-  // source tree is also packed into app.asar it gets extracted by
-  // asarUnpack:['resources/**'] to app.asar.unpacked/resources/win32/bin/orca.cmd,
-  // a duplicate with no adjacent orca.exe that fails to launch (#7351).
-  it('keeps the Windows CLI shim source tree out of app.asar', () => {
-    expect(electronBuilderConfig.files).toEqual(
-      expect.arrayContaining(['!resources/win32{,/**/*}'])
-    )
-    // Regression guard: the working shim must still ship via extraResources.
-    expect(electronBuilderConfig.win.extraResources).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          from: 'resources/win32/bin/orca.cmd',
-          to: 'bin/orca.cmd'
         })
       ])
     )
@@ -152,10 +127,11 @@ describe('electron-builder config', () => {
     )
   })
 
-  it('unpacks the compiled CommonJS boundary with CLI runtime files', () => {
+  it('unpacks the compiled CommonJS boundary with shared runtime files', () => {
     expect(electronBuilderConfig.asarUnpack).toEqual(
-      expect.arrayContaining(['out/package.json', 'out/cli/**', 'out/shared/**'])
+      expect.arrayContaining(['out/package.json', 'out/shared/**'])
     )
+    expect(electronBuilderConfig.asarUnpack).not.toContain('out/cli/**')
   })
 
   // Why: without the unpacked entry the watcher client silently falls back to
@@ -476,41 +452,4 @@ describe('electron-builder config', () => {
       await rm(resourcesDir, { recursive: true, force: true })
     }
   })
-
-  it.skipIf(process.platform === 'win32')(
-    'marks packaged Unix CLI launchers executable',
-    async () => {
-      const root = await mkdtemp(join(tmpdir(), 'orca-electron-builder-config-'))
-      try {
-        const resourcesDir = join(root, 'linux-unpacked', 'resources')
-        const launcherPath = join(resourcesDir, 'bin', 'orca-ide')
-        await mkdir(join(resourcesDir, 'bin'), { recursive: true })
-        await cp(
-          join(process.cwd(), 'resources', 'plugins', 'launch'),
-          join(resourcesDir, 'plugins', 'launch'),
-          { recursive: true }
-        )
-        await mkdir(join(resourcesDir, 'node_modules', 'zod', 'src'), { recursive: true })
-        // Why: afterPack now fails hard when the unpacked daemon entry is
-        // missing, so the fixture must carry one like a real package layout.
-        const unpackedMainDir = join(resourcesDir, 'app.asar.unpacked', 'out', 'main')
-        await mkdir(unpackedMainDir, { recursive: true })
-        await writeFile(
-          join(unpackedMainDir, 'daemon-entry.js'),
-          'console.error("Usage: daemon-entry <socket>"); process.exit(1)\n',
-          'utf8'
-        )
-        await writeFile(launcherPath, '#!/usr/bin/env bash\n', { encoding: 'utf8', mode: 0o644 })
-
-        await electronBuilderConfig.afterPack({
-          appOutDir: join(root, 'linux-unpacked'),
-          electronPlatformName: 'linux'
-        })
-
-        expect((await stat(launcherPath)).mode & 0o111).not.toBe(0)
-      } finally {
-        await rm(root, { recursive: true, force: true })
-      }
-    }
-  )
 })

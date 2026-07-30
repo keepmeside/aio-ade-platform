@@ -16,7 +16,6 @@ import {
 import net from 'node:net'
 import { createRequire } from 'node:module'
 import path from 'node:path'
-import { prepareDevCliTerminalWrappers } from './dev-cli-terminal-wrapper.mjs'
 
 // Why: Electron-based hosts (e.g. Claude Code, VS Code) set
 // ELECTRON_RUN_AS_NODE=1 in their terminal environment. If this leaks into
@@ -300,48 +299,6 @@ function restoreElectronFrameworkSymlinks(appPath) {
   for (const entry of ['Electron Framework', 'Resources', 'Libraries', 'Helpers']) {
     ensureRelativeSymlink(path.join(frameworkPath, entry), `Versions/Current/${entry}`)
   }
-}
-
-function getDevUserDataPath() {
-  if (process.env.ORCA_DEV_USER_DATA_PATH) {
-    return process.env.ORCA_DEV_USER_DATA_PATH
-  }
-  if (process.platform === 'darwin') {
-    return path.join(process.env.HOME ?? '', 'Library', 'Application Support', 'orca-dev')
-  }
-  if (process.platform === 'win32') {
-    return path.join(
-      process.env.APPDATA ?? path.join(process.env.USERPROFILE ?? '', 'AppData', 'Roaming'),
-      'orca-dev'
-    )
-  }
-  return path.join(
-    process.env.XDG_CONFIG_HOME ?? path.join(process.env.HOME ?? '', '.config'),
-    'orca-dev'
-  )
-}
-
-function prepareDevCliWrapper() {
-  const userDataPath = getDevUserDataPath()
-  const { binDir } = prepareDevCliTerminalWrappers({
-    repoRoot,
-    userDataPath,
-    electronExecutable: getElectronExecutable()
-  })
-
-  process.env.PATH = `${binDir}${path.delimiter}${process.env.PATH ?? ''}`
-  console.log(`[orca-dev] Prepared wrapper in ${binDir}`)
-}
-
-function getElectronExecutable() {
-  if (process.platform === 'win32') {
-    return path.join(repoRoot, 'node_modules', 'electron', 'dist', 'electron.exe')
-  }
-  return path.join(repoRoot, 'node_modules', '.bin', 'electron')
-}
-
-if (process.env.ORCA_SKIP_DEV_CLI_PREPARE !== '1') {
-  prepareDevCliWrapper()
 }
 
 seedDevInstanceIdentityEnv()

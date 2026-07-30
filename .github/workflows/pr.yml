@@ -237,8 +237,6 @@ jobs:
       - name: Build package inputs
         run: |
           status=0
-          pnpm run build:cli || status=1
-
           scripts=(build:relay build:electron-vite:parallel)
           pids=()
           for script in "${scripts[@]}"; do
@@ -261,9 +259,6 @@ jobs:
         env:
           ORCA_REUSE_PREPARED_NATIVE_RUNTIME: '1'
         run: pnpm exec electron-builder --config config/electron-builder.config.cjs --dir
-
-      - name: Smoke packaged CLI
-        run: node config/scripts/smoke-packaged-cli.mjs --app-dir=dist/linux-unpacked
 
   # Why: regression specs under tests/e2e/** used to merge green without ever
   # running — e2e.yml only fired on schedule/release (#10518). Path-filter so
