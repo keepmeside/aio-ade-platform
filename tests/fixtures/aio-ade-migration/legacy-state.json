@@ -1,0 +1,81 @@
+{
+  "schemaVersion": "aio-ade-legacy-state/v1",
+  "legacyBrand": "Orca",
+  "canonicalBrand": "aio-ade",
+  "authors": ["Keepmeside", "SalyyS1"],
+  "compatibility": {
+    "termProgram": "Orca",
+    "readLegacyWorkspaceKey": true,
+    "writeCanonicalWorkspaceKey": true
+  },
+  "persistedSettings": {
+    "terminal": {
+      "restoreScrollback": true,
+      "rows": 24,
+      "cols": 80,
+      "alternateScreen": false
+    },
+    "agent": {
+      "provider": "claude",
+      "model": "fable"
+    },
+    "authMode": "os-keyring"
+  },
+  "providerKeyedState": {
+    "disabled": {
+      "claude": false,
+      "codex": false,
+      "gemini": true,
+      "opencode": false
+    },
+    "args": {
+      "claude": ["--model", "fable"],
+      "codex": [],
+      "gemini": ["--legacy-mode"],
+      "opencode": ["--legacy-mode"]
+    },
+    "envOverrides": {
+      "claude": { "CLAUDE_PROFILE": "default" },
+      "codex": {},
+      "gemini": { "GEMINI_MODE": "legacy" },
+      "opencode": { "OPENCODE_MODE": "legacy" }
+    },
+    "selectedModels": {
+      "claude": "fable",
+      "codex": "gpt-5",
+      "gemini": "gemini-2.5-pro",
+      "opencode": "legacy-default"
+    },
+    "discoveredModels": {
+      "claude": ["fable"],
+      "codex": ["gpt-5"],
+      "gemini": ["gemini-2.5-pro"],
+      "opencode": ["legacy-default"]
+    },
+    "hostIds": {
+      "claude": "local",
+      "codex": "ssh-build",
+      "gemini": "local",
+      "opencode": "wsl-ubuntu"
+    },
+    "savedSessions": {
+      "claude": ["claude-session-1"],
+      "codex": ["codex-session-1"],
+      "gemini": ["stale-gemini-session"],
+      "opencode": ["stale-opencode-session"]
+    },
+    "rpcPayloads": {
+      "claude": { "agent": "claude", "model": "fable" },
+      "codex": { "agent": "codex", "model": "gpt-5" },
+      "gemini": { "agent": "gemini", "model": "gemini-2.5-pro" },
+      "opencode": { "agent": "opencode", "model": "legacy-default" }
+    }
+  },
+  "migration": {
+    "backupMarker": "aio-ade-migration-v1",
+    "sourceScope": "workspace-settings",
+    "targetScope": "workspace-settings",
+    "retainedProviderIds": ["claude", "codex"],
+    "removedProviderIds": ["gemini", "opencode"]
+  }
+}

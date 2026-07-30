@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "aio-ade-terminal-oracle/v1",
+  "fixtureId": "claude-fable-pty-contract",
+  "launch": {
+    "agent": "claude",
+    "model": "fable",
+    "argv": ["--model", "fable"],
+    "workspaceKinds": ["worktree", "folder"],
+    "transports": ["local", "wsl", "ssh"]
+  },
+  "contracts": [
+    "raw-bytes",
+    "alternate-screen",
+    "osc-10-11",
+    "kitty-keyboard",
+    "paste",
+    "ime",
+    "reconnect-history"
+  ],
+  "actions": [
+    {
+      "kind": "write",
+      "seq": 1,
+      "payload": { "text": "fable\r", "encoding": "utf8" },
+      "expected": { "ptyWriteHex": "6661626c650d", "chunkSeqs": [1, 2, 3, 4] }
+    },
+    {
+      "kind": "hide",
+      "seq": 2,
+      "payload": { "visibility": "hidden" },
+      "expected": { "ptyAttached": true, "chunkSeqs": [] }
+    },
+    {
+      "kind": "resize",
+      "seq": 3,
+      "payload": { "rows": 32, "cols": 120 },
+      "expected": { "lastResize": { "rows": 32, "cols": 120 }, "chunkSeqs": [] }
+    },
+    {
+      "kind": "reveal",
+      "seq": 4,
+      "payload": { "visibility": "visible", "requestSnapshot": true },
+      "expected": { "snapshotRestored": true, "chunkSeqs": [5, 6] }
+    },
+    {
+      "kind": "paste",
+      "seq": 5,
+      "payload": { "text": "paste\n", "bracketed": true },
+      "expected": {
+        "ptyWriteHex": "1b5b3230307e70617374650a1b5b3230317e",
+        "chunkSeqs": [7]
+      }
+    },
+    {
+      "kind": "ime",
+      "seq": 6,
+      "payload": { "composition": "xin chao", "commit": "xin chao" },
+      "expected": { "ptyWriteHex": "78696e206368616f", "chunkSeqs": [] }
+    },
+    {
+      "kind": "disconnect",
+      "seq": 7,
+      "payload": { "transport": "ssh", "reason": "network-loss" },
+      "expected": { "sessionState": "reconnecting", "chunkSeqs": [] }
+    },
+    {
+      "kind": "reconnect",
+      "seq": 8,
+      "payload": { "transport": "ssh", "replayFromSeq": 4 },
+      "expected": { "historyStartSeq": 4, "singleExitRecord": true, "chunkSeqs": [8] }
+    }
+  ],
+  "chunks": [
+    { "seq": 1, "actionSeq": 1, "kind": "alternate-screen-enter", "hex": "1b5b3f3130343968" },
+    { "seq": 2, "actionSeq": 1, "kind": "kitty-keyboard-enable", "hex": "1b5b3e3175" },
+    { "seq": 3, "actionSeq": 1, "kind": "osc-10-query", "hex": "1b5d31303b3f07" },
+    { "seq": 4, "actionSeq": 1, "kind": "osc-11-query", "hex": "1b5d31313b3f07" },
+    { "seq": 5, "actionSeq": 4, "kind": "snapshot-line", "hex": "6661626c650d0a" },
+    { "seq": 6, "actionSeq": 4, "kind": "invalid-utf8", "hex": "fffefd" },
+    {
+      "seq": 7,
+      "actionSeq": 5,
+      "kind": "bracketed-paste",
+      "hex": "1b5b3230307e70617374650a1b5b3230317e"
+    },
+    { "seq": 8, "actionSeq": 8, "kind": "alternate-screen-exit", "hex": "1b5b3f313034396c" }
+  ],
+  "streamSha256": "799678adef6c4baf6ed2543257269b2bd2c3d5829f72e9167db448edcda3de20",
+  "expected": {
+    "reconnectAuthority": "sidecar",
+    "replayCursor": 4,
+    "resize": { "rows": 32, "cols": 120 },
+    "preserveInvalidUtf8": true,
+    "singleExitRecord": true
+  }
+}

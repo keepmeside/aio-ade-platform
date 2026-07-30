@@ -1,7 +1,7 @@
 ---
 title: "aio-ade: lộ trình strangler migration sang Tauri v2"
 description: "Giữ Electron làm baseline, dựng Tauri v2 có cổng parity, giữ React/xterm và Node sidecar trước khi loại Electron."
-status: pending
+status: in-progress
 priority: P1
 effort: "14-20 tuần, phụ thuộc parity và platform gates"
 branch: codex/aio-ade-implementation
@@ -36,6 +36,8 @@ Chuyển fork Orca thành `aio-ade`, giữ React 19/xterm.js và hành vi PTY/SS
 - [Decision log](./decisions.md)
 - [Execution và ownership matrix](./execution-matrix.md)
 - [Danh mục 176 feature rows](./feature-catalog.md)
+- [Phase 01 baseline results](./reports/phase-01-baseline-results.md)
+- [Phase 01 capability checklist](./reports/phase-01-capability-checklist.md)
 - [Báo cáo Tauri/Rust runtime](./reports/tauri-rust-runtime-options-report.md)
 - [Báo cáo codebase seams](./reports/tauri-codebase-seams-report.md)
 
@@ -45,7 +47,7 @@ Chuyển fork Orca thành `aio-ade`, giữ React 19/xterm.js và hành vi PTY/SS
 
 | Phase | Deliverable | Trạng thái | Chi tiết |
 |---|---|---|---|
-| 01 | Preflight, baseline, runtime contracts | pending | [Preflight](./phase-01-baseline-and-contracts.md) |
+| 01 | Preflight, baseline, runtime contracts | completed | [Preflight](./phase-01-baseline-and-contracts.md) |
 | 02 | Xóa mobile/web companion | pending | [Delete mobile](./phase-02-delete-mobile-companion.md) |
 | 03 | Xóa product CLI/orchestration | pending | [Delete CLI](./phase-03-delete-product-cli-and-orchestration.md) |
 | 04 | Thu roster Claude/Codex, giữ Fable | pending | [Reduce providers](./phase-04-reduce-providers-to-claude-and-codex.md) |

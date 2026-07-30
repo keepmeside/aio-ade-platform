@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Preflight, baseline và runtime contracts"
-status: pending
+status: completed
 priority: P1
 effort: "1-2 ngày"
 dependencies: []
@@ -63,7 +63,7 @@ dependencies: []
 
 ## Success Criteria
 
-- [ ] Baseline commands, fixtures, platform gaps và pre-existing failures có timestamp.
-- [ ] Every destructive scope item có reverse-import inventory và owner phase.
-- [ ] Electron PTY/Fable/SSH oracle có thể chạy lại và so hash/snapshot.
-- [ ] Rust/toolchain blocker được ghi như prerequisite phase 06, không làm đổi kiến trúc.
+- [x] Baseline commands, fixtures, platform gaps và pre-existing failures có timestamp.
+- [x] Every destructive scope item có reverse-import inventory và owner phase.
+- [x] Electron PTY/Fable/SSH oracle có thể chạy lại và so hash/snapshot.
+- [x] Rust/toolchain blocker được ghi như prerequisite phase 06, không làm đổi kiến trúc.
