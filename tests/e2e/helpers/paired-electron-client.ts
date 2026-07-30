@@ -76,7 +76,7 @@ export async function createRuntimeDesktopPairingOffer(
   hubPage: Page
 ): Promise<RuntimeDesktopPairingOffer> {
   return hubPage.evaluate(async () => {
-    const offer = await window.api.mobile.getRuntimePairingUrl({
+    const offer = await window.api.runtime.getPairingUrl({
       address: '127.0.0.1',
       rotate: true
     })

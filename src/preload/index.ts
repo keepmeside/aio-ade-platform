@@ -19,8 +19,6 @@ import type {
   AgentProviderSessionMetadata,
   SleepingAgentLaunchConfig
 } from '../shared/agent-session-resume'
-import type { MobileRelayStatus } from '../shared/mobile-relay-status'
-import type { MobilePairingConnectionMode } from '../shared/mobile-pairing-connection-mode'
 import type {
   SshMutationExpectation,
   SshConnectionState,
@@ -129,13 +127,13 @@ import type {
   RuntimeTerminalDriverState,
   RuntimeTerminalPresentation
 } from '../shared/runtime-types'
+import type {
+  RuntimeMarkdownRequest,
+  RuntimeMarkdownResponse
+} from '../shared/runtime-markdown-document'
 import type { RuntimeRpcResponse } from '../shared/runtime-rpc-envelope'
 import type { PublicKnownRuntimeEnvironment } from '../shared/runtime-environments'
 import type { RemoteWorkspaceChangedEvent } from '../shared/remote-workspace-types'
-import type {
-  RuntimeMobileMarkdownRequest,
-  RuntimeMobileMarkdownResponse
-} from '../shared/mobile-markdown-document'
 import type {
   CodexRateLimitResetResult,
   GrokAccountStatus,
@@ -3845,7 +3843,7 @@ const api = {
       ipcRenderer.on('ui:moveSessionTab', listener)
       return () => ipcRenderer.removeListener('ui:moveSessionTab', listener)
     },
-    onOpenFileFromMobile: (
+    onOpenFileFromRuntime: (
       callback: (data: {
         worktreeId: string
         filePath: string
@@ -3862,10 +3860,10 @@ const api = {
           runtimeEnvironmentId?: string
         }
       ) => callback(data)
-      ipcRenderer.on('ui:openFileFromMobile', listener)
-      return () => ipcRenderer.removeListener('ui:openFileFromMobile', listener)
+      ipcRenderer.on('ui:openFileFromRuntime', listener)
+      return () => ipcRenderer.removeListener('ui:openFileFromRuntime', listener)
     },
-    onOpenDiffFromMobile: (
+    onOpenDiffFromRuntime: (
       callback: (data: {
         worktreeId: string
         filePath: string
@@ -3884,19 +3882,19 @@ const api = {
           runtimeEnvironmentId?: string
         }
       ) => callback(data)
-      ipcRenderer.on('ui:openDiffFromMobile', listener)
-      return () => ipcRenderer.removeListener('ui:openDiffFromMobile', listener)
+      ipcRenderer.on('ui:openDiffFromRuntime', listener)
+      return () => ipcRenderer.removeListener('ui:openDiffFromRuntime', listener)
     },
-    onMobileMarkdownRequest: (
-      callback: (request: RuntimeMobileMarkdownRequest) => void
+    onRuntimeMarkdownRequest: (
+      callback: (request: RuntimeMarkdownRequest) => void
     ): (() => void) => {
-      const listener = (_event: Electron.IpcRendererEvent, request: RuntimeMobileMarkdownRequest) =>
+      const listener = (_event: Electron.IpcRendererEvent, request: RuntimeMarkdownRequest) =>
         callback(request)
-      ipcRenderer.on('ui:mobileMarkdownRequest', listener)
-      return () => ipcRenderer.removeListener('ui:mobileMarkdownRequest', listener)
+      ipcRenderer.on('ui:runtimeMarkdownRequest', listener)
+      return () => ipcRenderer.removeListener('ui:runtimeMarkdownRequest', listener)
     },
-    respondMobileMarkdownRequest: (response: RuntimeMobileMarkdownResponse): void => {
-      ipcRenderer.send('ui:mobileMarkdownResponse', response)
+    respondRuntimeMarkdownRequest: (response: RuntimeMarkdownResponse): void => {
+      ipcRenderer.send('ui:runtimeMarkdownResponse', response)
     },
     onCloseTerminal: (
       callback: (data: { tabId: string; paneRuntimeId?: number }) => void
@@ -4178,6 +4176,22 @@ const api = {
     getStatus: (): Promise<RuntimeStatus> => ipcRenderer.invoke('runtime:getStatus'),
     call: (args: { method: string; params?: unknown }): Promise<RuntimeRpcResponse<unknown>> =>
       ipcRenderer.invoke('runtime:call', args),
+    listNetworkInterfaces: (): Promise<{
+      interfaces: { name: string; address: string }[]
+    }> => ipcRenderer.invoke('runtime:listNetworkInterfaces'),
+    getPairingUrl: (args?: { address?: string; rotate?: boolean }) =>
+      ipcRenderer.invoke('runtime:getPairingUrl', args),
+    listAccessGrants: () => ipcRenderer.invoke('runtime:listAccessGrants'),
+    revokeAccess: (args: { deviceId: string }): Promise<{ revoked: boolean }> =>
+      ipcRenderer.invoke('runtime:revokeAccess', args),
+    isWebSocketReady: (): Promise<{ ready: boolean; endpoint: string | null }> =>
+      ipcRenderer.invoke('runtime:isWebSocketReady'),
+    consumeAuthFailure: (): Promise<boolean> => ipcRenderer.invoke('runtime:consumeAuthFailure'),
+    onAuthFailure: (callback: () => void): (() => void) => {
+      const listener = () => callback()
+      ipcRenderer.on('runtime:authFailure', listener)
+      return () => ipcRenderer.removeListener('runtime:authFailure', listener)
+    },
     getTerminalFitOverrides: (): Promise<
       { ptyId: string; mode: 'mobile-fit' | 'remote-desktop-fit'; cols: number; rows: number }[]
     > => ipcRenderer.invoke('runtime:getTerminalFitOverrides'),
@@ -4530,85 +4544,6 @@ const api = {
 
   e2e: {
     getConfig: () => preloadE2EConfig
-  },
-
-  mobile: {
-    listNetworkInterfaces: (): Promise<{
-      interfaces: { name: string; address: string }[]
-    }> => ipcRenderer.invoke('mobile:listNetworkInterfaces'),
-
-    getPairingQR: (args?: {
-      address?: string
-      connectionMode?: MobilePairingConnectionMode
-      rotate?: boolean
-    }): Promise<
-      | { available: false }
-      | {
-          available: true
-          qrDataUrl: string | null
-          qrError?: 'encoding_failed'
-          pairingUrl: string
-          endpoint: string
-          deviceId: string
-          connectionMode: MobilePairingConnectionMode
-        }
-    > => ipcRenderer.invoke('mobile:getPairingQR', args),
-
-    getWindowsFirewallStatus: (args?: { address?: string }) =>
-      ipcRenderer.invoke('mobile:getWindowsFirewallStatus', args),
-
-    repairWindowsFirewall: () => ipcRenderer.invoke('mobile:repairWindowsFirewall'),
-
-    openWindowsNetworkSettings: () => ipcRenderer.invoke('mobile:openWindowsNetworkSettings'),
-
-    getRuntimePairingUrl: (args?: {
-      address?: string
-      rotate?: boolean
-    }): Promise<
-      | { available: false }
-      | {
-          available: true
-          pairingUrl: string
-          webClientUrl: string | null
-          endpoint: string
-          deviceId: string
-        }
-    > => ipcRenderer.invoke('mobile:getRuntimePairingUrl', args),
-
-    listDevices: (): Promise<{
-      devices: { deviceId: string; name: string; pairedAt: number; lastSeenAt: number }[]
-    }> => ipcRenderer.invoke('mobile:listDevices'),
-
-    revokeDevice: (args: { deviceId: string }): Promise<{ revoked: boolean }> =>
-      ipcRenderer.invoke('mobile:revokeDevice', args),
-
-    listRuntimeAccessGrants: () => ipcRenderer.invoke('mobile:listRuntimeAccessGrants'),
-
-    revokeRuntimeAccess: (args: { deviceId: string }): Promise<{ revoked: boolean }> =>
-      ipcRenderer.invoke('mobile:revokeRuntimeAccess', args),
-
-    isWebSocketReady: (): Promise<{ ready: boolean; endpoint: string | null }> =>
-      ipcRenderer.invoke('mobile:isWebSocketReady'),
-
-    getRelayStatus: (): Promise<{ status: MobileRelayStatus }> =>
-      ipcRenderer.invoke('mobile:getRelayStatus'),
-
-    onRelayStatusChanged: (callback: (status: MobileRelayStatus) => void): (() => void) => {
-      const listener = (_event: Electron.IpcRendererEvent, status: MobileRelayStatus) =>
-        callback(status)
-      ipcRenderer.on('mobile:relayStatusChanged', listener)
-      return () => ipcRenderer.removeListener('mobile:relayStatusChanged', listener)
-    },
-
-    consumePendingUnpairedDeviceAuthFailure: (): Promise<boolean> =>
-      ipcRenderer.invoke('mobile:consumePendingUnpairedDeviceAuthFailure'),
-
-    /** Fires (throttled, once per session) when an unpaired phone repeatedly fails direct-transport auth. */
-    onUnpairedDeviceAuthFailure: (callback: () => void): (() => void) => {
-      const listener = () => callback()
-      ipcRenderer.on('mobile:unpairedDeviceAuthFailure', listener)
-      return () => ipcRenderer.removeListener('mobile:unpairedDeviceAuthFailure', listener)
-    }
   },
 
   agentStatus: {

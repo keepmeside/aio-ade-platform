@@ -495,6 +495,12 @@ function hydratedUIPartialMatchesState(state: AppState, hydrated: Partial<UISlic
   )
 }
 
+function normalizeRestorableTopLevelView<T extends TopLevelView>(
+  value: T
+): Exclude<T, 'mobile'> | 'terminal' {
+  return value === 'mobile' ? 'terminal' : (value as Exclude<T, 'mobile'>)
+}
+
 function sanitizeHydratedActiveView(
   value: PersistedUIState['activeView'],
   experimentalActivityEnabled: boolean
@@ -504,7 +510,11 @@ function sanitizeHydratedActiveView(
   if (!isTopLevelView(value)) {
     return 'terminal'
   }
-  // Why: activity is hidden when its setting is off, so gate only it (mobile/automations stay functional when hidden).
+  // Why: persisted mobile companion views no longer have a desktop route.
+  if (value === 'mobile') {
+    return 'terminal'
+  }
+  // Why: activity is hidden when its setting is off, so gate only it.
   if (value === 'activity' && !experimentalActivityEnabled) {
     return 'terminal'
   }
@@ -611,7 +621,6 @@ export type UISlice = {
     | 'automations'
     | 'space'
     | 'skills'
-    | 'mobile'
   previousViewBeforeSettings:
     | 'terminal'
     | 'tasks'
@@ -619,7 +628,6 @@ export type UISlice = {
     | 'automations'
     | 'space'
     | 'skills'
-    | 'mobile'
   previousViewBeforeActivity:
     | 'terminal'
     | 'settings'
@@ -627,7 +635,6 @@ export type UISlice = {
     | 'automations'
     | 'space'
     | 'skills'
-    | 'mobile'
   previousViewBeforeAutomations:
     | 'terminal'
     | 'settings'
@@ -635,7 +642,6 @@ export type UISlice = {
     | 'activity'
     | 'space'
     | 'skills'
-    | 'mobile'
   previousViewBeforeSpace:
     | 'terminal'
     | 'settings'
@@ -643,7 +649,6 @@ export type UISlice = {
     | 'activity'
     | 'automations'
     | 'skills'
-    | 'mobile'
   previousViewBeforeSkills:
     | 'terminal'
     | 'settings'
@@ -651,15 +656,6 @@ export type UISlice = {
     | 'activity'
     | 'automations'
     | 'space'
-    | 'mobile'
-  previousViewBeforeMobile:
-    | 'terminal'
-    | 'settings'
-    | 'tasks'
-    | 'activity'
-    | 'automations'
-    | 'space'
-    | 'skills'
   setActiveView: (view: UISlice['activeView']) => void
   taskPageData: {
     preselectedRepoId?: string
@@ -734,8 +730,6 @@ export type UISlice = {
   closeSpacePage: () => void
   openSkillsPage: () => void
   closeSkillsPage: () => void
-  openMobilePage: () => void
-  closeMobilePage: () => void
   setNewWorkspaceDraft: (draft: NonNullable<UISlice['newWorkspaceDraft']>) => void
   clearNewWorkspaceDraft: () => void
   openSettingsPage: () => void
@@ -1225,7 +1219,6 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
   previousViewBeforeAutomations: 'terminal',
   previousViewBeforeSpace: 'terminal',
   previousViewBeforeSkills: 'terminal',
-  previousViewBeforeMobile: 'terminal',
   setActiveView: (view) => set({ activeView: view }),
   taskPageData: {},
   taskResumeState: undefined,
@@ -1298,7 +1291,9 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
     set((state) => ({
       activeView: 'tasks',
       previousViewBeforeTasks:
-        state.activeView === 'tasks' ? state.previousViewBeforeTasks : state.activeView,
+        state.activeView === 'tasks'
+          ? state.previousViewBeforeTasks
+          : normalizeRestorableTopLevelView(state.activeView),
       taskPageData: data
     }))
     // Why: prefetch the work-item list during first render so the page's effect hits a warm/in-flight SWR cache (~300–800ms win).
@@ -1414,7 +1409,9 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
     set((state) => ({
       activeView: 'activity',
       previousViewBeforeActivity:
-        state.activeView === 'activity' ? state.previousViewBeforeActivity : state.activeView
+        state.activeView === 'activity'
+          ? state.previousViewBeforeActivity
+          : normalizeRestorableTopLevelView(state.activeView)
     }))
   },
   closeActivityPage: () =>
@@ -1431,7 +1428,9 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
     set((state) => ({
       activeView: 'automations',
       previousViewBeforeAutomations:
-        state.activeView === 'automations' ? state.previousViewBeforeAutomations : state.activeView
+        state.activeView === 'automations'
+          ? state.previousViewBeforeAutomations
+          : normalizeRestorableTopLevelView(state.activeView)
     }))
   },
   closeAutomationsPage: () =>
@@ -1454,7 +1453,9 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
     set((state) => ({
       activeView: 'space',
       previousViewBeforeSpace:
-        state.activeView === 'space' ? state.previousViewBeforeSpace : state.activeView
+        state.activeView === 'space'
+          ? state.previousViewBeforeSpace
+          : normalizeRestorableTopLevelView(state.activeView)
     }))
   },
   closeSpacePage: () =>
@@ -1465,21 +1466,13 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
     set((state) => ({
       activeView: 'skills',
       previousViewBeforeSkills:
-        state.activeView === 'skills' ? state.previousViewBeforeSkills : state.activeView
+        state.activeView === 'skills'
+          ? state.previousViewBeforeSkills
+          : normalizeRestorableTopLevelView(state.activeView)
     })),
   closeSkillsPage: () =>
     set((state) => ({
       activeView: state.previousViewBeforeSkills
-    })),
-  openMobilePage: () =>
-    set((state) => ({
-      activeView: 'mobile',
-      previousViewBeforeMobile:
-        state.activeView === 'mobile' ? state.previousViewBeforeMobile : state.activeView
-    })),
-  closeMobilePage: () =>
-    set((state) => ({
-      activeView: state.previousViewBeforeMobile
     })),
   setNewWorkspaceDraft: (draft) => set({ newWorkspaceDraft: draft }),
   clearNewWorkspaceDraft: () => set({ newWorkspaceDraft: null }),
@@ -1490,7 +1483,9 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
       activeView: 'settings',
       // Why: preserve the originating view so Settings back returns there (e.g. in-progress draft), not always terminal.
       previousViewBeforeSettings:
-        state.activeView === 'settings' ? state.previousViewBeforeSettings : state.activeView
+        state.activeView === 'settings'
+          ? state.previousViewBeforeSettings
+          : normalizeRestorableTopLevelView(state.activeView)
     }))
   },
   closeSettingsPage: () =>

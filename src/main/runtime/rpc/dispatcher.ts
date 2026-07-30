@@ -10,7 +10,6 @@ import {
   isStreamingMethod,
   type RpcAnyMethod,
   type RpcEnvelopeMeta,
-  type PairingRpcContext,
   type RpcRegistry,
   type RpcRequest,
   type RpcResponse
@@ -127,7 +126,6 @@ export class RpcDispatcher {
       pairedDeviceId?: string
       clientKind?: 'mobile' | 'runtime'
       clientCapabilities?: readonly RuntimeCapability[]
-      pairing?: PairingRpcContext
       sendBinary?: (bytes: Uint8Array<ArrayBufferLike>) => boolean | void
       registerBinaryStreamHandler?: (
         streamId: number,
@@ -174,7 +172,6 @@ export class RpcDispatcher {
             authenticatedCallerFingerprint: authenticatedCallerFingerprint(request),
             recordMutationReceipt: mutation?.recordReceipt,
             orchestrationMutation: mutation?.identity,
-            pairing: options?.pairing,
             sendBinary: options?.sendBinary,
             registerBinaryStreamHandler: options?.registerBinaryStreamHandler
           })
@@ -212,7 +209,6 @@ export class RpcDispatcher {
           pairedDeviceId: options?.pairedDeviceId,
           clientKind: options?.clientKind,
           clientCapabilities: options?.clientCapabilities,
-          pairing: options?.pairing,
           sendBinary: options?.sendBinary,
           registerBinaryStreamHandler: options?.registerBinaryStreamHandler
         },

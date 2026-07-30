@@ -9,8 +9,7 @@ const RIGHT_SIDEBAR_SUPPRESSED_VIEWS = new Set<ActiveView>([
   'activity',
   'automations',
   'space',
-  'skills',
-  'mobile'
+  'skills'
 ])
 
 export function canShowRightSidebarForView(activeView: ActiveView): boolean {

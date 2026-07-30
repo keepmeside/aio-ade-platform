@@ -17,7 +17,6 @@ const ready: ServeReadiness = {
     deviceId: 'device-1',
     webClientUrl: 'https://orca.example.test/runtime/web-index.html#pairing=secret',
     scope: 'runtime',
-    qr: null
   }
 }
 

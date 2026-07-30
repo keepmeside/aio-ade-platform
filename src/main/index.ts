@@ -9,11 +9,10 @@ import {
   Store,
   initDataPath,
   getCanonicalUserDataPath,
-  migrateMobilePairingDataToCanonicalUserDataPath
+  migrateRuntimePairingDataToCanonicalUserDataPath
 } from './persistence'
 import { initSessionParseCachePersistence } from './ai-vault/session-parse-cache-persistence'
 import { ensureActiveOrcaProfile, initOrcaProfilePaths } from './orca-profiles/profile-index-store'
-import { getOrcaCloudAuthConfig } from './orca-profiles/profile-cloud-auth-config'
 import { getProfileUserDataPath } from './orca-profiles/profile-storage-paths'
 import { applyAppIcon } from './app-icon'
 import { relaunchApp } from './app-relaunch'
@@ -35,7 +34,7 @@ import { closeAllWatchers } from './ipc/filesystem-watcher'
 import { disposeWorktreeBaseDirectoryWatchers } from './ipc/worktree-base-directory-watcher'
 import { registerCoreHandlers } from './ipc/register-core-handlers'
 import { initObservability, shutdownObservability } from './observability'
-import { registerMobileHandlers } from './ipc/mobile'
+import { registerRuntimePairingHandlers } from './ipc/runtime-pairing'
 import { initTelemetry, shutdownTelemetry, trackAppOpenedOnce, track } from './telemetry/client'
 import { classifyError } from './telemetry/classify-error'
 import { runManagedHookInstallers } from './agent-hooks/install-telemetry'
@@ -65,8 +64,6 @@ import {
 import { resolveAdvertisedPairingEndpoint } from './runtime/pairing-endpoint'
 import { ServeReadinessPublisher } from './server/serve-readiness'
 import { reserveServeStdoutForReadiness } from './server/serve-stdout-boundary'
-import { DesktopRelayService } from './runtime/relay/desktop-relay-service'
-import type { RelayBrokerStatus } from './runtime/relay/relay-session-broker'
 import { awaitRuntimeFileWatcherUnsubscribes } from './runtime/orca-runtime-files'
 import { clearRuntimeMetadataIfOwned } from './runtime/runtime-metadata'
 import { ensureMainI18n, setMainPluginLanguagePacks, setMainUiLanguage } from './i18n/main-i18n'
@@ -302,9 +299,7 @@ let runtime: OrcaRuntimeService | null = null
 let rateLimits: RateLimitService | null = null
 let runtimeRpc: OrcaRuntimeRpcServer | null = null
 const serveReadinessPublisher = new ServeReadinessPublisher()
-let desktopRelayService: DesktopRelayService | null = null
-let desktopRelayStatus: RelayBrokerStatus = 'offline'
-let pendingUnpairedDeviceAuthFailure = false
+let pendingRuntimeAuthFailure = false
 // Why: gates whether headless serve installs the offscreen browser backend (and advertises browser pane support).
 let headlessBrowserDisplayAvailable = false
 
@@ -1216,11 +1211,8 @@ function openMainWindow(): BrowserWindow {
         }),
       onBeforeRelaunch: async () => {
         isQuitting = true
-        desktopRelayService?.fenceAndCloseNow()
         await preserveAgentAuthBeforeRestart({ codexRuntimeHome, claudeRuntimeAuth, store })
       },
-      onOrcaProfileAuthMutation: () => desktopRelayService?.authMutated(),
-      onBeforeOrcaProfileSignOut: () => desktopRelayService?.fenceAndCloseNow()
     },
     pluginService ?? undefined,
     pluginMarketplaceService && pluginMarketplaceInstaller
@@ -1573,7 +1565,6 @@ type ServeOptions = {
   wsPort?: number
   pairingAddress: string | null
   noPairing: boolean
-  mobilePairing: boolean
   recipeJson: boolean
   projectRoot: string | null
 }
@@ -1601,7 +1592,6 @@ function getServeOptions(argv = process.argv): ServeOptions {
     ...(wsPort !== undefined ? { wsPort } : {}),
     pairingAddress: valueAfter('--serve-pairing-address'),
     noPairing: argv.includes('--serve-no-pairing'),
-    mobilePairing: argv.includes('--serve-mobile-pairing'),
     recipeJson: argv.includes('--serve-recipe-json'),
     projectRoot: valueAfter('--serve-project-root')
   }
@@ -1615,21 +1605,6 @@ function getBundledWebClientRoot(): string | undefined {
     join(appPath, '..', 'web')
   ]
   return roots.find((root) => existsSync(join(root, 'web-index.html')))
-}
-
-async function renderTerminalPairingQr(pairingUrl: string): Promise<string | null> {
-  // Why dynamic: qrcode is only reachable from mobile pairing, so launch should
-  // not parse it for the majority who never pair a device.
-  const QRCode = await import('qrcode')
-  try {
-    return await QRCode.toString(pairingUrl, { type: 'terminal', small: true })
-  } catch {
-    try {
-      return await QRCode.toString(pairingUrl, { type: 'utf8' })
-    } catch {
-      return null
-    }
-  }
 }
 
 async function printServeReady(options: ServeOptions): Promise<void> {
@@ -1660,13 +1635,9 @@ async function printServeReady(options: ServeOptions): Promise<void> {
       } as const)
     : runtimeRpc.createPairingOffer({
         address: options.pairingAddress,
-        name: `${options.mobilePairing ? 'Mobile' : 'CLI'} ${new Date().toLocaleDateString()}`,
-        scope: options.mobilePairing ? 'mobile' : 'runtime'
+        name: `Runtime ${new Date().toLocaleDateString()}`,
+        scope: 'runtime'
       })
-  const pairingQr =
-    pairing.available && options.mobilePairing
-      ? await renderTerminalPairingQr(pairing.pairingUrl)
-      : null
   await serveReadinessPublisher.publish(
     {
       runtimeId: runtime.getRuntimeId(),
@@ -1681,8 +1652,7 @@ async function printServeReady(options: ServeOptions): Promise<void> {
             endpoint: pairing.endpoint,
             deviceId: pairing.deviceId,
             webClientUrl: pairing.webClientUrl,
-            scope: options.mobilePairing ? 'mobile' : 'runtime',
-            qr: pairingQr
+            scope: 'runtime'
           }
         : pairing
     },
@@ -2603,7 +2573,7 @@ void app.whenReady().then(async () => {
     return
   }
   // Why: existing installs may have pairing creds under the late app.getPath('userData'); copy them forward before switching to the canonical path.
-  migrateMobilePairingDataToCanonicalUserDataPath(app.getPath('userData'))
+  migrateRuntimePairingDataToCanonicalUserDataPath(app.getPath('userData'))
   runtimeRpc = new OrcaRuntimeRpcServer({
     runtime,
     // Why: mobile pairing needs the stable pre-setName() path (getCanonicalUserDataPath), not a late app.getPath('userData') that drops paired devices across restarts.
@@ -2620,27 +2590,26 @@ void app.whenReady().then(async () => {
       : {}),
     webClientRoot: getBundledWebClientRoot()
   })
-  registerMobileHandlers(runtimeRpc, {
-    getRelayStatus: () => desktopRelayStatus,
-    consumePendingUnpairedDeviceAuthFailure: (webContentsId) => {
+  registerRuntimePairingHandlers(runtimeRpc, {
+    consumePendingAuthFailure: (webContentsId) => {
       if (
         !mainWindow ||
         mainWindow.isDestroyed() ||
         mainWindow.webContents.id !== webContentsId ||
-        !pendingUnpairedDeviceAuthFailure
+        !pendingRuntimeAuthFailure
       ) {
         return false
       }
-      pendingUnpairedDeviceAuthFailure = false
+      pendingRuntimeAuthFailure = false
       return true
     }
   })
   // Why: repeated direct auth failures otherwise look like a client that never connects; point users to re-pairing.
   runtimeRpc.setOnUnpairedDeviceAuthFailure(() => {
     // Why: runtime startup races renderer mount; retain the one-shot until the listener consumes it.
-    pendingUnpairedDeviceAuthFailure = true
+    pendingRuntimeAuthFailure = true
     if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('mobile:unpairedDeviceAuthFailure')
+      mainWindow.webContents.send('runtime:authFailure')
     }
   })
 
@@ -2733,36 +2702,6 @@ void app.whenReady().then(async () => {
     void showRuntimeRpcStartupFailureDialog(win, runtimeRpcStartResult.error)
   }
 
-  const cloudAuth = getOrcaCloudAuthConfig()
-  if (cloudAuth.configured) {
-    try {
-      const relayService = new DesktopRelayService({
-        authConfig: cloudAuth.config,
-        userDataPath: getProfileUserDataPath(),
-        appVersion: app.getVersion(),
-        runtimeRpc,
-        onStatus: (status) => {
-          desktopRelayStatus = status
-          mainWindow?.webContents.send('mobile:relayStatusChanged', status)
-        }
-      })
-      desktopRelayService = relayService
-      runtimeRpc.setMobileRelayPairingProvider({
-        createPairingRelay: (relayDeviceId) => relayService.createPairingRelay(relayDeviceId),
-        onDeviceRevokeQueued: (item) => relayService.onDeviceRevokeQueued(item),
-        onDemandStateChanged: () => relayService.demandStateChanged(),
-        getEndpoints: (context, params) => relayService.getEndpoints(context, params),
-        provisionRelay: (context, params) => relayService.provisionRelay(context, params)
-      })
-      relayService.start()
-    } catch (error) {
-      console.warn(
-        '[relay] Desktop relay startup unavailable:',
-        error instanceof Error ? error.message : String(error)
-      )
-    }
-  }
-
   // Why: macOS notification permission dialog must fire after the window is shown, else it's hidden behind the maximized window.
   win.once('show', () => {
     // Why: store can be null if init failed earlier; bail rather than throw inside an Electron event listener.
@@ -2786,8 +2725,6 @@ app.on('before-quit', () => {
     })
   }
   isQuitting = true
-  desktopRelayService?.fenceAndCloseNow()
-  runtimeRpc?.setMobileRelayPairingProvider(null)
   unsubscribeSystemResumeBroadcast?.()
   unsubscribeSystemResumeBroadcast = null
   unsubscribeAgentAwakeStatusChanges?.()

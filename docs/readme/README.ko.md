@@ -23,26 +23,12 @@
 <h3 align="center"><a href="https://onorca.dev/download"><ins>Orca 다운로드</ins></a></h3>
 
 <p align="center">
-  <img src="../assets/readme-hero.jpg" alt="병렬 worktree에서 에이전트를 실행 중인 Orca 데스크톱 앱과 한쪽 모서리에 보이는 Orca 모바일 companion 앱" width="960" />
+  <img src="../assets/readme-hero.jpg" alt="병렬 worktree에서 에이전트를 실행 중인 Orca 데스크톱 앱" width="960" />
 </p>
 
 ## 기능
 
 <table>
-<tr>
-<td width="50%" valign="middle">
-
-### 모바일 Companion
-
-휴대폰에서 에이전트를 모니터링하고 조종하세요 — 에이전트가 완료되면 알림을 받고 어디서든 후속 지시를 보낼 수 있습니다.
-
-[iOS App Store](https://apps.apple.com/us/app/orca-ide/id6766130217) · [Android APK](https://github.com/stablyai/orca/releases/download/mobile-android-v0.0.32/app-release.apk) · [문서 →](https://www.onorca.dev/docs/mobile)
-
-</td>
-<td width="50%">
-  <a href="https://www.onorca.dev/docs/mobile"><picture><source srcset="../assets/feature-wall/mobile-companion-app-showcase.gif" type="image/gif"><img src="../assets/feature-wall/mobile-companion-app-showcase.jpg" alt="Orca 데스크톱과 모바일 companion 앱" width="100%" /></picture></a>
-</td>
-</tr>
 <tr>
 <td width="50%" valign="middle">
 
@@ -221,15 +207,6 @@ brew install --cask stablyai/orca/orca
 # Arch Linux (AUR) — or stably-orca-git to build from source
 yay -S stably-orca-bin
 ```
-
-### 모바일 Companion — iOS, Android
-
-데스크톱 앱과 페어링해 휴대폰에서 에이전트를 모니터링하고 조종하세요.
-
-- **iOS:** [App Store에서 다운로드](https://apps.apple.com/us/app/orca-ide/id6766130217)
-- **Android:** [APK 다운로드](https://github.com/stablyai/orca/releases/download/mobile-android-v0.0.32/app-release.apk)
-
----
 
 ## 커뮤니티와 지원
 

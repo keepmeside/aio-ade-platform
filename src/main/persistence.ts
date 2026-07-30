@@ -79,9 +79,9 @@ import {
   buildWorkspaceRunContext
 } from '../shared/task-source-context'
 import type { MigrationUnsupportedPtyEntry } from '../shared/agent-status-types'
-import { MOBILE_PAIRING_USERDATA_FILES } from './runtime/mobile-pairing-files'
+import { RUNTIME_PAIRING_USERDATA_FILES } from './runtime/runtime-pairing-files'
 import { normalizePersistedMobileClientTabSelections } from './runtime/client-session-tab-selection-persistence'
-import { sanitizeWorkspaceSessionTerminalRetirements } from './runtime/mobile-session-terminal-persistence-retirement'
+import { sanitizeWorkspaceSessionTerminalRetirements } from './runtime/runtime-session-terminal-persistence-retirement'
 import {
   removeRepoFromHostWorkspaceSessions,
   removeRepoFromWorkspaceSession
@@ -448,17 +448,17 @@ export function getCanonicalUserDataPath(): string {
 }
 
 /**
- * Copy legacy mobile pairing credentials into the canonical userData directory.
+ * Copy pairing credentials into the canonical userData directory.
  *
  * Copies the registry and E2EE keypair forward as a pair so an update doesn't force a re-pair or mix devices with the wrong key.
  */
-export function migrateMobilePairingDataToCanonicalUserDataPath(sourceUserDataDir: string): void {
+export function migrateRuntimePairingDataToCanonicalUserDataPath(sourceUserDataDir: string): void {
   const targetUserDataDir = getCanonicalUserDataPath()
   if (resolve(sourceUserDataDir) === resolve(targetUserDataDir)) {
     return
   }
 
-  const migrations = MOBILE_PAIRING_USERDATA_FILES.map((fileName) => ({
+  const migrations = RUNTIME_PAIRING_USERDATA_FILES.map((fileName) => ({
     sourcePath: join(sourceUserDataDir, fileName),
     targetPath: join(targetUserDataDir, fileName)
   }))

@@ -5,7 +5,7 @@ import { existsSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import nacl from 'tweetnacl'
 import { hardenExistingSecureFile, writeSecureJsonFile } from '../../shared/secure-file'
-import { E2EE_KEYPAIR_FILENAME } from './mobile-pairing-files'
+import { E2EE_KEYPAIR_FILENAME } from './runtime-pairing-files'
 
 const KEYPAIR_FILENAME = E2EE_KEYPAIR_FILENAME
 const KEYPAIR_VERSION = 1

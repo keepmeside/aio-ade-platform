@@ -47,10 +47,10 @@ import { getKnownWorktreeIdsForHistoryGc } from './history-gc-worktree-ids'
 import type {
   RuntimeMarkdownReadTabResult,
   RuntimeMarkdownSaveTabResult
-} from '../../shared/mobile-markdown-document'
+} from '../../shared/runtime-markdown-document'
 import type { RuntimeMobileSessionTabMove } from '../../shared/runtime-types'
 import { isNativeFileDropPayload, type NativeFileDropPayload } from '../../shared/native-file-drop'
-import { requestMobileMarkdownFromRenderer } from './mobile-markdown-request-relay'
+import { requestRuntimeMarkdownFromRenderer } from './runtime-markdown-request-relay'
 import { requestTerminalTabCloseFromRenderer } from './terminal-tab-close-request-relay'
 import type { ClaudeAccountSelectionTarget } from '../claude-accounts/runtime-selection'
 import { runWorktreeChangeInvalidators } from '../ipc/worktree-change-invalidators'
@@ -407,14 +407,14 @@ function registerRuntimeWindowLifecycle(
     moveSessionTab: (worktreeId: string, move: RuntimeMobileSessionTabMove) =>
       send('ui:moveSessionTab', { worktreeId, ...move }),
     openFile: (worktreeId, filePath, relativePath, runtimeEnvironmentId?) =>
-      send('ui:openFileFromMobile', {
+      send('ui:openFileFromRuntime', {
         worktreeId,
         filePath,
         relativePath,
         runtimeEnvironmentId
       }),
     openDiff: (worktreeId, filePath, relativePath, staged, runtimeEnvironmentId?) =>
-      send('ui:openDiffFromMobile', {
+      send('ui:openDiffFromRuntime', {
         worktreeId,
         filePath,
         relativePath,
@@ -422,13 +422,13 @@ function registerRuntimeWindowLifecycle(
         runtimeEnvironmentId
       }),
     readMobileMarkdownTab: (worktreeId, tabId) =>
-      requestMobileMarkdownFromRenderer(mainWindow, {
+    requestRuntimeMarkdownFromRenderer(mainWindow, {
         operation: 'read',
         worktreeId,
         tabId
       }) as Promise<RuntimeMarkdownReadTabResult>,
     saveMobileMarkdownTab: (worktreeId, tabId, baseVersion, content) =>
-      requestMobileMarkdownFromRenderer(mainWindow, {
+    requestRuntimeMarkdownFromRenderer(mainWindow, {
         operation: 'save',
         worktreeId,
         tabId,

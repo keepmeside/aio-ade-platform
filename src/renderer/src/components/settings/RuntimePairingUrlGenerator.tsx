@@ -85,7 +85,7 @@ export function RuntimePairingUrlGenerator({
         setIsLoadingAccessGrants(true)
       }
       try {
-        const result = await window.api.mobile.listRuntimeAccessGrants()
+        const result = await window.api.runtime.listAccessGrants()
         if (mountedRef.current && loadId === accessGrantLoadIdRef.current) {
           setRuntimeAccessGrants(result.grants)
         }
@@ -121,7 +121,7 @@ export function RuntimePairingUrlGenerator({
         setRefreshingNetworkInterfaces(true)
       }
       try {
-        const result = await window.api.mobile.listNetworkInterfaces()
+        const result = await window.api.runtime.listNetworkInterfaces()
         if (mountedRef.current && loadId === networkInterfaceLoadIdRef.current) {
           setNetworkInterfaces(result.interfaces)
         }
@@ -175,7 +175,7 @@ export function RuntimePairingUrlGenerator({
   const generateRuntimePairingUrl = async (): Promise<void> => {
     setIsGeneratingPairing(true)
     try {
-      const result = await window.api.mobile.getRuntimePairingUrl({
+      const result = await window.api.runtime.getPairingUrl({
         address: selectedAddress,
         rotate: true
       })
@@ -234,7 +234,7 @@ export function RuntimePairingUrlGenerator({
   const revokeRuntimeAccess = async (grant: RuntimeAccessGrant): Promise<void> => {
     setRevokingGrantId(grant.deviceId)
     try {
-      const result = await window.api.mobile.revokeRuntimeAccess({ deviceId: grant.deviceId })
+      const result = await window.api.runtime.revokeAccess({ deviceId: grant.deviceId })
       if (!result.revoked) {
         if (mountedRef.current) {
           toast.error(

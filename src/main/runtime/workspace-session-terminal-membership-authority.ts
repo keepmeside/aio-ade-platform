@@ -6,7 +6,7 @@ import type {
   WorkspaceSessionState
 } from '../../shared/types'
 import { getRepoIdFromWorktreeId } from '../../shared/worktree-id'
-import { pruneTabGroupLayoutAfterRetirement } from './mobile-session-terminal-retirement'
+import { pruneTabGroupLayoutAfterRetirement } from './runtime-session-terminal-retirement'
 
 function collectLeafIds(node: TerminalPaneLayoutNode | null, ids: Set<string>): void {
   if (!node) {

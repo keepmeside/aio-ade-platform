@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { resolveAdvertisedPairingEndpoint } from './pairing-endpoint'
-import { PAIRING_OFFER_VERSION, PairingOfferSchema } from '../../shared/mobile-relay-pairing-offer'
-import { PAIRING_ENDPOINT_MAX_CHARACTERS } from '../../shared/mobile-pairing-protocol-limits'
+import { PAIRING_OFFER_VERSION, PairingOfferSchema } from '../../shared/runtime-pairing-offer'
+import { PAIRING_ENDPOINT_MAX_CHARACTERS } from '../../shared/runtime-pairing-protocol-limits'
 import { parseManualNetworkAddress } from '../../shared/network/manual-address'
 
 describe('resolveAdvertisedPairingEndpoint', () => {

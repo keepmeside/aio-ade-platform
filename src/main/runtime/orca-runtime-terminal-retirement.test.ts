@@ -5,7 +5,7 @@ import type {
   RuntimeMobileSessionTabsSnapshot
 } from '../../shared/runtime-types'
 import type { WorkspaceSessionState } from '../../shared/types'
-import { sanitizeWorkspaceSessionTerminalRetirements } from './mobile-session-terminal-persistence-retirement'
+import { sanitizeWorkspaceSessionTerminalRetirements } from './runtime-session-terminal-persistence-retirement'
 import { OrcaRuntimeService } from './orca-runtime'
 
 const WORKTREE_ID = 'repo::/worktree'

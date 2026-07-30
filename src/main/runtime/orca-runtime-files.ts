@@ -85,7 +85,7 @@ import { joinWorktreeRelativePath, normalizeRuntimeRelativePath } from './runtim
 import {
   rankRuntimeMobileFilePaths,
   RuntimeMobileFilePathSearchCache
-} from './runtime-mobile-file-path-search'
+} from './runtime-file-path-search'
 import { beginWatcherInstall } from '../ipc/watcher-removal-gate'
 import { assertSshMutationExpectation } from '../ssh/ssh-connection-generation'
 import { toSshExecutionHostId } from '../../shared/execution-host'

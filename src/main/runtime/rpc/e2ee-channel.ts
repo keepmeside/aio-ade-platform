@@ -4,18 +4,18 @@ import { deriveSharedKey, encrypt, decrypt, encryptBytes, decryptBytes } from '.
 import {
   DesktopMobileE2EEV2Session,
   type DesktopMobileE2EEV2Context
-} from './mobile-e2ee-v2-desktop-session'
-import type { DesktopMobileE2EEV2OutboundItem as V2OutboundItem } from './mobile-e2ee-v2-desktop-outbound'
-import { handleDesktopMobileE2EEV2Inbound } from './mobile-e2ee-v2-desktop-inbound'
-import { authenticateMobileE2EE, decodeMobileE2EEPublicKey } from './mobile-e2ee-auth-validation'
+} from './runtime-e2ee-v2-desktop-session'
+import type { DesktopMobileE2EEV2OutboundItem as V2OutboundItem } from './runtime-e2ee-v2-desktop-outbound'
+import { handleDesktopMobileE2EEV2Inbound } from './runtime-e2ee-v2-desktop-inbound'
+import { authenticateMobileE2EE, decodeMobileE2EEPublicKey } from './runtime-e2ee-auth-validation'
 import {
   isMobileE2EEBinaryPayloadWithinLimit,
   isMobileE2EEOutboundItemWithinLimit,
   isMobileE2EETextPayloadWithinLimit
-} from './mobile-e2ee-outbound-admission'
+} from './runtime-e2ee-outbound-admission'
 import { parseRemoteRuntimeJsonText } from '../../../shared/remote-runtime-request-frames'
-import type { MobileE2EEOutboundMemoryBudget } from './mobile-e2ee-outbound-memory-budget'
-import { MobileE2EEDesktopOutboundOwner } from './mobile-e2ee-desktop-outbound-owner'
+import type { MobileE2EEOutboundMemoryBudget } from './runtime-e2ee-outbound-memory-budget'
+import { MobileE2EEDesktopOutboundOwner } from './runtime-e2ee-desktop-outbound-owner'
 import { parseRuntimeClientCapabilities } from './runtime-client-capabilities'
 import type { RuntimeCapability } from '../../../shared/protocol-version'
 

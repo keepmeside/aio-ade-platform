@@ -17,6 +17,8 @@ authors: [Keepmeside, SalyyS1]
 
 > **Artifact review chính:** [plan.html](./plan.html). Markdown này là index/cook handoff; phase files giữ contract thực thi chi tiết.
 
+**Tiến độ:** 2/12 phase hoàn thành.
+
 ## Phạm vi
 
 Chuyển fork Orca thành `aio-ade`, giữ React 19/xterm.js và hành vi PTY/SSH hiện tại. Electron vẫn là baseline cho đến khi mọi parity gate đạt; Tauri chỉ cắt sang ở phase 12. Xóa mobile, product CLI, Agent Teams, orchestration bridge và headless serve/installers/shims; giữ PTY, xterm/headless emulator, file editing, SSH, WSL và remote runtime.
@@ -48,7 +50,7 @@ Chuyển fork Orca thành `aio-ade`, giữ React 19/xterm.js và hành vi PTY/SS
 | Phase | Deliverable | Trạng thái | Chi tiết |
 |---|---|---|---|
 | 01 | Preflight, baseline, runtime contracts | completed | [Preflight](./phase-01-baseline-and-contracts.md) |
-| 02 | Xóa mobile/web companion | pending | [Delete mobile](./phase-02-delete-mobile-companion.md) |
+| 02 | Xóa mobile/web companion | completed | [Delete mobile](./phase-02-delete-mobile-companion.md) |
 | 03 | Xóa product CLI/orchestration | pending | [Delete CLI](./phase-03-delete-product-cli-and-orchestration.md) |
 | 04 | Thu roster Claude/Codex, giữ Fable | pending | [Reduce providers](./phase-04-reduce-providers-to-claude-and-codex.md) |
 | 05 | Rebrand `aio-ade`, compatibility readers | pending | [Rebrand](./phase-05-rebrand-identity-and-compatibility.md) |

@@ -44,8 +44,6 @@ import type {
   WriteTerminalRenderDesyncEvidenceArgs,
   WriteTerminalRenderDesyncEvidenceResult
 } from '../shared/terminal-render-desync-evidence'
-import type { MobileRelayStatus } from '../shared/mobile-relay-status'
-import type { MobilePairingConnectionMode } from '../shared/mobile-pairing-connection-mode'
 import type {
   SshMutationExpectation,
   SshConnectionState,
@@ -364,6 +362,10 @@ import type {
   RuntimeTerminalPresentation
 } from '../shared/runtime-types'
 import type {
+  RuntimeMarkdownRequest,
+  RuntimeMarkdownResponse
+} from '../shared/runtime-markdown-document'
+import type {
   CommitMessageAgentCapability,
   CommitMessageModelCapability
 } from '../shared/commit-message-agent-spec'
@@ -401,10 +403,6 @@ type RuntimeEnvironmentSubscriptionHandle = {
   unsubscribe: () => void
   sendBinary: (bytes: Uint8Array<ArrayBufferLike>) => void
 }
-import type {
-  RuntimeMobileMarkdownRequest,
-  RuntimeMobileMarkdownResponse
-} from '../shared/mobile-markdown-document'
 import type {
   DeveloperPermissionId,
   DeveloperPermissionRequestResult,
@@ -3186,7 +3184,7 @@ export type PreloadApi = {
     onMoveSessionTab: (
       callback: (data: { worktreeId: string } & RuntimeMobileSessionTabMove) => void
     ) => () => void
-    onOpenFileFromMobile: (
+    onOpenFileFromRuntime?: (
       callback: (data: {
         worktreeId: string
         filePath: string
@@ -3194,7 +3192,7 @@ export type PreloadApi = {
         runtimeEnvironmentId?: string
       }) => void
     ) => () => void
-    onOpenDiffFromMobile: (
+    onOpenDiffFromRuntime?: (
       callback: (data: {
         worktreeId: string
         filePath: string
@@ -3203,10 +3201,8 @@ export type PreloadApi = {
         runtimeEnvironmentId?: string
       }) => void
     ) => () => void
-    onMobileMarkdownRequest: (
-      callback: (request: RuntimeMobileMarkdownRequest) => void
-    ) => () => void
-    respondMobileMarkdownRequest: (response: RuntimeMobileMarkdownResponse) => void
+    onRuntimeMarkdownRequest: (callback: (request: RuntimeMarkdownRequest) => void) => () => void
+    respondRuntimeMarkdownRequest: (response: RuntimeMarkdownResponse) => void
     onCloseTerminal: (
       callback: (data: { tabId: string; paneRuntimeId?: number }) => void
     ) => () => void
@@ -3261,6 +3257,24 @@ export type PreloadApi = {
     syncWindowGraph: (graph: RuntimeSyncWindowGraph) => Promise<RuntimeSyncWindowGraphResult>
     getStatus: () => Promise<RuntimeStatus>
     call: (args: { method: string; params?: unknown }) => Promise<RuntimeRpcResponse<unknown>>
+    listNetworkInterfaces: () => Promise<{
+      interfaces: { name: string; address: string }[]
+    }>
+    getPairingUrl: (args?: { address?: string; rotate?: boolean }) => Promise<
+      | { available: false }
+      | {
+          available: true
+          pairingUrl: string
+          webClientUrl: string | null
+          endpoint: string
+          deviceId: string
+        }
+    >
+    listAccessGrants: () => Promise<{ grants: RuntimeAccessGrant[] }>
+    revokeAccess: (args: { deviceId: string }) => Promise<{ revoked: boolean }>
+    isWebSocketReady: () => Promise<{ ready: boolean; endpoint: string | null }>
+    consumeAuthFailure: () => Promise<boolean>
+    onAuthFailure?: (callback: () => void) => () => void
     getTerminalFitOverrides: () => Promise<
       { ptyId: string; mode: 'mobile-fit' | 'remote-desktop-fit'; cols: number; rows: number }[]
     >
@@ -3530,67 +3544,6 @@ export type PreloadApi = {
       toPaneKey: string
       ptyId?: string
     }) => void
-  }
-  mobile: {
-    listNetworkInterfaces: () => Promise<{
-      interfaces: { name: string; address: string }[]
-    }>
-    getPairingQR: (args?: {
-      address?: string
-      connectionMode?: MobilePairingConnectionMode
-      rotate?: boolean
-    }) => Promise<
-      | { available: false }
-      | {
-          available: true
-          qrDataUrl: string | null
-          qrError?: 'encoding_failed'
-          pairingUrl: string
-          endpoint: string
-          deviceId: string
-          /** Mode the QR actually encodes; 'local-only' when Relay could not be attached. */
-          connectionMode: MobilePairingConnectionMode
-        }
-    >
-    getWindowsFirewallStatus: (args?: { address?: string }) => Promise<
-      | { supported: false }
-      | {
-          supported: true
-          port: number
-          ruleAllowed: boolean
-          blockingRuleDetected: boolean
-          privateFirewallEnabled: boolean
-          networkCategory: 'private' | 'public' | 'domain' | 'unknown'
-          inspectionAvailable: boolean
-        }
-    >
-    repairWindowsFirewall: () => Promise<
-      { ok: true } | { ok: false; reason: 'cancelled' | 'failed' | 'unsupported' }
-    >
-    openWindowsNetworkSettings: () => Promise<boolean>
-    getRuntimePairingUrl: (args?: { address?: string; rotate?: boolean }) => Promise<
-      | { available: false }
-      | {
-          available: true
-          pairingUrl: string
-          webClientUrl: string | null
-          endpoint: string
-          deviceId: string
-        }
-    >
-    listDevices: () => Promise<{
-      devices: { deviceId: string; name: string; pairedAt: number; lastSeenAt: number }[]
-    }>
-    revokeDevice: (args: { deviceId: string }) => Promise<{ revoked: boolean }>
-    listRuntimeAccessGrants: () => Promise<{ grants: RuntimeAccessGrant[] }>
-    revokeRuntimeAccess: (args: { deviceId: string }) => Promise<{ revoked: boolean }>
-    isWebSocketReady: () => Promise<{ ready: boolean; endpoint: string | null }>
-    getRelayStatus: () => Promise<{ status: MobileRelayStatus }>
-    onRelayStatusChanged: (callback: (status: MobileRelayStatus) => void) => () => void
-    /** Consumes an auth-failure notification that arrived before the renderer listener mounted. */
-    consumePendingUnpairedDeviceAuthFailure?: () => Promise<boolean>
-    /** Fires (throttled, once per session) when an unpaired phone repeatedly fails direct-transport auth. */
-    onUnpairedDeviceAuthFailure?: (callback: () => void) => () => void
   }
   speech: {
     getCatalog: () => Promise<SpeechModelManifest[]>

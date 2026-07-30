@@ -6,14 +6,14 @@ import {
   validateMobileE2EEV2Handshake,
   type MobileE2EEV2Hello,
   type MobileE2EEV2Ready
-} from '../../../shared/mobile-e2ee-v2-contract'
+} from '../../../shared/runtime-e2ee-v2-contract'
 import {
   openMobileE2EEV2Frame,
   sealMobileE2EEV2Frame
-} from '../../../shared/mobile-e2ee-v2-framing'
+} from '../../../shared/runtime-e2ee-v2-framing'
 import { deriveSharedKey } from './e2ee-crypto'
 import { E2EEChannel } from './e2ee-channel'
-import { deriveMobileE2EEV2KeySchedule } from './mobile-e2ee-v2-key-schedule'
+import { deriveMobileE2EEV2KeySchedule } from './runtime-e2ee-v2-key-schedule'
 
 const server = nacl.box.keyPair.fromSecretKey(new Uint8Array(32).fill(1))
 const client = nacl.box.keyPair.fromSecretKey(new Uint8Array(32).fill(2))

@@ -62,7 +62,6 @@ import { TasksPane } from './TasksPane'
 import { QuickCommandsPane } from './QuickCommandsPane'
 import { DeveloperPermissionsPane } from './DeveloperPermissionsPane'
 import { ComputerUsePane } from './ComputerUsePane'
-import { MobileSettingsPane } from './MobileSettingsPane'
 import { MobileEmulatorSettingsPane } from './MobileEmulatorSettingsPane'
 import { RuntimeEnvironmentsPane } from './RuntimeEnvironmentsPane'
 import { PrivacyPane } from './PrivacyPane'
@@ -1359,21 +1358,6 @@ function Settings(): React.JSX.Element {
                 >
                   {isSectionMounted('integrations') ? <IntegrationsPane /> : null}
                 </SettingsSection>
-
-                {showDesktopOnlySettings ? (
-                  <SettingsSection
-                    id="mobile"
-                    title={translate('auto.components.settings.Settings.c40dadaac8', 'Mobile')}
-                    badge="Beta"
-                    description={translate(
-                      'auto.components.settings.Settings.c6c01ac209',
-                      'Control terminals and agents from your phone.'
-                    )}
-                    searchEntries={getSectionSearchEntries('mobile')}
-                  >
-                    {isSectionMounted('mobile') ? <MobileSettingsPane /> : null}
-                  </SettingsSection>
-                ) : null}
 
                 <SettingsSection
                   id="git"

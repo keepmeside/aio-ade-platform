@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WebSocket } from 'ws'
 import { E2EEChannel, type E2EEChannelOptions } from './e2ee-channel'
 import { deriveSharedKey, decrypt, encrypt, generateKeyPair } from './e2ee-crypto'
-import { createMobileE2EEOutboundMemoryBudget } from './mobile-e2ee-outbound-memory-budget'
+import { createMobileE2EEOutboundMemoryBudget } from './runtime-e2ee-outbound-memory-budget'
 
 // Repro for gap (a): the streaming JSON reply path (encryptedReply) had no
 // bufferedAmount gate, so a fast producer over a slow link (legacy

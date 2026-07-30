@@ -29,7 +29,7 @@ import type {
 import type {
   RuntimeMarkdownReadTabResult,
   RuntimeMarkdownSaveTabResult
-} from './mobile-markdown-document'
+} from './runtime-markdown-document'
 import type { RuntimeCapability } from './protocol-version'
 import type { RemoteRuntimeSharedConnectionDiagnostics } from './remote-runtime-shared-control-types'
 import type {

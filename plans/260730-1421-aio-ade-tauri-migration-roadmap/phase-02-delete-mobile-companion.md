@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Xóa mobile companion, giữ generic web/remote runtime"
-status: pending
+status: completed
 priority: P1
 effort: "1-2 ngày"
 dependencies: [1]
@@ -60,7 +60,11 @@ Xóa React Native/mobile companion và mọi asset/workflow/test chỉ phục v�
 
 ## Success Criteria
 
-- [ ] Mobile source/release/docs/assets biến mất hoàn toàn.
-- [ ] Desktop web/remote/SSH và unread state không regression.
-- [ ] Shared-manifest cleanup request đầy đủ cho phase 03.
-- [ ] Không thêm placeholder/mobile shim mới.
+- [x] Mobile source/release/docs/assets biến mất hoàn toàn.
+- [x] Desktop web/remote/SSH và unread state không regression.
+- [x] Shared-manifest cleanup request đầy đủ cho phase 03.
+- [x] Không thêm placeholder/mobile shim mới.
+
+## Completion Evidence
+
+- [Phase 02 removal report](./reports/phase-02-mobile-companion-removal.md)

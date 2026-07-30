@@ -794,15 +794,12 @@ describe('createUISlice hydratePersistedUI', () => {
     expect(store.getState().activeView).toBe('activity')
   })
 
-  it('restores a default-on view (mobile) even when its nav button is hidden', () => {
+  it('falls back from the removed mobile companion view to terminal', () => {
     const store = createUIStore()
-    store.setState({
-      settings: { showMobileButton: false } as AppState['settings']
-    })
 
     store.getState().hydratePersistedUI(makePersistedUI({ activeView: 'mobile' }), 'startup')
 
-    expect(store.getState().activeView).toBe('mobile')
+    expect(store.getState().activeView).toBe('terminal')
   })
 
   it('does not overwrite the current view on a later cross-window sync hydration', () => {

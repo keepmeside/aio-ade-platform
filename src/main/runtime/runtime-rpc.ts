@@ -23,23 +23,9 @@ import { DeviceRegistry, type DeviceEntry, type DeviceScope } from './device-reg
 import { loadOrCreateE2EEKeypair, type E2EEKeypair } from './e2ee-keypair'
 import { UnpairedDeviceAuthThrottle } from './rpc/unpaired-device-auth-throttle'
 import {
-  MobileSocketWiring,
-  type AuthenticatedMobileSocket,
-  type MobileSocketTransportMetadata
-} from './rpc/mobile-socket-wiring'
-import type { PairingRelay } from '../../shared/mobile-relay-pairing-offer'
-import type { MobilePairingConnectionMode } from '../../shared/mobile-pairing-connection-mode'
-import {
-  RelayRevokeOutbox,
-  type RelayDeviceBinding,
-  type RelayRevokeOutboxItem
-} from './relay/relay-revoke-outbox'
-import type {
-  DeviceCredentialInstalled,
-  PairingGetEndpointsParams,
-  PairingGetEndpointsResult,
-  PairingProvisionRelayParams
-} from '../../shared/mobile-relay-credential-contract'
+  RuntimeSocketWiring,
+  type AuthenticatedRuntimeSocket,
+} from './rpc/runtime-socket-wiring'
 import { encodePairingOffer, PAIRING_OFFER_VERSION } from '../../shared/pairing'
 import { resolveAdvertisedPairingEndpoint } from './pairing-endpoint'
 import {
@@ -94,28 +80,6 @@ const DEVICE_REGISTRY_UNAVAILABLE_GUIDANCE =
 const E2EE_KEY_UNAVAILABLE_GUIDANCE =
   'The E2EE identity is unavailable. Verify that the Orca data directory is writable.'
 
-type MobileRelayPairingProvider = {
-  createPairingRelay(
-    relayDeviceId: string
-  ): Promise<{ relay: PairingRelay; binding: RelayDeviceBinding }>
-  onDeviceRevokeQueued(item: RelayRevokeOutboxItem): void
-  onDemandStateChanged?(): void
-  getEndpoints(
-    context: MobilePairingConnectionContext,
-    params: PairingGetEndpointsParams
-  ): Promise<PairingGetEndpointsResult>
-  provisionRelay(
-    context: MobilePairingConnectionContext,
-    params: PairingProvisionRelayParams
-  ): Promise<DeviceCredentialInstalled>
-}
-
-export type MobilePairingConnectionContext = Readonly<{
-  deviceId: string
-  connectionId: string
-  transport: MobileSocketTransportMetadata
-}>
-
 // Why: keepalive frames count as socket activity, resetting both idle timers so long-polls outlive the 30s/60s idle caps. See §3.1.
 const KEEPALIVE_INTERVAL_MS = 10_000
 
@@ -145,267 +109,6 @@ function webClientPathForEndpoint(pathname: string): string {
   return `${pathname.replace(/\/$/, '')}/web-index.html`
 }
 
-const MOBILE_RPC_METHOD_ALLOWLIST = new Set([
-  'accounts.list',
-  'accounts.consumeCodexResetCredit',
-  'accounts.selectClaude',
-  'accounts.selectCodex',
-  'accounts.selectCodexForTarget',
-  'accounts.subscribe',
-  'accounts.unsubscribe',
-  'aiVault.listSessions',
-  'aiVault.prepareSessionResume',
-  'browser.back',
-  'browser.dialogAccept',
-  'browser.dialogDismiss',
-  'browser.forward',
-  'browser.goto',
-  'browser.keyboardInsertText',
-  'browser.keypress',
-  'browser.mouseDown',
-  'browser.mouseClick',
-  'browser.mouseMove',
-  'browser.mouseUp',
-  'browser.mouseWheel',
-  'browser.reload',
-  'browser.screencast',
-  'browser.screencast.unsubscribe',
-  'browser.tabCreate',
-  'browser.viewport',
-  'clipboard.abortImageUpload',
-  'clipboard.appendImageUploadChunk',
-  'clipboard.commitImageUpload',
-  'clipboard.saveImageAsTempFile',
-  'clipboard.startImageUpload',
-  'diagnostics.memory',
-  'files.browseServerDir',
-  'files.createFile',
-  'files.list',
-  'files.open',
-  'files.openDiff',
-  'files.read',
-  'files.readChunk',
-  'files.readDir',
-  'files.readPreview',
-  'files.readTerminalArtifact',
-  'files.readTerminalArtifactPreview',
-  'files.resolveTerminalPath',
-  'files.searchPaths',
-  'files.writeTerminalArtifact',
-  'folderWorkspace.list',
-  'git.abortMerge',
-  'git.abortRebase',
-  'git.bulkStage',
-  'git.bulkUnstage',
-  'git.branchCompare',
-  'git.branchDiff',
-  'git.cancelGenerateCommitMessage',
-  'git.cancelGeneratePullRequestFields',
-  'git.checkout',
-  'git.commit',
-  'git.commitCompare',
-  'git.commitDiff',
-  'git.discard',
-  'git.discoverCommitMessageModels',
-  'git.diff',
-  'git.fetch',
-  'git.forkSync',
-  'git.fastForward',
-  'git.generateCommitMessage',
-  'git.generatePullRequestFields',
-  'git.history',
-  'git.localBranches',
-  'git.pull',
-  'git.push',
-  'git.rebaseFromBase',
-  'git.stage',
-  'git.status',
-  'git.unstage',
-  'git.upstreamStatus',
-  'github.createIssue',
-  'github.addIssueComment',
-  'github.addPRReviewComment',
-  'github.addPRReviewCommentReply',
-  'github.countWorkItems',
-  'github.listAssignableUsers',
-  'github.listLabels',
-  'github.listWorkItems',
-  'github.mergePR',
-  'github.setPRAutoMerge',
-  'github.requestPRReviewers',
-  'github.removePRReviewers',
-  'github.project.listAccessible',
-  'github.project.listAssignableUsersBySlug',
-  'github.project.listIssueTypesBySlug',
-  'github.project.listLabelsBySlug',
-  'github.project.listViews',
-  'github.project.resolveRef',
-  'github.project.addIssueCommentBySlug',
-  'github.project.updateIssueCommentBySlug',
-  'github.project.deleteIssueCommentBySlug',
-  'github.project.clearItemField',
-  'github.project.updateIssueBySlug',
-  'github.project.updateIssueTypeBySlug',
-  'github.project.updateItemField',
-  'github.project.updatePullRequestBySlug',
-  'github.project.viewTable',
-  'github.project.workItemDetailsBySlug',
-  'github.prForBranch',
-  'github.prFileContents',
-  'github.prChecks',
-  'github.prCheckDetails',
-  'github.rerunPRChecks',
-  'github.resolveReviewThread',
-  'github.setPRFileViewed',
-  'github.updateIssue',
-  'github.updatePR',
-  'github.updatePRTitle',
-  'github.updatePRState',
-  'github.repoSlug',
-  'github.workItem',
-  // Cross-repo lookup: lets the mobile Smart picker resolve a pasted github.com URL for a different repo.
-  'github.workItemByOwnerRepo',
-  'github.workItemDetails',
-  'gitlab.createIssue',
-  'gitlab.addIssueComment',
-  'gitlab.addMRComment',
-  'gitlab.listWorkItems',
-  // Mobile Smart picker: resolve a pasted GitLab URL to an exact issue/MR (MR listing reuses gitlab.listWorkItems).
-  'gitlab.workItemByPath',
-  'gitlab.mergeMR',
-  'gitlab.resolveMRDiscussion',
-  'gitlab.todos',
-  'gitlab.updateIssue',
-  'gitlab.updateMR',
-  'gitlab.updateMRState',
-  'gitlab.workItemDetails',
-  'host.gitBash.isAvailable',
-  'host.platform',
-  'host.pwsh.isAvailable',
-  'host.wsl.isAvailable',
-  'host.wsl.listDistros',
-  'hostedReview.create',
-  'hostedReview.forBranch',
-  'hostedReview.getCreationEligibility',
-  'linear.getCustomView',
-  'linear.getIssue',
-  'linear.getProject',
-  'linear.agentSearchIssues',
-  'linear.issueContext',
-  'linear.resolveCurrentIssue',
-  'linear.addIssueComment',
-  'linear.connect',
-  'linear.createIssue',
-  'linear.createProject',
-  'linear.issueComments',
-  'linear.listCustomViewIssues',
-  'linear.listCustomViewProjects',
-  'linear.listCustomViews',
-  'linear.listIssues',
-  'linear.mcpListIssues',
-  'linear.listProjectIssues',
-  'linear.listProjects',
-  'linear.teamLabels',
-  'linear.teamMembers',
-  'linear.listTeams',
-  'linear.searchIssues',
-  'linear.selectWorkspace',
-  'linear.status',
-  'linear.teamStates',
-  'linear.updateIssue',
-  'markdown.readTab',
-  'markdown.saveTab',
-  'notifications.getMissedSince',
-  'notifications.subscribe',
-  'notifications.unsubscribe',
-  'pairing.getEndpoints',
-  'pairing.provisionRelay',
-  'preflight.check',
-  'preflight.detectAgents',
-  'preflight.detectRemoteAgents',
-  'projectGroup.list',
-  'repo.baseRefDefault',
-  'repo.gitAvailable',
-  'repo.hooks',
-  'repo.list',
-  'repo.saveSparsePreset',
-  'repo.searchRefs',
-  'repo.sparsePresets',
-  'repo.update',
-  'runtime.clientEvents.subscribe',
-  'runtime.clientEvents.unsubscribe',
-  'session.tabs.activate',
-  'session.tabs.close',
-  'session.tabs.closeLifecycle',
-  'session.tabs.createTerminal',
-  'session.tabs.list',
-  'session.tabs.listAll',
-  'session.tabs.move',
-  'session.tabs.subscribe',
-  'session.tabs.subscribeAll',
-  'session.tabs.unsubscribe',
-  'session.tabs.unsubscribeAll',
-  'nativeChat.readSession',
-  'nativeChat.subscribe',
-  'nativeChat.unsubscribe',
-  'settings.get',
-  'settings.getTerminalQuickCommands',
-  'settings.update',
-  'settings.updateTerminalQuickCommands',
-  'ssh.connect',
-  'ssh.getState',
-  'ssh.listRemovedTargetLabels',
-  'ssh.listTargets',
-  'ssh.listTargetSummaries',
-  'speech.dictation.cancel',
-  'speech.dictation.chunk',
-  'speech.dictation.finish',
-  'speech.dictation.setup',
-  'speech.dictation.start',
-  'speech.models.delete',
-  'speech.models.download',
-  'speech.models.list',
-  'stats.summary',
-  'status.get',
-  'agentTeams.prepareLaunch',
-  'agentTeams.tmuxCompat',
-  'terminal.clearBuffer',
-  'terminal.close',
-  'terminal.closeTab',
-  'terminal.create',
-  'terminal.createAgentSession',
-  'terminal.ensureAgentSession',
-  'terminal.focus',
-  'terminal.agentStatus',
-  'terminal.adoptOrphans',
-  'terminal.getAutoRestoreFit',
-  'terminal.isRunningAgent',
-  'terminal.list',
-  'terminal.multiplex',
-  'terminal.read',
-  'terminal.rename',
-  'terminal.send',
-  'terminal.setAutoRestoreFit',
-  'terminal.setDisplayMode',
-  'terminal.subscribe',
-  'terminal.unsubscribe',
-  'terminal.updateViewport',
-  'terminal.wait',
-  'ui.get',
-  'ui.recordFeatureInteraction',
-  'ui.set',
-  'worktree.activate',
-  'worktree.create',
-  'worktree.forceDeleteBranch',
-  'worktree.prefetchCreateBase',
-  'worktree.ps',
-  'worktree.show',
-  'worktree.resolveMrBase',
-  'worktree.resolvePrBase',
-  'worktree.rm',
-  'worktree.set',
-  'worktree.sleep'
-])
 
 // Why: 'ask' is metered separately from 'wait' — same keepalive/abort wiring, its own sub-cap.
 type LongPollClass = 'ask' | 'wait'
@@ -459,7 +162,6 @@ export class OrcaRuntimeRpcServer {
   private readonly longPollCap: number
   private readonly metadataOwnershipPollMs: number
   private readonly askLongPollCap: number
-  private readonly relayRevokeOutbox: RelayRevokeOutbox
   private deviceRegistry: DeviceRegistry | null = null
   private e2eeKeypair: E2EEKeypair | null = null
   private pairingInitializationFailure: PairingOfferUnavailable | null = null
@@ -467,8 +169,7 @@ export class OrcaRuntimeRpcServer {
   private activeTransports: RpcTransport[] = []
   private transports: RuntimeTransportMetadata[] = []
   private metadataOwnershipWatch: RuntimeMetadataOwnershipWatch | null = null
-  private mobileSocketWiring: MobileSocketWiring | null = null
-  private mobileRelayPairingProvider: MobileRelayPairingProvider | null = null
+  private runtimeSocketWiring: RuntimeSocketWiring | null = null
   private onUnpairedDeviceAuthFailure: (() => void) | null = null
   private unpairedDeviceAuthThrottle: UnpairedDeviceAuthThrottle | null = null
   private readonly binaryStreamHandlers = new Map<
@@ -511,7 +212,6 @@ export class OrcaRuntimeRpcServer {
     this.metadataOwnershipPollMs = metadataOwnershipPollMs
     // Why: derived, not configurable — the reservation must hold for whatever cap a caller picks.
     this.askLongPollCap = Math.max(1, Math.floor(longPollCap * ASK_LONG_POLL_SHARE))
-    this.relayRevokeOutbox = new RelayRevokeOutbox(userDataPath)
   }
 
   getDeviceRegistry(): DeviceRegistry | null {
@@ -530,61 +230,13 @@ export class OrcaRuntimeRpcServer {
     return this.e2eeKeypair
   }
 
-  getMobileSocketWiring(): MobileSocketWiring | null {
-    return this.mobileSocketWiring
-  }
-
-  getRelayRevokeOutbox(): RelayRevokeOutbox {
-    return this.relayRevokeOutbox
-  }
-
-  setMobileRelayBinding(deviceId: string, binding: RelayDeviceBinding): boolean {
-    const current = this.deviceRegistry?.getDevice(deviceId)
-    if (
-      current?.scope !== 'mobile' ||
-      this.deviceRegistry?.getMobilePairingConnectionMode(deviceId) === 'local-only'
-    ) {
-      return false
-    }
-    if (
-      current.relayBinding &&
-      (current.relayBinding.relayHostId !== binding.relayHostId ||
-        current.relayBinding.ownerIdentityKey !== binding.ownerIdentityKey)
-    ) {
-      // Why: switching the owning account/host must not strand the old cloud credential family, even if that account is offline.
-      this.queueRelayDeviceRevoke(current.relayBinding)
-    }
-    const updated = this.deviceRegistry?.setRelayBinding(deviceId, binding) ?? false
-    if (updated) {
-      this.mobileRelayPairingProvider?.onDemandStateChanged?.()
-    }
-    return updated
+  getRuntimeSocketWiring(): RuntimeSocketWiring | null {
+    return this.runtimeSocketWiring
   }
 
   // Why: only the desktop shell can surface UI; headless serve leaves this unset.
   setOnUnpairedDeviceAuthFailure(callback: (() => void) | null): void {
     this.onUnpairedDeviceAuthFailure = callback
-  }
-
-  setMobileRelayPairingProvider(provider: MobileRelayPairingProvider | null): void {
-    this.mobileRelayPairingProvider = provider
-  }
-
-  async revokeMobileDevice(deviceId: string): Promise<boolean> {
-    const device = this.deviceRegistry?.getDevice(deviceId)
-    if (device?.scope !== 'mobile') {
-      return false
-    }
-    if (device.relayBinding) {
-      this.queueRelayDeviceRevoke(device.relayBinding)
-    }
-    if (!this.deviceRegistry?.removeDevice(deviceId)) {
-      return false
-    }
-    this.mobileRelayPairingProvider?.onDemandStateChanged?.()
-    this.runtime.forgetClientNavigationState(deviceId)
-    this.mobileSocketWiring?.terminateDeviceConnections(device.token)
-    return true
   }
 
   revokeRuntimeAccess(deviceId: string): boolean {
@@ -593,7 +245,7 @@ export class OrcaRuntimeRpcServer {
       return false
     }
     this.runtime.forgetClientNavigationState(deviceId)
-    this.mobileSocketWiring?.terminateDeviceConnections(device.token)
+    this.runtimeSocketWiring?.terminateDeviceConnections(device.token)
     return true
   }
 
@@ -606,7 +258,7 @@ export class OrcaRuntimeRpcServer {
     address?: string | null
     name?: string
     rotate?: boolean
-    scope?: DeviceScope
+    scope?: 'runtime'
   }):
     | PairingOfferUnavailable
     | {
@@ -640,7 +292,7 @@ export class OrcaRuntimeRpcServer {
     }
     const endpoint = advertised.endpoint
     const deviceName = args.name ?? `CLI ${new Date().toLocaleDateString()}`
-    const scope = args.scope ?? 'runtime'
+    const scope = 'runtime' as const
     let device: DeviceEntry
     try {
       device = args.rotate
@@ -665,82 +317,6 @@ export class OrcaRuntimeRpcServer {
       webClientUrl:
         this.webClientRoot && scope === 'runtime' ? createWebClientUrl(endpoint, pairingUrl) : null
     }
-  }
-
-  async createMobilePairingOffer(args: {
-    address?: string | null
-    connectionMode?: MobilePairingConnectionMode
-    name?: string
-    rotate?: boolean
-  }): Promise<
-    | PairingOfferUnavailable
-    | {
-        available: true
-        pairingUrl: string
-        endpoint: string
-        deviceId: string
-        webClientUrl: string | null
-        /** Mode the offer actually encodes — 'local-only' when an automatic request degraded (Relay couldn't attach). */
-        connectionMode: MobilePairingConnectionMode
-      }
-  > {
-    // Why: the renderer is outside the trust boundary, so only an explicit local-only value may suppress Relay provisioning.
-    const connectionMode = args.connectionMode === 'local-only' ? 'local-only' : 'automatic'
-    const pending = this.deviceRegistry?.getPendingDevice('mobile')
-    // Why: connection policy is part of the credential, so rotate on any policy switch — an old-policy QR must not pair under the new one.
-    const switchingPendingMode =
-      pending != null &&
-      this.deviceRegistry?.getMobilePairingConnectionMode(pending.deviceId) !== connectionMode
-    if (args.rotate || switchingPendingMode) {
-      if (pending?.relayBinding) {
-        // Why: record the durable cloud revoke before rotating the local token so an old relay invite can't outlive the QR.
-        this.queueRelayDeviceRevoke(pending.relayBinding)
-      }
-    }
-    const direct = this.createPairingOffer({
-      ...args,
-      rotate: args.rotate || switchingPendingMode,
-      scope: 'mobile'
-    })
-    if (!direct.available) {
-      return direct
-    }
-    this.deviceRegistry?.setMobilePairingConnectionMode(direct.deviceId, connectionMode)
-    if (connectionMode === 'local-only' || !this.mobileRelayPairingProvider) {
-      return { ...direct, connectionMode: 'local-only' }
-    }
-    const device = this.deviceRegistry?.getDevice(direct.deviceId)
-    const publicKeyB64 = this.getE2EEPublicKey()
-    if (!device || !publicKeyB64) {
-      return { ...direct, connectionMode: 'local-only' }
-    }
-    try {
-      const relayPairing = await this.mobileRelayPairingProvider.createPairingRelay(device.deviceId)
-      if (!this.deviceRegistry?.setRelayBinding(device.deviceId, relayPairing.binding)) {
-        return { ...direct, connectionMode: 'local-only' }
-      }
-      this.mobileRelayPairingProvider.onDemandStateChanged?.()
-      return {
-        ...direct,
-        connectionMode: 'automatic',
-        pairingUrl: encodePairingOffer({
-          v: PAIRING_OFFER_VERSION,
-          endpoint: direct.endpoint,
-          deviceToken: device.token,
-          publicKeyB64,
-          scope: 'mobile',
-          relay: relayPairing.relay
-        })
-      }
-    } catch {
-      // Why: relay is additive — a transient outage must still yield the valid LAN/Tailscale pairing offer.
-      return { ...direct, connectionMode: 'local-only' }
-    }
-  }
-
-  private queueRelayDeviceRevoke(binding: RelayDeviceBinding): void {
-    const item = this.relayRevokeOutbox.enqueue(binding)
-    this.mobileRelayPairingProvider?.onDeviceRevokeQueued(item)
   }
 
   private registerBinaryStreamHandler(
@@ -770,7 +346,7 @@ export class OrcaRuntimeRpcServer {
   }
 
   private handleWebSocketBinaryMessage(bytes: Uint8Array<ArrayBufferLike>, ws: WebSocket): void {
-    const connectionId = this.mobileSocketWiring?.getConnectionId(ws)
+    const connectionId = this.runtimeSocketWiring?.getConnectionId(ws)
     if (!connectionId) {
       return
     }
@@ -937,7 +513,7 @@ export class OrcaRuntimeRpcServer {
           this.unpairedDeviceAuthThrottle = new UnpairedDeviceAuthThrottle({
             onTrigger: () => this.onUnpairedDeviceAuthFailure?.()
           })
-          const mobileSocketWiring = new MobileSocketWiring({
+          const runtimeSocketWiring = new RuntimeSocketWiring({
             deviceRegistry: pairingIdentity.deviceRegistry,
             e2eeKeypair: pairingIdentity.e2eeKeypair,
             onText: (socket, plaintext, reply, sendBinary) => {
@@ -953,13 +529,11 @@ export class OrcaRuntimeRpcServer {
             },
             onBinary: (socket, bytes) => this.handleWebSocketBinaryMessage(bytes, socket.ws),
             onReady: () => {
-              // Why: first authenticated mobile/remote client (direct WS and
-              // cloud relay both attach here) starts path-candidate tracking.
+              // First authenticated runtime client starts path-candidate tracking.
               // Activation is a local-host concern: candidate buffers live on the
               // buffer-owning host's runtime, so a remote runtime proxy may
               // legitimately lack this method (its own server activates it).
               this.runtime.activateRecentPtyPathCandidateTracking?.()
-              this.mobileRelayPairingProvider?.onDemandStateChanged?.()
             },
             onClose: (socket, hasOtherConnections) => {
               if (!socket) {
@@ -974,15 +548,10 @@ export class OrcaRuntimeRpcServer {
                 this.runtime.onClientDisconnected(socket.device.deviceToken)
               }
             },
-            // Why: relay attempts are authorized upstream; only direct failures should prompt local re-pairing.
-            onUnpairedDeviceAuthFailure: (metadata) => {
-              if (metadata.transport === 'direct') {
-                this.unpairedDeviceAuthThrottle?.recordFailure()
-              }
-            }
+            onUnpairedDeviceAuthFailure: () => this.unpairedDeviceAuthThrottle?.recordFailure()
           })
-          mobileSocketWiring.attachTransport(wsTransport)
-          this.mobileSocketWiring = mobileSocketWiring
+          runtimeSocketWiring.attachTransport(wsTransport)
+          this.runtimeSocketWiring = runtimeSocketWiring
 
           await wsTransport.start()
           if (this.wsPort !== 0 && wsTransport.resolvedPort !== this.wsPort) {
@@ -996,7 +565,7 @@ export class OrcaRuntimeRpcServer {
         } catch (error) {
           // Why: WebSocket transport is supplementary; on failure (e.g. port in use) continue with Unix socket only.
           console.error('[runtime] Failed to start WebSocket transport:', error)
-          this.mobileSocketWiring = null
+          this.runtimeSocketWiring = null
         }
       }
     }
@@ -1046,7 +615,7 @@ export class OrcaRuntimeRpcServer {
     this.transports = []
     this.metadataOwnershipWatch?.stop()
     this.metadataOwnershipWatch = null
-    this.mobileSocketWiring = null
+    this.runtimeSocketWiring = null
     if (transports.length === 0) {
       return
     }
@@ -1152,7 +721,7 @@ export class OrcaRuntimeRpcServer {
     wsTransport?: WebSocketTransport,
     ws?: WebSocket,
     authenticatedDeviceToken?: string | null,
-    authenticatedSocket?: AuthenticatedMobileSocket
+    authenticatedSocket?: AuthenticatedRuntimeSocket
   ): Promise<void> {
     let request: RpcRequest
     try {
@@ -1190,20 +759,7 @@ export class OrcaRuntimeRpcServer {
       reply(JSON.stringify(this.buildError(request.id, 'unauthorized', 'Invalid device token')))
       return
     }
-    if (device.scope === 'mobile' && !MOBILE_RPC_METHOD_ALLOWLIST.has(request.method)) {
-      reply(
-        JSON.stringify(
-          this.buildError(
-            request.id,
-            'forbidden',
-            `Method '${request.method}' is not available to mobile clients`
-          )
-        )
-      )
-      return
-    }
-
-    // Why: bind deviceToken to this socket so ws.on('close') knows which mobile client disconnected.
+    // Bind deviceToken to this socket so ws.on('close') can clean up the client.
     if (wsTransport && ws) {
       wsTransport.setClientId(ws, token)
     }
@@ -1223,40 +779,14 @@ export class OrcaRuntimeRpcServer {
         ? (response: string): void => reply(injectDeviceScope(response, device.scope))
         : reply
 
-    const connectionId = ws ? this.mobileSocketWiring?.getConnectionId(ws) : undefined
-    const pairingProvider = this.mobileRelayPairingProvider
-    const pairingContext =
-      pairingProvider && authenticatedSocket
-        ? {
-            getEndpoints: (params: PairingGetEndpointsParams) =>
-              pairingProvider.getEndpoints(
-                {
-                  deviceId: authenticatedSocket.device.deviceId,
-                  connectionId: authenticatedSocket.connectionId,
-                  transport: authenticatedSocket.transport
-                },
-                params
-              ),
-            provisionRelay: (params: PairingProvisionRelayParams) =>
-              pairingProvider.provisionRelay(
-                {
-                  deviceId: authenticatedSocket.device.deviceId,
-                  connectionId: authenticatedSocket.connectionId,
-                  transport: authenticatedSocket.transport
-                },
-                params
-              )
-          }
-        : undefined
+    const connectionId = ws ? this.runtimeSocketWiring?.getConnectionId(ws) : undefined
     try {
       await this.dispatcher.dispatchStreaming(request, replyForRequest, {
         connectionId,
         clientId: token,
         pairedDeviceId: device.deviceId,
-        // Why: gates the mobile-only payload diet so full-screen web/desktop clients aren't truncated.
         clientKind: device.scope,
         clientCapabilities: authenticatedSocket?.clientCapabilities,
-        pairing: pairingContext,
         signal: abortRegistration?.signal,
         sendBinary,
         registerBinaryStreamHandler: (streamId, handler) =>

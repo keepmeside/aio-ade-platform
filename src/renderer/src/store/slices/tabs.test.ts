@@ -4,7 +4,7 @@ import type { Tab, TabGroup } from '../../../../shared/types'
 import type * as AgentStatusModule from '@/lib/agent-status'
 import { FLOATING_TERMINAL_WORKTREE_ID, getDefaultUIState } from '../../../../shared/constants'
 import { buildMobileSessionTabSnapshots } from '../../runtime/sync-runtime-graph'
-import { closeMobileSessionTabInStore } from '../../runtime/mobile-session-tab-close'
+import { closeRuntimeSessionTabInStore } from '../../runtime/runtime-session-tab-close'
 
 // Mock sonner (imported by repos.ts)
 vi.mock('sonner', () => ({ toast: { info: vi.fn(), success: vi.fn(), error: vi.fn() } }))
@@ -346,7 +346,7 @@ describe('TabsSlice', () => {
         { id: tab.id, type: 'markdown', filePath: file.filePath }
       ])
 
-      expect(closeMobileSessionTabInStore(store.getState(), WT, tab.id)).toBe(true)
+      expect(closeRuntimeSessionTabInStore(store.getState(), WT, tab.id)).toBe(true)
 
       expect(store.getState().openFiles).toEqual([])
       expect(buildMobileSessionTabSnapshots(store.getState())[0]?.tabs ?? []).toEqual([])
@@ -395,7 +395,7 @@ describe('TabsSlice', () => {
         { id: tab.id, type: 'file', filePath: file.filePath }
       ])
 
-      expect(closeMobileSessionTabInStore(store.getState(), WT, tab.id)).toBe(true)
+      expect(closeRuntimeSessionTabInStore(store.getState(), WT, tab.id)).toBe(true)
 
       expect(store.getState().openFiles).toEqual([])
       expect(buildMobileSessionTabSnapshots(store.getState())[0]?.tabs ?? []).toEqual([])
@@ -424,7 +424,7 @@ describe('TabsSlice', () => {
         { id: file.id, type: 'file', filePath: file.filePath }
       ])
 
-      expect(closeMobileSessionTabInStore(store.getState(), WT, file.id)).toBe(true)
+      expect(closeRuntimeSessionTabInStore(store.getState(), WT, file.id)).toBe(true)
 
       expect(store.getState().openFiles).toEqual([])
       expect(buildMobileSessionTabSnapshots(store.getState())[0]?.tabs ?? []).toEqual([])

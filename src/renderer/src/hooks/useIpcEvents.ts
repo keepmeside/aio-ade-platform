@@ -83,11 +83,11 @@ import {
   acquireBrowserAutomationVisibility,
   releaseBrowserAutomationVisibility
 } from '@/components/browser-pane/browser-automation-visibility'
-import { attachMobileMarkdownBridge } from '@/runtime/mobile-markdown-bridge'
-import { closeMobileSessionTabInStore } from '@/runtime/mobile-session-tab-close'
+import { attachRuntimeMarkdownBridge } from '@/runtime/runtime-markdown-bridge'
+import { closeRuntimeSessionTabInStore } from '@/runtime/runtime-session-tab-close'
 import { createWorktreeChangeRefreshQueue } from './worktree-change-refresh-queue'
 import { subscribeRuntimeClientEvents } from '@/runtime/runtime-client-events'
-import { subscribeToUnpairedDeviceAuthNotification } from './unpaired-device-auth-notification'
+import { subscribeToRuntimeAuthFailureNotification } from './runtime-auth-failure-notification'
 import {
   applyRuntimeEnvironmentSshStateChanged,
   hydrateRuntimeEnvironmentSshState
@@ -770,7 +770,7 @@ export function useIpcEvents(): void {
     // Why: setAgentStatus notifies synchronously and re-enters this flush mid-drain; guard re-entrancy (crash 9fc89529).
     let isFlushingAgentStatuses = false
 
-    unsubs.push(attachMobileMarkdownBridge())
+    unsubs.push(attachRuntimeMarkdownBridge())
 
     const handleWorktreesChanged = async (
       repoId: string,
@@ -1143,28 +1143,28 @@ export function useIpcEvents(): void {
       }) ?? (() => {})
     )
 
-    // Why: a phone stuck in a silent 4001 auth loop (lost device registry) reads as
-    // "phone won't connect" with no clue on either end; main throttles to once per session.
     unsubs.push(
-      subscribeToUnpairedDeviceAuthNotification(window.api.mobile, () => {
+      subscribeToRuntimeAuthFailureNotification(window.api.runtime, () => {
         toast.warning(
           translate(
-            'auto.hooks.useIpcEvents.ef223fbb6b',
-            'A device tried to connect but is not paired'
+            'auto.hooks.useIpcEvents.runtimeAuthFailureTitle',
+            'A runtime client tried to connect but is not paired'
           ),
           {
-            id: 'unpaired-device-auth-failure',
+            id: 'runtime-auth-failure',
             description: translate(
-              'auto.hooks.useIpcEvents.11992d0337',
-              'If this was your phone or another Orca client, re-pair it from Settings → Mobile.'
+              'auto.hooks.useIpcEvents.runtimeAuthFailureDescription',
+              'Generate a new pairing code in Settings → Servers, then reconnect the client.'
             ),
-            // Why: main emits this recovery path once per session, so it must remain visible until acted on or dismissed.
             duration: Infinity,
             action: {
-              label: translate('auto.hooks.useIpcEvents.6573cfe955', 'Open Mobile Settings'),
+              label: translate(
+                'auto.hooks.useIpcEvents.runtimeAuthFailureAction',
+                'Open Server Settings'
+              ),
               onClick: () => {
                 const store = useAppStore.getState()
-                store.openSettingsTarget({ pane: 'mobile', repoId: null })
+                store.openSettingsTarget({ pane: 'servers', repoId: null })
                 store.openSettingsPage()
               }
             }
@@ -1199,7 +1199,7 @@ export function useIpcEvents(): void {
       })
     )
 
-    // Why: UI view-state is shared with mobile via ui.set; re-hydrate so mobile changes reflect live in the desktop sidebar.
+    // Why: UI view-state can change outside this renderer; re-hydrate so runtime updates stay live.
     unsubs.push(
       window.api.ui.onStateChanged((ui) => {
         useAppStore.getState().hydratePersistedUI(ui, 'sync')
@@ -1852,7 +1852,7 @@ export function useIpcEvents(): void {
           tabLabel: resolvePinnedTabLabel(store, worktreeId, tabId),
           onClose: () => {
             const currentStore = useAppStore.getState()
-            closeMobileSessionTabInStore(currentStore, worktreeId, tabId)
+            closeRuntimeSessionTabInStore(currentStore, worktreeId, tabId)
           }
         })
       })
@@ -1874,46 +1874,47 @@ export function useIpcEvents(): void {
       })
     )
 
-    unsubs.push(
-      window.api.ui.onOpenFileFromMobile(
-        ({ worktreeId, filePath, relativePath, runtimeEnvironmentId }) => {
-          const store = useAppStore.getState()
-          const basename = relativePath.split(/[\\/]/).pop() || relativePath
-          store.setActiveWorktree(worktreeId)
-          store.markWorktreeVisited(worktreeId)
-          store.setActiveView('terminal')
-          // Why: renderer owns tab creation so grouped order and markdown bridges share the desktop File Explorer's store path.
-          store.openFile({
-            filePath,
-            relativePath,
-            worktreeId,
-            language: detectLanguage(basename),
-            runtimeEnvironmentId,
-            mode: 'edit'
-          })
-          store.setActiveTabType('editor')
-          store.revealWorktreeInSidebar(worktreeId)
-        }
+    if (window.api.ui.onOpenFileFromRuntime) {
+      unsubs.push(
+        window.api.ui.onOpenFileFromRuntime(
+          ({ worktreeId, filePath, relativePath, runtimeEnvironmentId }) => {
+            const store = useAppStore.getState()
+            const basename = relativePath.split(/[\\/]/).pop() || relativePath
+            store.setActiveWorktree(worktreeId)
+            store.markWorktreeVisited(worktreeId)
+            store.setActiveView('terminal')
+            store.openFile({
+              filePath,
+              relativePath,
+              worktreeId,
+              language: detectLanguage(basename),
+              runtimeEnvironmentId,
+              mode: 'edit'
+            })
+            store.setActiveTabType('editor')
+            store.revealWorktreeInSidebar(worktreeId)
+          }
+        )
       )
-    )
+    }
 
-    unsubs.push(
-      window.api.ui.onOpenDiffFromMobile(
-        ({ worktreeId, filePath, relativePath, staged, runtimeEnvironmentId }) => {
-          const store = useAppStore.getState()
-          const language = detectLanguage(relativePath)
-          store.setActiveWorktree(worktreeId)
-          store.markWorktreeVisited(worktreeId)
-          store.setActiveView('terminal')
-          // Why: mobile renders diffs from metadata; the editor-local Changes shortcut would send plain markdown back to mobile.
-          store.openDiff(worktreeId, filePath, relativePath, language, staged, {
-            runtimeEnvironmentId
-          })
-          store.setActiveTabType('editor')
-          store.revealWorktreeInSidebar(worktreeId)
-        }
+    if (window.api.ui.onOpenDiffFromRuntime) {
+      unsubs.push(
+        window.api.ui.onOpenDiffFromRuntime(
+          ({ worktreeId, filePath, relativePath, staged, runtimeEnvironmentId }) => {
+            const store = useAppStore.getState()
+            store.setActiveWorktree(worktreeId)
+            store.markWorktreeVisited(worktreeId)
+            store.setActiveView('terminal')
+            store.openDiff(worktreeId, filePath, relativePath, detectLanguage(relativePath), staged, {
+              runtimeEnvironmentId
+            })
+            store.setActiveTabType('editor')
+            store.revealWorktreeInSidebar(worktreeId)
+          }
+        )
       )
-    )
+    }
 
     unsubs.push(
       window.api.ui.onCloseTerminal(({ tabId, paneRuntimeId }) => {

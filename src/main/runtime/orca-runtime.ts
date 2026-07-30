@@ -471,8 +471,8 @@ import { terminalOrphanExecutionOwnersEqual } from './terminal-orphan-owner'
 import {
   retireTerminalSurfacesFromSnapshot,
   type RetiredTerminalSurface
-} from './mobile-session-terminal-retirement'
-import { retireTerminalSurfaceFromPersistence } from './mobile-session-terminal-persistence-retirement'
+} from './runtime-session-terminal-retirement'
+import { retireTerminalSurfaceFromPersistence } from './runtime-session-terminal-persistence-retirement'
 import {
   advanceTerminalTopologyRevision,
   hasHostAuthoritativeTerminalMembership
@@ -898,12 +898,12 @@ import { killAllProcessesForWorktree, teardownRpcDeadline } from './worktree-tea
 import {
   MobileNotificationReplayBuffer,
   type ReplayableMobileNotification
-} from './mobile-notification-replay'
+} from './runtime-notification-replay'
 import { MOBILE_SUBSCRIBE_SCROLLBACK_ROWS } from './scrollback-limits'
 import {
   createMobileSessionTabsNotifyCoalescer,
   type MobileSessionTabsNotifyCoalescer
-} from './mobile-session-tabs-notify-coalescer'
+} from './runtime-session-tabs-notify-coalescer'
 import { getSshFilesystemProvider } from '../providers/ssh-filesystem-dispatch'
 import {
   assertFolderWorkspacePathUsable,

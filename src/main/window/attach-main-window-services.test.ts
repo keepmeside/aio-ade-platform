@@ -746,6 +746,19 @@ describe('attachMainWindowServices', () => {
         worktreeId: string,
         setup?: { runnerScriptPath: string; envVars: Record<string, string> }
       ) => void
+      openFile: (
+        worktreeId: string,
+        filePath: string,
+        relativePath: string,
+        runtimeEnvironmentId?: string
+      ) => void
+      openDiff: (
+        worktreeId: string,
+        filePath: string,
+        relativePath: string,
+        staged: boolean,
+        runtimeEnvironmentId?: string
+      ) => void
     }
 
     notifier.worktreesChanged('repo-1')
@@ -757,6 +770,8 @@ describe('attachMainWindowServices', () => {
         ORCA_WORKTREE_PATH: '/tmp/worktrees/wt-1'
       }
     })
+    notifier.openFile('wt-1', '/tmp/repo/readme.md', 'readme.md', 'runtime-1')
+    notifier.openDiff('wt-1', '/tmp/repo/readme.md', 'readme.md', true, 'runtime-1')
 
     expect(sendMock.mock.calls).toEqual([
       ['worktrees:changed', { repoId: 'repo-1' }],
@@ -773,6 +788,25 @@ describe('attachMainWindowServices', () => {
               ORCA_WORKTREE_PATH: '/tmp/worktrees/wt-1'
             }
           }
+        }
+      ],
+      [
+        'ui:openFileFromRuntime',
+        {
+          worktreeId: 'wt-1',
+          filePath: '/tmp/repo/readme.md',
+          relativePath: 'readme.md',
+          runtimeEnvironmentId: 'runtime-1'
+        }
+      ],
+      [
+        'ui:openDiffFromRuntime',
+        {
+          worktreeId: 'wt-1',
+          filePath: '/tmp/repo/readme.md',
+          relativePath: 'readme.md',
+          staged: true,
+          runtimeEnvironmentId: 'runtime-1'
         }
       ]
     ])

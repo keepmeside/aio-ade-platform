@@ -39,7 +39,6 @@ export type SettingsNavTarget =
   | 'orchestration'
   | 'linear'
   | 'servers'
-  | 'mobile'
   | 'mobile-emulator'
   | 'repo'
 
