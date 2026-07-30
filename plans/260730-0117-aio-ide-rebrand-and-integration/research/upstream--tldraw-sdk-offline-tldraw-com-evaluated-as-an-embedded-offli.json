@@ -1,0 +1,188 @@
+{
+  "architectureNotes": "tldraw ships as an npm package `tldraw` (all-in-one: editor + default UI + shapes + tools) built on `@tldraw/editor` (headless canvas engine) plus `@tldraw/store` (reactive record store), `@tldraw/state` (signals), `@tldraw/tlschema` (record types + migrations), and `@tldraw/sync` (optional multiplayer, needs a server). Integration surface is a single React component:\n\n  import { Tldraw } from 'tldraw'\n  import 'tldraw/tldraw.css'\n  <Tldraw persistenceKey=\"aio-ide-board-1\" onMount={(editor) => {...}} />\n\nThe `editor` instance handed to `onMount` (also reachable via `useEditor()` inside child components) is the entire imperative API: `editor.createShapes()`, `updateShapes()`, `deleteShapes()`, `select()`, `zoomToFit()`, `getSelectedShapeIds()`, `getCurrentPageShapes()`, `createAssets()`, `store.listen()` for change subscriptions. Shapes are plain JSON records `{ id: 'shape:xxx', type: 'geo'|'arrow'|'text'|'frame'|'image'|'note', x, y, props: {...}, parentId, meta }`, so an agent can emit shapes as JSON and the renderer can inject them directly — this is the load-bearing fact for \"agent draws the worktree topology\".\n\nPersistence has three independent layers, which matters for an Electron app:\n1. `persistenceKey` — opt-in local-first persistence into IndexedDB, handled entirely inside tldraw, plus cross-tab sync via BroadcastChannel. Zero code. Survives reload. Lives in the renderer's origin storage (Electron: the app's partition), NOT in a user-visible file.\n2. Snapshots — `getSnapshot(editor.store)` / `loadSnapshot(editor.store, snapshot)` (newer API; older docs show `store.getSnapshot()`/`loadSnapshot()`). Returns `{ document, session }` where `document` is the durable records and `session` is camera/selection. This is the correct path for Aio-IDE: serialize to JSON, write to a real file under the worktree via IPC to main. Migrations are versioned in tlschema, so old snapshots load into newer tldraw.\n3. `.tldr` files — just a JSON envelope around a document snapshot with a schema version. `TldrawFile` type + serialize/parse helpers are exported. Editor supports `editor.putExternalContent()` and the UI has open/save actions you can override (`overrides={{ actions: ... }}`) to route \"Save\" through Electron's dialog + fs instead of the browser download path.\n\nRendering: HTML/CSS/SVG DOM-based canvas (not a single <canvas>), so it composes with the rest of a React app, is themeable via CSS vars, and is accessible-ish, but a very large board is heavier than Konva/pixi. Export is `editor.toImage(shapeIds, { format: 'png'|'svg', scale, background })` -> Blob/SVG string, fully client-side (uses the DOM + font embedding). That gives you the PNG/SVG to hand an agent as an image attachment.\n\nOffline assets are the real integration cost. tldraw by default pulls fonts (Shantell Sans / IBM Plex family), icons (an SVG sprite sheet), embed definitions, and translations from tldraw's CDN (`unpkg`/`cdn.tldraw.com`) at runtime. For true offline you must self-host: the package ships the asset directory and there is an official helper (`@tldraw/assets`, with `getAssetUrlsByImport()` for bundlers or `getAssetUrlsByMetaUrl()`), passed as `<Tldraw assetUrls={...} />`. With electron-vite this means importing via the `assets/urls` entry so Vite fingerprints and bundles the fonts/icons/translations into the renderer output. If you skip this, the whiteboard silently degrades on an air-gapped machine (fallback fonts, missing icons).\n\nBundle size: `tldraw` is a heavy dependency — order of ~1MB+ minified JS for the full editor+UI before gzip, plus the asset payload (fonts dominate; the full translation set is ~40 locales of JSON, individually fetchable so you can ship only en/vi). In Electron this is disk, not download, so it is tolerable, but you want it behind a `React.lazy()` dynamic import so it does not sit in the main renderer chunk and slow cold start of the agent-orchestration UI.\n\nLicense architecture consequence: because the license gates *production deployment* rather than distribution-as-source, and gates it via a runtime key + watermark enforcement path (`licenseKey` prop on `<Tldraw>`), an MIT-licensed Electron app that ships tldraw is distributing software that its users will run outside a \"Development Environment\". That is the crux of the go/no-go below.",
+  "features": [
+    {
+      "effort": "S",
+      "howItWorks": "`import { Tldraw } from 'tldraw'` + `import 'tldraw/tldraw.css'`, rendered inside the existing renderer panel system. `onMount(editor)` captures the editor handle into a store (zustand, matching the repo's existing state layer). Mount behind React.lazy so the ~1MB chunk is not in the cold-start path.",
+      "integrationApproach": "npm-dependency",
+      "name": "Embedded whiteboard panel (Tldraw React component in a renderer tab)",
+      "priority": "must-have",
+      "valueForAioIde": "Gives the orchestrator a spatial surface. Today the IDE is lists of worktrees and streams of terminal text; a canvas is where a human actually reasons about 'which agent does what' before spawning 6 of them.",
+      "whatItDoes": "A full infinite-canvas whiteboard as a first-class Aio-IDE panel/tab alongside the agent terminals and diff views."
+    },
+    {
+      "effort": "M",
+      "howItWorks": "Pass `assetUrls` from `@tldraw/assets` (`getAssetUrlsByImport()` under Vite so electron-vite fingerprints and emits the files) into `<Tldraw assetUrls={...} />`. Disable/override the embed and image-upload paths that would otherwise hit the network. Verify by running the packaged app with the network adapter down and checking devtools has zero failed requests.",
+      "integrationApproach": "npm-dependency",
+      "name": "Offline-only operation via self-hosted assets",
+      "priority": "must-have",
+      "valueForAioIde": "Aio-IDE is a desktop tool used on locked-down machines and offline; a canvas that renders in fallback fonts and shows empty icon boxes offline is worse than no canvas. This is the difference between 'embedded tldraw' and 'embedded tldraw that actually ships'.",
+      "whatItDoes": "Makes the whiteboard work with zero network: fonts, icon sprite, translations, embed defs all served from the app bundle."
+    },
+    {
+      "effort": "M",
+      "howItWorks": "`getSnapshot(editor.store)` -> `{document, session}` -> IPC to main -> write `<worktree>/.aio/board.tldr` (or `plans/<slug>/board.tldr`). On open, read + `loadSnapshot(editor.store, snapshot)`. Debounce writes off `editor.store.listen()` filtered to document-scope changes. tlschema migrations make forward-compat safe.",
+      "integrationApproach": "npm-dependency",
+      "name": "Per-worktree board persistence to a real file",
+      "priority": "must-have",
+      "valueForAioIde": "Boards become reviewable artifacts that travel with the branch and can be diffed/committed, matching how this repo already treats plans/ and .claude/epics/. `persistenceKey` alone (IndexedDB) would strand the board in one machine's Electron profile.",
+      "whatItDoes": "Each git worktree / epic gets its own board, stored as a versioned JSON file inside the repo (or app data) rather than opaque browser storage."
+    },
+    {
+      "effort": "S",
+      "howItWorks": "`<Tldraw persistenceKey=\"aio-scratch\" />` — tldraw writes to IndexedDB itself and syncs sibling tabs over BroadcastChannel. No app code.",
+      "integrationApproach": "npm-dependency",
+      "name": "persistenceKey quick-scratch mode",
+      "priority": "nice-to-have",
+      "valueForAioIde": "Free win for the 'scratch pad' case where a file on disk is overkill. One prop, and it covers reload-safety before the file-based layer lands.",
+      "whatItDoes": "Zero-config local-first autosave for throwaway boards, plus cross-window sync if the same board is open twice."
+    },
+    {
+      "effort": "M",
+      "howItWorks": "`await editor.toImage(ids, { format: 'png', scale: 2, background: true })` returns a Blob entirely client-side (DOM + embedded fonts, no server). IPC the bytes to main, write to a temp path inside the worktree, then reference that path in the agent prompt (both Claude Code and Codex accept image/file references). SVG variant for when text fidelity matters more than raster.",
+      "integrationApproach": "npm-dependency",
+      "name": "Export board to PNG/SVG and attach as agent context",
+      "priority": "must-have",
+      "valueForAioIde": "This is the single highest-value feature: the human sketches the architecture, presses 'Send to agent', and the agent implements against the drawing. It closes the loop between the canvas and the orchestration the IDE already does.",
+      "whatItDoes": "Turns the current board or a selection into an image that gets handed to a Claude Code / Codex session as an attachment in the prompt."
+    },
+    {
+      "effort": "M",
+      "howItWorks": "Walk `editor.getCurrentPageShapes()`, keep `type`, `props.text`/`props.richText`, geometry, and for `arrow` shapes resolve `props.start`/`props.end` bindings to the connected shape ids; emit `A --> B` edges plus a node table. Cheaper in tokens than an image and unambiguous about connectivity.",
+      "integrationApproach": "reimplement",
+      "name": "Board-to-text structural context (shapes as JSON/outline)",
+      "priority": "must-have",
+      "valueForAioIde": "Agents reason far better over an explicit edge list than over a screenshot of arrows, and it costs a fraction of the tokens of a 2x PNG. Pair it with the image, not instead of it.",
+      "whatItDoes": "Serializes the board into a compact textual description (boxes, labels, arrows as edges) so an agent gets structure, not just pixels."
+    },
+    {
+      "effort": "L",
+      "howItWorks": "Define a narrow JSON contract (nodes + edges + optional groups), have the agent emit it, then map to `editor.createShapes([...])` with `geo`/`frame` for nodes, `text` for labels, `arrow` with start/end bindings for edges, then `editor.zoomToFit()`. Shapes are plain records so this is mechanical. Layout can be dagre/elk before injection since tldraw does no auto-layout.",
+      "integrationApproach": "reimplement",
+      "name": "Agent-generated diagrams (agent writes shapes back onto the canvas)",
+      "priority": "nice-to-have",
+      "valueForAioIde": "Directly serves the product thesis: the IDE knows the worktree graph, the agent sessions, and the file topology. Rendering that as an editable diagram the human can then annotate and hand back is a genuinely differentiated orchestration UI.",
+      "whatItDoes": "An agent emits shape JSON and it appears on the board — e.g. 'diagram the current worktree/agent topology' or 'draw the module graph of src/main'."
+    },
+    {
+      "effort": "M",
+      "howItWorks": "`editor.putExternalContent({type:'files'|'text'})` or the default paste handler creates an `image` shape backed by a tldraw asset; annotate with normal tools; then `editor.toImage()` over the image shape plus its annotations for a flattened PNG. Asset bytes must be routed to local disk (custom asset store) instead of the default upload path so nothing leaves the machine.",
+      "integrationApproach": "npm-dependency",
+      "name": "Screenshot annotation workflow",
+      "priority": "nice-to-have",
+      "valueForAioIde": "'This button is wrong, see the red circle' is how humans actually report UI bugs to a coding agent. Right now that requires an external tool and a manual file path.",
+      "whatItDoes": "Drop or paste a screenshot (failing UI, terminal output, design mock), mark it up with arrows and circles, then ship the annotated composite to an agent."
+    },
+    {
+      "effort": "L",
+      "howItWorks": "tldraw's own makereal demo is the reference: export the selection to a PNG data URL, send it to a vision model with a prompt that demands a self-contained implementation, then render/write the result. In Aio-IDE the sink is a Claude Code / Codex session in a worktree writing real project files rather than an iframe of raw HTML.",
+      "integrationApproach": "inspiration-only",
+      "name": "'Make real' pattern (draw UI, agent generates code)",
+      "priority": "nice-to-have",
+      "valueForAioIde": "Highest-wow demo feature and it fits the existing agent plumbing exactly — the only new pieces are the export and the prompt template. Do it after export + context handoff exist.",
+      "whatItDoes": "Sketch a UI wireframe on the canvas, select it, and an agent generates the corresponding component code in the worktree."
+    },
+    {
+      "effort": "L",
+      "howItWorks": "Frames become phases, sticky notes inside a frame become steps, arrows become dependencies; walk the shape tree and emit the markdown skeleton the repo's plan convention expects, then let an agent flesh out each phase file.",
+      "integrationApproach": "reimplement",
+      "name": "Plan-first sketching bound to plans/ workflow",
+      "priority": "nice-to-have",
+      "valueForAioIde": "This repo's whole workflow is plan-then-delegate. A visual front-end to plan authoring that emits the same markdown is high leverage and low risk.",
+      "whatItDoes": "Sketch the phase breakdown on the board, then generate the plans/<slug>/ phase files from it."
+    },
+    {
+      "effort": "XL",
+      "howItWorks": "Extend `ShapeUtil` (getDefaultProps, getGeometry, component(), indicator()) and pass via `shapeUtils={[...]}` plus a matching tool in `tools={[...]}`. Shape `meta` carries the worktree id; a store subscription pushes live status into shape props.",
+      "integrationApproach": "npm-dependency",
+      "name": "Custom shape types for Aio-IDE domain objects",
+      "priority": "nice-to-have",
+      "valueForAioIde": "Turns the whiteboard from a drawing tool into the orchestration dashboard — the canvas becomes the control surface for the agents, not a separate sketchpad.",
+      "whatItDoes": "First-class 'Worktree', 'Agent session', and 'File' shapes that are live — showing status colour, agent model, diff counts — and clickable to focus the real panel."
+    },
+    {
+      "effort": "M",
+      "howItWorks": "`overrides={{actions, tools}}`, `components={{MainMenu, PageMenu, DebugMenu: null, ...}}` to replace or hide chrome, plus CSS custom properties for the colour scheme; force dark via `<Tldraw inferDarkMode>` or the editor user preferences API.",
+      "integrationApproach": "npm-dependency",
+      "name": "UI chrome overrides to fit the IDE",
+      "priority": "nice-to-have",
+      "valueForAioIde": "The stock tldraw browser chrome (share, browser-download-based export) is wrong inside an Electron IDE and would read as a bolted-on iframe.",
+      "whatItDoes": "Trim tldraw's default menus to the ones that make sense in a desktop IDE, replace Save/Open with Electron dialogs, and theme it to match Aio-IDE."
+    },
+    {
+      "effort": "XL",
+      "howItWorks": "Requires running a sync server/durable-object backend; `@tldraw/sync` client + `useSync`.",
+      "integrationApproach": "npm-dependency",
+      "name": "Multiplayer / sync (@tldraw/sync)",
+      "priority": "skip",
+      "valueForAioIde": "Contradicts the offline-first requirement, adds a server dependency to a local desktop tool, and is bundled with the paid SDK story. Local-only boards are the right scope.",
+      "whatItDoes": "Real-time collaborative boards across machines."
+    },
+    {
+      "effort": "M",
+      "howItWorks": "Verified landing-page claims: offline.tldraw.com distributes a separate desktop app for macOS, Windows and Linux from `tldraw/tldraw-offline` releases. It advertises no account/server, self-contained local `.tldraw` documents with images/video/custom scripts, and access from Codex, Claude Code, Pi and OpenCode. The landing page itself loads Google Fonts and tldraw analytics. Source license, document contract and exact agent bridge remain unverified, so use it only as workflow prior art or an interoperability research target.",
+      "integrationApproach": "inspiration-only",
+      "name": "tldraw's own AI module / offline.tldraw.com feature parity",
+      "priority": "skip",
+      "valueForAioIde": "If it is a PWA using IndexedDB it is essentially `persistenceKey` plus a manifest, which teaches us nothing we do not already know. If it is a real desktop app with an MCP/agent bridge, it is worth studying as prior art. Needs a follow-up with a JS-capable fetch.",
+      "whatItDoes": "tldraw ships/prototypes an AI integration layer (and offline.tldraw.com is marketed as 'a whiteboard for your desktop that your AI can use too')."
+    },
+    {
+      "effort": "M",
+      "howItWorks": "`@excalidraw/excalidraw` React component; `initialData` + `onChange` give you the element array (plain JSON, same shape-injection story as tldraw); `exportToBlob`/`exportToSvg` for PNG/SVG; `.excalidraw` files are JSON. Fonts must be self-hosted for offline (set the asset path / vendor the woff2 files). MIT for the editor package, so it can be vendored into an MIT Electron app with no key, no watermark, no production gate.",
+      "integrationApproach": "npm-dependency",
+      "name": "ALTERNATIVE: Excalidraw as the whiteboard (MIT)",
+      "priority": "must-have",
+      "valueForAioIde": "This is the license-safe default. It covers sketching, annotation, arrow-connected boxes, image annotation, and programmatic element creation — i.e. every must-have feature above — without any commercial licensing exposure for a distributed desktop app.",
+      "whatItDoes": "Hand-drawn-style infinite canvas whiteboard, the closest functional substitute for the sketch/annotate/export use cases."
+    },
+    {
+      "effort": "M",
+      "howItWorks": "`@xyflow/react`, MIT. Nodes are React components, so a 'worktree node' can render live agent status, diff counts, and buttons that drive the real IDE. Pairs with dagre/elk for auto-layout. Export via html-to-image. Not a freehand whiteboard — no sketching, no ink.",
+      "integrationApproach": "npm-dependency",
+      "name": "ALTERNATIVE: xyflow / React Flow for structured node graphs (MIT)",
+      "priority": "must-have",
+      "valueForAioIde": "Strictly better than tldraw for the *topology* feature: nodes are interactive React, layout is automatic, and the data model is already a graph. The honest split is xyflow for generated/structured diagrams, Excalidraw for freehand sketching and annotation.",
+      "whatItDoes": "Node-and-edge graph editor with real layout, handles, and edge routing — for worktree/agent topology and module graphs."
+    },
+    {
+      "effort": "XL",
+      "howItWorks": "`react-konva`, MIT. You build the whiteboard yourself: tools, undo/redo, selection, text editing, serialization, export.",
+      "integrationApproach": "npm-dependency",
+      "name": "ALTERNATIVE: Konva / react-konva (MIT)",
+      "priority": "skip",
+      "valueForAioIde": "Only worth it if you need a bespoke canvas surface (e.g. a custom timeline or a very large-scale render where DOM-based tldraw/Excalidraw would choke). As a whiteboard replacement it is months of work reimplementing solved problems — YAGNI.",
+      "whatItDoes": "Low-level 2D canvas scene graph — shapes, transforms, hit testing, drag."
+    }
+  ],
+  "integrationRisks": [
+    "LICENSE, go/no-go blocker: tldraw's license permits free use only in a 'Development Environment' — internal dev/test/staging that end users, customers, and the public cannot reach. A distributed Electron desktop app is by definition reachable by end users, so shipping Aio-IDE with tldraw embedded is production use and needs a key (trial or commercial). This is not a watermark-only inconvenience.",
+    "LICENSE: the license explicitly forbids offering the software under a license that 'supersedes or negates the effect of this License' and requires shipping a verbatim copy of the tldraw license with any distribution. So Aio-IDE cannot present tldraw's code as MIT; the repo's LICENSE story becomes 'MIT except vendored tldraw, governed by LICENSE-tldraw'. For an open-source project that is a persistent footgun for forkers, who inherit the same production gate without a key.",
+    "LICENSE: conditions bar disabling or interfering with license-key enforcement, and Technical Enforcement says the software verifies key validity, detects the deployment environment, applies restrictions by license type, and ensures 'proper watermark display'. Patching out the watermark or the env check terminates the license automatically.",
+    "PRIVACY/OFFLINE: official guidance says commercial and hobby usage is offline and sends no information; trial only pings a license-key hash. Keep a packaged network-off smoke test for self-hosted assets, embeds and bookmarks, and prohibit trial keys in release builds.",
+    "LICENSE: production requires a trial, commercial or discretionary hobby key. Hobby is non-commercial and keeps a 'made with tldraw' watermark; commercial pricing is value-based/quoted. A trial is generally one per business unit and is not a shipping strategy.",
+    "OFFLINE: default asset loading (fonts, icon sprite, translations, embeds) goes to tldraw's CDN. Miss the assetUrls wiring and the app appears to work on a dev machine and quietly degrades on an air-gapped one. Needs an explicit offline smoke test in CI or a manual gate.",
+    "BUNDLE: size was not measured in this audit. Require packaged chunk analysis and lazy loading before accepting any canvas runtime into the cold-start path.",
+    "ELECTRON: browser-oriented open/save must be routed through host-aware APIs. Default user images are inline base64 in memory and IndexedDB-backed with `persistenceKey`, not remotely uploaded by default; remote embeds/bookmarks still require explicit offline controls.",
+    "REPO FIT: this codebase enforces a max-lines ratchet, oxlint code-quality gates, a localization catalog with coverage checks, and reliability gates. A whiteboard panel with custom shapes, snapshot IPC, and export plumbing will need new i18n keys and will bump against the max-lines ratchet unless split into small kebab-case modules from the start.",
+    "VERIFICATION GAPS: dollar pricing, `tldraw/tldraw-offline` source license/document protocol/agent bridge, exact tldraw 5 asset helper behavior, and packaged Electron integration remain unverified. Official docs do verify the `licenseKey` prop, client-side validation, offline commercial/hobby behavior, trial hash ping and hobby watermark."
+  ],
+  "license": "tldraw SDK 5.2.5 is not MIT/OSI and is free without a key only in a private Development Environment. A distributed Aio-IDE build is Production and needs a trial, commercial or discretionary hobby key. Hobby is non-commercial and retains a 'made with tldraw' watermark; commercial pricing is quoted. Keys validate client-side and work offline; official guidance says commercial/hobby usage sends no information and trial pings only a license-key hash. Any distribution must preserve tldraw notices and license terms. Default Aio-IDE remains Excalidraw-first; revisit only after negotiated downstream terms and counsel review.",
+  "oneLiner": "tldraw is a React infinite-canvas whiteboard SDK with excellent local-first persistence and a fully programmable shape API, but its license restricts free use to non-public development environments and requires a paid key for anything end users can reach — which rules it out for a distributed MIT-licensed desktop IDE.",
+  "project": "tldraw (SDK + offline.tldraw.com) — evaluated as an embedded offline whiteboard for Aio-IDE",
+  "reusablePointers": [
+    "npm `tldraw` — the all-in-one entry: `import { Tldraw } from 'tldraw'` + `import 'tldraw/tldraw.css'`. The single-component mount pattern with `onMount(editor)` is worth copying verbatim into whatever canvas you pick.",
+    "npm `@tldraw/assets` — `getAssetUrlsByImport()` / `getAssetUrlsByMetaUrl()` for self-hosting fonts, icon sprite, translations, embed defs. This is the reference implementation of 'make a canvas library work fully offline under a bundler'; the same technique is what Excalidraw needs for its fonts.",
+    "tldraw snapshot API — `getSnapshot(editor.store)` / `loadSnapshot(editor.store, snapshot)` returning `{ document, session }` (durable records vs camera/selection). The document/session split is the right model for Aio-IDE board files: commit `document`, keep `session` per machine.",
+    "tldraw `.tldr` format — a JSON envelope `{ tldrawFileFormatVersion, schema, records }`. Good prior art for versioning Aio-IDE's own board file with migrations rather than raw dumps.",
+    "`editor.toImage(ids, { format, scale, background })` — fully client-side PNG/SVG export including font embedding. This is the exact primitive needed for 'hand the drawing to an agent'; Excalidraw's `exportToBlob`/`exportToSvg` are the MIT equivalents.",
+    "tldraw arrow bindings — `props.start`/`props.end` referencing shape ids is how you recover a real graph from a drawing. Copy this idea for the board-to-text serializer regardless of library.",
+    "tldraw makereal demo (github.com/tldraw/make-real) — reference for the sketch-to-code prompt loop: export selection PNG -> vision model -> self-contained implementation. Inspiration only; the license applies to the tldraw dependency, and Aio-IDE's sink is an agent writing real files, not an iframe.",
+    "tldraw `ShapeUtil` + `shapeUtils`/`tools` props — the custom-shape extension model, if you ever need domain shapes (Worktree/Agent). Note Excalidraw has no equivalent, which is the main capability you give up by switching; xyflow's React-component nodes cover it better anyway.",
+    "REPLACEMENT STACK (recommended): `@excalidraw/excalidraw` (MIT) for freehand sketching + screenshot annotation, and `@xyflow/react` (MIT) for generated worktree/agent topology graphs with dagre/elk layout. Both are vendorable into an MIT Electron app with no key, no watermark, no production gate.",
+    "Aio-IDE integration points to wire either choice into: `src/renderer` panel system for the canvas tab, `src/main` + `src/preload` IPC for snapshot read/write and temp-image export, `src/shared` for the board-file schema and the board-to-text serializer. Board files fit the repo's existing `plans/<slug>/` convention."
+  ],
+  "stack": "TypeScript + React 18/19 monorepo. Public package `tldraw` (batteries-included editor + UI) composed from `@tldraw/editor` (headless canvas), `@tldraw/store` (reactive records), `@tldraw/state` (signals), `@tldraw/tlschema` (record types + migrations), `@tldraw/sync` (optional multiplayer, server required), `@tldraw/assets` (self-hostable fonts/icons/translations). DOM/CSS/SVG rendering rather than a single <canvas>. Local persistence via IndexedDB + BroadcastChannel for cross-tab. Peer deps React + react-dom; ships its own CSS (`tldraw/tldraw.css`). Current SDK 5.2.5 is peer-compatible with React 18/19; packaged Electron/Vite integration and the exact static-asset helper path still require a spike.",
+  "url": "https://tldraw.dev/community/license — verified license guide; https://tldraw.dev/pricing — pricing; https://github.com/tldraw/tldraw — source + LICENSE.md; https://offline.tldraw.com/ — separate downloadable desktop-app landing page; https://www.npmjs.com/package/tldraw — package",
+  "verdict": "SKIP tldraw in the default MIT build. Use Excalidraw (MIT) for the file-backed whiteboard and defer XYFlow (MIT) to a topology tranche after usage validation. tldraw remains valuable prior art for snapshot document/session separation, programmable shapes, PNG/SVG export and sketch-to-code handoff. Revisit only for a commercial Aio-IDE distribution after negotiated downstream terms, counsel review, key provisioning, notices, privacy documentation and a packaged offline/accessibility/bundle spike."
+}

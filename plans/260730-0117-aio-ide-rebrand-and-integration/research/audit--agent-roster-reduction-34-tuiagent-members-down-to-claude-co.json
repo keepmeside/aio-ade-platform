@@ -1,0 +1,392 @@
+{
+  "estimate": "Large: roughly 120 files touched (~35 deleted outright, ~85 surgically edited). Budget 2-3 focused days if mobile/ and src/cli/ are deleted first. Rough split: shared type/data tables ~2h (8 files, mechanical once the union is narrowed); per-agent directory deletions ~1h; main-process surgical pass ~4-6h (orca-runtime.ts at 197 hits dominates); persistence migration + tests ~2-3h (highest risk-per-line, do not rush); renderer pass ~4-5h (agent-catalog.tsx, status-bar family, automations); assets/CSS/i18n ~2h; test rewrites ~6-8h (the five 100+ hit fixture tables are the single largest bucket); docs/skills ~2h. This estimate is derived from grep hit-density plus the roster tables I read directly; I did not run `pnpm typecheck` or `pnpm test`, so the post-narrowing error count is unmeasured and the test-rewrite bucket is the least certain figure.",
+  "gotchas": [
+    "Narrow the union FIRST, not last — the opposite of the usual advice. The instinct is to narrow last so typecheck stays green while cleaning up. Here that backfires: the roster is enforced almost entirely by `Record<TuiAgent, …>` and `satisfies Record<TuiAgent, …>`, so while the union is wide, deleting a roster entry is itself the error (missing property). You cannot delete anything incrementally without going red. Narrowing first inverts it: leftover entries become excess-property errors the compiler enumerates for you, and every deletion moves monotonically toward green. Accept one large red window between steps 2 and 3 rather than fighting the type system in both directions.",
+    "`claude-agent-teams` is NOT just another Claude flavor — it is an Orca-hosted launch mode. Its TUI_AGENT_CONFIG entry has detectCmd 'orca' with aliases ['orca-dev','orca-ide'], detectRequiredCommands ['claude'], detectUnsupportedRuntimes ['win32','wsl'], launchCmd `orca claude-teams`, promptInjectionMode 'stdin-after-start', and launchCmdByPlatform built from getOrcaCliCommandNameForPlatform(). Keeping it forces you to keep the src/cli claude-teams entrypoint you are deleting, plus claude-agent-teams-tmux-compat.ts and the native-pane/tmux-shim machinery. It looks like a one-line keep and is not.",
+    "`openclaude` reads as Claude-family but is a distinct third-party binary (detectCmd/launchCmd/expectedProcess all 'openclaude', with its own `--prefill` flag). 'Claude Code + Codex only' should exclude it.",
+    "Agent ID does not equal binary name, so grepping the id misses call sites and grepping the binary misses the id. Real mismatches in TUI_AGENT_CONFIG: kiro→`kiro-cli chat --tui`, aug→`auggie`, continue→`cn` (because `continue` is a shell builtin), cursor→`cursor-agent`, qwen-code→`qwen`, mistral-vibe→`vibe` (with 'mistral-vibe' as an alias), antigravity→`agy`, mimo-code→`mimo`, trae→`traecli` (deliberately, to avoid colliding with the unrelated bytedance/trae-agent `trae-cli`), command-code→`command-code` (full name chosen to avoid Windows cmd.exe). Sweep BOTH id and binary for each removed agent. `agy` and `cn` are short enough to produce false-positive grep noise.",
+    "`isTuiAgent()` in src/shared/tui-agent-config.ts is a runtime guard over `Object.prototype.hasOwnProperty.call(TUI_AGENT_CONFIG, value)`. It silently starts returning false for removed ids the moment you trim the table — correct, but it means stored values now flow down whatever the `else` branch is at each call site. Audit those branches: some may throw or render blank rather than falling back to claude.",
+    "Do NOT delete the `?? 'other'` fallback in `tuiAgentToAgentKind` (src/shared/agent-kind.ts). Its comment states the exact reason it exists: stale persisted settings or unsafe IPC casts can carry an out-of-union string. After the reduction there will be MORE such strings in the wild, not fewer. Same for `agentKindToTuiAgent` returning null.",
+    "src/shared/agent-session-option-catalog-claude-codex.ts vs -gemini-cursor.ts is a trap for automated cleanup: the filenames suggest a symmetric pair, so a script that deletes 'the other catalog' could grab the wrong one. The claude-codex file is exactly what you keep.",
+    "The `droid` removal reaches further than the roster: TUI_AGENT_CONFIG['droid'] carries `windowsShiftEnterEncoding: 'csi-u'`, which is why the Windows Shift+Enter branch exists at all (src/renderer/src/components/terminal-pane/terminal-windows-shift-enter.test.ts). Droid also owns the droid-orchestration-group doc and appears in src/main/runtime/orchestration/groups.test.ts (45 hits). Deleting the agent leaves an orchestration group and a keyboard-encoding code path orphaned in different layers.",
+    "Delete mobile/ and src/cli/ BEFORE the roster work, not after. mobile/src/tasks/mobile-tui-agents.ts (91 hits), mobile-agent-catalog.ts, mobile-agent-icon-assets.ts, MobileAgentIcon.tsx, accounts-snapshot.ts, agent-row-display.ts and ~15 more mobile files all enumerate the roster. Editing then deleting them is pure waste, and mobile/ has its own pnpm-lock.yaml (52 hits) so it is a semi-independent workspace.",
+    "Test-file hit counts are a better effort estimate than source-file counts, and they invert the usual ratio: pty-connection.test.ts 229 vs 53 in the source; orca-runtime.test.ts 224 vs 197; server.test.ts 271 with no comparably sized source. The bulk of this task is fixture-table maintenance, not production logic.",
+    "resources/ images and per-agent CSS are easy to forget because nothing type-checks them. src/renderer/src/assets/main.css has 34 agent-token hits (brand colors/icon classes) and will not error when an agent disappears — it just accumulates dead rules. Same for orphaned images."
+  ],
+  "inventory": [
+    {
+      "action": "keep-but-edit (narrow union to 'claude' | 'codex')",
+      "path": "src/shared/types.ts",
+      "what": "`TuiAgent` union, 34 members: claude, claude-agent-teams, openclaude, codex, autohand, opencode, mimo-code, pi, omp, gemini, antigravity, aider, goose, amp, kilo, kiro, crush, aug, cline, codebuff, command-code, continue, cursor, droid, kimi, mistral-vibe, qwen-code, rovo, hermes, openclaw, copilot, grok, devin, ante, trae. Also holds the settings types that reference agents (defaultTuiAgent, disabledTuiAgents, agentCmdOverrides, selectedModelByAgent)."
+    },
+    {
+      "action": "keep-but-edit (delete 32 entries; keep claude/codex blocks verbatim incl. claude's `--prefill` draftPromptFlag and codex's preflightTrust:'codex' + draftPasteReadySignal:'codex-composer-prompt')",
+      "path": "src/shared/tui-agent-config.ts",
+      "what": "328 lines. `TUI_AGENT_CONFIG: Record<TuiAgent, TuiAgentConfig>` — the master roster: detectCmd, launchCmd, expectedProcess, promptInjectionMode, preflightTrust, draftPromptFlag/EnvVar, draftPasteReadySignal, windowsShiftEnterEncoding per agent. `isTuiAgent()` runtime guard reads its keys."
+    },
+    {
+      "action": "keep-but-edit (trim map to kept ids; the `?? 'other'` fallback already handles removed ids at runtime — do not remove it)",
+      "path": "src/shared/agent-kind.ts",
+      "what": "74 lines. `TUI_AGENT_KIND_BY_AGENT` mapping all 34 ids to telemetry AgentKind, `satisfies Record<TuiAgent, ConcreteAgentKind>`; plus reverse map AGENT_BY_TUI_AGENT_KIND and `tuiAgentToAgentKind` / `agentKindToTuiAgent`. Comments already note the `?? 'other'` fallback exists precisely for stale persisted settings."
+    },
+    {
+      "action": "keep-but-edit — but do NOT narrow the enum; leave removed kinds as accepted historical values so already-queued events still validate",
+      "path": "src/shared/telemetry-events.ts",
+      "what": "`AGENT_KIND_VALUES` / `agentKindSchema = z.enum(AGENT_KIND_VALUES)` (line ~100), consumed by agentStartedSchema and agentPromptSentSchema `agent_kind` fields (lines ~347, ~355)."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/shared/tui-agent-display-names.ts",
+      "what": "48 lines, per-agent human labels (roster-shaped)."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/shared/tui-agent-selection.ts",
+      "what": "92 lines, selection/ordering of the roster."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/shared/tui-agent-launch-command.ts",
+      "what": "62 lines, launch command assembly per agent."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/shared/tui-agent-launch-defaults.ts",
+      "what": "104 lines, per-agent launch defaults."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/shared/tui-agent-permissions.ts",
+      "what": "166 lines, per-agent permission/trust flags."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/shared/agent-type-label.ts",
+      "what": "35 lines, agent type label mapping."
+    },
+    {
+      "action": "keep (mostly unchanged)",
+      "path": "src/shared/agent-session-option-catalog-claude-codex.ts",
+      "what": "Session-option catalog for the two agents being KEPT."
+    },
+    {
+      "action": "delete",
+      "path": "src/shared/agent-session-option-catalog-gemini-cursor.ts",
+      "what": "Session-option catalog exclusively for gemini + cursor."
+    },
+    {
+      "action": "keep-but-edit (drop the gemini-cursor import + its registry entries)",
+      "path": "src/shared/agent-session-option-catalog.ts",
+      "what": "Aggregator that imports both catalog files."
+    },
+    {
+      "action": "keep-but-edit (strip gemini/cursor cases)",
+      "path": "src/shared/agent-session-option-catalog.test.ts",
+      "what": "Tests both catalogs."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/shared/agent-detection.ts + agent-detection.test.ts",
+      "what": "PATH detection driven by TUI_AGENT_CONFIG detectCmd/aliases/required/unsupported-runtimes; test has 35 agent-token hits."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/shared/agent-process-recognition.ts + .test.ts",
+      "what": "Maps running process names to agents; test file has 75 agent-token hits."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/shared/agent-feature-install-commands.ts + .test.ts",
+      "what": "Per-agent install commands for feature bootstrap."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/shared/agent-headless-command.ts",
+      "what": "Per-agent headless invocation forms."
+    },
+    {
+      "action": "keep-but-edit (delete removed-agent icon files)",
+      "path": "src/shared/agent-icons/",
+      "what": "Per-agent icon modules/assets directory."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/shared/agent-title-decoration.ts + .test.ts, agent-decorative-title-signature.ts, agent-title-core.ts, agent-title-identity.ts, agent-title-status.ts, terminal-title-agent-type.ts + .test.ts",
+      "what": "Title parsing/decoration keyed by agent identity strings; terminal-title-agent-type.test.ts has 49 hits, .ts has 34."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/shared/agent-status-osc.ts + .test.ts, agent-status-types.ts, agent-status-identity.ts, agent-status-field-normalization.ts",
+      "what": "OSC status protocol + status typing per agent."
+    },
+    {
+      "action": "keep-but-edit (optionally prune AgentPromptInjectionMode union LAST)",
+      "path": "src/shared/agent-prompt-injection.ts + .test.ts",
+      "what": "Implements the promptInjectionMode variants; modes 'hermes-query', 'flag-prompt-interactive', 'flag-interactive', 'flag-prompt' become dead once only claude+codex remain (both are 'argv')."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/shared/agent-resume-argv-drop.ts + .test.ts, agent-session-resume.ts + .test.ts",
+      "what": "Resume argv handling per agent; agent-session-resume.ts 42 hits, .test.ts 35 hits."
+    },
+    {
+      "action": "delete",
+      "path": "src/shared/pi-agent-kind.ts + pi-agent-kind.test.ts",
+      "what": "Pi-specific agent kind module."
+    },
+    {
+      "action": "delete (per the recommendation to drop claude-agent-teams; it depends on src/cli which is being deleted)",
+      "path": "src/shared/claude-agent-teams-tmux-compat.ts + .test.ts",
+      "what": "tmux-shim compat for the 'claude-agent-teams' launch mode (detects via the orca CLI, unsupported on win32/wsl)."
+    },
+    {
+      "action": "keep",
+      "path": "src/shared/claude-subagent-roster.ts, codex-subagent-roster.ts, codex-subagent-transcript.ts (+ tests)",
+      "what": "Subagent rosters for the two KEPT agents."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/shared/native-chat-agent-profiles.ts + native-chat-agent-support.ts (+ tests)",
+      "what": "Native-chat capability per agent."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/shared/commit-message-agent-spec.ts + .test.ts",
+      "what": "Commit-message generation agent specs enumerating agents; 36 and 33 hits."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/shared/agents-orchestration-steps.ts",
+      "what": "Orchestration step definitions referencing agents."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/shared/ai-vault-types.ts",
+      "what": "49 agent-token hits — AI vault session source types per agent."
+    },
+    {
+      "action": "delete",
+      "path": "src/main/ai-vault/session-scanner-antigravity-fixtures.ts, -history.ts, -parser.ts, -parser.test.ts, -source.test.ts, -sources.ts",
+      "what": "Antigravity-exclusive session history scanning."
+    },
+    {
+      "action": "keep-but-edit (surgical: remove removed-agent source entries, keep claude+codex parsers)",
+      "path": "src/main/ai-vault/session-scanner.ts, session-scanner-discovery.ts, session-scanner-source-discovery.ts, session-scanner-agent-parser.ts, session-scanner-secondary-parsers.ts, session-scanner-graph-parsers.ts, session-scanner-parse-cache.ts, session-scanner-incremental-fixtures.ts, remote-session-scanner-sources.ts, session-scanner.test.ts, remote-session-scanner.test.ts",
+      "what": "Shared on-disk session-history scanning enumerating per-agent sources; session-scanner.test.ts 83 hits, incremental-fixtures 47, source-discovery 37."
+    },
+    {
+      "action": "delete",
+      "path": "src/main/ai-vault/session-scanner-opencode-sqlite-coexistence.test.ts",
+      "what": "OpenCode-specific sqlite coexistence test, 39 hits."
+    },
+    {
+      "action": "delete (whole per-agent directories)",
+      "path": "src/main/antigravity/hook-service.ts, src/main/command-code/hook-service.ts + command-code-managed-script.ts, src/main/hermes/hook-service.ts + hook-service.test.ts, src/main/opencode/hook-service.test.ts, src/main/pi/titlebar-extension-service.test.ts + agent-status-extension-source.test.ts",
+      "what": "Per-agent main-process hook services and extension sources for agents being removed; pi titlebar test 105 hits, pi agent-status test 62, opencode hook test 40."
+    },
+    {
+      "action": "keep-but-edit (server.test.ts likely needs a fixture rewrite rather than line edits)",
+      "path": "src/main/agent-hooks/managed-agent-hook-controls.ts, remote-managed-hook-installers.ts, remote-hook-service-installers.test.ts, server.test.ts, managed-hook-stdin-lifecycle.test.ts, managed-hook-timeout.test.ts",
+      "what": "Managed hook install/control matrix enumerated per agent — densest agent-id concentration in main: server.test.ts 271 hits, remote-hook-service-installers.test.ts 119, managed-agent-hook-controls.ts 44, managed-hook-stdin-lifecycle.test.ts 39."
+    },
+    {
+      "action": "keep-but-edit — ADD a coercing migration (see gotchas)",
+      "path": "src/main/persistence.ts + persistence.test.ts",
+      "what": "Settings load/validate/migrate — where zod schemas for defaultTuiAgent / disabledTuiAgents / agentCmdOverrides / selectedModelByAgent live; 65 and 33 hits."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/main/rate-limits/service.ts + service.test.ts",
+      "what": "Provider rate-limit tracking per agent/provider; 95 and 72 hits."
+    },
+    {
+      "action": "keep-but-edit (large surgical pass)",
+      "path": "src/main/runtime/orca-runtime.ts + orca-runtime.test.ts",
+      "what": "Runtime surface enumerating agents; 197 and 224 hits — second-densest agent-token files in the repo."
+    },
+    {
+      "action": "keep-but-edit (drop droid group)",
+      "path": "src/main/runtime/orchestration/groups.test.ts",
+      "what": "Orchestration groups incl. the droid-orchestration-group; 45 hits."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/main/runtime/rpc/methods/client-ui-schemas.ts, client-ui.test.ts, agent-session.test.ts",
+      "what": "RPC schemas validating agent ids over the wire."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/main/ipc/pty.ts + pty.test.ts",
+      "what": "pty:spawn handler — emits agent_started telemetry via tuiAgentToAgentKind; 39 and 123 hits."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/main/ipc/agent-hooks.ts + .test.ts, notifications.test.ts, preflight.test.ts",
+      "what": "IPC surfaces enumerating agents."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/main/automations/external-manager.ts + .test.ts, external-job-mappers.ts, src/relay/external-automations-handler.ts + .test.ts",
+      "what": "External automation managers keyed by agent/provider; external-manager.test.ts 37 hits."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/main/providers/agent-foreground-process.test.ts, src/shared/foreground-wrapper-agent.ts + .test.ts",
+      "what": "Foreground process recognition per agent; test 51 hits."
+    },
+    {
+      "action": "keep",
+      "path": "src/main/codex/config-toml-trust.ts",
+      "what": "Codex trust config, 47 hits — KEPT agent, referenced by TUI_AGENT_CONFIG codex.preflightTrust:'codex'."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/main/skills/skill-discovery-sources.ts",
+      "what": "Skill discovery enumerating per-agent skill dirs."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/renderer/src/lib/agent-catalog.tsx",
+      "what": "The renderer's agent picker catalog — icons + labels + ordering for all 34; 109 hits. Largest single renderer edit."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/renderer/src/lib/agent-favicon-assets.ts",
+      "what": "Per-agent favicon asset map; 48 hits."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/renderer/src/lib/agent-status.ts + agent-status.test.ts, agent-picker-search.test.ts, agent-followup-delivery.test.ts, launch-agent-in-new-tab.ts + .test.ts, launch-agent-background-session.ts + .test.ts + -remote.test.ts, run-quick-command-in-new-tab.test.ts, new-workspace.test.ts, tui-agent-startup.test.ts, ai-vault-resume-command.ts, source-control-agent-action-plan.test.ts",
+      "what": "Renderer agent launch/status/search logic; agent-status.test.ts 88 hits, tui-agent-startup.test.ts 76, agent-status.ts 34."
+    },
+    {
+      "action": "delete",
+      "path": "src/renderer/src/lib/use-tab-agent-pi-identity.test.ts, src/renderer/src/lib/command-code-prompt-status-seed.ts",
+      "what": "Pi-identity hook test (62 hits) and command-code prompt seeding — both exclusive to removed agents."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/renderer/src/lib/orchestration-skill-coverage.ts + .test.ts",
+      "what": "Asserts skill coverage across the agent roster; test 37 hits — will fail loudly after reduction."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/renderer/src/components/settings/AgentsPane.test.tsx, AppearancePane.test.tsx, CommitMessageAiPane.test.tsx, AppearanceWindowSidebarSection.tsx, appearance-status-bar-search.test.ts, general-search.ts",
+      "what": "Settings UI + its searchable-keyword indexes naming each agent."
+    },
+    {
+      "action": "delete",
+      "path": "src/renderer/src/components/settings/appearance-status-bar-antigravity-toggle-search.ts",
+      "what": "Antigravity-only status-bar toggle search entry."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/renderer/src/components/status-bar/StatusBar.tsx, status-bar-agent-gating.ts + .test.ts, status-bar-provider-visibility.ts + .test.ts, tooltip.tsx + tooltip.test.ts, usage-error-copy.ts + .test.ts, usage-provider-settings-target.ts + .test.ts",
+      "what": "Status bar per-provider usage/gating rows; StatusBar.tsx 52 hits, status-bar-provider-visibility.test.ts 74, tooltip.test.ts 33."
+    },
+    {
+      "action": "keep-but-edit (expect a fixture-table rewrite)",
+      "path": "src/renderer/src/components/terminal-pane/pty-connection.ts + pty-connection.test.ts",
+      "what": "PTY connection + agent recognition; test file is the single densest agent-token file in the repo at 229 hits (source 53)."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/renderer/src/components/terminal-pane/agent-completion-coordinator.ts + .test.ts, parked-terminal-command-status.ts + .test.ts, parked-terminal-byte-watcher.test.ts, terminal-windows-shift-enter.test.ts",
+      "what": "Completion detection + Windows Shift+Enter encoding (the csi-u branch exists for droid)."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/renderer/src/components/terminal-quick-commands/terminal-quick-command-agent-options.ts + .test.ts, src/renderer/src/components/tab-bar/tab-agent-launch-options.test.ts",
+      "what": "Quick-command + tab launch option lists per agent."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/renderer/src/components/onboarding/agent-picked-payload.test.ts, sidebar/WorktreeList.tsx, sidebar/smart-attention.ts + .test.ts, sidebar/worktree-title-derived-agent-rows.ts + .test.ts, sidebar/folder-workspace-composer-submit.test.ts, TaskPage.tsx, hooks/useComposerState.ts, store/slices/agent-status.ts, web/web-preload-api.ts",
+      "what": "Remaining renderer surfaces that branch on agent id; WorktreeList.tsx 33 hits, TaskPage.tsx 34, store/slices/agent-status.ts 32, web-preload-api.ts 31."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/renderer/src/components/automations/AutomationEditorDialog.tsx, AutomationEditorDialogFooter.tsx, AutomationsPage.tsx, ExternalAutomationManagers.tsx + .test.tsx, automation-setup-decision.ts + .test.ts, external-automation-source-availability.ts + .test.ts, external-automation-run-table-state.test.ts",
+      "what": "Automations UI enumerating external agent managers."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/renderer/src/assets/main.css",
+      "what": "Per-agent brand colors / icon classes; 34 hits. Nothing type-checks this file, so dead rules accumulate silently."
+    },
+    {
+      "action": "keep-but-edit (delete the same key sets from all five)",
+      "path": "src/renderer/src/i18n/locales/en.json, es.json, ja.json, ko.json, zh.json",
+      "what": "Agent display names + per-agent settings copy; 73/76/53/48/49 hits respectively. Counts already differ, so locales are not perfectly aligned today."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "config/scripts/locale-ko-key-overrides.json",
+      "what": "Third source of truth for Korean agent keys."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/relay/plugin-overlay.ts + plugin-overlay.test.ts, wsl-install-plugins-handler.test.ts",
+      "what": "Relay plugin overlays installed per agent (pi titlebar extension, orca-prefill, etc.); plugin-overlay.test.ts 88 hits, .ts 32, wsl handler test 40."
+    },
+    {
+      "action": "delete (already scheduled) — do it BEFORE the roster work to avoid editing ~20 files twice",
+      "path": "mobile/",
+      "what": "Entire React Native tree; mobile/src/tasks/mobile-tui-agents.ts 91 hits, plus mobile-agent-catalog.ts, MobileAgentIcon.tsx, mobile-agent-icon-assets.ts, accounts-snapshot.ts, agent-row-display.ts, new-worktree-agent-selection.ts, workspace-agent-selection.ts, mobile-new-tab-agent-options.ts, mobile-terminal-tab-agent.ts and ~15 more roster-enumerating files. Has its own pnpm-lock.yaml (52 hits)."
+    },
+    {
+      "action": "delete (already scheduled) — resolve the claude-agent-teams decision first",
+      "path": "src/cli/",
+      "what": "Headless CLI: agent-context.ts, handlers/agent-hooks.ts, specs/agent-hooks.ts. Also the target of claude-agent-teams' `orca claude-teams` launchCmd."
+    },
+    {
+      "action": "keep-but-edit (delete removed-agent stubs/guides; rewrite or delete droid-orchestration-group)",
+      "path": "docs/, skills/, skill-guides/, skill-stubs/",
+      "what": "Per-agent docs incl. the droid-orchestration-group doc; skill stubs/guides per agent; orchestration coverage docs asserted by src/renderer/src/lib/orchestration-skill-coverage.test.ts."
+    },
+    {
+      "action": "keep-but-edit (delete removed-agent images; verify no bundler glob import breaks)",
+      "path": "resources/",
+      "what": "Agent icon/logo image assets referenced by src/shared/agent-icons/ and src/renderer/src/lib/agent-favicon-assets.ts."
+    },
+    {
+      "action": "keep-but-edit; delete mobile-agent-status-projection-benchmark.mjs",
+      "path": "config/scripts/verify-agent-hook-stdin-lifecycle.mjs, remote-agent-session-*.mjs, mobile-agent-status-projection-benchmark.mjs, agent-hook-normalizer-roundtrip-benchmark.mjs",
+      "what": "Dev/verification scripts naming agents; the mobile benchmark dies with mobile/."
+    },
+    {
+      "action": "keep-but-edit (folds into the brand rename pass)",
+      "path": "ORCHESTRATION_IMPLEMENTATION_CHECKLIST.md, orca.yaml, AGENTS.md, README.md",
+      "what": "Root-level docs/config naming the agent roster."
+    }
+  ],
+  "orderedSteps": [
+    "0. Prereq ordering: do the `mobile/` and `src/cli/` DELETIONS first (they are already planned). ~20 of the roster-enumerating files live in mobile/ (mobile-tui-agents.ts alone has 91 agent-token hits). Deleting those trees first removes roughly a fifth of the roster edit surface and prevents editing the same files twice. Caveat: src/shared/claude-agent-teams-tmux-compat.ts and TUI_AGENT_CONFIG['claude-agent-teams'].launchCmd (`orca claude-teams`) point INTO src/cli, so resolve step 1 before deleting src/cli.",
+    "1. Decide the kept set explicitly and write it down. Recommendation: keep `claude` and `codex` only; DROP `claude-agent-teams` and `openclaude`. Rationale: `claude-agent-teams` is not a separate binary — detectCmd 'orca' with detectCmdAliases ['orca-dev','orca-ide'], detectRequiredCommands ['claude'], detectUnsupportedRuntimes ['win32','wsl'], launchCmd `orca claude-teams` built via getOrcaCliCommandNameForPlatform(). Keeping it means keeping the src/cli claude-teams entrypoint plus claude-agent-teams-tmux-compat.ts and the native-pane/tmux-shim machinery. `openclaude` is a separate third-party binary (detectCmd/launchCmd/expectedProcess all 'openclaude'), not Anthropic's Claude Code. If you want Agent Teams later, re-add it as a launch MODE of `claude`, not a roster member.",
+    "2. NARROW THE UNION FIRST, in src/shared/types.ts: replace the 34-member `TuiAgent` with `export type TuiAgent = 'claude' | 'codex'`. Run `pnpm typecheck` and treat the error list as the worklist. This works because the roster is enforced by `Record<TuiAgent, …>` / `satisfies Record<TuiAgent, …>` in at least 8 shared modules (TUI_AGENT_CONFIG in tui-agent-config.ts, TUI_AGENT_KIND_BY_AGENT in agent-kind.ts, tui-agent-display-names.ts, tui-agent-selection.ts, tui-agent-launch-command.ts, tui-agent-launch-defaults.ts, tui-agent-permissions.ts, agent-type-label.ts) — every leftover entry becomes an excess-property error pointing at the exact line.",
+    "3. Fix the shared data tables until typecheck is green on src/shared: trim TUI_AGENT_CONFIG to the claude + codex blocks (copy verbatim — claude keeps `draftPromptFlag: '--prefill'`, codex keeps `preflightTrust: 'codex'` and `draftPasteReadySignal: 'codex-composer-prompt'`), then agent-kind.ts, tui-agent-display-names.ts, tui-agent-selection.ts, tui-agent-launch-command.ts, tui-agent-launch-defaults.ts, tui-agent-permissions.ts, agent-type-label.ts.",
+    "4. Delete the agent-exclusive shared modules: src/shared/agent-session-option-catalog-gemini-cursor.ts, src/shared/pi-agent-kind.ts + pi-agent-kind.test.ts, src/shared/claude-agent-teams-tmux-compat.ts + .test.ts. Then edit src/shared/agent-session-option-catalog.ts to drop the gemini-cursor import and registry entries, and prune agent-session-option-catalog.test.ts.",
+    "5. Delete the per-agent main-process directories: src/main/antigravity/, src/main/command-code/, src/main/hermes/, src/main/opencode/, src/main/pi/. Then delete the antigravity session-scanner family (src/main/ai-vault/session-scanner-antigravity-{fixtures,history,parser,parser.test,source.test,sources}.ts) and session-scanner-opencode-sqlite-coexistence.test.ts.",
+    "6. Surgical pass on the shared scanner/discovery layer: src/main/ai-vault/{session-scanner.ts, session-scanner-discovery.ts, session-scanner-source-discovery.ts, session-scanner-agent-parser.ts, session-scanner-secondary-parsers.ts, session-scanner-graph-parsers.ts, session-scanner-parse-cache.ts, session-scanner-incremental-fixtures.ts, remote-session-scanner-sources.ts} plus src/shared/ai-vault-types.ts. Remove per-agent source entries; keep the claude + codex parsers.",
+    "7. Surgical pass on main: src/main/agent-hooks/{managed-agent-hook-controls.ts, remote-managed-hook-installers.ts}, src/main/rate-limits/service.ts, src/main/runtime/orca-runtime.ts (197 hits — budget real time), src/main/runtime/rpc/methods/client-ui-schemas.ts, src/main/ipc/{pty.ts, agent-hooks.ts}, src/main/automations/{external-manager.ts, external-job-mappers.ts}, src/main/skills/skill-discovery-sources.ts, src/relay/{external-automations-handler.ts, plugin-overlay.ts}.",
+    "8. ADD THE SETTINGS MIGRATION in src/main/persistence.ts before touching its zod schemas. Requirements: (a) `defaultTuiAgent` holding a removed id coerces to 'claude' instead of throwing; (b) `disabledTuiAgents` filters unknown ids instead of failing the array parse; (c) `agentCmdOverrides` and `selectedModelByAgent` are keyed by agent id — strip unknown keys rather than rejecting the object (permissive record + post-filter, or z.record(z.string(), …) then narrow in code). Any schema that is `.strict()` or uses z.enum over the narrowed roster on these fields will hard-reject existing user profiles and can silently reset ALL settings, not just the agent field. Add a persistence.test.ts case feeding a settings blob containing 'gemini'/'droid'/'cursor' and asserting a clean coerced result.",
+    "9. Renderer pass: src/renderer/src/lib/agent-catalog.tsx (109 hits) first since it drives the picker, then agent-favicon-assets.ts, agent-status.ts, launch-agent-in-new-tab.ts, launch-agent-background-session.ts, ai-vault-resume-command.ts, orchestration-skill-coverage.ts. Delete use-tab-agent-pi-identity.test.ts and command-code-prompt-status-seed.ts. Then components: status-bar/* (StatusBar.tsx, status-bar-agent-gating.ts, status-bar-provider-visibility.ts, tooltip.tsx, usage-error-copy.ts, usage-provider-settings-target.ts), terminal-pane/{pty-connection.ts, agent-completion-coordinator.ts, parked-terminal-command-status.ts}, terminal-quick-commands/terminal-quick-command-agent-options.ts, sidebar/{WorktreeList.tsx, smart-attention.ts, worktree-title-derived-agent-rows.ts}, TaskPage.tsx, automations/*, settings/* (delete appearance-status-bar-antigravity-toggle-search.ts; edit general-search.ts + AppearanceWindowSidebarSection.tsx), hooks/useComposerState.ts, store/slices/agent-status.ts, web/web-preload-api.ts.",
+    "10. Assets + styles + i18n: delete removed-agent icon modules under src/shared/agent-icons/ and their images in resources/; prune per-agent rules in src/renderer/src/assets/main.css (34 hits); delete the same agent key sets from all five locales (src/renderer/src/i18n/locales/{en,es,ja,ko,zh}.json) and from config/scripts/locale-ko-key-overrides.json. Run the repo's locale-key-parity check if one exists (grep config/scripts) — key drift across locales is a common silent break, and the current counts already differ (73/76/53/48/49).",
+    "11. Tests: DELETE test files whose entire subject is a removed agent (pi-agent-kind.test.ts, use-tab-agent-pi-identity.test.ts, session-scanner-antigravity-parser.test.ts, session-scanner-antigravity-source.test.ts, session-scanner-opencode-sqlite-coexistence.test.ts, hermes/hook-service.test.ts, pi/titlebar-extension-service.test.ts, pi/agent-status-extension-source.test.ts, opencode/hook-service.test.ts). REWRITE the high-density fixture tables rather than line-editing them: pty-connection.test.ts (229), agent-hooks/server.test.ts (271), orca-runtime.test.ts (224), ipc/pty.test.ts (123), remote-hook-service-installers.test.ts (119). Then the mid-density ones (tui-agent-startup.test.ts 102/76, agent-status.test.ts 88, plugin-overlay.test.ts 88, agent-process-recognition.test.ts 75, status-bar-provider-visibility.test.ts 74, rate-limits/service.test.ts 72).",
+    "12. Docs/skills: delete removed-agent entries in skills/, skill-guides/, skill-stubs/; rewrite or delete the droid-orchestration-group doc (its group also appears in src/main/runtime/orchestration/groups.test.ts, 45 hits); update AGENTS.md, README.md, ORCHESTRATION_IMPLEMENTATION_CHECKLIST.md, orca.yaml. Make orchestration-skill-coverage.ts + .test.ts agree with the new skill set.",
+    "13. Optional final cleanup, only after everything is green and behind its own commit: prune now-dead type variants in src/shared/tui-agent-config.ts — `AgentPromptInjectionMode` collapses to 'argv' | 'stdin-after-start' (claude and codex are both 'argv'; 'flag-prompt', 'flag-prompt-interactive', 'flag-interactive', 'hermes-query' unreachable), `DraftPasteReadySignal` to 'codex-composer-prompt', `preflightTrust` to 'codex', and windowsShiftEnterEncoding / detectUnsupportedRuntimes / launchCmdByPlatform / draftPromptEnvVar may become unused. This also deletes branches in agent-prompt-injection.ts and the Windows Shift+Enter csi-u path.",
+    "14. Verification gates: `pnpm typecheck` after step 3 and after every subsequent step; `pnpm test` (vitest) after step 11; `pnpm lint` (oxlint) to catch now-unused imports and orphaned assets, the most common leftover after this kind of reduction; then a real app launch to confirm the picker shows exactly two agents and that loading a pre-existing settings file does not reset preferences."
+  ],
+  "risks": [
+    "Persisted settings rejection is the highest-severity risk. `defaultTuiAgent`, `disabledTuiAgents`, `agentCmdOverrides`, `selectedModelByAgent` carry agent ids into src/main/persistence.ts (65 agent-token hits). If those fields are validated with a zod enum derived from the narrowed roster, every existing user profile containing e.g. 'gemini' fails validation. Depending on how persistence handles a parse failure, the blast radius is either a crash on boot or a silent reset of ALL settings, not just the agent field. Handle with a coercing migration, not schema narrowing.",
+    "Telemetry enum narrowing would break historical validation. `agentKindSchema = z.enum(AGENT_KIND_VALUES)` in src/shared/telemetry-events.ts feeds agentStartedSchema and agentPromptSentSchema, both `.strict()`. Narrowing it means any locally queued or retried event referencing a removed kind now fails validation and is dropped. Leave AGENT_KIND_VALUES wide; only trim the TuiAgent→AgentKind map.",
+    "src/main/runtime/orca-runtime.ts (197 hits) + orca-runtime.test.ts (224), src/renderer/src/components/terminal-pane/pty-connection.test.ts (229), and src/main/agent-hooks/server.test.ts (271) are dense enough that a hurried find/replace will introduce logic errors. These four files alone are a meaningful fraction of the total effort.",
+    "i18n key drift: five locale files carry agent keys at different counts (en 73, es 76, ja 53, ko 48, zh 49). The counts already differ, so the locales are not perfectly aligned today. Deleting keys unevenly will either leave orphans or break a key-parity check. config/scripts/locale-ko-key-overrides.json is a third source of truth for ko.",
+    "Deleting resources/ image assets can break the build if any module imports them via a bundler glob (Vite `import.meta.glob`) rather than an explicit path. Check src/shared/agent-icons/ and src/renderer/src/lib/agent-favicon-assets.ts for glob patterns before bulk-deleting images.",
+    "src/renderer/src/lib/orchestration-skill-coverage.test.ts asserts skill coverage across the roster. It will fail after reduction and its failure mode is a coverage assertion, easily mistaken for a missing-skill bug rather than expected roster shrinkage.",
+    "Removing per-agent main directories may break relay plugin-overlay wiring: src/relay/plugin-overlay.ts (32 hits) + .test.ts (88 hits) install overlays such as the pi titlebar extension and the orca-prefill extension. The ORCA_PI_PREFILL / ORCA_OMP_PREFILL env-var seeding disappears with pi/omp, but claude uses the `--prefill` FLAG instead, so no prefill capability is lost for the kept agents.",
+    "Scope creep with the brand rename. `orca` appears in 3475 files and the agent code is saturated with it (ORCA_PI_PREFILL, getOrcaCliCommandNameForPlatform, orca-runtime.ts, detectCmdAliases ['orca-dev','orca-ide']). Doing roster reduction and rename in one pass makes conflicts and review nearly impossible. Land roster reduction first, rename second."
+  ],
+  "summary": "Reducing 34 TuiAgent members to `claude` + `codex` touches ~120 files. The union in src/shared/types.ts is the keystone: 8 shared modules use `Record<TuiAgent, …>` or `satisfies Record<TuiAgent, …>`, so narrowing the union FIRST makes every stale roster entry an immediate excess-property error, giving you a compiler-driven worklist. On the Claude-family variants: drop both `claude-agent-teams` and `openclaude`. `claude-agent-teams` is not a separate binary — it detects via the `orca` CLI and launches `orca claude-teams`, i.e. it depends on the src/cli tree being deleted. `openclaude` is a distinct third-party binary, not Anthropic's Claude Code. The real risk is not typecheck; it is persisted settings: `defaultTuiAgent`, `disabledTuiAgents`, `agentCmdOverrides`, `selectedModelByAgent` are zod-validated on load in src/main/persistence.ts, and a narrowed enum will reject existing user profiles unless a migration coerces unknown ids.",
+  "surface": "Agent roster reduction: 34 TuiAgent members down to claude + codex (plus decision on Claude-family variants)"
+}
