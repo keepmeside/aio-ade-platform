@@ -1,0 +1,287 @@
+{
+  "estimate": "CI/release surface rebrand + gate unblocking: 3-4 hours (release-cut.yml alone is 95KB with 45 brand hits and 16 literal artifact-name echoes). Pages setup: 30-45 minutes once the visibility decision is made (workflow YAML 10 min, gh api enable 2 min, first deploy ~2 min, self-contained HTML authoring is the bulk). Deleting the 12 dead workflows + Casks + .github/scripts: 20 minutes. Reliability-gate/lint-chain surgery for mobile+CLI removal: 45 minutes including verification runs.",
+  "gotchas": [
+    "docs/** is gitignored with a narrow allowlist (.gitignore:84-95). Verified: `git check-ignore -v docs/aio-ade-rebrand-plan.html` matches .gitignore:84. docs/orchestration-primitives.html is tracked only because ignore rules do not apply to already-tracked files — it is NOT in the allowlist. So writing the new plan HTML into docs/ makes it invisible to `git status`, `git add .`, and any Pages deploy that checks out the repo. Use site/ (verified not ignored) or add an explicit `!docs/<file>.html` allowlist line.",
+    "docs/orchestration-primitives.html line 11 links ../src/renderer/src/assets/main.css — a path that climbs OUT of docs/. Published to Pages this 404s and the page renders as unstyled black-on-white, because every color, font, radius and surface in its 580-line inline <style> is a var() reference into that file. Copy main.css beside the HTML or inline the :root token block.",
+    "Renaming the binary looks like a one-line package.json edit but config/scripts/verify-cli-bin.mjs hardcodes `packageJson.bin?.orca` and throws 'package.json must declare bin.orca'. It also writes an out/package.json with name 'orca-compiled-output'. And it is in the .gitattributes eol=lf pin list, so deleting it means editing .gitattributes too.",
+    "package.json `audit:code-quality:native` passes `mobile` as a literal positional path to oxlint. Deleting mobile/ makes oxlint error on a nonexistent path, so `pnpm lint` fails at a step that mentions 'code-quality', not 'mobile'.",
+    "check-max-lines-ratchet.mjs guards mobile/.oxlintrc.json with fs.existsSync (line 119) so mobile deletion is safe there — but the baseline 'may only shrink' and STALE entries are a hard error ('Stale max-lines baseline entry (prune it)'). config/max-lines-baseline.txt currently has ZERO mobile/ or src/cli/ entries, so this specific deletion should be clean; still re-run it because unrelated deletions can trip it.",
+    "The `e2e` job is deliberately excluded from pr.yml's `verify` aggregator — an in-file comment states the E2E suite is red on main on every scheduled run. Do not treat a red e2e as something your rebrand broke, and do not 'fix' it by adding e2e to needs.",
+    "homebrew-bump.yml is intentionally NOT triggered by `release.published` — its header comment explains that mobile-v* releases from the same repo would fire it and rewrite the cask to a non-desktop version. Once you delete the mobile release workflows that reason evaporates, but keep the workflow_call design if you ever restore a tap; do not 'simplify' it to release.published.",
+    "pnpm-workspace.yaml exists solely to stop `pnpm -r` auto-discovering mobile/ (its comment cites ERR_PNPM_UNUSED_PATCH on patchedDependencies). Deleting the file after removing mobile/ is technically fine but gains nothing and risks re-enabling auto-discovery of any future nested package. Keep `packages: []`.",
+    "There is no `npm publish` anywhere in .github/** (grep returned empty) and no NPM_TOKEN secret. The npm/binary name 'aio-ade' only affects package.json bin + electron-builder executableName + the Homebrew cask's `binary` line — no registry publish will break.",
+    "actions/upload-pages-artifact is the correct action name (the deploy chain is configure-pages -> upload-pages-artifact -> deploy-pages). There is no 'upload-pageage'.",
+    "The Pages deploy job needs `permissions: pages: write, id-token: write` AND an `environment: github-pages` block AND `concurrency: group: pages`. Missing id-token: write is the single most common cause of deploy-pages failing with an OIDC error even after Pages is enabled.",
+    "site/main.css will be picked up by lint-staged's `*.{json,css}` -> `oxfmt --write` rule on commit, reformatting a 107KB vendored file. Either accept the reformat and re-`git add`, or commit it with `--no-verify` disabled in favor of adding site/ to an oxfmt ignore — do not bypass the hook."
+  ],
+  "inventory": [
+    {
+      "action": "keep-but-edit",
+      "path": ".github/workflows/release-cut.yml",
+      "what": "95,862-byte release orchestrator. workflow_dispatch only (kind rc|patch|minor|major, ref, dry_run, version_suffix, version). Jobs: cut, create-release, terminal-rendering-golden, terminal-rendering-release-evidence, build (win/linux matrix), build-mac (dispatches release-mac-build.yml), publish-release, post-release-e2e, homebrew-bump-published-rc-draft, homebrew-bump. Uses signpath/github-action-submit-signing-request@v2 (line 1321), nick-fields/retry@v4, actions/cache@v5. Hardcodes asset names orca-windows-setup.exe(+.blockmap), latest.yml; gates on `github.repository == 'stablyai/orca'` at line 68; comments at 342-345 depend on mobile-v* tag prefixes existing. 45 orca/stablyai matches."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": ".github/workflows/release-mac-build.yml",
+      "what": "workflow_dispatch(tag, release_run_id) -> build-mac job, uploads mac artifacts to a draft release. Gated `github.repository == 'stablyai/orca'` (line 26). Needs MAC_CERTS, MAC_CERTS_PASSWORD, APPLE_ID, APPLE_TEAM_ID, APPLE_APP_SPECIFIC_PASSWORD for notarization."
+    },
+    {
+      "action": "delete",
+      "path": ".github/workflows/homebrew-bump.yml",
+      "what": "workflow_call/dispatch(tag). Downloads orca-macos-arm64.dmg + orca-macos-x64.dmg from the release, sha256s them, templates Casks/orca.rb (stable) or Casks/orca@rc.rb (rc), then opens a PR into stablyai/homebrew-orca using a GitHub App (secrets.BUFO_BOT_PRIVATE_KEY, repositories: homebrew-orca). 19 brand matches."
+    },
+    {
+      "action": "delete",
+      "path": ".github/workflows/mobile.yml",
+      "what": "PR checks on mobile/** and src/shared/terminal-file-link-conformance.ts -> verify job."
+    },
+    {
+      "action": "delete",
+      "path": ".github/workflows/mobile-android-release.yml",
+      "what": "push tags mobile-android-v* + dispatch -> android-build (EAS/Expo release path)."
+    },
+    {
+      "action": "delete",
+      "path": ".github/workflows/mobile-ios-release.yml",
+      "what": "push tags mobile-ios-v* + dispatch -> ios-build; uses ASC_KEY_ID, ASC_ISSUER_ID, ASC_API_KEY_P8, IOS_DIST_CERT_P12, IOS_DIST_CERT_PASSWORD (TestFlight)."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": ".github/workflows/pr.yml",
+      "what": "The merge gate. Jobs: static_analysis, typecheck, git_compatibility, shell_contracts, test (sharded matrix), package, e2e-paths, e2e (reusable, deliberately NOT in verify.needs), verify (aggregator over the first six). Line 240 runs `pnpm run build:cli`; package job runs config/scripts/smoke-packaged-cli.mjs --app-dir=dist/linux-unpacked; sets ORCA_REUSE_PREPARED_NATIVE_RUNTIME=1."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": ".github/workflows/e2e.yml",
+      "what": "Reusable (workflow_call) + dispatch + cron '0 17,22 * * *'. Jobs: build, e2e, ssh-docker-watcher-isolation."
+    },
+    {
+      "action": "delete",
+      "path": ".github/workflows/computer-e2e.yml",
+      "what": "PR paths + dispatch + nightly cron. Jobs native-smoke/mac/linux/windows. Heavily coupled to src/cli: path filter 'src/cli/**' plus explicit test files src/cli/format.test.ts, src/cli/handlers/computer*.test.ts, src/cli/specs/computer.test.ts, src/cli/index.test.ts, src/cli/runtime/envelope-schema.test.ts, and four `pnpm build:cli` steps (lines 118, 159, 186, 205)."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": ".github/workflows/win-crash-survival-e2e.yml",
+      "what": "PR-triggered Windows installer build + crash-survival harness (tools/win-crash-survival-e2e). 11 brand matches."
+    },
+    {
+      "action": "delete",
+      "path": ".github/workflows/win-update-e2e.yml",
+      "what": "push on branch Jinwoo-H/windows-update-survival + dispatch(from_tag,to_tag,expect,asset_pattern '*windows-setup.exe',soak_seconds)."
+    },
+    {
+      "action": "delete",
+      "path": ".github/workflows/win-update-survival-e2e.yml",
+      "what": "push on branch Jinwoo-H/windows-update-survival only; branch does not exist in fork."
+    },
+    {
+      "action": "delete",
+      "path": ".github/workflows/daemon-relocation-spike.yml",
+      "what": "push on branch Jinwoo-H/windows-update-survival, paths tools/daemon-relocation-spike/**. Dead in fork."
+    },
+    {
+      "action": "delete",
+      "path": ".github/workflows/windows-signing-rehearsal.yml",
+      "what": "dispatch-only SignPath rehearsal (signing-policy-slug, inner-artifact-configuration-slug). 21 brand matches; needs SIGNPATH_API_TOKEN."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": ".github/workflows/windows-terminal-restart-e2e.yml",
+      "what": "PR paths (daemon/pty/terminal-pane) -> windows-terminal-restart job."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": ".github/workflows/linux-wayland-gpu-sandbox.yml",
+      "what": "PR paths on wayland scripts + configure-process -> verify job."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": ".github/workflows/golden-e2e-experiment.yml",
+      "what": "PR paths on golden-core-flows + xterm webgl patch -> golden-e2e job."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": ".github/workflows/terminal-perf.yml",
+      "what": "dispatch (12 tuning inputs) + daily cron '30 8 * * *'. 27 brand matches."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": ".github/workflows/skill-update-roundtrip.yml",
+      "what": "PR on skills/**, resources/skills/**, merge_group, push main -> roundtrip job running config/scripts/verify-skill-update-roundtrip.mjs. Zero brand matches."
+    },
+    {
+      "action": "delete",
+      "path": ".github/workflows/readme-downloads-badge.yml",
+      "what": "dispatch + cron '17 */6 * * *' + release published/edited/deleted. Commits docs/assets/readme-downloads.svg straight to main via github-actions[bot]. Gated `github.repository == 'stablyai/orca'` (line 23)."
+    },
+    {
+      "action": "delete",
+      "path": ".github/workflows/track-community-prs.yaml",
+      "what": "pull_request_target opened/reopened/ready_for_review + dispatch(pr_number) -> track-community-pr. Stably-internal analytics."
+    },
+    {
+      "action": "delete",
+      "path": ".github/workflows/pullfrog.yml",
+      "what": "dispatch(prompt,name) agent runner; pulls CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / OPENAI_API_KEY / GEMINI_API_KEY / XAI_API_KEY / DEEPSEEK_API_KEY / MOONSHOT_API_KEY / OPENROUTER_API_KEY / OPENCODE_API_KEY / AWS_* / VERTEX_SERVICE_ACCOUNT_JSON."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": ".github/workflows/issue-os-labeler.yaml",
+      "what": "issues opened/edited/reopened -> apply-os-label. Zero brand matches, harmless."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": ".github/actions/install-node-dependencies/action.yml",
+      "what": "The ONLY composite action. pnpm/action-setup@v6 -> actions/setup-node@v6 (node-version-file: package.json, cache: pnpm) -> optional node-gyp@11.5.0 -> rm -rf node_modules -> `pnpm install --no-frozen-lockfile --prefer-frozen-lockfile=false --ignore-scripts` -> `git diff --exit-code package.json pnpm-lock.yaml` -> ensure-native-runtime.mjs. Brand-clean."
+    },
+    {
+      "action": "delete",
+      "path": ".github/scripts/render-readme-downloads-badge.mjs",
+      "what": "The ONLY .github script. Line 4 hardcodes stablyai/orca; queries release download counts and writes docs/assets/readme-downloads.svg."
+    },
+    {
+      "action": "rename-token",
+      "path": ".github/CONTRIBUTING.md",
+      "what": "stablyai/orca at lines 123 and 129."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": ".github/ISSUE_TEMPLATE/{bug_report,feature_request,other,config}.yml",
+      "what": "Issue forms; config.yml typically points at Discord/docs URLs."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": ".github/pull_request_template.md",
+      "what": "PR template."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": ".husky/pre-commit",
+      "what": "Exactly `pnpm exec lint-staged`. Installed by the `prepare: husky` script."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "package.json",
+      "what": "name orca, version 1.4.162-rc.0, author stablyai, homepage github.com/stablyai/orca, bin.orca -> ./out/cli/index.js, bin.orca-dev -> ./config/scripts/orca-dev.mjs, engines.node 24, packageManager pnpm@10.24.0. lint-staged: oxlint + oxlint --config config/oxlint-react-doctor.json + oxfmt --write on {ts,tsx,js,jsx,mjs,mts,cts}; oxfmt --write on {json,css}. `lint` chains 9 sub-gates."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "config/reliability-gates.jsonc",
+      "what": "Manifest validated by check:reliability-gates. Contains gates mobile-ui.drawer-close-continuity (line 20) and mobile-relay.endpoint-recovery (line 117) whose testFiles point at mobile/src/**, plus a gate at ~line 631 whose commands+testFiles include src/cli/runtime/launch.test.ts, src/cli/runtime-client.test.ts, src/cli/runtime/websocket-transport.test.ts, src/main/runtime/orca-runtime.test.ts."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "config/scripts/check-reliability-gates.mjs",
+      "what": "Line 341: `if (!(await fileExists(root, testFile))) failures.push(...)` — hard failure on any missing testFile. This is what breaks `pnpm lint` after mobile/CLI deletion."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "config/scripts/check-max-lines-ratchet.mjs",
+      "what": "Reads config/max-lines-baseline.txt (18,311 bytes, ZERO mobile/ or src/cli/ entries) and mobile/.oxlintrc.json guarded by fs.existsSync (line 119) so mobile deletion is safe here. Enumerates via `git ls-files '*.ts' '*.tsx' '*.mjs'`. Baseline may only shrink; stale entries are a hard error, so deleting src/cli files that ARE in the baseline would fail — verify with a dry run."
+    },
+    {
+      "action": "delete",
+      "path": "config/scripts/verify-cli-bin.mjs",
+      "what": "Hardcodes `packageJson.bin?.orca` and throws 'package.json must declare bin.orca'. Also writes an out/ package.json with name 'orca-compiled-output'. Listed in .gitattributes as eol=lf."
+    },
+    {
+      "action": "delete",
+      "path": "config/scripts/smoke-packaged-cli.mjs",
+      "what": "Run by pr.yml package job against dist/linux-unpacked; smoke-tests the bundled CLI shim."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "config/electron-builder.config.cjs",
+      "what": "appId 'com.stablyai.orca' (line 21), productName 'Orca' (66), win executableName 'Orca' (246), artifactName 'orca-windows-setup.${ext}' (276), mac 'orca-macos-${arch}.${ext}' (364), linux executableName 'orca-ide' (369), 'orca-linux[-arm64].${ext}' (403), deb 'orca-ide_${version}_${arch}.${ext}' (407), rpm 'orca-ide-${version}.${arch}.${ext}' (429). Every one of these names is echoed literally in release-cut.yml and homebrew-bump.yml."
+    },
+    {
+      "action": "delete",
+      "path": "Casks/orca.rb",
+      "what": "Homebrew cask, version 1.3.24, url github.com/stablyai/orca releases, homepage https://onorca.dev/, app 'Orca.app', binary .../Resources/bin/orca, conflicts_with orca@rc."
+    },
+    {
+      "action": "delete",
+      "path": "Casks/orca@rc.rb",
+      "what": "RC cask, version 1.4.36-rc.3, same stablyai URLs + onorca.dev homepage."
+    },
+    {
+      "action": "rename-token",
+      "path": "orca.yaml",
+      "what": "92-byte repo self-config: `scripts.setup` runs config/scripts/run-internal-dev-setup.mjs then pnpm install. Filename itself is brand."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "docs/orchestration-primitives.html",
+      "what": "2937 lines, 134,935 bytes. Single self-contained page EXCEPT line 11: <link rel=\"stylesheet\" href=\"../src/renderer/src/assets/main.css\">. One inline <style> (~580 lines) and one inline <script> (line 2889) doing a prefers-color-scheme default + localStorage['orca-orchestration-primitives-theme'] toggle. Layout: .page-shell grid 236px sticky sidebar + minmax(0,1fr) content; .sidebar-inner, .brand/.brand-title/.brand-copy, .eyebrow (11px uppercase 0.05em), .nav anchor list; content uses h1 + h2 section headers + h3 subheads; <pre> = 1px var(--border), radius calc(var(--radius)*0.8), bg var(--editor-surface), 12px/1.65. Zero external CDN deps. Depends on CSS vars --background --foreground --app-font-family --font-mono --border --editor-surface --sidebar --sidebar-border --sidebar-foreground --muted-foreground --radius. 130 'orca' mentions."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "src/renderer/src/assets/main.css",
+      "what": "107,691 bytes. Source of every CSS var the HTML doc relies on. Must be copied next to the published HTML (or the needed vars inlined) for a Pages deploy to render."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": ".gitignore",
+      "what": "Lines 84-95: `docs/**` ignored with an allowlist (!docs/assets/**, !docs/readme/**, !docs/STYLEGUIDE.md, !docs/mobile-terminal-shortcut-bar.md, !docs/reference/ + 3 named files). Verified: `git check-ignore -v docs/aio-ade-rebrand-plan.html` -> matched by .gitignore:84. `site/index.html` is NOT ignored."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": ".gitattributes",
+      "what": "Pins eol=lf on config/scripts/{create-draft-release,orca-dev,latest-stable-release,publish-complete-draft-releases,release-rc-history,run-internal-dev-setup,verify-cli-bin,verify-release-required-assets}.mjs, skill-guides/*.md, skill-stubs/*.md, skills/*/SKILL.md, src/cli/bundled-skill-guides.ts, and resources/plugins/** (byte-hashed at package time)."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": ".npmrc",
+      "what": "shamefully-hoist=true and minimum-release-age=4320 (3 days) — pnpm refuses any dependency published less than 72h ago."
+    },
+    {
+      "action": "keep-but-edit",
+      "path": "pnpm-workspace.yaml",
+      "what": "`packages: []` with a comment stating it exists specifically so `pnpm -r` does not auto-discover mobile/ and break patchedDependencies with ERR_PNPM_UNUSED_PATCH."
+    },
+    {
+      "action": "new-file",
+      "path": ".github/workflows/deploy-pages.yml",
+      "what": "Does not exist. New workflow to publish site/ to GitHub Pages."
+    },
+    {
+      "action": "new-file",
+      "path": "site/index.html",
+      "what": "Does not exist. Proposed home for the aio-ade rebrand plan HTML (site/ is not gitignored, docs/ is)."
+    },
+    {
+      "action": "new-file",
+      "path": "site/main.css",
+      "what": "Does not exist. Copy of src/renderer/src/assets/main.css (or a trimmed :root token block) so the published page has its CSS vars."
+    }
+  ],
+  "orderedSteps": [
+    "STEP 0 - baseline the gates before touching anything, so you can tell pre-existing red from self-inflicted red: `cd /d/Project/.15_Ai0-IDE && pnpm run check:reliability-gates; pnpm run check:max-lines-ratchet; pnpm run verify:skill-bundle-manifest; pnpm run verify:localization-catalog`. Record which already fail.",
+    "STEP 1 - delete the dead workflows (no rebrand needed, they cannot work in this fork): `git rm .github/workflows/mobile.yml .github/workflows/mobile-android-release.yml .github/workflows/mobile-ios-release.yml .github/workflows/computer-e2e.yml .github/workflows/homebrew-bump.yml .github/workflows/windows-signing-rehearsal.yml .github/workflows/readme-downloads-badge.yml .github/workflows/track-community-prs.yaml .github/workflows/pullfrog.yml .github/workflows/win-update-e2e.yml .github/workflows/win-update-survival-e2e.yml .github/workflows/daemon-relocation-spike.yml && git rm .github/scripts/render-readme-downloads-badge.mjs && git rm -r Casks`",
+    "STEP 2 - unhook the deleted workflows from release-cut.yml: remove the `homebrew-bump-published-rc-draft` and `homebrew-bump` jobs (around lines 1950-1975, including `uses: ./.github/workflows/homebrew-bump.yml` at 1956) and the SignPath job/steps that reference secrets.SIGNPATH_API_TOKEN (signpath/github-action-submit-signing-request@v2 at line 1321) unless you are provisioning SignPath. Then flip the three repo guards: `github.repository == 'stablyai/orca'` -> `'keepmeside/aio-ade-platform'` in .github/workflows/release-cut.yml:68 and .github/workflows/release-mac-build.yml:26.",
+    "STEP 3 - prune config/reliability-gates.jsonc BEFORE deleting mobile/ and src/cli/: remove the `mobile-ui.drawer-close-continuity` gate (line 20) and `mobile-relay.endpoint-recovery` gate (line 117) entirely, and edit the gate near line 631 to drop src/cli/runtime/launch.test.ts, src/cli/runtime-client.test.ts, src/cli/runtime/websocket-transport.test.ts from both `commands` and `testFiles`. Re-run `pnpm run check:reliability-gates` — it must be green before the deletions land.",
+    "STEP 4 - fix the lint chain for a mobile-free tree: in package.json change `audit:code-quality:native` from `oxlint --config config/oxlint-code-quality-native-plugins.json src config tests mobile --deny-warnings` to drop the trailing `mobile`. Also drop the `mobile-pairing` jsPlugin entry (config/oxlint-plugins/mobile-pairing-qrcode-import.mjs) from .oxlintrc.json if you delete that plugin file.",
+    "STEP 5 - remove the CLI gates: delete `verify:cli-bin`, `build:cli`, `test:repro:remote-agent-session` from package.json scripts; remove `bin.orca` and `bin.orca-dev`; `git rm config/scripts/verify-cli-bin.mjs config/scripts/smoke-packaged-cli.mjs`; delete the `- name: Smoke packaged CLI` step (pr.yml:248-249) and the `pnpm run build:cli || status=1` line (pr.yml:240); strip `pnpm run build:cli` out of build:desktop and build:release; drop the `/config/scripts/verify-cli-bin.mjs` and `/src/cli/bundled-skill-guides.ts` lines from .gitattributes.",
+    "STEP 6 - rebrand the remaining CI text (do this with targeted edits, not a repo-wide sed): stablyai/orca -> keepmeside/aio-ade-platform in .github/workflows/release-cut.yml:68, release-mac-build.yml:26, .github/CONTRIBUTING.md:123+129. Then rename artifact names in config/electron-builder.config.cjs (appId com.stablyai.orca -> com.keepmeside.aio-ade, productName Orca -> aio-ade, orca-windows-setup.exe -> aio-ade-windows-setup.exe, orca-macos-${arch} -> aio-ade-macos-${arch}, orca-linux -> aio-ade-linux, orca-ide -> aio-ade) and update every literal echo of those names in release-cut.yml (lines ~1584-1609, 1779) — 16 occurrences of orca-windows-setup.exe alone.",
+    "STEP 7 - rename `orca.yaml` -> `aio-ade.yaml` (`git mv orca.yaml aio-ade.yaml`) and keep pnpm-workspace.yaml with `packages: []` (just update the stale comment about mobile/).",
+    "STEP 8 - re-run the full local gate set: `pnpm run lint && pnpm run typecheck && pnpm test`. Expect the max-lines ratchet to complain about stale baseline entries if any deleted file was listed — prune them with `node config/scripts/check-max-lines-ratchet.mjs --prune` (the script supports shrink-only pruning).",
+    "STEP 9 - build the Pages payload as a first-class directory, not under docs/ (docs/** is gitignored): `mkdir site && cp src/renderer/src/assets/main.css site/main.css`, write site/index.html modelled on docs/orchestration-primitives.html but with `<link rel=\"stylesheet\" href=\"./main.css\">`, and change the localStorage key to 'aio-ade-plan-theme'. Verify tracking with `git check-ignore -v site/index.html` (must exit 1 = not ignored).",
+    "STEP 10 - USER DECISION on repo visibility (see risks). If going public: `gh repo edit keepmeside/aio-ade-platform --visibility public --accept-visibility-change-consequences`. If staying private on a paid plan, no visibility change is needed. If neither, stop at STEP 9 and open site/index.html locally with `start site/index.html`.",
+    "STEP 11 - enable Pages in Actions mode: `gh api -X POST repos/keepmeside/aio-ade-platform/pages -f build_type=workflow` (use `-X PUT` if Pages already exists), then confirm with `gh api repos/keepmeside/aio-ade-platform/pages --jq '{status,html_url,build_type}'`.",
+    "STEP 12 - add .github/workflows/deploy-pages.yml (YAML in the note below), commit, push to a branch, merge to main, then `gh run watch` on the 'Deploy Plan to Pages' run. Final URL will be https://keepmeside.github.io/aio-ade-platform/.",
+    "STEP 13 - commit in focused chunks so pre-commit stays fast and reviewable: workflow deletions, gate/manifest edits, brand renames, then the site/ addition. Each `git commit` triggers .husky/pre-commit -> lint-staged -> oxlint + react-doctor oxlint + oxfmt --write on staged ts/tsx/js/jsx/mjs/mts/cts and oxfmt --write on staged json/css. site/main.css IS a .css file so oxfmt will reformat your 107KB copy in place — expect a second `git add`."
+  ],
+  "risks": [
+    "USER DECISION - Pages on a private repo: `gh repo view` reports isPrivate true. GitHub Free cannot publish Pages from a private repository at all; publishing from a private repo requires GitHub Pro / Team / Enterprise Cloud, and access-controlled (viewer-restricted) Pages requires Enterprise Cloud. Options: (a) make keepmeside/aio-ade-platform public — Pages works on Free, but the whole fork including all 3475 brand-touched files becomes world-readable; (b) create a small public repo e.g. keepmeside/aio-ade-plan holding only site/, publish Pages there, keep the platform repo private — cleanest, no visibility change, costs one extra repo and a manual copy step; (c) skip Pages, ship site/index.html in-repo and open it locally — zero risk, no URL to share. Recommendation: (b) if the plan needs a shareable link, (c) if it does not. Do not silently make the repo public.",
+    "Turning on release-cut.yml by fixing its `github.repository` guard converts a currently-inert workflow into one that creates tags, commits version bumps, force-forwards main, and publishes GitHub Releases — and it will fail partway through because SIGNPATH_API_TOKEN, MAC_CERTS, MAC_CERTS_PASSWORD, APPLE_ID, APPLE_TEAM_ID, APPLE_APP_SPECIFIC_PASSWORD and ORCA_POSTHOG_WRITE_KEY do not exist in the fork. Leave the guard pointing at a non-existent repo, or gut the signing/notarization jobs first, before ever dispatching it.",
+    "config/scripts/check-reliability-gates.mjs hard-fails on missing testFiles and is chained into `pnpm lint`, which the PR static_analysis job runs. If you delete mobile/ or src/cli/ before pruning config/reliability-gates.jsonc, every subsequent commit and every PR is red for a reason that has nothing to do with the file you touched.",
+    "config/scripts/generate-skill-bundle-manifest.mjs (the verify:skill-bundle-manifest gate) walks `git for-each-ref refs/tags/v*` and `git cat-file --batch` over released history. It needs the full tag history present locally. The checkout is on detached HEAD with only main + a pile of *-release-prep refs visible; if tags were not fetched, this gate throws rather than skipping. Run it before doing any work so you know whether it is pre-existing red.",
+    "actions/checkout in the install-node-dependencies path runs `pnpm install --no-frozen-lockfile` followed by `git diff --exit-code package.json pnpm-lock.yaml`. Any package.json edit (name, bin, scripts) that causes pnpm to rewrite pnpm-lock.yaml will fail CI with a confusing diff error unless you commit the regenerated lockfile in the same commit.",
+    "resources/plugins/** is byte-hashed at package time and pinned to eol=lf in .gitattributes. A repo-wide case-insensitive orca->aio-ade replacement that touches any file under resources/plugins/ will break packaging verification (config/scripts/verify-packaged-plugin-resources.cjs). Exclude resources/plugins/ from bulk rename.",
+    ".npmrc sets minimum-release-age=4320 (72 hours). If any step of the rebrand adds a freshly published dependency, pnpm install refuses it. Pin to versions at least 3 days old or override per-invocation.",
+    "readme-downloads-badge.yml has `permissions: contents: write` and pushes commits directly to main. It is currently inert only because of the repository guard. Delete it rather than rebranding it, or a scheduled bot commit will land on main every 6 hours."
+  ],
+  "summary": "23 workflows, 1 composite action, 1 script. No GitHub Pages anything exists: no pages workflow, no CNAME, no gh-pages branch, no site/ dir, zero `configure-pages`/`upload-pages-artifact`/`deploy-pages` references. There IS an HTML-docs habit — docs/orchestration-primitives.html is a tracked 2937-line single-file doc with an inline <style> block, an inline theme-toggle <script>, and a 236px sidebar + content grid; it consumes CSS custom properties from src/renderer/src/assets/main.css via a relative <link>, which will 404 once published to Pages. Biggest CI landmine is not the workflows, it is `pnpm lint`: check:reliability-gates hard-fails when a file listed in config/reliability-gates.jsonc is missing (that file names mobile/src/transport/*.test.ts, mobile/src/components/*.test.ts, src/cli/runtime/launch.test.ts, src/cli/runtime-client.test.ts, src/cli/runtime/websocket-transport.test.ts), and audit:code-quality:native passes a literal `mobile` path to oxlint. Deleting mobile/ + src/cli/ therefore breaks the lint gate, and the husky pre-commit hook runs oxlint/oxfmt on every staged file. Three revenue-path workflows (release-cut, release-mac-build, readme-downloads-badge) are gated on `github.repository == 'stablyai/orca'` so they currently no-op in the fork; homebrew-bump PRs into stablyai/homebrew-orca with a GitHub App key you do not have. No `npm publish` exists anywhere in CI — the only npm-name coupling is package.json `bin.orca`, which config/scripts/verify-cli-bin.mjs hardcodes. Repo is private, so Pages needs a paid plan; that is a user decision (make public / separate public repo / local file).",
+  "surface": "Build/CI/release pipeline (.github/**, package.json gates, husky) + GitHub Pages deployment for the HTML plan"
+}
