@@ -28,7 +28,7 @@ Chuyển fork Orca thành **Aio-IDE**, tác giả hiển thị là **Keepmeside*
 | `src/cli/` | 146 file |
 | Agent roster | 35 xuống 2 (`claude`, `codex`) |
 | Workflow CI | 23 |
-| Trạng thái Pages | Workflow manual đã push; Pages API `404`, Actions bị chặn bởi billing/payment/spending limit |
+| Trạng thái Pages | Workflow manual đã push; Pages API `404`, token chỉ có `WRITE` không có `ADMIN`, Actions bị chặn bởi billing/payment/spending limit |
 
 ## Phase roadmap
 
@@ -47,7 +47,7 @@ Chuyển fork Orca thành **Aio-IDE**, tác giả hiển thị là **Keepmeside*
 
 1. **CLI:** khuyến nghị giữ agent bridge tối thiểu để không làm hỏng orchestration qua process boundary. Nếu bắt buộc xoá toàn bộ `src/cli/`, phải xoá cả orchestration, Claude Agent Teams và các e2e phụ thuộc nó.
 2. **tldraw:** không đưa SDK tldraw vào bản phân phối nếu chưa có production/downstream license phù hợp. Mặc định dùng Excalidraw MIT; `@xyflow/react` chỉ thêm ở tranche topology sau usage validation.
-3. **Pages:** repo hiện private. Workflow manual đã được push, nhưng GitHub chặn run trước build vì billing/payment/spending limit và Pages API trả `404`. Cần sửa billing/private Pages capability hoặc duyệt repo public riêng chỉ chứa static plan; không tự ý public repo chính.
+3. **Pages:** repo hiện private. Workflow manual đã được push, nhưng GitHub chặn run trước build vì billing/payment/spending limit; Pages API trả `404` và credential hiện tại chỉ có `WRITE`, không có `ADMIN`. Owner phải sửa billing + bật Pages, hoặc duyệt repo public riêng chỉ chứa static plan; không tự ý public repo chính.
 4. **Scope integrations:** phase 07 chia must-have, next, later, skip để tránh biến plan thành danh sách copy vô hạn.
 5. **Pasted text #1:** nội dung không có trong transcript, nên chưa thể trích tính năng từ phần đó.
 6. **Release/telemetry:** giữ release workflow, updater, telemetry và diagnostics inert/disabled cho tới khi có fork-owned endpoints, signing, privacy policy và approval rõ ràng.

@@ -38,8 +38,17 @@ dependencies: [1]
 
 - 2026-07-30: plan/workflow pushed to `main` at commit `7eff045`.
 - Pages create API returned `404` for the private repository.
+- Authenticated user has repository `WRITE` but not `ADMIN`, so this session cannot enable Pages in repository settings.
 - Manual workflow dispatch was blocked before any step ran because GitHub reported failed account payments or an insufficient spending limit.
 - Next action requires user choice: repair billing/private Pages capability, or approve a separate public repo containing only the sanitized static artifact.
+
+## Recovery Matrix
+
+| Hướng | Owner action | Sau đó Codex làm |
+|---|---|---|
+| Private-repo Pages | Sửa billing/spending limit; owner/admin bật Pages với GitHub Actions | Dispatch `aio-ide-plan-pages.yml`, theo dõi deploy, xác minh URL/HTTP 200 |
+| Public static-only repo | User duyệt tên/visibility; owner cho phép tạo repo public | Push duy nhất sanitized `plan.html` + Pages workflow, không mirror source/research private |
+| Local review only | Không thay đổi GitHub | Giữ file self-contained hiện tại; phase 08 không thể đạt tiêu chí URL public |
 
 ## Success Criteria
 
