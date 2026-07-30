@@ -28,7 +28,7 @@ Chuyển fork Orca thành **Aio-IDE**, tác giả hiển thị là **Keepmeside*
 | `src/cli/` | 146 file |
 | Agent roster | 35 xuống 2 (`claude`, `codex`) |
 | Workflow CI | 23 |
-| Trạng thái Pages | Workflow draft đã có; GitHub Pages chưa enable |
+| Trạng thái Pages | Workflow manual đã push; Pages API `404`, Actions bị chặn bởi billing/payment/spending limit |
 
 ## Phase roadmap
 
@@ -41,13 +41,13 @@ Chuyển fork Orca thành **Aio-IDE**, tác giả hiển thị là **Keepmeside*
 | [05 Rebrand Orca thành Aio-IDE](phase-05-rebrand-orca-to-aio-ide.md) | pending | 3 đến 5 ngày | 04 |
 | [06 Account và API profile switcher](phase-06-account-and-api-profile-switcher.md) | pending | 5 đến 6 tuần, chia 06A/06B | 04, 05 |
 | [07 Tích hợp tính năng chọn lọc từ upstream](phase-07-upstream-feature-integrations.md) | staged | theo tranche | 05, 06 |
-| [08 HTML review và GitHub Pages](phase-08-docs-html-plan-and-github-pages.md) | awaiting-approval | 0.5 đến 1 ngày | 01; docs sản phẩm sync lại ở từng phase |
+| [08 HTML review và GitHub Pages](phase-08-docs-html-plan-and-github-pages.md) | awaiting-user-choice | 0.5 đến 1 ngày | 01; GitHub billing/Pages capability |
 
 ## Gate cần người dùng duyệt
 
 1. **CLI:** khuyến nghị giữ agent bridge tối thiểu để không làm hỏng orchestration qua process boundary. Nếu bắt buộc xoá toàn bộ `src/cli/`, phải xoá cả orchestration, Claude Agent Teams và các e2e phụ thuộc nó.
 2. **tldraw:** không đưa SDK tldraw vào bản phân phối nếu chưa có production/downstream license phù hợp. Mặc định dùng Excalidraw MIT; `@xyflow/react` chỉ thêm ở tranche topology sau usage validation.
-3. **Pages:** repo hiện private. Không tự ý public repo chính. Chọn repo Pages public riêng, bật Pages trên private repo nếu tài khoản hỗ trợ, hoặc chỉ chạy local.
+3. **Pages:** repo hiện private. Workflow manual đã được push, nhưng GitHub chặn run trước build vì billing/payment/spending limit và Pages API trả `404`. Cần sửa billing/private Pages capability hoặc duyệt repo public riêng chỉ chứa static plan; không tự ý public repo chính.
 4. **Scope integrations:** phase 07 chia must-have, next, later, skip để tránh biến plan thành danh sách copy vô hạn.
 5. **Pasted text #1:** nội dung không có trong transcript, nên chưa thể trích tính năng từ phần đó.
 6. **Release/telemetry:** giữ release workflow, updater, telemetry và diagnostics inert/disabled cho tới khi có fork-owned endpoints, signing, privacy policy và approval rõ ràng.

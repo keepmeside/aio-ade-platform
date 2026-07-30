@@ -171,7 +171,7 @@
         <article class="decision"><h3>CLI: giữ bridge tối thiểu</h3><p>External Claude/Codex chạy trong PTY không gọi được Electron IPC. Khuyến nghị giữ runtime transport, core/orchestration handlers và xoá phần CLI không cần.</p><strong>Khuyến nghị: Option A</strong></article>
         <article class="decision"><h3>Canvas: license trước, wow sau</h3><p>tldraw offline hỗ trợ React 18/19, nhưng production cần key/license; hobby còn watermark. Mặc định dùng Excalidraw MIT và XYFlow MIT.</p><strong>Khuyến nghị: không ship tldraw mặc định</strong></article>
         <article class="decision"><h3>Profile: hai loại, resolver riêng</h3><p>Account là OAuth/subscription. API profile là key, base URL, model và policy, nhưng Claude và Codex phải materialize config theo hai contract khác nhau.</p><strong>Khuyến nghị: schema chung, runtime riêng</strong></article>
-        <article class="decision"><h3>Pages: không lộ fork private</h3><p>Repo chính đang private. Không tự ý đổi visibility. Ưu tiên repo public riêng chỉ chứa static plan, hoặc chỉ mở Pages khi gói GitHub đã hỗ trợ.</p><strong>Khuyến nghị: public plan repo riêng</strong></article>
+        <article class="decision"><h3>Pages: đang bị billing chặn</h3><p>Workflow manual đã push nhưng GitHub chặn trước build vì billing/payment hoặc spending limit; Pages API trả 404. Repo chính vẫn private và không đổi visibility.</p><strong>Cần chọn: sửa billing hoặc duyệt public plan repo riêng</strong></article>
       </div>
     </section>
 

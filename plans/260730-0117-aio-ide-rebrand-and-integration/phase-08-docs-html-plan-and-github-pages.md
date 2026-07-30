@@ -1,7 +1,7 @@
 ---
 phase: 8
 title: "HTML review và GitHub Pages"
-status: awaiting-approval
+status: awaiting-user-choice
 priority: P1
 effort: "0.5-1d"
 dependencies: [1]
@@ -33,6 +33,13 @@ dependencies: [1]
 4. Add Pages Actions workflow manual-dispatch only, runs configure-pages, copies only safe self-contained HTML to `_site/index.html` và rejects private/internal GitHub URLs trước upload.
 5. Check repository visibility/Pages capability. Nếu private repo không hỗ trợ, stop before publicizing and request choice of separate public repo or local-only.
 6. Commit focused docs/workflow changes, push branch/main only after user-approved scope, then confirm Pages URL with `gh api` and HTTP check.
+
+## Deployment Attempt
+
+- 2026-07-30: plan/workflow pushed to `main` at commit `7eff045`.
+- Pages create API returned `404` for the private repository.
+- Manual workflow dispatch was blocked before any step ran because GitHub reported failed account payments or an insufficient spending limit.
+- Next action requires user choice: repair billing/private Pages capability, or approve a separate public repo containing only the sanitized static artifact.
 
 ## Success Criteria
 
