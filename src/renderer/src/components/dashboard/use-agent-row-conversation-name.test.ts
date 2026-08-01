@@ -69,12 +69,7 @@ describe('useAgentRowConversationName', () => {
     expect(
       useAgentRowConversationName(
         makeAgent({
-          entry: {
-            prompt: 'child prompt',
-            orchestration: {
-              parentPaneKey: 'tab-1:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
-            }
-          },
+          activationPaneKey: 'tab-1:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
           lineage: { depth: 1, isFirstSibling: true, isLastSibling: true, childCount: 0 }
         } as Partial<DashboardAgentRow>)
       )
@@ -83,12 +78,6 @@ describe('useAgentRowConversationName', () => {
 
   it('uses a lineage child conversation name when it owns a separate tab', () => {
     const agent = makeAgent({
-      entry: {
-        prompt: 'child prompt',
-        orchestration: {
-          parentPaneKey: 'parent-tab:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
-        }
-      },
       lineage: { depth: 1, isFirstSibling: true, isLastSibling: true, childCount: 0 }
     } as Partial<DashboardAgentRow>)
     expect(useAgentRowConversationName(agent)).toBe('Patient sync spike')

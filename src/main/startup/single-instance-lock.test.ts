@@ -75,17 +75,15 @@ describe('acquireSingleInstanceLock', () => {
 })
 
 describe('shouldSkipSingleInstanceLock', () => {
-  it('keeps ordinary dev multi-instance behavior but never skips for serve', () => {
-    expect(shouldSkipSingleInstanceLock({ isDev: true, isServeMode: false, env: {} })).toBe(true)
-    expect(shouldSkipSingleInstanceLock({ isDev: true, isServeMode: true, env: {} })).toBe(false)
-    expect(shouldSkipSingleInstanceLock({ isDev: false, isServeMode: false, env: {} })).toBe(false)
+  it('keeps ordinary dev multi-instance behavior', () => {
+    expect(shouldSkipSingleInstanceLock({ isDev: true, env: {} })).toBe(true)
+    expect(shouldSkipSingleInstanceLock({ isDev: false, env: {} })).toBe(false)
   })
 
   it('lets isolated E2E exercise the production single-instance path', () => {
     expect(
       shouldSkipSingleInstanceLock({
         isDev: true,
-        isServeMode: false,
         env: { ORCA_E2E_ENFORCE_SINGLE_INSTANCE_LOCK: '1' }
       })
     ).toBe(false)
@@ -109,7 +107,6 @@ describe('shouldBypassSingleInstanceLock', () => {
       shouldBypassSingleInstanceLock({
         env: { ORCA_BYPASS_SINGLE_INSTANCE_LOCK: '1' },
         isDev: false,
-        isServeMode: false,
         platform: 'darwin'
       })
     ).toBe(true)
@@ -117,7 +114,6 @@ describe('shouldBypassSingleInstanceLock', () => {
       shouldBypassSingleInstanceLock({
         env: { ORCA_BYPASS_SINGLE_INSTANCE_LOCK: '1' },
         isDev: true,
-        isServeMode: false,
         platform: 'darwin'
       })
     ).toBe(false)
@@ -125,7 +121,6 @@ describe('shouldBypassSingleInstanceLock', () => {
       shouldBypassSingleInstanceLock({
         env: { ORCA_BYPASS_SINGLE_INSTANCE_LOCK: '1' },
         isDev: false,
-        isServeMode: false,
         platform: 'linux'
       })
     ).toBe(false)

@@ -24,12 +24,12 @@ describe('plugin skill candidate scan', () => {
     temporaryDirectories.push(root)
     await Promise.all(
       ['one', 'two'].map(async (vendor) => {
-        await mkdir(join(root, vendor, 'orca-cli'), { recursive: true })
-        await writeFile(join(root, vendor, 'orca-cli', 'SKILL.md'), '# Orca CLI\n')
+        await mkdir(join(root, vendor, 'sample-skill'), { recursive: true })
+        await writeFile(join(root, vendor, 'sample-skill', 'SKILL.md'), '# Sample Skill\n')
       })
     )
 
-    const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']), 1)
+    const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']), 1)
 
     expect(result.candidates).toHaveLength(1)
     expect(result.issues).toEqual([{ path: root, reason: 'candidate-limit', errorCode: null }])
@@ -41,42 +41,42 @@ describe('plugin skill candidate scan', () => {
     const root = await mkdtemp(join(tmpdir(), 'orca-plugin-real-shape-'))
     temporaryDirectories.push(root)
     const packageRoot = join(root, 'openai-bundled', 'sites', '0.1.31')
-    const skill = join(packageRoot, 'skills', 'orca-cli')
+    const skill = join(packageRoot, 'skills', 'sample-skill')
     await mkdir(join(packageRoot, '.codex-plugin'), { recursive: true })
     await mkdir(
       join(skill, 'templates', 'vinext-starter', 'examples', 'd1', 'app', 'api', 'deep'),
       { recursive: true }
     )
     await writeFile(join(packageRoot, '.codex-plugin', 'plugin.json'), '{"skills":"./skills/"}\n')
-    await writeFile(join(skill, 'SKILL.md'), '# Orca CLI\n')
+    await writeFile(join(skill, 'SKILL.md'), '# Sample Skill\n')
 
-    const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+    const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
-    expect(result).toEqual({ candidates: [{ name: 'orca-cli', path: skill }], issues: [] })
+    expect(result).toEqual({ candidates: [{ name: 'sample-skill', path: skill }], issues: [] })
   })
 
   it('does not emit a plugin directory that only shares a skill name', async () => {
-    // The cached plugin is itself called orca-cli. Only the SKILL.md below it is a skill.
+    // The cached plugin is itself called sample-skill. Only the SKILL.md below it is a skill.
     const root = await mkdtemp(join(tmpdir(), 'orca-plugin-name-collision-'))
     temporaryDirectories.push(root)
-    const packageRoot = join(root, 'openai-bundled', 'orca-cli', '1.0.0')
-    const skill = join(packageRoot, 'skills', 'orca-cli')
+    const packageRoot = join(root, 'openai-bundled', 'sample-skill', '1.0.0')
+    const skill = join(packageRoot, 'skills', 'sample-skill')
     await mkdir(join(packageRoot, '.codex-plugin'), { recursive: true })
     await mkdir(skill, { recursive: true })
     await writeFile(join(packageRoot, '.codex-plugin', 'plugin.json'), '{"skills":"./skills/"}\n')
-    await writeFile(join(skill, 'SKILL.md'), '# Orca CLI\n')
+    await writeFile(join(skill, 'SKILL.md'), '# Sample Skill\n')
 
-    const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+    const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
-    expect(result).toEqual({ candidates: [{ name: 'orca-cli', path: skill }], issues: [] })
+    expect(result).toEqual({ candidates: [{ name: 'sample-skill', path: skill }], issues: [] })
   })
 
   it('does not emit a bare known-name directory that carries no SKILL.md', async () => {
     const root = await mkdtemp(join(tmpdir(), 'orca-plugin-bare-name-'))
     temporaryDirectories.push(root)
-    await mkdir(join(root, 'vendor', 'orca-cli', 'assets'), { recursive: true })
+    await mkdir(join(root, 'vendor', 'sample-skill', 'assets'), { recursive: true })
 
-    const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+    const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
     expect(result).toEqual({ candidates: [], issues: [] })
   })
@@ -86,14 +86,14 @@ describe('plugin skill candidate scan', () => {
     temporaryDirectories.push(root)
     const packageRoot = join(root, 'vendor', 'plugin', '1.0.0')
     const skill = join(packageRoot, 'skills', 'sites-building')
-    const buried = join(skill, 'templates', 'starter', 'examples', 'orca-cli')
+    const buried = join(skill, 'templates', 'starter', 'examples', 'sample-skill')
     await mkdir(join(packageRoot, '.codex-plugin'), { recursive: true })
     await mkdir(buried, { recursive: true })
     await writeFile(join(packageRoot, '.codex-plugin', 'plugin.json'), '{"skills":"./skills"}\n')
     await writeFile(join(skill, 'SKILL.md'), '# Sites building\n')
-    await writeFile(join(buried, 'SKILL.md'), '# Orca CLI\n')
+    await writeFile(join(buried, 'SKILL.md'), '# Sample Skill\n')
 
-    const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+    const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
     // Why: pruning payload is a topology decision, so it must stay silent rather than
     // surface as a coverage issue the user is asked to act on.
@@ -104,10 +104,10 @@ describe('plugin skill candidate scan', () => {
     const root = await mkdtemp(join(tmpdir(), 'orca-plugin-skill-depth-'))
     temporaryDirectories.push(root)
     const segments = Array.from({ length: 11 }, (_, index) => `level-${index}`)
-    const hiddenSkill = join(root, ...segments, 'orca-cli')
+    const hiddenSkill = join(root, ...segments, 'sample-skill')
     await mkdir(hiddenSkill, { recursive: true })
 
-    const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+    const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
     expect(result.candidates).toEqual([])
     expect(result.issues).toHaveLength(1)
@@ -130,7 +130,7 @@ describe('plugin skill candidate scan', () => {
       { recursive: true }
     )
 
-    const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+    const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
     expect(result).toEqual({ candidates: [], issues: [] })
   })
@@ -139,7 +139,7 @@ describe('plugin skill candidate scan', () => {
     const root = await mkdtemp(join(tmpdir(), 'orca-plugin-manifest-roots-'))
     temporaryDirectories.push(root)
     const packageRoot = join(root, 'vendor', 'plugin', '1.0.0')
-    const candidate = join(packageRoot, 'custom-skills', 'group', 'orca-cli')
+    const candidate = join(packageRoot, 'custom-skills', 'group', 'sample-skill')
     await mkdir(join(packageRoot, '.codex-plugin'), { recursive: true })
     await mkdir(candidate, { recursive: true })
     await mkdir(
@@ -150,12 +150,12 @@ describe('plugin skill candidate scan', () => {
       join(packageRoot, '.codex-plugin', 'plugin.json'),
       '{"skills":["./custom-skills","./skills"]}\n'
     )
-    await writeFile(join(candidate, 'SKILL.md'), '# Orca CLI\n')
+    await writeFile(join(candidate, 'SKILL.md'), '# Sample Skill\n')
 
-    const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+    const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
     expect(result).toEqual({
-      candidates: [{ name: 'orca-cli', path: candidate }],
+      candidates: [{ name: 'sample-skill', path: candidate }],
       issues: []
     })
   })
@@ -164,16 +164,16 @@ describe('plugin skill candidate scan', () => {
     const root = await mkdtemp(join(tmpdir(), 'orca-plugin-default-root-'))
     temporaryDirectories.push(root)
     const packageRoot = join(root, 'vendor', 'plugin', '1.0.0')
-    const candidate = join(packageRoot, 'skills', 'nested', 'orca-cli')
+    const candidate = join(packageRoot, 'skills', 'nested', 'sample-skill')
     await mkdir(join(packageRoot, '.claude-plugin'), { recursive: true })
     await mkdir(candidate, { recursive: true })
     await writeFile(join(packageRoot, '.claude-plugin', 'plugin.json'), '{"name":"plugin"}\n')
-    await writeFile(join(candidate, 'SKILL.md'), '# Orca CLI\n')
+    await writeFile(join(candidate, 'SKILL.md'), '# Sample Skill\n')
 
-    const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+    const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
     expect(result).toEqual({
-      candidates: [{ name: 'orca-cli', path: candidate }],
+      candidates: [{ name: 'sample-skill', path: candidate }],
       issues: []
     })
   })
@@ -182,19 +182,19 @@ describe('plugin skill candidate scan', () => {
     const root = await mkdtemp(join(tmpdir(), 'orca-plugin-invalid-declared-root-'))
     temporaryDirectories.push(root)
     const packageRoot = join(root, 'vendor', 'plugin', '1.0.0')
-    const candidate = join(packageRoot, 'custom-skills', 'orca-cli')
+    const candidate = join(packageRoot, 'custom-skills', 'sample-skill')
     await mkdir(join(packageRoot, '.codex-plugin'), { recursive: true })
     await mkdir(candidate, { recursive: true })
     await writeFile(
       join(packageRoot, '.codex-plugin', 'plugin.json'),
       '{"skills":"custom-skills"}\n'
     )
-    await writeFile(join(candidate, 'SKILL.md'), '# Orca CLI\n')
+    await writeFile(join(candidate, 'SKILL.md'), '# Sample Skill\n')
 
-    const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+    const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
     expect(result).toEqual({
-      candidates: [{ name: 'orca-cli', path: candidate }],
+      candidates: [{ name: 'sample-skill', path: candidate }],
       issues: []
     })
   })
@@ -210,7 +210,7 @@ describe('plugin skill candidate scan', () => {
     )
     await writeFile(join(packageRoot, '.codex-plugin', 'plugin.json'), '{"name":"plugin"}\n')
 
-    const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+    const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
     expect(result).toEqual({ candidates: [], issues: [] })
   })
@@ -226,7 +226,7 @@ describe('plugin skill candidate scan', () => {
     )
     await writeFile(join(packageRoot, '.codex-plugin', 'plugin.json'), '{"skills":[]}\n')
 
-    const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+    const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
     expect(result).toEqual({ candidates: [], issues: [] })
   })
@@ -237,15 +237,15 @@ describe('plugin skill candidate scan', () => {
     const packageRoot = join(root, 'vendor', 'plugin', '1.0.0')
     const skillRoot = join(packageRoot, 'skills', 'sites-building')
     await mkdir(join(packageRoot, '.claude-plugin'), { recursive: true })
-    await mkdir(join(skillRoot, 'templates', 'orca-cli'), { recursive: true })
+    await mkdir(join(skillRoot, 'templates', 'sample-skill'), { recursive: true })
     await writeFile(join(packageRoot, '.claude-plugin', 'plugin.json'), '{"skills":"./skills"}\n')
     await writeFile(join(skillRoot, 'SKILL.md'), '# Sites building\n')
-    await writeFile(join(skillRoot, 'templates', 'orca-cli', 'SKILL.md'), '# Orca CLI\n')
+    await writeFile(join(skillRoot, 'templates', 'sample-skill', 'SKILL.md'), '# Sample Skill\n')
 
-    const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+    const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
     expect(result).toEqual({
-      candidates: [{ name: 'orca-cli', path: join(skillRoot, 'templates', 'orca-cli') }],
+      candidates: [{ name: 'sample-skill', path: join(skillRoot, 'templates', 'sample-skill') }],
       issues: []
     })
   })
@@ -254,19 +254,19 @@ describe('plugin skill candidate scan', () => {
     const root = await mkdtemp(join(tmpdir(), 'orca-plugin-windows-parent-'))
     temporaryDirectories.push(root)
     const packageRoot = join(root, 'vendor', 'plugin', '1.0.0')
-    const candidate = join(packageRoot, 'skills', 'orca-cli')
+    const candidate = join(packageRoot, 'skills', 'sample-skill')
     await mkdir(join(packageRoot, '.codex-plugin'), { recursive: true })
     await mkdir(candidate, { recursive: true })
     await writeFile(
       join(packageRoot, '.codex-plugin', 'plugin.json'),
       '{"skills":"./..\\\\outside"}\n'
     )
-    await writeFile(join(candidate, 'SKILL.md'), '# Orca CLI\n')
+    await writeFile(join(candidate, 'SKILL.md'), '# Sample Skill\n')
 
-    const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+    const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
     expect(result).toEqual({
-      candidates: [{ name: 'orca-cli', path: candidate }],
+      candidates: [{ name: 'sample-skill', path: candidate }],
       issues: []
     })
   })
@@ -275,7 +275,7 @@ describe('plugin skill candidate scan', () => {
     const root = await mkdtemp(join(tmpdir(), 'orca-plugin-manifest-precedence-'))
     temporaryDirectories.push(root)
     const packageRoot = join(root, 'vendor', 'plugin', '1.0.0')
-    const candidate = join(packageRoot, 'custom-skills', 'orca-cli')
+    const candidate = join(packageRoot, 'custom-skills', 'sample-skill')
     await mkdir(join(packageRoot, '.codex-plugin'), { recursive: true })
     await mkdir(join(packageRoot, '.claude-plugin'), { recursive: true })
     await mkdir(candidate, { recursive: true })
@@ -287,12 +287,12 @@ describe('plugin skill candidate scan', () => {
       join(packageRoot, '.claude-plugin', 'plugin.json'),
       '{"skills":"./custom-skills"}\n'
     )
-    await writeFile(join(candidate, 'SKILL.md'), '# Orca CLI\n')
+    await writeFile(join(candidate, 'SKILL.md'), '# Sample Skill\n')
 
-    const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+    const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
     expect(result).toEqual({
-      candidates: [{ name: 'orca-cli', path: candidate }],
+      candidates: [{ name: 'sample-skill', path: candidate }],
       issues: []
     })
   })
@@ -302,10 +302,10 @@ describe('plugin skill candidate scan', () => {
     temporaryDirectories.push(root)
     const packageRoot = join(root, 'vendor', 'plugin', '1.0.0')
     const manifestPath = join(packageRoot, '.codex-plugin', 'plugin.json')
-    const candidate = join(packageRoot, 'r0000', 'orca-cli')
+    const candidate = join(packageRoot, 'r0000', 'sample-skill')
     await mkdir(join(packageRoot, '.codex-plugin'), { recursive: true })
     await mkdir(candidate, { recursive: true })
-    await writeFile(join(candidate, 'SKILL.md'), '# Orca CLI\n')
+    await writeFile(join(candidate, 'SKILL.md'), '# Sample Skill\n')
     await writeFile(
       manifestPath,
       JSON.stringify({
@@ -313,12 +313,12 @@ describe('plugin skill candidate scan', () => {
       })
     )
 
-    const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+    const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
     // Why: resolving declared roots bypasses the entry budget, so without this cap the
     // manifest alone decides how long the scan runs. Falling back to the bounded walk
     // still finds the skill, so the cap costs coverage nothing.
-    expect(result.candidates).toEqual([{ name: 'orca-cli', path: candidate }])
+    expect(result.candidates).toEqual([{ name: 'sample-skill', path: candidate }])
     expect(result.issues).toEqual([
       { path: manifestPath, reason: 'manifest-limit', errorCode: null }
     ])
@@ -328,8 +328,8 @@ describe('plugin skill candidate scan', () => {
     const root = await mkdtemp(join(tmpdir(), 'orca-plugin-invalid-root-array-'))
     temporaryDirectories.push(root)
     const packageRoot = join(root, 'vendor', 'plugin', '1.0.0')
-    const defaultCandidate = join(packageRoot, 'skills', 'orca-cli')
-    const declaredCandidate = join(packageRoot, 'custom-skills', 'orca-cli')
+    const defaultCandidate = join(packageRoot, 'skills', 'sample-skill')
+    const declaredCandidate = join(packageRoot, 'custom-skills', 'sample-skill')
     await mkdir(join(packageRoot, '.codex-plugin'), { recursive: true })
     await mkdir(defaultCandidate, { recursive: true })
     await mkdir(declaredCandidate, { recursive: true })
@@ -338,12 +338,12 @@ describe('plugin skill candidate scan', () => {
       '{"skills":["./custom-skills",7]}\n'
     )
     await writeFile(join(defaultCandidate, 'SKILL.md'), '# Wrong root\n')
-    await writeFile(join(declaredCandidate, 'SKILL.md'), '# Orca CLI\n')
+    await writeFile(join(declaredCandidate, 'SKILL.md'), '# Sample Skill\n')
 
-    const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+    const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
     expect(result).toEqual({
-      candidates: [{ name: 'orca-cli', path: declaredCandidate }],
+      candidates: [{ name: 'sample-skill', path: declaredCandidate }],
       issues: []
     })
   })
@@ -357,11 +357,11 @@ describe('plugin skill candidate scan', () => {
       await writeFile(join(pluginRoot, '.codex-plugin', 'plugin.json'), '{"skills":"./skills"}\n')
       pluginRoot = join(pluginRoot, 'skills', `nested-${index}`)
     }
-    const hiddenCandidate = join(pluginRoot, 'orca-cli')
+    const hiddenCandidate = join(pluginRoot, 'sample-skill')
     await mkdir(hiddenCandidate, { recursive: true })
-    await writeFile(join(hiddenCandidate, 'SKILL.md'), '# Orca CLI\n')
+    await writeFile(join(hiddenCandidate, 'SKILL.md'), '# Sample Skill\n')
 
-    const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+    const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
     expect(result.candidates).toEqual([])
     expect(result.issues).toContainEqual(
@@ -373,7 +373,7 @@ describe('plugin skill candidate scan', () => {
     const root = await mkdtemp(join(tmpdir(), 'orca-plugin-manifest-marker-file-'))
     temporaryDirectories.push(root)
     const packageRoot = join(root, 'vendor', 'plugin', '1.0.0')
-    const candidate = join(packageRoot, 'custom-skills', 'orca-cli')
+    const candidate = join(packageRoot, 'custom-skills', 'sample-skill')
     await mkdir(packageRoot, { recursive: true })
     await mkdir(join(packageRoot, '.claude-plugin'), { recursive: true })
     await mkdir(candidate, { recursive: true })
@@ -386,12 +386,12 @@ describe('plugin skill candidate scan', () => {
       join(packageRoot, '.claude-plugin', 'plugin.json'),
       '{"skills":"./custom-skills"}\n'
     )
-    await writeFile(join(candidate, 'SKILL.md'), '# Orca CLI\n')
+    await writeFile(join(candidate, 'SKILL.md'), '# Sample Skill\n')
 
-    const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+    const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
     expect(result).toEqual({
-      candidates: [{ name: 'orca-cli', path: candidate }],
+      candidates: [{ name: 'sample-skill', path: candidate }],
       issues: []
     })
   })
@@ -403,7 +403,7 @@ describe('plugin skill candidate scan', () => {
     await mkdir(join(root, 'vendor', 'plugin', '.codex-plugin'), { recursive: true })
     await writeFile(manifestPath, ' '.repeat(256 * 1024 + 1))
 
-    const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+    const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
     expect(result.issues).toContainEqual({
       path: manifestPath,
@@ -423,7 +423,7 @@ describe('plugin skill candidate scan', () => {
       const linkPath = join(root, 'loop')
       await symlink('loop', linkPath, 'dir')
 
-      const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+      const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
       expect(result.issues).toContainEqual({
         path: linkPath,
@@ -449,7 +449,7 @@ describe('plugin skill candidate scan', () => {
       await symlink('SKILL.md', join(packageRoot, 'SKILL.md'), 'file')
       await symlink('plugin.json', join(packageRoot, '.codex-plugin', 'plugin.json'), 'file')
 
-      const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+      const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
       expect(result.issues).toContainEqual({
         path: join(root, 'loop-00'),
@@ -494,7 +494,7 @@ describe('plugin skill candidate scan', () => {
     async () => {
       const root = await createCacheBehindSpentBudget('orca-plugin-attention-eviction-', 1)
 
-      const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+      const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
       // Why: a read failure is the only issue that can take the headline off "all up to
       // date". Evicting it for display budget reports all-clear over a path that could be
@@ -521,7 +521,7 @@ describe('plugin skill candidate scan', () => {
         MAXIMUM_PLUGIN_SCAN_ATTENTION_ISSUES + 4
       )
 
-      const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+      const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
       // Why: outranking the budget is what makes this class unbounded, so a tree full of
       // unreadable folders must not be able to pin one issue per folder in memory.
@@ -549,12 +549,12 @@ describe('plugin skill candidate scan', () => {
     )
     await Promise.all(
       ['zz-one', 'zz-two'].map(async (vendor) => {
-        await mkdir(join(root, vendor, 'orca-cli'), { recursive: true })
-        await writeFile(join(root, vendor, 'orca-cli', 'SKILL.md'), '# Orca CLI\n')
+        await mkdir(join(root, vendor, 'sample-skill'), { recursive: true })
+        await writeFile(join(root, vendor, 'sample-skill', 'SKILL.md'), '# Sample Skill\n')
       })
     )
 
-    const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']), 1)
+    const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']), 1)
 
     // Why: the deep trees above exist to spend the display budget, so assert it is full —
     // otherwise this passes with budget to spare and stops covering the case it is named
@@ -571,7 +571,7 @@ describe('plugin skill candidate scan', () => {
   it('keeps scanning past the issue budget', async () => {
     const root = await mkdtemp(join(tmpdir(), 'orca-plugin-issue-budget-coverage-'))
     temporaryDirectories.push(root)
-    const candidate = join(root, 'zz-package', 'skills', 'orca-cli')
+    const candidate = join(root, 'zz-package', 'skills', 'sample-skill')
     await Promise.all(
       Array.from({ length: 20 }, (_, index) =>
         mkdir(
@@ -585,14 +585,14 @@ describe('plugin skill candidate scan', () => {
       )
     )
     await mkdir(candidate, { recursive: true })
-    await writeFile(join(candidate, 'SKILL.md'), '# Orca CLI\n')
+    await writeFile(join(candidate, 'SKILL.md'), '# Sample Skill\n')
 
-    const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+    const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
     // Why: the issue budget bounds what the dialog lists, not how far the walk reaches.
     // Ending the scan there would drop real copies and still report all-clear, because
     // none of the bounds that filled the budget raise attention.
-    expect(result.candidates).toEqual([{ name: 'orca-cli', path: candidate }])
+    expect(result.candidates).toEqual([{ name: 'sample-skill', path: candidate }])
     expect(result.issues).toContainEqual({ path: root, reason: 'issue-limit', errorCode: null })
   })
 
@@ -602,7 +602,7 @@ describe('plugin skill candidate scan', () => {
       const root = await mkdtemp(join(tmpdir(), 'orca-plugin-issue-budget-candidate-'))
       temporaryDirectories.push(root)
       const packageRoot = join(root, 'zz-package')
-      const candidate = join(packageRoot, 'skills', 'orca-cli')
+      const candidate = join(packageRoot, 'skills', 'sample-skill')
       await Promise.all(
         Array.from({ length: 16 }, (_, index) =>
           mkdir(
@@ -620,11 +620,11 @@ describe('plugin skill candidate scan', () => {
       await writeFile(join(packageRoot, '.codex-plugin', 'plugin.json'), '{"skills":"./skills"}\n')
       await symlink('missing-target', candidate, 'dir')
 
-      const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+      const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
       // Why: the depth bounds fill the issue budget first. Dropping this one for budget
       // would leave the badge amber over a candidate the dialog never mentions.
-      expect(result.candidates).toEqual([{ name: 'orca-cli', path: candidate }])
+      expect(result.candidates).toEqual([{ name: 'sample-skill', path: candidate }])
       expect(result.issues).toContainEqual({
         path: candidate,
         reason: 'io-error',
@@ -639,19 +639,19 @@ describe('plugin skill candidate scan', () => {
       const root = await mkdtemp(join(tmpdir(), 'orca-plugin-declared-dangling-symlink-'))
       temporaryDirectories.push(root)
       const packageRoot = join(root, 'vendor', 'plugin')
-      const candidate = join(packageRoot, 'skills', 'orca-cli')
+      const candidate = join(packageRoot, 'skills', 'sample-skill')
       await mkdir(join(packageRoot, '.codex-plugin'), { recursive: true })
       await mkdir(join(packageRoot, 'skills'), { recursive: true })
       await writeFile(join(packageRoot, '.codex-plugin', 'plugin.json'), '{"skills":"./skills"}\n')
       await symlink('missing-target', candidate, 'dir')
 
-      const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+      const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
       // Why: this candidate resolves to nothing, so it reads as inaccessible and raises
       // attention. Without the issue the dialog would report all-clear against a badge
       // that says otherwise, and nothing would ever name the broken link.
       expect(result).toEqual({
-        candidates: [{ name: 'orca-cli', path: candidate }],
+        candidates: [{ name: 'sample-skill', path: candidate }],
         issues: [{ path: candidate, reason: 'io-error', errorCode: 'ENOENT' }]
       })
     }
@@ -665,12 +665,12 @@ describe('plugin skill candidate scan', () => {
       const root = join(parent, 'cache')
       const outside = join(parent, 'outside')
       const linkPath = join(root, 'vendor')
-      await mkdir(join(outside, 'orca-cli'), { recursive: true })
+      await mkdir(join(outside, 'sample-skill'), { recursive: true })
       await mkdir(root, { recursive: true })
-      await writeFile(join(outside, 'orca-cli', 'SKILL.md'), '# Orca CLI\n')
+      await writeFile(join(outside, 'sample-skill', 'SKILL.md'), '# Sample Skill\n')
       await symlink(outside, linkPath, 'dir')
 
-      const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+      const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
       expect(result).toEqual({
         candidates: [],
@@ -685,14 +685,14 @@ describe('plugin skill candidate scan', () => {
       const parent = await mkdtemp(join(tmpdir(), 'orca-plugin-skill-file-outside-'))
       temporaryDirectories.push(parent)
       const root = join(parent, 'cache')
-      const skill = join(root, 'vendor', 'orca-cli')
+      const skill = join(root, 'vendor', 'sample-skill')
       const outsideSkillFile = join(parent, 'outside', 'SKILL.md')
       await mkdir(skill, { recursive: true })
       await mkdir(join(parent, 'outside'), { recursive: true })
-      await writeFile(outsideSkillFile, '# Orca CLI\n')
+      await writeFile(outsideSkillFile, '# Sample Skill\n')
       await symlink(outsideSkillFile, join(skill, 'SKILL.md'), 'file')
 
-      const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+      const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
       expect(result).toEqual({
         candidates: [],
@@ -713,7 +713,7 @@ describe('plugin skill candidate scan', () => {
       await writeFile(outsideManifest, '{"skills":"./outside"}\n')
       await symlink(outsideManifest, manifestPath, 'file')
 
-      const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+      const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
       expect(result).toEqual({
         candidates: [],
@@ -731,7 +731,7 @@ describe('plugin skill candidate scan', () => {
       await mkdir(join(root, '.codex-plugin'), { recursive: true })
       await execFileAsync('mkfifo', [manifestPath])
 
-      const result = await scanKnownPluginSkillCandidates(root, new Set(['orca-cli']))
+      const result = await scanKnownPluginSkillCandidates(root, new Set(['sample-skill']))
 
       expect(result).toEqual({ candidates: [], issues: [] })
     },

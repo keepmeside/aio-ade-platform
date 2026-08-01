@@ -18,7 +18,6 @@ import { isPathInsideOrEqual, isWindowsAbsolutePathLike } from '../../shared/cro
 import { deleteWorktreeHistoryDir } from '../terminal-history'
 import type {
   AutomationWorkspaceProvenance,
-  CliWorkspaceProvenance,
   CreateWorktreeArgs,
   CreateWorktreeResult,
   DetectedWorktree,
@@ -139,7 +138,6 @@ import { createSenderScopedRequestCancellations } from './sender-scoped-request-
 
 type CreateWorktreeArgsWithSystemProvenance = CreateWorktreeArgs & {
   automationProvenance?: AutomationWorkspaceProvenance
-  cliProvenance?: CliWorkspaceProvenance
 }
 
 type RemoveWorktreeArgs = {
@@ -506,7 +504,6 @@ const loggedUnavailableSshGitProviders = new Set<string>()
 const loggedWorktreeListFailures = new Set<string>()
 const loggedMalformedWorktreeMetaKeys = new Set<string>()
 export const DETECTED_WORKTREE_PROVIDER_TIMEOUT_MS = 30_000
-export const LINEAGE_HYDRATION_TIMEOUT_MS = 5_000
 // Why: absorb renderer polling bursts while bounding external worktree-change lag to one short refresh window.
 const DETECTED_WORKTREE_SCAN_CACHE_TTL_MS = 5_000
 
@@ -893,7 +890,6 @@ function mergeFolderWorkspace(repo: Repo, worktreeId: string, meta: WorktreeMeta
     ...(meta.automationProvenance !== undefined
       ? { automationProvenance: meta.automationProvenance }
       : {}),
-    ...(meta.cliProvenance !== undefined ? { cliProvenance: meta.cliProvenance } : {}),
     ...(meta.priorWorktreeIds !== undefined ? { priorWorktreeIds: meta.priorWorktreeIds } : {}),
     workspaceStatus: meta.workspaceStatus ?? DEFAULT_WORKSPACE_STATUS_ID,
     diffComments: meta.diffComments,
@@ -984,7 +980,6 @@ function createFolderWorkspace(
     orcaCreatedAt: now,
     orcaCreationSource: 'desktop',
     ...(args.automationProvenance ? { automationProvenance: args.automationProvenance } : {}),
-    ...(args.cliProvenance ? { cliProvenance: args.cliProvenance } : {}),
     ...(args.createdWithAgent ? { createdWithAgent: args.createdWithAgent } : {}),
     ...(args.linkedIssue !== undefined ? { linkedIssue: args.linkedIssue } : {}),
     ...(args.linkedPR !== undefined ? { linkedPR: args.linkedPR } : {}),
@@ -1524,29 +1519,8 @@ function filterLineageForHost(
   return { worktreeLineageById, workspaceLineageByChildKey }
 }
 
-async function hydrateLineageWithinDeadline(runtime: OrcaRuntimeService): Promise<boolean> {
-  let timeout: ReturnType<typeof setTimeout> | undefined
-  const hydration = Promise.resolve()
-    .then(() => runtime.hydrateInferredWorktreeLineage())
-    .then(
-      () => true,
-      () => false
-    )
-  const deadline = new Promise<false>((resolve) => {
-    timeout = setTimeout(() => resolve(false), LINEAGE_HYDRATION_TIMEOUT_MS)
-  })
-  try {
-    return await Promise.race([hydration, deadline])
-  } finally {
-    if (timeout) {
-      clearTimeout(timeout)
-    }
-  }
-}
-
 async function listDesktopLineageForHost(
   store: Store,
-  runtime: OrcaRuntimeService,
   args: ListDesktopLineageForHostArgs
 ): Promise<HostLineageSnapshot> {
   const parsedHost = parseExecutionHostId(args?.executionHostId)
@@ -1583,9 +1557,6 @@ async function listDesktopLineageForHost(
     if (!provider) {
       return rejected('unavailable')
     }
-  }
-  if (!(await hydrateLineageWithinDeadline(runtime))) {
-    return rejected('unavailable')
   }
   if (
     parsedHost.kind === 'ssh' &&
@@ -2849,7 +2820,6 @@ export function registerWorktreeHandlers(
   )
 
   ipcMain.handle('worktrees:listLineage', async () => {
-    await runtime.hydrateInferredWorktreeLineage()
     return {
       lineage: store.getAllWorktreeLineage(),
       workspaceLineage: store.getAllWorkspaceLineage()
@@ -2859,7 +2829,7 @@ export function registerWorktreeHandlers(
   ipcMain.handle(
     'worktrees:listLineageForHost',
     (_event, args: ListDesktopLineageForHostArgs): Promise<HostLineageSnapshot> =>
-      listDesktopLineageForHost(store, runtime, args)
+      listDesktopLineageForHost(store, args)
   )
 
   ipcMain.handle(

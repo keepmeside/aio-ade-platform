@@ -4,8 +4,7 @@ import type { TerminalTab } from '../../../../shared/types'
 
 /** Row-identity key for an in-process subagent child row. The NUL separator
  *  cannot appear in real pane keys, so synthetic keys can never collide with
- *  one. Never parsed back — activation goes through `activationPaneKey` /
- *  `orchestration.parentPaneKey` instead. */
+ *  one. Never parsed back — activation goes through `activationPaneKey`. */
 function subagentRowKey(parentPaneKey: string, subagentId: string): string {
   return `${parentPaneKey}\u0000subagent:${subagentId}`
 }
@@ -14,8 +13,7 @@ function subagentRowKey(parentPaneKey: string, subagentId: string): string {
  * Derive indented child rows for the live in-process subagents/teammates a
  * pane's agent has spawned (entry.subagents, reported via agent hooks). These
  * children have no PTY or tab of their own: the rows reuse the parent's tab,
- * activate the parent's pane, and link into the existing lineage tree through
- * `orchestration.parentPaneKey`.
+ * activate the parent's pane, and link into the lineage tree through that key.
  */
 export function buildSubagentChildRows(args: {
   parentEntry: AgentStatusEntry
@@ -43,13 +41,7 @@ export function buildSubagentChildRows(args: {
       paneKey,
       worktreeId: args.parentEntry.worktreeId,
       tabId: args.parentEntry.tabId,
-      stateHistory: [],
-      orchestration: {
-        taskId: `subagent:${subagent.id}`,
-        dispatchId: `subagent:${subagent.id}`,
-        displayName: subagent.description,
-        parentPaneKey: args.parentEntry.paneKey
-      }
+      stateHistory: []
     }
     return {
       paneKey,

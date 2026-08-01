@@ -25,10 +25,7 @@ export type FeatureInteractionId =
   | 'workspace-creation'
   | 'agent-browser-setup'
   | 'agent-browser-use'
-  | 'agent-orchestration-setup'
-  | 'agent-orchestration'
   | 'ephemeral-vm-setup'
-  | 'mobile-emulator-agent-setup'
   | 'ai-commit-generation'
   | 'ai-pr-generation'
   | 'claude-account-switching'
@@ -38,7 +35,6 @@ export type FeatureInteractionId =
   | 'cookie-import'
   | 'floating-workspace'
   | 'floating-workspace-hidden'
-  | 'mobile-pairing'
   | 'notifications'
   | 'ports'
   | 'quick-commands'
@@ -99,15 +95,6 @@ export const FEATURE_INTERACTIONS = [
   { id: 'agent-browser-use', interaction: 'agent browser runtime method used' },
   { id: 'ephemeral-vm-setup', interaction: 'Ephemeral VMs setup opened or scaffold prompt copied' },
   {
-    id: 'agent-orchestration-setup',
-    interaction: 'Agent Orchestration setup enabled or opened'
-  },
-  { id: 'agent-orchestration', interaction: 'agent orchestration runtime method used' },
-  {
-    id: 'mobile-emulator-agent-setup',
-    interaction: 'Mobile Emulator agent CLI or skill setup opened'
-  },
-  {
     id: 'ai-commit-generation',
     interaction: 'AI commit message generation enabled or used'
   },
@@ -131,7 +118,6 @@ export const FEATURE_INTERACTIONS = [
     id: 'floating-workspace-hidden',
     interaction: 'Floating Workspace explicitly hidden or disabled'
   },
-  { id: 'mobile-pairing', interaction: 'mobile pairing enabled or QR code generated' },
   { id: 'notifications', interaction: 'desktop notifications enabled or tested' },
   { id: 'ports', interaction: 'Ports popover opened, configured, or port action used' },
   { id: 'quick-commands', interaction: 'terminal quick command created or edited' },

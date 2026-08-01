@@ -47,7 +47,6 @@ export function dashboardSnapshotInputsChanged(
     state.agentStatusByPaneKey !== previousState.agentStatusByPaneKey ||
     state.retainedAgentsByPaneKey !== previousState.retainedAgentsByPaneKey ||
     state.migrationUnsupportedByPtyId !== previousState.migrationUnsupportedByPtyId ||
-    state.runtimeAgentOrchestrationByPaneKey !== previousState.runtimeAgentOrchestrationByPaneKey ||
     state.terminalLayoutsByTabId !== previousState.terminalLayoutsByTabId ||
     state.ptyIdsByTabId !== previousState.ptyIdsByTabId ||
     state.runtimePaneTitlesByTabId !== previousState.runtimePaneTitlesByTabId ||

@@ -31,9 +31,13 @@ export async function readLinearIssueContext(
   resolveCurrent: (context?: LinearCurrentIssueContextHints) => Promise<CurrentIssueLink>
 ): Promise<LinearIssueContextResult> {
   if (request.workspaceId === 'all') {
-    throw linearError('linear_invalid_workspace', '--workspace all is not valid for issue reads.', {
-      nextSteps: ['Pass a concrete Linear workspace id or omit --workspace.']
-    })
+    throw linearError(
+      'linear_invalid_workspace',
+      '`workspaceId: "all"` is not valid for issue reads.',
+      {
+        nextSteps: ['Pass a concrete Linear `workspaceId` or omit `workspaceId`.']
+      }
+    )
   }
 
   const parsed = request.input ? parseLinearIssueInput(request.input) : null
@@ -50,7 +54,7 @@ export async function readLinearIssueContext(
       : await missingIssueInput()
   const identifier = parsed?.identifier ?? currentLink?.identifier
   if (!identifier) {
-    throw linearError('linear_issue_required', 'Pass an issue id or use --current.')
+    throw linearError('linear_issue_required', 'Pass an issue id or set `current: true`.')
   }
 
   const resolved = await resolveIssue(identifier, {
@@ -61,8 +65,10 @@ export async function readLinearIssueContext(
 }
 
 async function missingIssueInput(): Promise<CurrentIssueLink> {
-  throw linearError('linear_issue_required', 'Pass an issue id or use --current.', {
-    nextSteps: ['Run `orca linear issue ENG-123` or retry from a linked worktree with --current.']
+  throw linearError('linear_issue_required', 'Pass an issue id or set `current: true`.', {
+    nextSteps: [
+      'Call `linear.issueContext` with `input: "ENG-123"` or retry from a linked worktree with `current: true`.'
+    ]
   })
 }
 

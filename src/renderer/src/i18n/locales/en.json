@@ -352,25 +352,11 @@
           "0baad2d5d2": "Grok",
           "760bc6883d": "Codex",
           "a5fc0cb622": "OpenClaude",
-          "bf53f09bf8": "Claude Agent Teams",
           "0708ed89f1": "Claude",
           "fc80296033": "Devin",
           "da41abbdd4": "Ante",
           "060d152fb5": "Trae",
           "mimo_code_label": "MiMo Code"
-        },
-        "skill": {
-          "cli": {
-            "prerequisite": {
-              "79371593b0": "Orca CLI is not visible on PATH yet",
-              "e99d7dc36f": "Orca CLI registration needs attention",
-              "2db0bd7515": "Orca CLI registration is unavailable",
-              "8d6eedf97e": "Failed to register the Orca CLI in PATH.",
-              "0f116999f1": "Restart your shell or add the Orca CLI directory to PATH before setup.",
-              "15cbedc3e3": "Install the Orca CLI before running agent skill setup.",
-              "windowsPathUnknown": "Orca could not check your Windows user PATH"
-            }
-          }
         }
       },
       "ensure": {
@@ -466,17 +452,6 @@
             "tab": {
               "bf4f2a8a72": "Could not start the emulator. Check iOS or Android emulator setup and try another device."
             }
-          }
-        }
-      },
-      "orchestration": {
-        "usage": {
-          "examples": {
-            "f91fe27f2a": "Split a large change into smaller PRs",
-            "9e37a5b1b3": "Run independent work in parallel",
-            "bddc4c09b8": "Run a phased workflow",
-            "ab0e9803b7": "Hand off to another worktree",
-            "5e0d489fe1": "Hand off an active task"
           }
         }
       },
@@ -709,7 +684,10 @@
         "ef223fbb6b": "A device tried to connect but is not paired",
         "11992d0337": "If this was your phone or another Orca client, re-pair it from Settings → Mobile.",
         "6573cfe955": "Open Mobile Settings",
-        "unresolvedTerminalWorktreeOwner": "Terminal creation is unavailable because the worktree owner could not be resolved"
+        "unresolvedTerminalWorktreeOwner": "Terminal creation is unavailable because the worktree owner could not be resolved",
+        "runtimeAuthFailureTitle": "A runtime client tried to connect but is not paired",
+        "runtimeAuthFailureDescription": "Generate a new pairing code in Settings → Servers, then reconnect the client.",
+        "runtimeAuthFailureAction": "Open Server Settings"
       },
       "useSettingsNavigationMetadata": {
         "4a728cd56b": "New features that are still taking shape. Give them a try.",
@@ -764,8 +742,6 @@
         "6a50cdcd7c": "Voice",
         "0059bd17f3": "Enable agents to control any app on your computer.",
         "b35e92364b": "Computer Use",
-        "cd50cec5d7": "Coordinate multiple coding agents through Orca.",
-        "58a868e8e4": "Orchestration",
         "7c79d3b7bf": "Optional",
         "b1c2f8b0ac": "Optional account switching and usage setup for Claude, Codex, Gemini, OpenCode Go, MiniMax, and Grok.",
         "f70ac54d38": "AI Provider Accounts",
@@ -4365,8 +4341,7 @@
           "2d74665a56": "Ports",
           "65a9820bd1": "Agent statuses",
           "219ebf1961": "Branch name",
-          "folderPathIdentity": "Branch / folder path",
-          "cli": "Orca CLI"
+          "folderPathIdentity": "Branch / folder path"
         },
         "SshDisconnectedDialog": {
           "ca4a7892af": "Connecting...",
@@ -4487,12 +4462,7 @@
           "checkingAutomationAvailability": "Checking automation availability...",
           "automationMissing": "Automation no longer available.",
           "automationRunMissing": "Run history no longer available.",
-          "automationAvailabilityUnavailable": "Automation availability could not be checked.",
-          "cliHeader": "Orca CLI",
-          "cliCreatedFromAgent": "Created by an agent via `orca worktree create`",
-          "cliCreatedFromShell": "Created via `orca worktree create`",
-          "cliStartupAgent": "Started with {{value0}}",
-          "cliCreated": "Created by Orca CLI"
+          "automationAvailabilityUnavailable": "Automation availability could not be checked."
         },
         "WorktreeCardMetadataStatusBadges": {
           "fe188062a1": "State: Open",
@@ -4864,43 +4834,6 @@
           "3c4d5e6f7a": "Manage host…",
           "6e7f8a9b0c": "Remove host…"
         },
-        "LinearAgentSkillSetupPrompt": {
-          "missingCliAndSkill": "Orca CLI and Linear agent skill are missing.",
-          "modalTitle": "Enable Linear ticket access",
-          "modalDescription": "Install the Linear skill from a terminal.",
-          "modalPrompt": "Enable agents to read and edit the attached Linear ticket.",
-          "dontShowAgain": "Don't show again",
-          "missingBoth": "Orca CLI and Linear agent skill are missing.",
-          "missingCli": "Orca CLI is missing.",
-          "missingSkill": "Linear agent skill is missing.",
-          "title": "Set up Linear agent skill",
-          "remoteCopy": "This installs host setup; remote agent environments may need separate setup.",
-          "hostCopy": "Install it for host agent handoffs from linked Linear work.",
-          "dismiss": "Dismiss Linear agent skill setup",
-          "setup": "Set up",
-          "recheck": "Re-check",
-          "panelTitle": "Linear agent skill",
-          "panelDescription": "Install the host agent skill for linked Linear task handoffs.",
-          "terminalTitle": "Install Linear agent skill",
-          "terminalAria": "Linear agent skill installer terminal",
-          "install": "Install CLI & Skill",
-          "successTitle": "Linear ticket access is ready",
-          "successDescription": "Agents can now read and update linked Linear tickets from this workspace.",
-          "successDescriptionWsl": "WSL agents can now use linked Linear tickets from this workspace.",
-          "successDescriptionRemote": "Host agents can now use linked Linear tickets. Remote agent environments may still need their own setup.",
-          "successStatus": "Linear ticket access ready",
-          "done": "Done",
-          "wslCopy": "Install it for WSL agent handoffs from linked Linear work.",
-          "wslLabel": "WSL default",
-          "toastMissingCliAndSkill": "Orca CLI and Linear skill are missing",
-          "toastMissingCli": "Orca CLI is missing",
-          "toastMissingSkill": "Linear skill is missing",
-          "toastInstallCliAndSkillDescription": "Install the Orca CLI and the Linear skill to enable your agents to read and edit Linear tasks.",
-          "toastInstallCliDescription": "Install the Orca CLI to enable your agents to read and edit Linear tasks.",
-          "toastInstallSkillDescription": "Install the Linear skill to enable your agents to read and edit Linear tasks through the Orca CLI.",
-          "toastRemoteDescription": "{{value0}} Remote agent environments may need their own setup.",
-          "toastWslDescription": "{{value0}} This setup runs in the selected WSL agent runtime."
-        },
         "FolderWorkspaceComposerDialog": {
           "connectFailed": "Failed to connect to project.",
           "noRepos": "Add a Git project under this folder to attach GitHub or GitLab tasks.",
@@ -4997,8 +4930,7 @@
           "pairingCode": "Pairing code",
           "pairingCodePlaceholder": "orca://pair?code=...",
           "pairingHelpPrefix": "Run",
-          "pairingCommand": "orca serve --pairing-address <host>",
-          "pairingHelpSuffix": "on the server and paste the printed pairing URL.",
+          "pairingHelpSuffix": "Paste a pairing URL issued by the Aio-ADE runtime host.",
           "sshImportAlreadySynced": "~/.ssh/config already in sync.",
           "sshImportSynced": "Synced {{value0}} host{{value1}}.",
           "sshImportFailed": "Failed to import SSH config.",
@@ -5504,66 +5436,14 @@
           "72d4815523": "Bring your existing logins into Orca so agents can reach authenticated pages. Imports into the default profile.",
           "2eb906706c": "Import Browser Cookies",
           "af8c83ed61": "Import cookies from Chrome, Edge, or other browsers so agents can reuse your logins.",
-          "68ea76eb71": "Install the Browser Use skill so agents can operate Orca's browser.",
-          "2d6ead9ab2": "Install Browser Use Skill",
-          "e9f3f3b488": "Installed at",
-          "9fca1f7f5d": "Registers the Orca CLI command so agents can orchestrate the browser from their shell.",
-          "c6065d205d": "Enable Orca CLI",
-          "c79eff0213": "Register the Orca CLI so agents can drive the browser.",
-          "702488a5f7": "Let coding agents drive this browser with your logins. Finish the three steps below.",
           "b8a1f2d84d": "Agent Browser Use",
           "96b91c6349": "Let coding agents drive this browser with your logins.",
           "2ea4617e3a": "Imported {{value0}} cookies from {{value1}}{{value2}}.",
-          "721aee31b4": "Registered the Orca CLI in PATH.",
-          "180a9abf3a": "Failed to load CLI status.",
           "2ccfc9cff8": "Import",
           "0462565413": "Re-import",
-          "de9b2f32f3": "Enable",
-          "ad8cb0ee22": "Fix PATH",
-          "0289434ed6": "Enabled",
-          "8b3054dac7": "Registering...",
           "8f2675c2f3": "Imported {{value0}} cookies from file.",
-          "5301857d88": "From {{value0}}"
-        },
-        "BrowserUseSkillStep": {
-          "0871b6998d": "Enables agents to navigate and verify pages in Orca's browser.",
-          "459e24eebc": "Browser Use skill"
-        },
-        "CliSection": {
-          "8671e406f0": "Cancel",
-          "a4aafe46e3": "Target path:",
-          "e8012c03a1": "Enables agents to use Orca workspace, terminal, and progress commands.",
-          "6053cf736c": "CLI skill",
-          "36a6f919ba": "Give agents Orca-aware workspace, terminal, and progress workflows.",
-          "04873eea3e": "Agent skills",
-          "7f2747f7dd": "is not currently visible on PATH for this shell.",
-          "b0c310ab46": "Existing launcher target:",
-          "15eaad0d31": "Command path:",
-          "5dae812f50": "Refresh",
-          "52e640f3a0": "Refresh CLI status",
-          "38edbb5721": "Shell command",
-          "6930feda9e": "Use Orca from your terminal to open the app, manage worktrees, and interact with Orca terminals.",
-          "c5c0f2641d": "Orca CLI",
-          "d77352f2df": "Failed to remove `{{value0}}` from PATH.",
-          "af5540930c": "Removed `{{value0}}` from PATH.",
-          "a2b13efa94": "Failed to register `{{value0}}` in PATH.",
-          "9cbcd31338": "Registered `{{value0}}` in PATH.",
-          "7baec27029": "Failed to load CLI status.",
-          "d00df2e397": "Register",
-          "9a5f8a4568": "Remove",
-          "b0fca411a0": "Registering…",
-          "4c7e3e4c5f": "install",
-          "068552b191": "Removing…",
-          "8d96213669": "remove",
-          "aa6536977e": "Orca will register {{value0}} so the command works from your terminal.",
-          "a030816e3e": "This removes the shell command symlink. Orca itself remains installed.",
-          "fa87db3d6e": "Register `{{value0}}` in PATH?",
-          "14444243ba": "Remove `{{value0}}` from PATH?",
-          "5d432fe44d": "installed",
-          "8a9b784c60": "stale",
-          "d363e5929b": "Checking CLI registration…",
-          "cliSkillTerminalTitle": "CLI skill setup",
-          "cliSkillTerminalAria": "CLI skill install terminal"
+          "5301857d88": "From {{value0}}",
+          "browserControlDescription": "Let coding agents drive this browser with your logins."
         },
         "CliSkillRuntimeSetup": {
           "04325573f8": "WSL",
@@ -6121,41 +6001,13 @@
           "82436439eb": "Add MCP config",
           "0a5c1ead54": "Create empty config"
         },
-        "MobileEmulatorAgentControlRow": {
-          "1861982430": "Failed to load CLI status.",
-          "8af7a8bc38": "Commands target the active emulator for the current worktree. Coordinates are normalized from 0..1.",
-          "c7f3fe0a6e": "Common emulator commands",
-          "d94ca6a623": "Enables agents to use Orca CLI commands, including mobile emulator control.",
-          "67e19ee03c": "Orca CLI skill",
-          "aaf62a3dd2": "Installed at",
-          "2fef055608": "Registers the Orca CLI command so agents can control the active emulator from their shell.",
-          "4f2205f3b6": "Enable Orca CLI",
-          "ff4b7e65d6": "Let coding agents control the active mobile emulator with Orca CLI commands.",
-          "2a674aa810": "Agent Mobile Emulator Control",
-          "cdeaed9e37": "Registered the Orca CLI in PATH.",
-          "3d34423e88": "Registering the Orca CLI",
-          "3be27641c9": "so emulator commands can run from agent shells.",
-          "3941719a56": "Checking Orca CLI before opening skill setup."
-        },
-        "MobileEmulatorExamples": {
-          "edf13dd03b": "Copy",
-          "c12b253997": "Copy example prompt",
-          "d151e25078": "\"",
-          "b525ff2b12": "\"",
-          "4daa95f25a": "Paste any of these into Claude Code, Codex, or another agent in a project where the Orca CLI skill is installed.",
-          "0820b3f84f": "Try it — example prompts",
-          "1f608e7d60": "Failed to copy prompt.",
-          "2b077b5544": "Copied prompt."
-        },
         "MobileEmulatorSettingsPane": {
-          "19d39113b6": "Let coding agents control the active mobile emulator with Orca CLI commands.",
-          "f2f8d97bb6": "Agent Mobile Emulator Control",
           "143961d031": "Default Device",
           "8aec2f99a0": "Refresh emulator availability",
           "ae1612c58c": "Availability",
-          "f9af91ea26": "Shows the New Mobile Emulator action and allows agents to attach to the active emulator.",
+          "f9af91ea26": "Shows the New Mobile Emulator action and enables emulator tabs.",
           "700ddbf9b1": "Enable Mobile Emulator",
-          "bc39d0f115": "Configure mobile emulator support for Orca and coding agents.",
+          "bc39d0f115": "Configure mobile emulator support for Orca.",
           "6593c9ddd3": "Mobile Emulator",
           "a4f1c82d90": "Disabled",
           "b5e2d93e01": "Checking...",
@@ -6165,7 +6017,7 @@
           "6d1483d4a0": "1 emulator device detected.",
           "0a452d4d3b": "{{value0}} emulator devices detected.",
           "f62a1bb759": "Orca will auto-select an emulator device after devices are detected.",
-          "b2fd62ea75": "Default device for new emulator tabs and agent attach commands. Auto-select prefers an already running device."
+          "b2fd62ea75": "Default device for new emulator tabs. Auto-select prefers an already running device."
         },
         "MobileNetworkInterfaceSection": {
           "63d5e4ae1e": "Regenerate the QR code and scan it from the Orca mobile app.",
@@ -6288,34 +6140,6 @@
           "3ebe650f74": "App name",
           "3743ed080c": "Set command",
           "f79084947b": "New app"
-        },
-        "OrchestrationPane": {
-          "52e0634e2c": "Ask a coordinator agent to use orchestration for handoffs, worktree handovers, and sequential or parallel child agents.",
-          "ae79504732": "How to use it",
-          "7bc082f4de": "Copy install command",
-          "832f1f3ee6": "Prefer your own terminal?",
-          "9bedd2a6e5": "Enables agents to hand off context and coordinate work through Orca.",
-          "07641b9768": "Orchestration skill",
-          "2aacdb0517": "Coordinate coding agents across handoffs, worktree handovers, and child-agent work.",
-          "191ac34567": "Agent Orchestration"
-        },
-        "OrchestrationSetupCard": {
-          "e7d2a5146c": "Enables agents to hand off context and coordinate work through Orca.",
-          "2777ff0fdc": "Orchestration skill"
-        },
-        "OrchestrationSkillAgentCoverage": {
-          "6dec5ce2d2": "Agent coverage",
-          "ffe13e36fb": "Missing",
-          "1e8f8d8fae": "Ready"
-        },
-        "OrchestrationSkillPromptDialog": {
-          "f08d45293d": "Copy command",
-          "35550f3b3b": "Done",
-          "1bdce1911e": "Copy orchestration skill install command",
-          "b99f375eb2": "Run this command in a terminal to install the orchestration skill for your agents.",
-          "2914abcfa2": "Install orchestration skill",
-          "d3dc559225": "Failed to copy install command.",
-          "239bf9132b": "Copied install command."
         },
         "PrivacyDiagnosticBundleControls": {
           "dc8404a930": "Create diagnostic file",
@@ -6639,8 +6463,7 @@
           "6e1280ca55": "Share this Orca server",
           "9a3758d983": "No saved servers.",
           "9bee6bbeeb": "Add Server",
-          "55fcc964cd": "on the server and paste the printed pairing URL.",
-          "960e901ae4": "orca serve --pairing-address <host>",
+          "55fcc964cd": "Paste a pairing URL issued by the Aio-ADE runtime host.",
           "163671f7b5": "Run",
           "c3d772c514": "orca://pair?code=...",
           "9bc9b83474": "Pairing code",
@@ -6790,8 +6613,6 @@
           "5063bb47a5": "Voice",
           "7118953f14": "Enable agents to control any app on your computer.",
           "c9841721cb": "Computer Use",
-          "475980f53d": "Coordinate multiple coding agents through Orca.",
-          "00c3a7950d": "Orchestration",
           "21f09426ea": "Optional. Orca works with your existing provider logins; add accounts only if you want Orca to help switch between them.",
           "ad6c529693": "AI Provider Accounts",
           "ec1ba547f7": "Manage AI agents, set a default, and customize commands.",
@@ -7355,33 +7176,6 @@
           "d72ba8dc68": "{{value0}} paths",
           "9ea912d811": "1 path"
         },
-        "WslCliRegistration": {
-          "c6f6f89d7c": "Cancel",
-          "119fef6cd2": "Target path:",
-          "1dbb0377d9": "Existing launcher target:",
-          "554305956d": "Command path:",
-          "9b6627522c": "Refresh",
-          "ab6b022a5c": "Refresh WSL CLI status",
-          "d9c6880dbd": "WSL shell command",
-          "52d990420e": "Failed to remove `{{value0}}` from WSL.",
-          "89c7414cf5": "Removed `{{value0}}` from WSL.",
-          "6f91ad1333": "Failed to register `{{value0}}` in WSL.",
-          "951536dda5": "Registered `{{value0}}` in WSL.",
-          "26b4b3b00f": "Failed to load WSL CLI status.",
-          "290bfff3ab": "Register",
-          "f951f85196": "Remove",
-          "4c4a9178a3": "Registering...",
-          "41a1480d3e": "install",
-          "4598b18464": "Removing...",
-          "7c3bb36706": "remove",
-          "7ee4e52b99": "Orca will register {{value0}} so the command works from WSL terminals.",
-          "d8216eb22e": "This removes the WSL shell command. Orca itself remains installed on Windows.",
-          "e49688f67f": "Register `{{value0}}` in WSL?",
-          "61ac55278e": "Remove `{{value0}}` from WSL?",
-          "e2b0ee267f": "stale",
-          "7aa456a460": "Register `orca-ide` in ~/.local/bin inside WSL.",
-          "0307677bb9": "Checking WSL CLI registration..."
-        },
         "accounts": {
           "search": {
             "86edc96bc9": "status bar",
@@ -7763,25 +7557,7 @@
               "fb8178824f": "cookies",
               "ba4eb53b72": "browser use",
               "2fb24d17db": "Import cookies from Chrome, Edge, or other browsers so agents can reuse your logins.",
-              "614c756ab1": "Import Browser Cookies",
-              "cee44fb442": "automation",
-              "a57c2172dc": "agent-browser",
-              "6ea88e5206": "npx",
-              "f5b8fdddf5": "orca-cli",
-              "e5a784bc54": "install",
-              "9d97446873": "agent",
-              "a2d489263e": "skill",
-              "a7e82445fa": "Install the Browser Use skill so agents can operate Orca's browser.",
-              "a1414dcefb": "Install Browser Use Skill",
-              "e56c7b55c9": "setup",
-              "034c5e8d7f": "enable",
-              "7e0dcb257a": "shell",
-              "3ffafc9b95": "command",
-              "30c74aaa1f": "path",
-              "ff05cbc344": "orca",
-              "85fab5e12c": "cli",
-              "890ddf943d": "Register the Orca CLI so agents can drive the browser.",
-              "50f0860e18": "Enable Orca CLI"
+              "614c756ab1": "Import Browser Cookies"
             }
           }
         },
@@ -8016,18 +7792,8 @@
             "f89a94773c": "update",
             "79ff46776e": "Check for app updates and install a newer Orca version.",
             "e15af4eb64": "Check for Updates",
-            "6382fe9724": "npx",
-            "baa263d6d8": "agents",
-            "bda108e66c": "skill",
-            "244e3fb4c8": "Install the Orca skill so agents know to use the Orca CLI.",
-            "2d9f7b42df": "Agent skill",
-            "0a00691c06": "shell command",
             "dbeb1f348e": "command",
-            "88d3df9ce9": "terminal",
             "fb4f338a3d": "path",
-            "924a660a78": "cli",
-            "ca529079bf": "Register or remove the Orca CLI command.",
-            "327e3fa70d": "Orca CLI",
             "fb84767421": "switch",
             "f8f0ac213a": "sequential",
             "12ecc640a8": "mru",
@@ -8279,13 +8045,6 @@
           "emulator": {
             "search": {
               "2348045036": "Choose which emulator device Orca opens by default.",
-              "2bb2e09225": "mobile skill",
-              "bbe4267416": "emulator type",
-              "64494f03c3": "emulator attach",
-              "6f728f1456": "emulator tap",
-              "f8b871d655": "agent cli",
-              "2e0b45b2ba": "Use Orca CLI commands to list, attach, tap, and type into a mobile emulator.",
-              "ea3eac39bb": "Agent CLI Control",
               "8ef0f08d36": "runtime",
               "27397fe8e9": "xcode command line tools",
               "7650063d17": "simctl",
@@ -8299,11 +8058,7 @@
               "1dc8c52ffa": "default iphone",
               "ab4814f3c5": "default simulator",
               "54184cb9c5": "Default Emulator Device",
-              "b8ddd13195": "agent emulator",
               "1ad6fb6230": "default device",
-              "ac0a985873": "emulator skill",
-              "9353854ff3": "orca emulator",
-              "d4b7833894": "orca cli",
               "84e5706975": "serve-sim",
               "7c5a8a2bee": "xcode",
               "bec7231663": "ipad",
@@ -8312,7 +8067,7 @@
               "2d67f708ce": "simulator",
               "c5eca29310": "ios simulator",
               "25159de808": "mobile emulator",
-              "9595354cff": "Configure mobile emulator support for Orca and coding agents.",
+              "9595354cff": "Configure mobile emulator support for Orca.",
               "cdd3c31918": "Mobile Emulator"
             }
           },
@@ -8423,27 +8178,6 @@
             "51ae2183e1": "desktop",
             "0534c76311": "Master switch for Orca desktop notifications.",
             "4a210b2f72": "Enable Notifications"
-          }
-        },
-        "orchestration": {
-          "search": {
-            "f5d39af41e": "child agents",
-            "c766a01978": "handoff",
-            "08c65b12a2": "examples",
-            "f278fd04db": "codex",
-            "32c5098e7b": "claude",
-            "21c28ccdf7": "coordinator",
-            "741dfc03fa": "worker",
-            "ca54c69806": "DAG",
-            "7ad948b714": "task",
-            "eee028ae14": "dispatch",
-            "9a5ebdca31": "messaging",
-            "91fc8ab7e5": "coordination",
-            "13ba5c6cbd": "agents",
-            "d86705ba77": "multi-agent",
-            "a7f76b4ca7": "orchestration",
-            "e05ff36753": "Coordinate multiple coding agents via messaging, task DAGs, dispatch, and decision gates.",
-            "c34045764e": "Agent Orchestration"
           }
         },
         "privacy": {
@@ -9501,18 +9235,6 @@
           "copyExampleAria": "Copy {{value0}} example prompt",
           "done": "Done",
           "copyPrompt": "Copy prompt"
-        },
-        "LinearAgentSkillPane": {
-          "title": "Linear",
-          "description": "Give agents the skill to read and update your linked Linear tickets.",
-          "skillTitle": "Linear skill",
-          "skillDescription": "Enables agents to read linked tickets and post updates to Linear through Orca.",
-          "howToUse": "How to use it",
-          "howToUseDescription": "Ask an agent working a Linear-linked worktree to read context, post updates, move the ticket, or attach the PR.",
-          "terminalTitle": "Linear skill setup",
-          "terminalAriaLabel": "Linear skill install terminal",
-          "manageConnectionHint": "Review connected Linear workspaces and API keys in",
-          "manageConnectionLink": "Integrations settings"
         },
         "MobileRelayBetaNotice": {
           "notice": "Orca Relay is in beta."
@@ -11176,20 +10898,10 @@
           "yoloPermissionsTooltip": "Skip permission checks for agents for less interruptions"
         },
         "FeatureSetupChecklist": {
-          "77f74946f5": "Agents can message each other, take tasks, and coordinate handoffs.",
-          "399cf885c0": "Agent Orchestration",
           "c5292c409d": "Agents can inspect app windows and operate local apps when you ask.",
           "1ecfb490ac": "Computer Use",
           "01426f3a23": "Agents can navigate sites, inspect pages, and work through browser tasks.",
-          "ea85d9e628": "Agent Browser Use",
-          "linearTicketsTitle": "Linear agent skill",
-          "linearTicketsDescription": "Agents can use linked Linear tasks for richer ticket-aware handoffs.",
-          "linearTicketsSetupSummary": "Recommended for Linear workspaces; does not affect Linear connection setup."
-        },
-        "FeatureSetupInlineTerminal": {
-          "789b59936e": "Press Enter to run the command and confirm npx if asked. You can also set this up later in Settings.",
-          "47fc6cc6dc": "Skill setup command",
-          "c767ab7061": "Skill setup"
+          "ea85d9e628": "Agent Browser Use"
         },
         "IntegrationsStep": {
           "277f30eb34": "Linear, GitLab, Bitbucket, Azure DevOps, Gitea, and Jira live in Settings > Integrations.",
@@ -11336,7 +11048,7 @@
           }
         },
         "AgentFeatureSetupStep": {
-          "97dcdc010f": "Enable capabilities"
+          "setUpFeatures": "Set Up Features"
         },
         "WindowsTerminalStep": {
           "powerShell": "PowerShell",
@@ -11666,15 +11378,6 @@
             "763f5fa2c1": "Move to Floating Button",
             "0ee79e0674": "Move to Status Bar"
           },
-          "FloatingTerminalOrchestrationDialog": {
-            "f726054620": "Enables agents to hand off context and coordinate work through Orca.",
-            "1cd3f8af64": "Orchestration skill",
-            "6f0aed26b8": "Install the Orca CLI and orchestration skill so agents can coordinate through Orca.",
-            "05d7aabc20": "Not installed",
-            "630c0ac8c8": "Installed",
-            "dfd021ce46": "Checking...",
-            "543f325a14": "Enable orchestration"
-          },
           "FloatingTerminalPanel": {
             "fc1042e92b": "Minimize",
             "8b07759314": "New Browser",
@@ -11685,10 +11388,6 @@
             "918c2139f3": "Don't Save",
             "e7bf09d4d4": "Cancel",
             "690b6fb98a": "Unsaved Changes",
-            "bbc177f98f": "Enable",
-            "adc281394d": "Dismiss",
-            "8cf80db43b": "Set up the Orca CLI and agent skill so agents can coordinate through Orca.",
-            "2a3c5ddf5e": "Enable orchestration",
             "d6b563ae24": "Loading editor...",
             "8b14ba6c17": "New Browser Tab",
             "b085fb58b5": "This file has unsaved changes.",
@@ -11722,13 +11421,11 @@
             "362a07517d": "Computer Use",
             "5e8fe5a72d": "Give agents direct access to Orca's browser so they can test pages, capture screenshots, and act on what they see.",
             "e638da007a": "Agent Browser Use",
-            "c61c91e642": "Let agents coordinate through Orca to keep large, multi-step tasks moving to completion.",
-            "ac07f8887f": "Agent Orchestration",
             "e9eb197e12": "Opened Computer Use permissions",
             "3a59452a67": "Skill command copied and inserted below for review.",
             "c605f51f2b": "Capability setup ready",
             "1aa657d8f4": "Some capability setup needs attention",
-            "c89534cbe9": "Install CLI & Skills"
+            "setUpFeatures": "Set Up Features"
           },
           "AiCommitPrSettingsCard": {
             "8d4152701a": "e.g. ollama run llama3.1 {{value0}}",
@@ -11763,10 +11460,6 @@
             "1bec24acc1": "@keyframes browserFlash { 0% { opacity: 0; } 20% { opacity: 0.85; } 100% { opacity: 0; } } @keyframes browserTabIn { from { opacity: 0; transform: translateY(-2px); } to { opacity: 1; transform: none; } } @keyframes browserViewIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }",
             "73bbb46073": "/pricing",
             "f39be6ca14": "/signup"
-          },
-          "BrowserUseSkillSetupCard": {
-            "cbc45022d4": "Enables agents to navigate and verify pages in Orca's browser.",
-            "d5bb1cd4ba": "Browser Use skill"
           },
           "ComputerUseAnimatedVisual": {
             "d8401975b1": "approved",
@@ -11823,12 +11516,6 @@
             "fc0cc0b267": "GH #1842",
             "0688842445": "GH #1799",
             "bee6b4088d": "GitHub & Linear tasks",
-            "5171768676": "orchestrating 3 agents",
-            "cebc7769cd": "redesign auth flow",
-            "e44269e97d": "Agent orchestration",
-            "ec4a73f5e6": "PR 3/3",
-            "cfdfd4d6b4": "PR 2/3",
-            "b1f17bcc74": "PR 1/3",
             "e38112b289": "refactor billing webhook",
             "9c812e0d7c": "speed up CI pipeline",
             "3c4adfd821": "fix login race condition",
@@ -11836,7 +11523,6 @@
             "ef737dcee1": "GitHub & Linear tasks",
             "ac51c061e2": "codex",
             "47f16ecf34": "Ship several things at once. Each workspace keeps its branch, terminal, and agent activity together.",
-            "70aa182266": "Hand off a goal and walk away. A coordinator agent fans out and ships parallel PRs.",
             "f10c14dd9d": "Skip the tab-switching. Pick from your GitHub or Linear backlog and start a workspace in one click.",
             "5d6ee181b6": "Open any workspace to return to its terminal, then split panes for tests, logs, and agents."
           },
@@ -11969,13 +11655,14 @@
               "setup": {
                 "status": {
                   "8eccfcb314": "Installed",
-                  "21d4f79c93": "click Install CLI & Skills to open macOS access settings",
                   "5c9293e51a": "checking app access",
-                  "aae94eeb52": "Click Install CLI & Skills",
                   "aa8e143a2f": "Could not check install",
                   "9b33e7fb13": "Checking install",
                   "4c8e1f92a7": "open Orca Desktop on this Mac",
-                  "6d2b0a84e1": "Unavailable in this build"
+                  "6d2b0a84e1": "Unavailable in this build",
+                  "browserReady": "Available in Orca",
+                  "clickSetUpFeatures": "Click Set Up Features",
+                  "clickSetUpFeaturesMacAccess": "click Set Up Features to open macOS access settings"
                 }
               }
             }
@@ -12025,64 +11712,6 @@
               }
             }
           },
-          "agents": {
-            "orchestration": {
-              "OrchestrationPage": {
-                "30b509a467": "2 children",
-                "862605d066": "2 child workspaces",
-                "coordinatorName": "redesign auth flow",
-                "childPr1Name": "PR 1/2: migrate users.sql",
-                "childPr2Name": "PR 2/2: withSession middleware"
-              },
-              "types": {
-                "coordinatorInitial": "Splitting auth rewrite into 2 PRs…",
-                "codexInitial": "Writing the users table migration…",
-                "claudeInitial": "Sketching withSession middleware…",
-                "codexBeat1": "Adding the email_verified column…",
-                "claudeBeat1": "Wiring withSession middleware…",
-                "coordinatorBeat1": "PR 1/2 ready",
-                "coordinatorBeat2": "PR 2/2 ready"
-              },
-              "steps": {
-                "name": "Orchestration",
-                "subtitle": "Orchestration",
-                "description": "Enable agents to manage and coordinate Orca workspaces to execute larger tasks."
-              },
-              "StatusesPage": {
-                "2f549fc0ba": "src/auth/session.test.ts",
-                "139e3d7458": "Updated",
-                "7b26349cb2": "pnpm migrate latest",
-                "78f0318ac1": "Wants to run",
-                "79971d1539": "redesign auth flow"
-              },
-              "UsageAccountsCard": {
-                "6986b36708": "Surface rate limits and swap accounts inline.",
-                "d90d2e1f6d": "Track session and weekly usage.",
-                "8919321417": "Codex sign-in failed.",
-                "c7b90c140b": "Codex account added.",
-                "4e71d72912": "Claude sign-in failed.",
-                "9ddeb558f9": "Claude account added.",
-                "29d0653961": "Sign in",
-                "945865332e": "Signing in"
-              },
-              "UsagePage": {
-                "64265cb295": "29% used 5h",
-                "be5a165875": "Switch to",
-                "277a9c65a9": "Codex Account",
-                "4dce5ca3aa": "Resets in 4d 3h",
-                "05ce4ecdd3": "38% used",
-                "0470aaed99": "Weekly",
-                "f421abf962": "Session",
-                "5e45fb1238": "Updated 1m ago",
-                "6a4b1d3c38": "Codex"
-              },
-              "orchestration": {
-                "cards": {
-                  "da6f1f97c9": "working"
-                }
-              }
-            }
-          },
           "FeatureTourWorkspaceCard": {
             "a23ed9da7f": "codex",
             "2f33dc932b": "claude",
@@ -12095,14 +11724,7 @@
           "FeatureWallBrowserAction": {
             "5022c43a88": "Browser could not open",
             "c9eb68b474": "No workspace group is available for this worktree yet.",
-            "c9728107c5": "Try it out",
-            "25dd101f15": "Browser setup needs attention",
-            "e02b11e6b0": "Browser setup ready",
-            "d6d15077df": "Skill command copied and inserted below for review.",
-            "78e65f19d9": "Browser setup failed",
-            "b7345c18db": "An unexpected error occurred.",
-            "5f97caf76b": "Installing…",
-            "c2df599513": "Install CLI & Skill"
+            "c9728107c5": "Try it out"
           },
           "ConnectIntegrationsList": {
             "3dddb2d565": "connected for tasks",
@@ -12140,39 +11762,13 @@
           }
         },
         "tips": {
-          "CliFeatureTipVisual": {
-            "badb4fc342": ">",
-            "22e62f3bab": "Claude Code session started"
-          },
-          "CliSkillSetupTerminal": {
-            "1953e90447": "Press Enter to install the Orca CLI orchestration skill for your agents.",
-            "43b60ec5c3": "Orca CLI and orchestration skill install terminal",
-            "84e9576dac": "Skill setup",
-            "5c3aee22c0": "Copy command",
-            "5eca672aac": "Copy skill install command",
-            "6ff813fc1d": "Failed to copy skill command.",
-            "b8ad063571": "Copied the skill install command."
-          },
           "CmdJPaletteTipDialog": {
             "c0bb9f869b": "Settings → Shortcuts",
             "8241897205": "Rebind the shortcut anytime in"
           },
           "FeatureTipActions": {
-            "eb04abece8": "Maybe Later"
-          },
-          "FeatureTipsModal": {
-            "c169298e4d": "Done",
-            "3c6c478462": "X finishes, send it the review task.”",
-            "298301b7a0": "worktree",
-            "864e2db28f": "“When the agent in",
-            "7fc6f02099": "and create PRs for each.”",
-            "27c567a89c": "worktrees",
-            "55846c7f95": "“Split this PR into two",
-            "4795ac2d4a": "Try asking:",
-            "53905bd076": "Development preview: opening skills setup terminal.",
-            "1da82af45b": "Orca CLI needs attention",
-            "ce13a742d0": "Registered `orca` in PATH.",
-            "d1a86c7eb5": "Open Settings to finish CLI setup."
+            "eb04abece8": "Maybe Later",
+            "working": "Working..."
           },
           "CmdJPaletteFeatureTipVisual": {
             "ab94e16d44": "Create worktree \"{{value0}}\"",
@@ -12241,23 +11837,6 @@
             },
             "mobile": {
               "emulator": {
-                "agent": {
-                  "setup": {
-                    "state": {
-                      "fdcca1ec75": "Registering...",
-                      "69fb2c2289": "Enabled",
-                      "c6705092ba": "Fix PATH",
-                      "7c1b6bdb1e": "Enable",
-                      "51074ccb05": "Failed to load CLI status.",
-                      "35dea1ae12": "Agent control is ready.",
-                      "9dff3a6338": "Skill is installed. Enable the Orca CLI to finish setup.",
-                      "15986a1080": "Orca CLI is ready. Install the skill to finish setup.",
-                      "4c26913def": "Still not set up. Complete both steps to enable agent control.",
-                      "c94ff11e91": "Could not re-check setup status.",
-                      "2b519eed94": "Registered the Orca CLI in PATH."
-                    }
-                  }
-                },
                 "tab": {
                   "intro": {
                     "actions": {
@@ -12268,31 +11847,9 @@
               }
             }
           },
-          "MobileEmulatorAgentSetupGuide": {
-            "2fda9ff015": "Set up agent control",
-            "0ac0fef514": "Agent control is ready.",
-            "2bdfff8763": "Agent control (optional).",
-            "72736b051f": "Set up Orca CLI + skill when you want agents to drive this simulator.",
-            "d10ae98046": "Done",
-            "3756cbeca7": "Not now",
-            "6d950431d2": "Hide",
-            "ebceac65a4": "Set up",
-            "3f003507f4": "Open full setup in Settings"
-          },
-          "MobileEmulatorAgentSetupGuideSteps": {
-            "9b49d892e3": "Enable Orca CLI",
-            "3d8dc52c93": "Registers the orca command for emulator control in agent shells.",
-            "21f5687c07": "Orca CLI skill",
-            "64fb057667": "Teaches agents the orca emulator commands for this worktree.",
-            "5c59ea96ca": "Mobile emulator Orca CLI skill setup",
-            "bff5341ac3": "Mobile emulator Orca CLI skill install terminal",
-            "3d34423e88": "Registering the Orca CLI",
-            "3be27641c9": "so emulator commands can run from agent shells.",
-            "3941719a56": "Checking Orca CLI before opening skill setup."
-          },
           "MobileEmulatorTabIntroCallout": {
             "1924982130": "Dismiss",
-            "5789936d9a": "Preview iOS simulators while agents drive the screen.",
+            "5789936d9a": "Preview and control iOS simulators from a workspace tab.",
             "8014b4b80b": "Keep",
             "6e051a40b7": "Hide"
           },
@@ -14342,10 +13899,10 @@
   "runtimeRpc": {
     "startupFailure": {
       "unknownCause": "No additional error details were available.",
-      "continueButton": "Continue without CLI",
-      "title": "Orca CLI unavailable",
-      "message": "Orca couldn't start its local command transport.",
-      "detail": "Orca will continue to work, but commands such as orca status, orca terminal, and orchestration are unavailable for this session.\n\n{{guidance}}\n\nCause: {{cause}}",
+      "continueButton": "Continue without runtime",
+      "title": "Orca runtime unavailable",
+      "message": "Orca couldn't start its local runtime service.",
+      "detail": "Orca will continue to work, but in-app runtime actions such as Computer Use and Linear are unavailable for this session.\n\n{{guidance}}\n\nCause: {{cause}}",
       "guidance": {
         "permissionDenied": "Orca couldn't write its runtime file. Check permissions on Orca's data folder, then restart.",
         "storageUnavailable": "Your disk may be full or read-only. Free up space, then restart Orca.",

@@ -838,9 +838,6 @@ function normalizeWorkspaceLineageByChildKey(
       parentInstanceId: lineage.parentInstanceId ?? null,
       origin: lineage.origin ?? 'cli',
       capture: lineage.capture ?? { source: 'manual-action', confidence: 'inferred' },
-      ...(lineage.taskId ? { taskId: lineage.taskId } : {}),
-      ...(lineage.orchestrationRunId ? { orchestrationRunId: lineage.orchestrationRunId } : {}),
-      ...(lineage.coordinatorHandle ? { coordinatorHandle: lineage.coordinatorHandle } : {}),
       ...(lineage.createdByTerminalHandle
         ? { createdByTerminalHandle: lineage.createdByTerminalHandle }
         : {}),
@@ -3035,11 +3032,6 @@ export class Store {
         if (!visibleTaskProvidersDefaultedForJira) {
           this.loadNeedsSave = true
         }
-        const claudeAgentTeamsDefaultDisabledMigrated =
-          parsed.settings?.claudeAgentTeamsDefaultDisabledMigrated === true
-        if (!claudeAgentTeamsDefaultDisabledMigrated) {
-          this.loadNeedsSave = true
-        }
         const migratedDisabledTuiAgents = normalizeDisabledTuiAgents(
           parsed.settings?.disabledTuiAgents
         )
@@ -3050,12 +3042,6 @@ export class Store {
           hasUnsupportedTuiAgentArgs('kilo', parsed.settings?.agentDefaultArgs?.kilo)
         ) {
           this.loadNeedsSave = true
-        }
-        if (
-          !claudeAgentTeamsDefaultDisabledMigrated &&
-          !migratedDisabledTuiAgents.includes('claude-agent-teams')
-        ) {
-          migratedDisabledTuiAgents.push('claude-agent-teams')
         }
         const migratedWindowsRuntimeDefault =
           parsed.settings?.localWindowsRuntimeDefault === undefined
@@ -3190,7 +3176,6 @@ export class Store {
             ),
             disabledTuiAgents: migratedDisabledTuiAgents,
             ...migratedAgentYoloDefaults,
-            claudeAgentTeamsDefaultDisabledMigrated: true,
             openInApplications: normalizeOpenInApplications(parsed.settings?.openInApplications, {
               seedDefaults: true
             }),

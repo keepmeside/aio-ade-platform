@@ -27,22 +27,6 @@ describe('agent status worktree attribution', () => {
     ).toBe('current-worktree')
   })
 
-  it('falls back to a parent pane tab for a pre-mirror worker', () => {
-    expect(
-      resolveAgentStatusWorktreeId(
-        entry({
-          paneKey: 'worker-tab:22222222-2222-4222-8222-222222222222',
-          orchestration: {
-            taskId: 'task-1',
-            dispatchId: 'dispatch-1',
-            parentPaneKey: 'parent-tab:1'
-          }
-        }),
-        new Map([['parent-tab', 'parent-worktree']])
-      )
-    ).toBe('parent-worktree')
-  })
-
   it('parses legacy numeric pane identities consistently', () => {
     expect(parseAgentStatusPaneIdentity('tab-1:7')).toEqual({ tabId: 'tab-1', paneId: '7' })
   })

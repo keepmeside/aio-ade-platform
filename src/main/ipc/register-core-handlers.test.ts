@@ -4,7 +4,6 @@ const {
   getPathMock,
   listEnvironmentsMock,
   callRuntimeEnvironmentMock,
-  registerCliHandlersMock,
   registerPreflightHandlersMock,
   registerClaudeUsageHandlersMock,
   registerCodexUsageHandlersMock,
@@ -69,7 +68,6 @@ const {
   getPathMock: vi.fn(() => '/test/user-data'),
   listEnvironmentsMock: vi.fn(() => []),
   callRuntimeEnvironmentMock: vi.fn(),
-  registerCliHandlersMock: vi.fn(),
   registerPreflightHandlersMock: vi.fn(),
   registerClaudeUsageHandlersMock: vi.fn(),
   registerCodexUsageHandlersMock: vi.fn(),
@@ -164,10 +162,6 @@ vi.mock('./terminal-preview', () => ({
 
 vi.mock('./speech', () => ({
   registerSpeechHandlers: registerSpeechHandlersMock
-}))
-
-vi.mock('./cli', () => ({
-  registerCliHandlers: registerCliHandlersMock
 }))
 
 vi.mock('./preflight', () => ({
@@ -387,7 +381,6 @@ describe('registerCoreHandlers', () => {
     listEnvironmentsMock.mockReset()
     listEnvironmentsMock.mockReturnValue([])
     callRuntimeEnvironmentMock.mockReset()
-    registerCliHandlersMock.mockReset()
     registerPreflightHandlersMock.mockReset()
     registerClaudeUsageHandlersMock.mockReset()
     registerCodexUsageHandlersMock.mockReset()
@@ -546,7 +539,6 @@ describe('registerCoreHandlers', () => {
     )
     expect(aiVaultOptions.getActiveRuntimeAiVaultHostInfos()).toEqual([])
     expect(registerNativeChatHandlersMock).toHaveBeenCalled()
-    expect(registerCliHandlersMock).toHaveBeenCalled()
     expect(registerPreflightHandlersMock).toHaveBeenCalled()
     expect(registerShellHandlersMock).toHaveBeenCalledWith(store)
     expect(registerClipboardHandlersMock).toHaveBeenCalledWith(store)
@@ -644,7 +636,6 @@ describe('registerCoreHandlers', () => {
     expect(setTrustedClipboardRendererWebContentsIdMock).toHaveBeenCalledWith(42)
     expect(setTrustedUIRendererWebContentsIdMock).toHaveBeenCalledWith(42)
     // IPC handlers should NOT be registered again
-    expect(registerCliHandlersMock).not.toHaveBeenCalled()
     expect(registerPreflightHandlersMock).not.toHaveBeenCalled()
     expect(registerBrowserHandlersMock).not.toHaveBeenCalled()
     // Why: ipcMain.handle throws on duplicate channel registration, so the

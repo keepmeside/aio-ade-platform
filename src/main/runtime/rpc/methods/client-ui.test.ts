@@ -554,8 +554,7 @@ describe('client UI RPC methods', () => {
       { setupGuideBrowserMilestoneLegacyComplete: true }
     ],
     ['browserImportHintHidden', { browserImportHintHidden: true }],
-    ['mobileEmulatorTabIntroDismissed', { mobileEmulatorTabIntroDismissed: true }],
-    ['mobileEmulatorAgentSetupDismissed', { mobileEmulatorAgentSetupDismissed: true }]
+    ['mobileEmulatorTabIntroDismissed', { mobileEmulatorTabIntroDismissed: true }]
   ])('accepts %s, which the renderer persists through ui.set', async (_label, payload) => {
     const runtime = {
       getRuntimeId: () => 'test-runtime',

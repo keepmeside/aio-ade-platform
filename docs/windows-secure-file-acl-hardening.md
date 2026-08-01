@@ -69,7 +69,7 @@ on `ubuntu-latest`, where `applySecurePathRestriction` short-circuits to
 `chmodSync` and never reaches the PowerShell path. The ACL storm therefore cannot
 be reproduced in the cross-platform e2e harness; verify it manually on Windows.
 
-Pre-req: a Windows client paired to a remote `orca serve` runtime.
+Pre-req: a Windows client paired to a remote runtime host.
 
 Watcher (PowerShell, run before launching Orca):
 

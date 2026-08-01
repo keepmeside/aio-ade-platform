@@ -254,7 +254,6 @@ export function getDefaultSettings(homedir: string): GlobalSettings {
     // applied by both the Electron store and the web client's localStorage store).
     terminalAllowOsc52Clipboard: true,
     terminalAllowOsc52ClipboardDefaultedOnForAllUsers: true,
-    claudeAgentTeamsMode: 'off',
     setupScriptLaunchMode: 'new-tab',
     terminalScrollbackRows: DESKTOP_TERMINAL_SCROLLBACK_ROWS_DEFAULT,
     httpProxyUrl: '',
@@ -313,7 +312,6 @@ export function getDefaultSettings(homedir: string): GlobalSettings {
     disabledPlugins: [],
     pluginConsents: {},
     devPluginPaths: [],
-    claudeAgentTeamsDefaultDisabledMigrated: true,
     skipDeleteWorktreeConfirm: false,
     skipCloseTerminalWithRunningProcessConfirm: false,
     skipDeleteAutomationConfirm: false,
@@ -469,7 +467,6 @@ export function getDefaultUIState(): PersistedUIState {
     showSleepingWorkspaces: DEFAULT_SHOW_SLEEPING_WORKSPACES,
     hideDefaultBranchWorkspace: false,
     hideAutomationGeneratedWorkspaces: false,
-    hideCliCreatedWorkspaces: false,
     hideDetachedHeadWorkspaces: false,
     showDotfilesByWorktree: {},
     filterRepoIds: [],
@@ -504,7 +501,6 @@ export function getDefaultUIState(): PersistedUIState {
     // Why: fresh profiles start on the new default, so nothing was overridden to report.
     osc52ClipboardDefaultOnNoticePending: false,
     mobileEmulatorTabIntroDismissed: false,
-    mobileEmulatorAgentSetupDismissed: false,
     // Why: only upgraded profiles saw the old ordering, so only they get the one-time notice.
     projectOrderManualDefaultNoticeDismissed: true,
     // Why: only upgraded profiles saw the old default, so only they get the one-time change notice.

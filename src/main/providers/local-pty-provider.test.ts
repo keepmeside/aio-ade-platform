@@ -618,9 +618,7 @@ describe('LocalPtyProvider', () => {
         cols: 80,
         rows: 24,
         env: {
-          TERM: 'screen-256color',
-          PATH: '/tmp/orca-agent-teams-bin:/usr/bin',
-          ORCA_AGENT_TEAMS_TEAM_ID: 'team-test'
+          TERM: 'screen-256color'
         },
         envToDelete: ['TERM_PROGRAM', 'ORCA_ATTRIBUTION_SHIM_DIR']
       })
@@ -628,7 +626,6 @@ describe('LocalPtyProvider', () => {
       const spawnCall = spawnMock.mock.calls.at(-1)!
       expect(spawnCall[2].name).toBe('screen-256color')
       expect(spawnCall[2].env.TERM).toBe('screen-256color')
-      expect(spawnCall[2].env.PATH.split(':')[0]).toBe('/tmp/orca-agent-teams-bin')
       expect(spawnCall[2].env.TERM_PROGRAM).toBeUndefined()
       expect(spawnCall[2].env.ORCA_ATTRIBUTION_SHIM_DIR).toBeUndefined()
     })

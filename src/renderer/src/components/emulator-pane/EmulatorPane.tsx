@@ -1,7 +1,6 @@
 import type { Tab } from '../../../../shared/types'
 import { EmulatorPaneToolbar } from './emulator-pane-toolbar'
 import { EmulatorDeviceFrame } from './emulator-device-frame'
-import { MobileEmulatorAgentSetupGuideLayer } from './MobileEmulatorAgentSetupGuideLayer'
 import { useEmulatorPaneSession } from './use-emulator-pane-session'
 import { translate } from '@/i18n/i18n'
 
@@ -65,28 +64,26 @@ export default function EmulatorPane({ tab, worktreeId, isActive = true }: Emula
       ) : null}
 
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-muted px-3 py-6">
-        <MobileEmulatorAgentSetupGuideLayer isActive={isActive} worktreeId={worktreeId}>
-          {!isLive && !loading ? (
-            <p className="mb-4 text-center text-xs text-muted-foreground">
-              {translate(
-                'auto.components.emulator.pane.EmulatorPane.59b08fa031',
-                'No emulator connected'
-              )}
-            </p>
-          ) : null}
-          <EmulatorDeviceFrame
-            previewUrl={previewUrl}
-            wsUrl={wsUrl}
-            streamKey={streamKey}
-            deviceName={displayName}
-            loading={loading}
-            isLive={isLive}
-            visualOrientation={visualOrientation}
-            isActive={isActive}
-            onTap={(x, y) => void sendTap(x, y)}
-            onGesture={(points) => void sendGesture(points)}
-          />
-        </MobileEmulatorAgentSetupGuideLayer>
+        {!isLive && !loading ? (
+          <p className="mb-4 text-center text-xs text-muted-foreground">
+            {translate(
+              'auto.components.emulator.pane.EmulatorPane.59b08fa031',
+              'No emulator connected'
+            )}
+          </p>
+        ) : null}
+        <EmulatorDeviceFrame
+          previewUrl={previewUrl}
+          wsUrl={wsUrl}
+          streamKey={streamKey}
+          deviceName={displayName}
+          loading={loading}
+          isLive={isLive}
+          visualOrientation={visualOrientation}
+          isActive={isActive}
+          onTap={(x, y) => void sendTap(x, y)}
+          onGesture={(points) => void sendGesture(points)}
+        />
       </div>
     </div>
   )

@@ -126,26 +126,6 @@ function classTokensForTaggedElement(markup: string, dataAttribute: string): str
 }
 
 describe('DashboardAgentRow', () => {
-  it('renders orchestration task preview instead of the raw dispatch preamble prompt', () => {
-    const markup = renderRow(
-      makeAgent(
-        {},
-        {
-          prompt: 'You are working inside Orca, a multi-agent IDE.',
-          orchestration: {
-            taskId: 'task-1',
-            dispatchId: 'ctx-1',
-            taskTitle: 'Checkout race',
-            displayName: 'Fix checkout race'
-          }
-        }
-      )
-    )
-
-    expect(markup).toContain('Fix checkout race')
-    expect(markup).not.toContain('You are working inside Orca')
-  })
-
   it('shows the active model beside the agent label', () => {
     const markup = renderRow(makeAgent({}, { model: 'gpt-5.4-mini' }))
 
@@ -347,7 +327,7 @@ describe('DashboardAgentRow', () => {
     expect(activeToolMarkup).toContain('ListDir')
   })
 
-  it('renders orchestration child rows with a connector and tree level', () => {
+  it('renders nested child rows with a connector and tree level', () => {
     const markup = renderRow(
       makeAgent({
         lineage: {

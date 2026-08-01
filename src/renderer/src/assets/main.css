@@ -1344,17 +1344,6 @@ html.native-shell .app-layout {
   border-bottom-color: color-mix(in srgb, var(--accent) 80%, transparent);
 }
 
-/* Why: anchor the optional setup card over the emulator without blurring the
-   device preview, which read as a rendering glitch. */
-.mobile-emulator-agent-setup-guide-scrim {
-  background: linear-gradient(
-    to top,
-    color-mix(in srgb, var(--background) 92%, transparent),
-    transparent
-  );
-  pointer-events: none;
-}
-
 /* Why: the detected command is editable, but a pure app-background fill reads
    like a black box in dark mode and overpowers the prompt card. */
 .setup-script-prompt-command {
@@ -1366,7 +1355,7 @@ html.native-shell .app-layout {
 }
 
 .worktree-agent-lineage-parent-row {
-  /* Why: inline orchestration trees have two chevron levels; the manager row
+  /* Why: inline nested-agent trees have two chevron levels; the parent row
      needs a structural cue that is quieter than the workspace card chrome. */
   background: color-mix(in srgb, var(--sidebar-foreground) 3%, var(--sidebar));
   box-shadow:
@@ -2272,38 +2261,6 @@ html.native-shell .app-layout {
   }
 }
 
-.cli-tip-orchestration-frame .feature-wall-orch-stage {
-  --feature-wall-workspace-title-size: 11.5px;
-  --feature-wall-agent-message-size: 10.5px;
-  --feature-wall-agent-row-gap: 5px;
-  --feature-wall-agent-status-col: 10px;
-  --feature-wall-agent-icon-col: 12px;
-  --feature-wall-agent-status-box: 10px;
-  --feature-wall-agent-status-icon: 9px;
-  --feature-wall-agent-icon-box: 12px;
-  --feature-wall-child-indent: 22px;
-  align-content: start !important;
-  padding-top: 10px !important;
-  padding-left: 12px !important;
-  padding-right: 52px !important;
-}
-
-.cli-tip-orchestration-frame .feature-wall-agent-icon svg {
-  height: 11px;
-  width: 11px;
-}
-
-.cli-tip-orchestration-frame .feature-wall-agent-status [aria-label] {
-  height: 10px;
-  width: 10px;
-}
-
-.cli-tip-orchestration-frame .feature-wall-agent-status [aria-label] > span {
-  height: 6px;
-  width: 6px;
-  border-width: 1.5px;
-}
-
 /* Cmd+J feature tip — JS-driven sequence (keypress → palette → typing → results).
    The keypress press-down and palette entrance are handled inline by React state
    transitions; this file only defines the caret blink and the results fade-in. */
@@ -2353,7 +2310,7 @@ html.native-shell .app-layout {
   }
 }
 
-/* ── Feature wall: agents-orchestration animations ───────────────── */
+/* ── Feature wall animations ─────────────────────────────────────── */
 
 /* Why: drives the supported-agents marquee on page 1 of the agents tile.
    Track is duplicated in the DOM so a -50% translate loops seamlessly. */
@@ -2398,170 +2355,6 @@ html.native-shell .app-layout {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-/* Why: orchestrator → child connector arrows. Faint dashed strokes drawn in
-   JS so endpoints follow the real card geometry as cards animate between
-   phase 1 (parent + nested child) and phase 2 (parent + spawned peer). */
-.feature-wall-orch-arrows {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1;
-  transition: opacity 280ms ease;
-}
-.feature-wall-orch-arrows[data-fading='true'] {
-  opacity: 0;
-}
-.feature-wall-orch-arrows path {
-  fill: none;
-  stroke: color-mix(in srgb, var(--foreground) 32%, transparent);
-  stroke-width: 1.5;
-  stroke-dasharray: 4 4;
-}
-
-/* Message envelope that travels along the dashed connector. Position is
-   driven by `offset-path` so the bubble visibly follows the same shape the
-   connector drew. */
-.feature-wall-bubble {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 3;
-  width: 24px;
-  height: 24px;
-  border-radius: 999px;
-  background: var(--foreground);
-  color: var(--background);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow:
-    0 6px 16px rgba(24, 24, 27, 0.22),
-    0 1px 2px rgba(24, 24, 27, 0.12);
-  opacity: 0;
-  offset-rotate: 0deg;
-  offset-distance: 0%;
-  pointer-events: none;
-  will-change: offset-distance, opacity, transform;
-  transform: translate(-12px, -12px) scale(0.7);
-}
-.feature-wall-bubble svg {
-  width: 13px;
-  height: 13px;
-}
-.feature-wall-bubble.in-flight {
-  opacity: 1;
-  offset-distance: 100%;
-  transform: translate(-12px, -12px) scale(1);
-  transition:
-    offset-distance 1600ms cubic-bezier(0.25, 0.6, 0.25, 1),
-    transform 280ms ease,
-    opacity 280ms ease;
-}
-.feature-wall-bubble.landed {
-  opacity: 0;
-  offset-distance: 100%;
-  transform: translate(-12px, -12px) scale(0.85);
-  transition: opacity 320ms ease 80ms;
-}
-
-/* When a message just lands, briefly tint the recipient line so the new
-   text reads as a fresh inbound message rather than ambient text. */
-@keyframes feature-wall-msg-pop {
-  0% {
-    color: rgb(180 83 9);
-  }
-  70% {
-    color: rgb(180 83 9);
-  }
-  100% {
-    color: var(--foreground);
-  }
-}
-.feature-wall-msg-received {
-  animation: feature-wall-msg-pop 1100ms ease-out;
-}
-
-/* Children container fades in once the orchestrator finishes creating. */
-.feature-wall-children-wrapper {
-  opacity: 0;
-  transform: translateY(6px);
-  transition:
-    opacity 320ms ease,
-    transform 320ms ease;
-}
-.feature-wall-children-wrapper[data-visible='true'] {
-  opacity: 1;
-  transform: none;
-}
-
-@keyframes feature-wall-child-card-in {
-  0% {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-.feature-wall-child-card-shell {
-  animation: feature-wall-child-card-in 260ms ease-out both;
-}
-
-/* Each child agent row stays collapsed until *its* dispatch bubble lands on
-   it, so the child workspace visibly gains an agent as work arrives. */
-.feature-wall-spawn-row {
-  overflow: hidden;
-  opacity: 1;
-  max-height: 60px;
-  transform: none;
-  transition:
-    opacity 320ms ease 80ms,
-    transform 320ms ease 80ms,
-    max-height 320ms cubic-bezier(0.4, 0, 0.2, 1) 80ms,
-    margin 320ms cubic-bezier(0.4, 0, 0.2, 1) 80ms,
-    padding 320ms cubic-bezier(0.4, 0, 0.2, 1) 80ms;
-}
-.feature-wall-spawn-row[data-pending='true'] {
-  opacity: 0;
-  transform: translateY(2px);
-  pointer-events: none;
-  max-height: 0;
-  margin-top: 0;
-  margin-bottom: 0;
-  padding-top: 0;
-  padding-bottom: 0;
-  transition:
-    opacity 220ms ease,
-    transform 220ms ease,
-    max-height 320ms cubic-bezier(0.4, 0, 0.2, 1),
-    margin 320ms cubic-bezier(0.4, 0, 0.2, 1),
-    padding 320ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Brief one-shot pulse when the Codex limits popover swaps accounts and the
-   "0% used" label flashes from red to green. */
-@keyframes feature-wall-meta-pulse {
-  0% {
-    color: rgb(220 38 38);
-    transform: scale(1);
-  }
-  20% {
-    color: rgb(22 163 74);
-    transform: scale(1.08);
-  }
-  100% {
-    color: rgb(22 163 74);
-    transform: scale(1);
-  }
-}
-
-.feature-wall-meta-pulse {
-  color: rgb(22 163 74);
-  font-weight: 600;
-  animation: feature-wall-meta-pulse 1100ms ease-out 1;
 }
 
 /* Onboarding step 5: the compact "Take the tour" intro expands into the
@@ -2618,13 +2411,12 @@ html.onboarding-tour-start-transition::view-transition-new(root) {
 
 /* ── Feature tour nudge: cycling preview ─────────────────────────── */
 
-/* Why: the bottom-right nudge cycles through 4 silhouette frames
-   (Workspace → Orchestration → Tasks → Terminal). Each frame is visible for
-   1/4 of the cycle. Holding fade-out late (24%–25%) gives the user dwell
+/* Why: the bottom-right nudge cycles through three silhouette frames
+   (Workspace → Tasks → Terminal). Holding fade-out late gives the user dwell
    time on the resolved state before swapping. Uses CSS-driven timing rather
    than React state so we stay cheap when the popup is mounted but idle. */
 :root {
-  --feature-tour-cycle: 16s;
+  --feature-tour-cycle: 12s;
 }
 
 .feature-tour-frame {
@@ -2642,9 +2434,6 @@ html.onboarding-tour-start-transition::view-transition-new(root) {
 .feature-tour-frame[data-frame='3'] {
   animation-delay: 8s;
 }
-.feature-tour-frame[data-frame='4'] {
-  animation-delay: 12s;
-}
 
 @keyframes feature-tour-frame-fade {
   0% {
@@ -2653,10 +2442,10 @@ html.onboarding-tour-start-transition::view-transition-new(root) {
   1.5% {
     opacity: 1;
   }
-  24% {
+  32% {
     opacity: 1;
   }
-  25% {
+  33.333% {
     opacity: 0;
   }
   100% {
@@ -2719,9 +2508,6 @@ html.onboarding-tour-start-transition::view-transition-new(root) {
 .feature-tour-copy-slide[data-frame='3'] {
   animation-delay: 8s;
 }
-.feature-tour-copy-slide[data-frame='4'] {
-  animation-delay: 12s;
-}
 
 .feature-tour-dot {
   width: 5px;
@@ -2739,16 +2525,13 @@ html.onboarding-tour-start-transition::view-transition-new(root) {
 .feature-tour-dot[data-frame='3'] {
   animation-delay: 8s;
 }
-.feature-tour-dot[data-frame='4'] {
-  animation-delay: 12s;
-}
 @keyframes feature-tour-dot-pulse {
   0%,
-  24% {
+  32% {
     background: var(--primary);
     transform: scale(1.05);
   }
-  25%,
+  33.333%,
   100% {
     background: color-mix(in srgb, var(--foreground) 18%, transparent);
     transform: scale(1);
@@ -2772,167 +2555,7 @@ html.onboarding-tour-start-transition::view-transition-new(root) {
   }
 }
 
-/* Frame 2 — Orchestration: child cards flash as bubbles land along the
-   dashed paths fanning down from the coordinator. */
-/* Why: bubbles use percent-based left/top so they always travel from the
-   root card's right edge (34%) to the child card's left edge (64%),
-   regardless of preview width. The previous offset-path used hardcoded
-   pixels and drifted off the dashed lines once the preview resized. */
-.feature-tour-orch-bubble {
-  position: absolute;
-  left: 34%;
-  top: 50%;
-  width: 12px;
-  height: 12px;
-  margin-left: -6px;
-  margin-top: -6px;
-  border-radius: 3px;
-  background: var(--primary);
-  color: var(--primary-foreground);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  z-index: 4;
-}
-.feature-tour-orch-bubble.top {
-  animation: feature-tour-orch-travel-top var(--feature-tour-cycle) cubic-bezier(0.4, 0, 0.2, 1)
-    infinite;
-  animation-delay: 4s;
-}
-.feature-tour-orch-bubble.mid {
-  animation: feature-tour-orch-travel-mid var(--feature-tour-cycle) cubic-bezier(0.4, 0, 0.2, 1)
-    infinite;
-  animation-delay: calc(4s + 0.2s);
-}
-.feature-tour-orch-bubble.bot {
-  animation: feature-tour-orch-travel-bot var(--feature-tour-cycle) cubic-bezier(0.4, 0, 0.2, 1)
-    infinite;
-  animation-delay: calc(4s + 0.4s);
-}
-@keyframes feature-tour-orch-travel-top {
-  0% {
-    left: 34%;
-    top: 50%;
-    opacity: 0;
-  }
-  2% {
-    opacity: 1;
-  }
-  3.5% {
-    left: 49%;
-    top: 50%;
-    opacity: 1;
-  }
-  6.5% {
-    left: 64%;
-    top: 18%;
-    opacity: 1;
-  }
-  7.5% {
-    left: 64%;
-    top: 18%;
-    opacity: 0;
-  }
-  25%,
-  100% {
-    left: 64%;
-    top: 18%;
-    opacity: 0;
-  }
-}
-@keyframes feature-tour-orch-travel-mid {
-  0% {
-    left: 34%;
-    top: 50%;
-    opacity: 0;
-  }
-  2% {
-    opacity: 1;
-  }
-  6.5% {
-    left: 64%;
-    top: 50%;
-    opacity: 1;
-  }
-  7.5% {
-    left: 64%;
-    top: 50%;
-    opacity: 0;
-  }
-  25%,
-  100% {
-    left: 64%;
-    top: 50%;
-    opacity: 0;
-  }
-}
-@keyframes feature-tour-orch-travel-bot {
-  0% {
-    left: 34%;
-    top: 50%;
-    opacity: 0;
-  }
-  2% {
-    opacity: 1;
-  }
-  3.5% {
-    left: 49%;
-    top: 50%;
-    opacity: 1;
-  }
-  6.5% {
-    left: 64%;
-    top: 82%;
-    opacity: 1;
-  }
-  7.5% {
-    left: 64%;
-    top: 82%;
-    opacity: 0;
-  }
-  25%,
-  100% {
-    left: 64%;
-    top: 82%;
-    opacity: 0;
-  }
-}
-
-.feature-tour-orch-child {
-  animation: feature-tour-orch-child-flash var(--feature-tour-cycle) linear infinite;
-}
-.feature-tour-orch-child.top {
-  animation-delay: 4s;
-}
-.feature-tour-orch-child.mid {
-  animation-delay: calc(4s + 0.2s);
-}
-.feature-tour-orch-child.bot {
-  animation-delay: calc(4s + 0.4s);
-}
-@keyframes feature-tour-orch-child-flash {
-  0%,
-  6% {
-    box-shadow: 0 0 0 0 transparent;
-    border-color: var(--border);
-  }
-  7% {
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--foreground) 12%, transparent);
-    border-color: color-mix(in srgb, var(--foreground) 38%, transparent);
-  }
-  9% {
-    box-shadow: 0 0 0 0 transparent;
-    border-color: var(--border);
-  }
-  25%,
-  100% {
-    box-shadow: 0 0 0 0 transparent;
-    border-color: var(--border);
-  }
-}
-
-/* Frame 3 — Tasks: cursor lands on the second row, the "Open" pill morphs
+/* Frame 2 — Tasks: cursor lands on the second row, the "Open" pill morphs
    to a dark "Start workspace →" pill, then a workspace card slides in. */
 .feature-tour-tasks-cursor {
   /* Why: anchored from the row's right edge so the cursor sits just past the
@@ -2950,7 +2573,7 @@ html.onboarding-tour-start-transition::view-transition-new(root) {
   opacity: 0;
   animation: feature-tour-tasks-cursor var(--feature-tour-cycle) cubic-bezier(0.45, 0.05, 0.2, 1)
     infinite;
-  animation-delay: 8s;
+  animation-delay: 4s;
 }
 .feature-tour-tasks-cursor svg {
   width: 14px;
@@ -2997,7 +2620,7 @@ html.onboarding-tour-start-transition::view-transition-new(root) {
 
 .feature-tour-tasks-row {
   animation: feature-tour-tasks-row-hover var(--feature-tour-cycle) linear infinite;
-  animation-delay: 8s;
+  animation-delay: 4s;
 }
 @keyframes feature-tour-tasks-row-hover {
   0%,
@@ -3022,7 +2645,7 @@ html.onboarding-tour-start-transition::view-transition-new(root) {
 
 .feature-tour-tasks-pill {
   animation: feature-tour-tasks-pill-morph var(--feature-tour-cycle) linear infinite;
-  animation-delay: 8s;
+  animation-delay: 4s;
 }
 @keyframes feature-tour-tasks-pill-morph {
   0%,
@@ -3056,7 +2679,7 @@ html.onboarding-tour-start-transition::view-transition-new(root) {
 .feature-tour-tasks-pill-label {
   opacity: 0;
   animation: feature-tour-tasks-pill-label var(--feature-tour-cycle) linear infinite;
-  animation-delay: 8s;
+  animation-delay: 4s;
 }
 @keyframes feature-tour-tasks-pill-label {
   0%,
@@ -3096,7 +2719,7 @@ html.onboarding-tour-start-transition::view-transition-new(root) {
   z-index: 7;
   pointer-events: none;
   animation: feature-tour-tasks-click-ring var(--feature-tour-cycle) linear infinite;
-  animation-delay: 8s;
+  animation-delay: 4s;
 }
 @keyframes feature-tour-tasks-click-ring {
   0%,
@@ -3125,7 +2748,7 @@ html.onboarding-tour-start-transition::view-transition-new(root) {
   opacity: 0;
   transform: translateY(-6px);
   animation: feature-tour-tasks-workspace var(--feature-tour-cycle) linear infinite;
-  animation-delay: 8s;
+  animation-delay: 4s;
 }
 @keyframes feature-tour-tasks-workspace {
   0%,
@@ -3148,7 +2771,7 @@ html.onboarding-tour-start-transition::view-transition-new(root) {
   }
 }
 
-/* Frame 4 — Terminal: command stays anchored while the split panes stream
+/* Frame 3 — Terminal: command stays anchored while the split panes stream
    Playwright and Claude activity. */
 .feature-tour-terminal-line {
   width: 23ch;
@@ -3158,16 +2781,16 @@ html.onboarding-tour-start-transition::view-transition-new(root) {
   opacity: 0;
   transform: translateY(2px);
   animation: feature-tour-terminal-output var(--feature-tour-cycle) linear infinite;
-  animation-delay: 12s;
+  animation-delay: 8s;
 }
 .feature-tour-terminal-output[data-line='1'] {
-  animation-delay: calc(12s + 0.05s);
+  animation-delay: calc(8s + 0.05s);
 }
 .feature-tour-terminal-output[data-line='2'] {
-  animation-delay: calc(12s + 0.25s);
+  animation-delay: calc(8s + 0.25s);
 }
 .feature-tour-terminal-output[data-line='3'] {
-  animation-delay: calc(12s + 0.45s);
+  animation-delay: calc(8s + 0.45s);
 }
 @keyframes feature-tour-terminal-output {
   0%,
@@ -3195,8 +2818,6 @@ html.onboarding-tour-start-transition::view-transition-new(root) {
   .feature-tour-copy-slide,
   .feature-tour-dot,
   .feature-tour-ws-status,
-  .feature-tour-orch-bubble,
-  .feature-tour-orch-child,
   .feature-tour-tasks-cursor,
   .feature-tour-tasks-row,
   .feature-tour-tasks-pill,

@@ -1,13 +1,5 @@
 import type { PtyIncarnationId } from '../../shared/pty-incarnation'
 
-export type RemoteCliBridgeEnv = {
-  binDir: string
-  relayDir: string
-  nodePath: string
-  sockPath: string
-  pathDelimiter?: ':' | ';'
-}
-
 export type SshPtyDataCallback = (payload: {
   id: string
   data: string

@@ -17,7 +17,6 @@ type MockState = {
   ptyIdsByTabId: Record<string, string[]>
   agentStatusEpoch: number
   agentStatusByPaneKey: Record<string, AgentStatusEntry>
-  runtimeAgentOrchestrationByPaneKey: Record<string, NonNullable<AgentStatusEntry['orchestration']>>
   migrationUnsupportedByPtyId: Record<string, never>
   retainedAgentsByPaneKey: Record<string, unknown>
 }
@@ -45,7 +44,6 @@ function makeAgentStatusEntry(args: {
   paneKey: string
   state: AgentStatusEntry['state']
   worktreeId?: string
-  parentPaneKey?: string
 }): AgentStatusEntry {
   return {
     paneKey: args.paneKey,
@@ -54,14 +52,7 @@ function makeAgentStatusEntry(args: {
     updatedAt: 1_000,
     stateStartedAt: 1_000,
     stateHistory: [],
-    worktreeId: args.worktreeId,
-    orchestration: args.parentPaneKey
-      ? {
-          taskId: 'task-1',
-          dispatchId: 'dispatch-1',
-          parentPaneKey: args.parentPaneKey
-        }
-      : undefined
+    worktreeId: args.worktreeId
   }
 }
 
@@ -111,7 +102,6 @@ describe('useWorktreeActivityStatus', () => {
       ptyIdsByTabId: {},
       agentStatusEpoch: 0,
       agentStatusByPaneKey: {},
-      runtimeAgentOrchestrationByPaneKey: {},
       migrationUnsupportedByPtyId: {},
       retainedAgentsByPaneKey: {}
     }
@@ -268,44 +258,6 @@ describe('useWorktreeActivityStatus', () => {
       agentStatusEpoch: 1,
       agentStatusByPaneKey: {
         [paneKey]: makeAgentStatusEntry({ paneKey, state: 'done' })
-      }
-    }
-
-    expect(renderToStaticMarkup(<StatusProbe worktreeId={worktreeId} />)).toBe('<span>done</span>')
-  })
-
-  it('lets a completed worker suppress its parent pane stale working title', () => {
-    const worktreeId = 'repo1::/path/wt1'
-    const parentPaneKey = makePaneKey('tab-parent', LEAF_ID)
-    const childPaneKey = makePaneKey('tab-child', SECOND_LEAF_ID)
-    mockState = {
-      ...mockState,
-      tabsByWorktree: {
-        [worktreeId]: [makeTab('tab-parent', worktreeId)]
-      },
-      ptyIdsByTabId: {
-        'tab-parent': ['pty-parent']
-      },
-      runtimePaneTitlesByTabId: {
-        'tab-parent': {
-          1: '⠋ Codex'
-        }
-      },
-      terminalLayoutsByTabId: {
-        'tab-parent': {
-          root: { type: 'leaf', leafId: LEAF_ID },
-          activeLeafId: LEAF_ID,
-          expandedLeafId: null
-        }
-      },
-      agentStatusEpoch: 1,
-      agentStatusByPaneKey: {
-        [childPaneKey]: makeAgentStatusEntry({
-          paneKey: childPaneKey,
-          state: 'done',
-          worktreeId,
-          parentPaneKey
-        })
       }
     }
 

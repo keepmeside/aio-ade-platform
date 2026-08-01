@@ -295,22 +295,9 @@ async function createWorkspaceFromSeededRepo(page, timeoutMs) {
 }
 
 const OVERLAY_DISMISS_LABELS = ['Got it', 'Dismiss setup scripts', 'Dismiss tip', 'Dismiss update']
-const CLI_FEATURE_TIP_TITLE = 'Let agents drive Orca with the Orca CLI'
 
 async function dismissKnownOverlays(page) {
   let acted = false
-  const cliFeatureTip = page.getByRole('dialog', { name: CLI_FEATURE_TIP_TITLE }).first()
-  if (await cliFeatureTip.isVisible().catch(() => false)) {
-    // Why: a global "Close" role also matches the Windows/Linux title-bar button.
-    const dialogClose = cliFeatureTip.locator('[data-slot="dialog-close"]').first()
-    if (await dialogClose.isVisible().catch(() => false)) {
-      const clicked = await dialogClose
-        .click({ timeout: 3_000 })
-        .then(() => true)
-        .catch(() => false)
-      acted ||= clicked
-    }
-  }
   for (const name of OVERLAY_DISMISS_LABELS) {
     const btn = page.getByRole('button', { name }).first()
     if (await btn.isVisible().catch(() => false)) {

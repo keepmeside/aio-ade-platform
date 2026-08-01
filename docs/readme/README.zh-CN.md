@@ -127,20 +127,6 @@ VS Code 的编辑器，处处自动保存 — 把文件或图片直接拖入智�
   <a href="https://www.onorca.dev/docs/editing/file-explorer"><picture><source srcset="../assets/feature-wall/file-drag.gif" type="image/gif"><img src="../assets/feature-wall/file-drag.jpg" alt="将文件和图片拖入智能体提示" width="100%" /></picture></a>
 </td>
 </tr>
-<tr>
-<td width="50%" valign="middle">
-
-### Orca CLI
-
-智能体也能驱动 Orca — 用 `orca worktree create`、`snapshot`、`click` 和 `fill` 把每个工作流脚本化。
-
-[文档 →](https://www.onorca.dev/docs/cli/overview)
-
-</td>
-<td width="50%">
-  <a href="https://www.onorca.dev/docs/cli/overview"><picture><source srcset="../assets/feature-wall/orca-cli.gif" type="image/gif"><img src="../assets/feature-wall/orca-cli.jpg" alt="从 CLI 脚本化 Orca" width="100%" /></picture></a>
-</td>
-</tr>
 </table>
 
 **开箱即用的还有：**
@@ -148,7 +134,7 @@ VS Code 的编辑器，处处自动保存 — 把文件或图片直接拖入智�
 - **[快速打开](https://www.onorca.dev/docs/model/quick-open)** — 在 worktree、文件、智能体、命令和仓库上下文之间搜索，不打断你的心流。
 - **[账号切换与用量追踪](https://www.onorca.dev/docs/agents/usage-tracking)** — 查看 Claude 和 Codex 的用量与限额重置时间，并且无需重新登录即可热切换账号。
 - **[丰富仓库预览](https://www.onorca.dev/docs/editing/markdown)** — 在工作区中预览 Markdown、图片、PDF 和仓库文档。
-- **[Computer Use](https://www.onorca.dev/docs/cli/computer-use)** — 当工作流需要真实交互时，让智能体操作桌面应用和可见 UI。
+- **Computer Use** — 当工作流需要真实交互时，让智能体操作桌面应用和可见 UI。
 - **[通知与未读状态](https://www.onorca.dev/docs/notifications)** — 第一时间知道智能体何时完成或需要关注，并可将会话标记为未读，稍后再回来处理。
 - **还有很多很多** — 我们每天发布新功能，这个列表永远跟不上。[更新日志](https://github.com/stablyai/orca/releases)才是真正的功能列表。
 

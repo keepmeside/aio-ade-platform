@@ -28,7 +28,6 @@ export const NEVER_TRANSLATE_VALUES = new Set([
   'Autohand Code',
   'Charm',
   'Claude',
-  'Claude Agent Teams',
   'Cline',
   'Codebuff',
   'Codex',

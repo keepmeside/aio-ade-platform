@@ -275,9 +275,6 @@ function areLineageRecordsEqual(
     a.origin === b.origin &&
     a.capture.source === b.capture.source &&
     a.capture.confidence === b.capture.confidence &&
-    a.orchestrationRunId === b.orchestrationRunId &&
-    a.taskId === b.taskId &&
-    a.coordinatorHandle === b.coordinatorHandle &&
     a.createdByTerminalHandle === b.createdByTerminalHandle &&
     a.createdAt === b.createdAt
   )
@@ -1361,9 +1358,6 @@ function projectWorktreeLineageToWorkspaceLineage(
     parentInstanceId: lineage.parentWorktreeInstanceId,
     origin: lineage.origin,
     capture: lineage.capture,
-    ...(lineage.taskId ? { taskId: lineage.taskId } : {}),
-    ...(lineage.orchestrationRunId ? { orchestrationRunId: lineage.orchestrationRunId } : {}),
-    ...(lineage.coordinatorHandle ? { coordinatorHandle: lineage.coordinatorHandle } : {}),
     ...(lineage.createdByTerminalHandle
       ? { createdByTerminalHandle: lineage.createdByTerminalHandle }
       : {}),

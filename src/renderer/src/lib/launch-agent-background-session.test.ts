@@ -279,7 +279,7 @@ describe('launchAgentBackgroundSession', () => {
     const effectiveLaunchConfig = {
       agentCommand: "claude '--dangerously-skip-permissions'",
       agentArgs: '--dangerously-skip-permissions',
-      agentEnv: { ORCA_AGENT_TEAMS_TEAM_ID: 'team-fresh' }
+      agentEnv: { EXAMPLE_SESSION_ID: 'session-fresh' }
     }
     mockSpawn.mockResolvedValue({ id: 'pty-1', launchConfig: effectiveLaunchConfig })
     const { launchAgentBackgroundSession } = await import('./launch-agent-background-session')

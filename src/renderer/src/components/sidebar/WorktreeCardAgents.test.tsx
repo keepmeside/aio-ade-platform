@@ -18,7 +18,7 @@ type MockAgentOptions = {
   lastAssistantMessage?: string
   stateStartedAt?: number
   terminalHandle?: string
-  orchestration?: {
+  lineageMetadata?: {
     parentPaneKey?: string
     parentTerminalHandle?: string
     coordinatorHandle?: string
@@ -42,7 +42,7 @@ function mockAgent({
   lastAssistantMessage,
   stateStartedAt = 1000,
   terminalHandle,
-  orchestration,
+  lineageMetadata,
   lineage
 }: MockAgentOptions = {}): unknown {
   return {
@@ -59,7 +59,7 @@ function mockAgent({
       stateStartedAt,
       stateHistory: prompt === undefined ? undefined : [],
       terminalHandle,
-      orchestration
+      orchestration: lineageMetadata
     },
     lineage
   }
@@ -406,7 +406,7 @@ describe('WorktreeCardAgents', () => {
     expect(activationMocks.activateTabAndFocusPane).not.toHaveBeenCalled()
   })
 
-  it('shows orchestration child agent rows under their parent by default', async () => {
+  it('shows nested child agent rows under their parent by default', async () => {
     mockAgentActivityDisplayMode = 'full'
     mockAgents = [
       mockAgent({
@@ -422,7 +422,7 @@ describe('WorktreeCardAgents', () => {
         paneKey: 'tab-child:1',
         state: 'done',
         stateStartedAt: 1500,
-        orchestration: { parentPaneKey: 'tab-parent:1' },
+        lineageMetadata: { parentPaneKey: 'tab-parent:1' },
         lineage: {
           depth: 1,
           isFirstSibling: true,
@@ -443,7 +443,7 @@ describe('WorktreeCardAgents', () => {
     expect(markup).toContain('aria-expanded="true"')
   })
 
-  it('shows orchestration children under a retained parent matched by terminal handle', async () => {
+  it('shows nested children under a retained parent matched by terminal handle', async () => {
     mockAgentActivityDisplayMode = 'full'
     mockAgents = [
       mockAgent({
@@ -454,7 +454,7 @@ describe('WorktreeCardAgents', () => {
         paneKey: 'tab-child:1',
         state: 'done',
         stateStartedAt: 1500,
-        orchestration: { parentTerminalHandle: 'term-parent' }
+        lineageMetadata: { parentTerminalHandle: 'term-parent' }
       })
     ]
     const { default: WorktreeCardAgents } = await import('./WorktreeCardAgents')
@@ -467,7 +467,7 @@ describe('WorktreeCardAgents', () => {
     expect(markup).toContain('aria-label="Hide 1 child agent"')
   })
 
-  it('shows orchestration children under a visible coordinator when parent handle is absent', async () => {
+  it('shows nested children under a visible coordinator when parent handle is absent', async () => {
     mockAgentActivityDisplayMode = 'full'
     mockAgents = [
       mockAgent({
@@ -478,7 +478,7 @@ describe('WorktreeCardAgents', () => {
         paneKey: 'tab-child:1',
         state: 'done',
         stateStartedAt: 1500,
-        orchestration: { coordinatorHandle: 'term-coordinator' }
+        lineageMetadata: { coordinatorHandle: 'term-coordinator' }
       })
     ]
     const { default: WorktreeCardAgents } = await import('./WorktreeCardAgents')
@@ -491,14 +491,14 @@ describe('WorktreeCardAgents', () => {
     expect(markup).toContain('aria-label="Hide 1 child agent"')
   })
 
-  it('keeps partially cyclic orchestration rows visible as flat roots', async () => {
+  it('keeps partially cyclic lineage rows visible as flat roots', async () => {
     mockAgentActivityDisplayMode = 'full'
     mockAgents = [
       mockAgent({ paneKey: 'tab-root:1' }),
       mockAgent({
         paneKey: 'tab-cycle-a:1',
         stateStartedAt: 1200,
-        orchestration: { parentPaneKey: 'tab-cycle-b:1' },
+        lineageMetadata: { parentPaneKey: 'tab-cycle-b:1' },
         lineage: {
           depth: 0,
           isFirstSibling: true,
@@ -510,7 +510,7 @@ describe('WorktreeCardAgents', () => {
         paneKey: 'tab-cycle-b:1',
         state: 'done',
         stateStartedAt: 1300,
-        orchestration: { parentPaneKey: 'tab-cycle-a:1' },
+        lineageMetadata: { parentPaneKey: 'tab-cycle-a:1' },
         lineage: {
           depth: 1,
           isFirstSibling: false,
@@ -854,7 +854,7 @@ describe('WorktreeCardAgents', () => {
         startedAt: 1100,
         stateStartedAt: 1100,
         prompt: 'Child A',
-        orchestration: { parentPaneKey: 'tab-parent-a:1' }
+        lineageMetadata: { parentPaneKey: 'tab-parent-a:1' }
       }),
       mockAgent({
         paneKey: 'tab-parent-b:1',
@@ -870,7 +870,7 @@ describe('WorktreeCardAgents', () => {
         startedAt: 1300,
         stateStartedAt: 1300,
         prompt: 'Child B',
-        orchestration: { parentPaneKey: 'tab-parent-b:1' }
+        lineageMetadata: { parentPaneKey: 'tab-parent-b:1' }
       }),
       mockAgent({
         paneKey: 'tab-parent-c:1',

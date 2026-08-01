@@ -23,7 +23,7 @@ describe('toRuntimeTerminalWorktreeSelector', () => {
   it('resolves ephemeral setup terminals to the floating-terminal scope', () => {
     expect(
       toRuntimeTerminalWorktreeSelector(
-        brandEphemeralSetupTerminalWorktreeId('feature-wall-orchestration-skill-terminal')
+        brandEphemeralSetupTerminalWorktreeId('feature-wall-browser-skill-terminal')
       )
     ).toBe('id:global-floating-terminal')
   })

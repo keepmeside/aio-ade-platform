@@ -11,7 +11,7 @@ describe('FeatureTourPreview first-run copy', () => {
   })
 
   it('teaches that opening a workspace returns to its terminal', () => {
-    const terminalFrame = FEATURE_TOUR_PREVIEW_COPY.find((frame) => frame.id === 4)
+    const terminalFrame = FEATURE_TOUR_PREVIEW_COPY.find((frame) => frame.id === 3)
 
     expect(terminalFrame?.caption).toContain('Open any workspace')
     expect(terminalFrame?.caption).toContain('return to its terminal')

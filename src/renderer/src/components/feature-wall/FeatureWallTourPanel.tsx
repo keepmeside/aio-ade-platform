@@ -1,14 +1,11 @@
 import type { JSX, KeyboardEvent, MutableRefObject, ReactNode } from 'react'
-import type { AgentsStep, AgentsStepId } from '../../../../shared/agents-orchestration-steps'
 import type {
   FeatureWallWorkflow,
   FeatureWallWorkflowId
 } from '../../../../shared/feature-wall-workflows'
 import type { ReviewStep, ReviewStepId } from '../../../../shared/review-steps'
 import type { FeatureWallOpenSourceTelemetry } from '../../../../shared/telemetry-events'
-import type { GlobalSettings } from '../../../../shared/types'
 import type { WorkbenchStep, WorkbenchStepId } from '../../../../shared/workbench-steps'
-import type { InstalledAgentSkillState } from '@/hooks/useInstalledAgentSkills'
 import { cn } from '@/lib/utils'
 import type { FeatureWallCompletionState } from './use-feature-wall-completion'
 import { FeatureWallBody } from './FeatureWallBody'
@@ -35,9 +32,6 @@ export function FeatureWallTourPanel(props: {
   railRefs: MutableRefObject<(HTMLButtonElement | null)[]>
   onSelectWorkflow: (workflow: FeatureWallWorkflow) => void
   onRailKeyDown: (event: KeyboardEvent<HTMLButtonElement>, index: number) => void
-  agentsSteps: readonly AgentsStep[]
-  agentsActiveStep: AgentsStep | null
-  onSelectAgentsStep: (id: AgentsStepId) => void
   workbenchSteps: readonly WorkbenchStep[]
   workbenchActiveStep: WorkbenchStep | null
   onSelectWorkbenchStep: (id: WorkbenchStepId) => void
@@ -49,16 +43,10 @@ export function FeatureWallTourPanel(props: {
   showGif: boolean
   prefersReducedMotion: boolean
   source: FeatureWallOpenSourceTelemetry
-  orchestrationSkill: InstalledAgentSkillState
-  browserUseSkill: InstalledAgentSkillState
-  settings: GlobalSettings | null
-  updateSettings: (updates: Partial<GlobalSettings>) => void
   footerText: string | null
   continueButton: ReactNode
   leadingFooterContent?: ReactNode
 }): JSX.Element {
-  // Why: the tour should not slide horizontally between pages; individual
-  // visuals can adapt inside the stage, but the page anchor must stay fixed.
   const contentStageClassName = 'mx-auto w-full max-w-[940px]'
   const previewTitle = props.activeStepCopy?.title ?? props.selected.title
   const panel = (
@@ -85,10 +73,6 @@ export function FeatureWallTourPanel(props: {
             onSelect={props.onSelectWorkflow}
             onRailKeyDown={props.onRailKeyDown}
             workflowDone={props.completion.workflowDone}
-            agentsSteps={props.agentsSteps}
-            agentsActiveStepId={props.agentsActiveStep?.id ?? null}
-            agentStepDone={props.completion.agentStepDone}
-            onSelectAgentsStep={props.onSelectAgentsStep}
             workbenchSteps={props.workbenchSteps}
             workbenchActiveStepId={props.workbenchActiveStep?.id ?? null}
             workbenchStepDone={props.completion.workbenchStepDone}
@@ -136,14 +120,8 @@ export function FeatureWallTourPanel(props: {
               showGif={props.showGif}
               prefersReducedMotion={props.prefersReducedMotion}
               source={props.source}
-              agentsActiveStep={props.agentsActiveStep}
               workbenchActiveStep={props.workbenchActiveStep}
               reviewActiveStep={props.reviewActiveStep}
-              orchestrationSkill={props.orchestrationSkill}
-              browserUseSkill={props.browserUseSkill}
-              onUsageAccountStateChange={props.completion.refreshUsageAccountState}
-              settings={props.settings}
-              updateSettings={props.updateSettings}
             />
           </div>
         </section>

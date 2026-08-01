@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
 import type { PersistedUIState } from '../../../shared/types'
 import { getDefaultUIState } from '../../../shared/constants'
-import { ORCHESTRATION_CONTRACT_VERSION } from '../../../shared/protocol-version'
 import {
   ORCA_RUNTIME_RPC_BROWSER_UI_SOURCE,
   ORCA_RUNTIME_RPC_FEATURE_INTERACTION_SOURCE_KEY
@@ -16,10 +15,7 @@ function makeRequest(method: string, params: unknown = {}): RpcRequest {
     id: 'req-1',
     authToken: 'tok',
     method,
-    params,
-    ...(method.startsWith('orchestration.')
-      ? { orchestrationContractVersion: ORCHESTRATION_CONTRACT_VERSION }
-      : {})
+    params
   }
 }
 
@@ -125,11 +121,6 @@ const METHODS = [
     handler: () => ({ clicked: true })
   }),
   defineMethod({
-    name: 'orchestration.send',
-    params: z.object({}),
-    handler: () => ({ id: 'msg-1' })
-  }),
-  defineMethod({
     name: 'browser.fail',
     params: z.object({}),
     handler: () => {
@@ -145,11 +136,9 @@ describe('RpcDispatcher feature interactions', () => {
 
     await dispatcher.dispatch(makeRequest('browser.click'))
     await dispatcher.dispatch(makeRequest('computer.click'))
-    await dispatcher.dispatch(makeRequest('orchestration.send'))
 
     expect(runtime.recordFeatureInteraction).toHaveBeenCalledWith('agent-browser-use')
     expect(runtime.recordFeatureInteraction).toHaveBeenCalledWith('computer-use')
-    expect(runtime.recordFeatureInteraction).toHaveBeenCalledWith('agent-orchestration')
   })
 
   it('keeps setup and cookie import separate from actual runtime use', async () => {
@@ -175,6 +164,20 @@ describe('RpcDispatcher feature interactions', () => {
 
     expect(runtime.recordFeatureInteraction).not.toHaveBeenCalled()
   })
+
+  it.each(['orchestration.ask', 'orchestration.check'])(
+    'does not expose the removed %s bridge method',
+    async (method) => {
+      const runtime = makeRuntime()
+      const dispatcher = new RpcDispatcher({ runtime })
+
+      await expect(dispatcher.dispatch(makeRequest(method))).resolves.toMatchObject({
+        ok: false,
+        error: { code: 'method_not_found' }
+      })
+      expect(runtime.recordFeatureInteraction).not.toHaveBeenCalled()
+    }
+  )
 
   it('records unmarked browser display RPCs as agent browser use', async () => {
     const runtime = makeRuntime()

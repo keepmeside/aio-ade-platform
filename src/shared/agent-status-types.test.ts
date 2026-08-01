@@ -99,58 +99,7 @@ describe('parseAgentStatusPayload', () => {
     expect(result!.prompt).toHaveLength(AGENT_STATUS_MAX_FIELD_LENGTH)
   })
 
-  // Why: dispatch preambles bury the task body after multi-KB CLI text; naive head-truncation would keep only boilerplate.
-  it('compacts Orca dispatch preambles so the task body survives 200-char truncation', () => {
-    const longCliNoise = Array.from(
-      { length: 50 },
-      (_, i) => `orca orchestration send --to term_parent --type heartbeat --phase step-${i}`
-    ).join('\n')
-    const result = parseAgentStatusPayload(
-      JSON.stringify({
-        state: 'working',
-        prompt: `You are working inside Orca, a multi-agent IDE. You are a dispatched worker.
-Your task ID is: task_compact_1
-
-=== CLI COMMANDS ===
-${longCliNoise}
-
-=== TASK ===
-Fix dispatch fallback preview for normalized status prompts`
-      })
-    )
-    expect(result).not.toBeNull()
-    expect(result!.prompt.length).toBeLessThanOrEqual(AGENT_STATUS_MAX_FIELD_LENGTH)
-    expect(result!.prompt.includes('\n')).toBe(false)
-    expect(result!.prompt.startsWith('You are working inside Orca, a multi-agent IDE.')).toBe(true)
-    expect(result!.prompt).toContain('Your task ID is: task_compact_1')
-    expect(result!.prompt).toContain('=== TASK ===')
-    expect(result!.prompt).toContain('Fix dispatch fallback preview')
-    expect(result!.prompt).not.toContain('CLI COMMANDS')
-    expect(result!.prompt).not.toContain('heartbeat')
-  })
-
-  it('ignores task-marker text inside base-drift commit subjects', () => {
-    const result = normalizeAgentStatusPayload({
-      state: 'working',
-      // Why: CRLF covers Windows hook payloads; commit text must not impersonate the task separator.
-      prompt: [
-        'You are working inside Orca, a multi-agent IDE. You are a dispatched worker.',
-        'Your task ID is: task_drift_marker',
-        '',
-        '--- BASE DRIFT ---',
-        '  - docs: explain === TASK === marker parsing',
-        '---',
-        '',
-        '=== TASK ===',
-        'Fix the actual dispatch fallback preview'
-      ].join('\r\n')
-    })
-
-    expect(result!.prompt).toContain('=== TASK === Fix the actual dispatch fallback preview')
-    expect(result!.prompt).not.toContain('marker parsing')
-  })
-
-  it('keeps dispatch detection bounded for oversized whitespace prompts', () => {
+  it('keeps prompt normalization bounded for oversized whitespace prompts', () => {
     const trimStartSpy = vi.spyOn(String.prototype, 'trimStart')
     const prompt = ' '.repeat(1_000_000)
 

@@ -39,10 +39,6 @@ export function isAutomationGeneratedWorkspace(worktree: Worktree): boolean {
   return worktree.automationProvenance?.kind === 'created-by-automation'
 }
 
-export function isCliCreatedWorkspace(worktree: Worktree): boolean {
-  return worktree.cliProvenance?.kind === 'created-by-cli'
-}
-
 /**
  * Whether a worktree sits on a detached HEAD (a commit, not a branch).
  *
@@ -61,7 +57,6 @@ export type SidebarFilterState = {
   filterRepoIds: readonly string[]
   hideDefaultBranchWorkspace: boolean
   hideAutomationGeneratedWorkspaces: boolean
-  hideCliCreatedWorkspaces: boolean
   hideDetachedHeadWorkspaces: boolean
   visibleWorkspaceHostIds?: readonly ExecutionHostId[] | null
   workspaceHostScope?: ExecutionHostScope
@@ -82,7 +77,6 @@ export function sidebarHasActiveFilters(state: SidebarFilterState): boolean {
     state.filterRepoIds.length > 0 ||
     state.hideDefaultBranchWorkspace ||
     state.hideAutomationGeneratedWorkspaces ||
-    state.hideCliCreatedWorkspaces ||
     state.hideDetachedHeadWorkspaces ||
     state.visibleWorkspaceHostIds != null ||
     (state.workspaceHostScope != null && state.workspaceHostScope !== ALL_EXECUTION_HOSTS_SCOPE)
@@ -96,7 +90,6 @@ export type ClearFilterActions = {
   resetFilterRepoIds: boolean
   resetHideDefaultBranchWorkspace: boolean
   resetHideAutomationGeneratedWorkspaces: boolean
-  resetHideCliCreatedWorkspaces: boolean
   resetHideDetachedHeadWorkspaces: boolean
   resetVisibleWorkspaceHostIds: boolean
 }
@@ -117,7 +110,6 @@ export function computeClearFilterActions(state: SidebarFilterState): ClearFilte
     resetFilterRepoIds: state.filterRepoIds.length > 0,
     resetHideDefaultBranchWorkspace: state.hideDefaultBranchWorkspace,
     resetHideAutomationGeneratedWorkspaces: state.hideAutomationGeneratedWorkspaces,
-    resetHideCliCreatedWorkspaces: state.hideCliCreatedWorkspaces,
     resetHideDetachedHeadWorkspaces: state.hideDetachedHeadWorkspaces,
     resetVisibleWorkspaceHostIds:
       state.visibleWorkspaceHostIds != null ||
@@ -153,7 +145,6 @@ export function computeVisibleWorktreeIds(
     // forgetting to pass it.
     hideDefaultBranchWorkspace: boolean
     hideAutomationGeneratedWorkspaces: boolean
-    hideCliCreatedWorkspaces: boolean
     hideDetachedHeadWorkspaces: boolean
     repoMap: Map<string, Repo>
     workspaceHostScope: ExecutionHostScope
@@ -179,10 +170,6 @@ export function computeVisibleWorktreeIds(
 
   if (opts.hideAutomationGeneratedWorkspaces) {
     all = all.filter((w) => !isAutomationGeneratedWorkspace(w))
-  }
-
-  if (opts.hideCliCreatedWorkspaces) {
-    all = all.filter((w) => !isCliCreatedWorkspace(w))
   }
 
   if (opts.hideDetachedHeadWorkspaces) {
@@ -368,7 +355,6 @@ export function getVisibleWorktreeIds(): string[] {
     ),
     hideDefaultBranchWorkspace: state.hideDefaultBranchWorkspace,
     hideAutomationGeneratedWorkspaces: state.hideAutomationGeneratedWorkspaces,
-    hideCliCreatedWorkspaces: state.hideCliCreatedWorkspaces,
     hideDetachedHeadWorkspaces: state.hideDetachedHeadWorkspaces,
     repoMap,
     workspaceHostScope: state.workspaceHostScope,

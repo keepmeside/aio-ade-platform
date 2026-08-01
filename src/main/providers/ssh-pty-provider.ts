@@ -3,7 +3,6 @@ import type { IPtyProvider, PtyProcessInfo, PtySpawnOptions, PtySpawnResult } fr
 import { toAppSshPtyId, toRelaySshPtyId } from './ssh-pty-id'
 import { createSshPtyAppliedSizeReader } from './ssh-pty-applied-size'
 import type {
-  RemoteCliBridgeEnv,
   SshPtyDataCallback,
   SshPtyExitCallback,
   SshPtyReplayCallback
@@ -44,11 +43,7 @@ export class SshPtyProvider implements IPtyProvider {
   private readonly agentSessionCapabilities: SshAgentSessionCapabilities
   private spawnExitRaces = new SshPtySpawnExitRaceTracker()
 
-  constructor(
-    connectionId: string,
-    mux: SshChannelMultiplexer,
-    private readonly remoteCliBridgeEnv?: RemoteCliBridgeEnv
-  ) {
+  constructor(connectionId: string, mux: SshChannelMultiplexer) {
     this.connectionId = connectionId
     this.mux = mux
     this.agentSessionCapabilities = new SshAgentSessionCapabilities(mux)
@@ -128,11 +123,7 @@ export class SshPtyProvider implements IPtyProvider {
         mux: this.mux,
         operationId: opts.agentSessionCreateOperationId,
         signal: opts.signal,
-        params: buildSshPtySpawnRequest({
-          options: opts,
-          remoteCliBridgeEnv: this.remoteCliBridgeEnv,
-          supportsCreateOperation
-        })
+        params: buildSshPtySpawnRequest({ options: opts, supportsCreateOperation })
       })
       if (opts.agentSessionCreateOperationId) {
         assertSshAgentSessionCreateResult(result)

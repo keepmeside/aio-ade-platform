@@ -47,12 +47,6 @@ test.describe('Setup guide sidebar entry', () => {
       .toBe('automations')
     await orcaPage.waitForTimeout(500)
 
-    await setActiveViewForFlashProbe(orcaPage, 'mobile')
-    await expect
-      .poll(async () => getStoreState<string>(orcaPage, 'activeView'), { timeout: 5_000 })
-      .toBe('mobile')
-    await orcaPage.waitForTimeout(500)
-
     const flashSamples = await stopSetupGuideFlashMonitor(orcaPage)
     expect(flashSamples, `setup guide sidebar flashed at ${flashSamples.join(', ')}`).toEqual([])
 
@@ -67,7 +61,7 @@ test.describe('Setup guide sidebar entry', () => {
 
 async function setActiveViewForFlashProbe(
   page: Page,
-  view: 'tasks' | 'automations' | 'mobile'
+  view: 'tasks' | 'automations'
 ): Promise<void> {
   await page.evaluate((nextView) => {
     // Why: this spec monitors setup-guide visibility during view transitions;
@@ -119,11 +113,7 @@ async function installBlockedCompletedCapabilityFakes(
     ipcMain.handle('skills:discover', async (): Promise<SkillDiscoveryResult> => {
       await waitForSkillDiscoveryRelease()
       return {
-        skills: [
-          makeSkill('orca-cli', 'e2e-orca-cli'),
-          makeSkill('computer-use', 'e2e-computer-use'),
-          makeSkill('orchestration', 'e2e-orchestration')
-        ],
+        skills: [makeSkill('computer-use', 'e2e-computer-use')],
         sources: [],
         scannedAt: Date.now()
       }

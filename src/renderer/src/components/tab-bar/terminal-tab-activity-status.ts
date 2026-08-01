@@ -142,7 +142,7 @@ export function resolveTerminalTabActivityStatus({
     hasPermission: flags?.hasPermission ?? false,
     hasLiveWorking: flags?.hasLiveWorking ?? false,
     hasLiveDone: flags?.hasLiveDone ?? false,
-    // Why: retained/orchestration promotions are worktree-aggregate concerns;
+    // Why: retained and nested-agent promotions are worktree-aggregate concerns;
     // a tab reflects its own live panes and title only.
     hasRetainedDone: false
   })

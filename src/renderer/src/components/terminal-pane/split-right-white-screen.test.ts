@@ -135,9 +135,7 @@ describe('split-right white screen: post-spawn PTY size reconcile', () => {
   })
 
   it('does NOT force a fallback when the pane is hidden (background spawn legitimately stays 0x0)', () => {
-    // A permanently-hidden background spawn at 0x0 is legitimate (orchestration
-    // workers, `terminal create` without --focus); it refits when shown, so the
-    // reconcile must not push a phantom 80x24 onto it.
+    // A hidden background spawn refits when shown; do not push a phantom 80x24.
     const { resize, lastSent } = runReconcile({
       isAuthoritative: () => false,
       measure: vi.fn((): PtySizeReconcileDimensions | null => null),

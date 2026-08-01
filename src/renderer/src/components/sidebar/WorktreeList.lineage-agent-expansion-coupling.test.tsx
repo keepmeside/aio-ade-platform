@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 
 // Regression test for the child-worktrees <-> agent-list expansion coupling:
-// in a worktree card that shows BOTH inline agent rows (with orchestration
-// lineage) AND a "N children" child-worktrees chip, toggling the child-worktrees
+// in a worktree card that shows BOTH inline agent rows (with subagent lineage)
+// AND a "N children" child-worktrees chip, toggling the child-worktrees
 // chip used to reset the agent list's expansion state (it remounts the card).
 // It renders the REAL WorktreeCardAgents (not a mock) inside the REAL
 // WorktreeList so the remount and the durable-expansion fix are exercised
@@ -16,10 +16,7 @@
 import { act, type ReactNode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import type {
-  AgentStatusEntry,
-  AgentStatusOrchestrationContext
-} from '../../../../shared/agent-status-types'
+import type { AgentStatusEntry } from '../../../../shared/agent-status-types'
 import type {
   Repo,
   TerminalTab,
@@ -205,8 +202,8 @@ function makeLineage(worktree: Worktree, parent: Worktree): WorktreeLineage {
     worktreeInstanceId: worktree.instanceId!,
     parentWorktreeId: parent.id,
     parentWorktreeInstanceId: parent.instanceId!,
-    origin: 'orchestration',
-    capture: { source: 'orchestration-context', confidence: 'explicit' },
+    origin: 'manual',
+    capture: { source: 'manual-action', confidence: 'explicit' },
     createdAt: 1
   }
 }
@@ -214,7 +211,7 @@ function makeLineage(worktree: Worktree, parent: Worktree): WorktreeLineage {
 function makeAgentEntry(
   paneKey: string,
   prompt: string,
-  orchestration?: AgentStatusOrchestrationContext
+  activationPaneKey?: string
 ): AgentStatusEntry {
   const now = Date.now()
   return {
@@ -226,7 +223,7 @@ function makeAgentEntry(
     paneKey,
     worktreeId: 'parent',
     stateHistory: [],
-    ...(orchestration ? { orchestration } : {})
+    ...(activationPaneKey ? { activationPaneKey } : {})
   }
 }
 
@@ -265,11 +262,7 @@ function setAgentLineageState(options: {
   })
   const agentStatusByPaneKey: Record<string, AgentStatusEntry> = {
     [PANE_ROOT]: makeAgentEntry(PANE_ROOT, 'PARENT_AGENT_PROMPT'),
-    [PANE_CHILD]: makeAgentEntry(PANE_CHILD, 'CHILD_AGENT_PROMPT', {
-      taskId: 't1',
-      dispatchId: 'd1',
-      parentPaneKey: PANE_ROOT
-    })
+    [PANE_CHILD]: makeAgentEntry(PANE_CHILD, 'CHILD_AGENT_PROMPT', PANE_ROOT)
   }
   if (options.secondRootAgent) {
     agentStatusByPaneKey[PANE_ROOT_2] = makeAgentEntry(PANE_ROOT_2, 'SECOND_ROOT_PROMPT')
@@ -338,7 +331,6 @@ function setAgentLineageState(options: {
     retainedAgentsByPaneKey: {},
     revealWorktreeInSidebar: vi.fn(),
     runtimePaneTitlesByTabId: {},
-    runtimeAgentOrchestrationByPaneKey: {},
     setFilterRepoIds: vi.fn(),
     setHideDefaultBranchWorkspace: vi.fn(),
     setRenamingWorktreeId: vi.fn(),

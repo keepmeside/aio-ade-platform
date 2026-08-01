@@ -172,16 +172,9 @@ export function RemoteServerFields({
           className="font-mono"
         />
         <p className="text-xs text-muted-foreground">
-          {translate('auto.components.sidebar.AddRemoteHostDialog.pairingHelpPrefix', 'Run')}{' '}
-          <span className="font-mono">
-            {translate(
-              'auto.components.sidebar.AddRemoteHostDialog.pairingCommand',
-              'orca serve --pairing-address <host>'
-            )}
-          </span>{' '}
           {translate(
             'auto.components.sidebar.AddRemoteHostDialog.pairingHelpSuffix',
-            'on the server and paste the printed pairing URL.'
+            'Paste a pairing URL issued by the Aio-ADE runtime host.'
           )}
         </p>
       </div>

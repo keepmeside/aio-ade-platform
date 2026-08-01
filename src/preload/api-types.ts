@@ -339,7 +339,6 @@ import type {
 } from '../shared/browser-guest-events'
 import type { ElectronAPI } from '@electron-toolkit/preload'
 import type { BrowserSetAnnotationViewportBridgeArgs } from '../shared/browser-annotation-viewport-bridge'
-import type { CliInstallStatus } from '../shared/cli-install-types'
 import type { E2EConfig } from '../shared/e2e-config'
 import type { AgentHookInstallStatus } from '../shared/agent-hook-types'
 import type { CodexConfigSyncStatus } from '../shared/codex-config-sync-types'
@@ -2380,14 +2379,6 @@ export type PreloadApi = {
       runtime?: 'host' | 'wsl'
       wslDistro?: string | null
     }) => Promise<ClaudeRateLimitAccountsState>
-  }
-  cli: {
-    getInstallStatus: () => Promise<CliInstallStatus>
-    install: () => Promise<CliInstallStatus>
-    remove: () => Promise<CliInstallStatus>
-    getWslInstallStatus: (args?: { distro?: string | null }) => Promise<CliInstallStatus>
-    installWsl: (args?: { distro?: string | null }) => Promise<CliInstallStatus>
-    removeWsl: (args?: { distro?: string | null }) => Promise<CliInstallStatus>
   }
   codexConfigSync: {
     status: () => Promise<CodexConfigSyncStatus>

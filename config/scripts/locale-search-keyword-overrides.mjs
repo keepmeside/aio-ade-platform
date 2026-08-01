@@ -59,7 +59,6 @@ export const SEARCH_KEYWORD_OVERRIDES = {
     messaging: '메시징',
     coordination: '코디네이션',
     'multi-agent': '멀티 에이전트',
-    orchestration: '오케스트레이션',
     task: '작업',
     issue: '이슈',
     issues: '이슈',

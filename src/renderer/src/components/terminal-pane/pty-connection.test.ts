@@ -2110,7 +2110,7 @@ describe('connectPanePty', () => {
     )
   })
 
-  // Why: hidden panes (orchestration workers, CLI terminal create) legitimately connect at 0×0 and refit when shown, so the zero-dimensions diagnostic must stay silent.
+  // Why: hidden panes legitimately connect at 0×0 and refit when shown.
   it('does not surface the zero-dimensions diagnostic for a hidden pane', async () => {
     const { connectPanePty } = await import('./pty-connection')
     const transport = createMockTransport()
@@ -17467,8 +17467,7 @@ describe('connectPanePty', () => {
     const { createIpcPtyTransport } = await import('./pty-transport')
     const transport = createMockTransport()
     transportFactoryQueue.push(transport)
-    const setupWorktreeId =
-      'ephemeral-setup-terminal:settings-mobile-emulator-orca-cli-skill-terminal'
+    const setupWorktreeId = 'ephemeral-setup-terminal:settings-computer-use-skill-terminal'
     mockStoreState = {
       ...mockStoreState,
       tabsByWorktree: { [setupWorktreeId]: [{ id: 'tab-1', ptyId: null }] },
@@ -17493,8 +17492,7 @@ describe('connectPanePty', () => {
     const { createRemoteRuntimePtyTransport } = await import('./remote-runtime-pty-transport')
     const transport = createMockTransport()
     transportFactoryQueue.push(transport)
-    const setupWorktreeId =
-      'ephemeral-setup-terminal:settings-mobile-emulator-orca-cli-skill-terminal'
+    const setupWorktreeId = 'ephemeral-setup-terminal:settings-computer-use-skill-terminal'
     mockStoreState = {
       ...mockStoreState,
       tabsByWorktree: { [setupWorktreeId]: [{ id: 'tab-1', ptyId: null }] },

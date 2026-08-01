@@ -159,8 +159,7 @@ describe('worktree RPC methods', () => {
       lineage: {
         parentWorktree: 'id:parent',
         noParent: false,
-        callerTerminalHandle: undefined,
-        orchestrationContext: undefined
+        callerTerminalHandle: undefined
       }
     })
   })
@@ -671,7 +670,9 @@ describe('worktree RPC methods', () => {
     )
 
     expect(response).toMatchObject({ ok: false })
-    expect(JSON.stringify(response)).toContain('Choose either one parent selector or --no-parent')
+    expect(JSON.stringify(response)).toContain(
+      'Choose either one parent selector or `noParent: true`'
+    )
     expect(runtime.createManagedWorktree).not.toHaveBeenCalled()
   })
 
@@ -811,7 +812,9 @@ describe('worktree RPC methods', () => {
     )
 
     expect(response).toMatchObject({ ok: false })
-    expect(JSON.stringify(response)).toContain('Choose either --parent-worktree or --no-parent')
+    expect(JSON.stringify(response)).toContain(
+      'Choose either `parentWorktree` or `noParent: true`, not both'
+    )
     expect(runtime.updateManagedWorktreeMeta).not.toHaveBeenCalled()
   })
 

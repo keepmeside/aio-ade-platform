@@ -16,9 +16,6 @@ export function useLiveDashboardSnapshot(): DashboardSnapshot {
   const agentStatusByPaneKey = useAppStore((s) => s.agentStatusByPaneKey)
   const retainedAgentsByPaneKey = useAppStore((s) => s.retainedAgentsByPaneKey)
   const migrationUnsupportedByPtyId = useAppStore((s) => s.migrationUnsupportedByPtyId)
-  const runtimeAgentOrchestrationByPaneKey = useAppStore(
-    (s) => s.runtimeAgentOrchestrationByPaneKey
-  )
   const terminalLayoutsByTabId = useAppStore((s) => s.terminalLayoutsByTabId)
   const ptyIdsByTabId = useAppStore((s) => s.ptyIdsByTabId)
   const runtimePaneTitlesByTabId = useAppStore((s) => s.runtimePaneTitlesByTabId)
@@ -67,7 +64,6 @@ export function useLiveDashboardSnapshot(): DashboardSnapshot {
           agentStatusByPaneKey,
           retainedAgentsByPaneKey,
           migrationUnsupportedByPtyId,
-          runtimeAgentOrchestrationByPaneKey,
           terminalLayoutsByTabId,
           ptyIdsByTabId,
           runtimePaneTitlesByTabId,
@@ -102,7 +98,6 @@ export function useLiveDashboardSnapshot(): DashboardSnapshot {
       agentStatusByPaneKey,
       retainedAgentsByPaneKey,
       migrationUnsupportedByPtyId,
-      runtimeAgentOrchestrationByPaneKey,
       terminalLayoutsByTabId,
       ptyIdsByTabId,
       runtimePaneTitlesByTabId,

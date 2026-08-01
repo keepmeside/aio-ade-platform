@@ -4,8 +4,7 @@ import type { RetainedAgentEntry } from '@/store/slices/agent-status'
 import {
   AGENT_STATUS_STALE_AFTER_MS,
   type AgentType,
-  type AgentStatusEntry,
-  type AgentStatusOrchestrationContext
+  type AgentStatusEntry
 } from '../../../../shared/agent-status-types'
 import {
   makePaneKey,
@@ -45,51 +44,6 @@ function resolveRowAgentType(entry: AgentStatusEntry, tab?: TerminalTab | null):
     entryAgentType ??
     'unknown'
   )
-}
-
-function orchestrationContextsEqual(
-  a: AgentStatusOrchestrationContext,
-  b: AgentStatusOrchestrationContext
-): boolean {
-  return (
-    a.taskId === b.taskId &&
-    a.dispatchId === b.dispatchId &&
-    a.taskTitle === b.taskTitle &&
-    a.displayName === b.displayName &&
-    a.parentTerminalHandle === b.parentTerminalHandle &&
-    a.parentPaneKey === b.parentPaneKey &&
-    a.coordinatorHandle === b.coordinatorHandle &&
-    a.orchestrationRunId === b.orchestrationRunId
-  )
-}
-
-function entryWithRuntimeOrchestration(
-  entry: AgentStatusEntry,
-  runtimeAgentOrchestrationByPaneKey: Record<string, AgentStatusOrchestrationContext> | undefined
-): AgentStatusEntry {
-  const runtimeOrchestration = runtimeAgentOrchestrationByPaneKey?.[entry.paneKey]
-  const sameDispatch =
-    entry.orchestration &&
-    runtimeOrchestration &&
-    entry.orchestration.taskId === runtimeOrchestration.taskId &&
-    entry.orchestration.dispatchId === runtimeOrchestration.dispatchId
-  if (entry.orchestration && runtimeOrchestration && !sameDispatch) {
-    return entry
-  }
-  const orchestration =
-    sameDispatch && entry.orchestration && runtimeOrchestration
-      ? { ...entry.orchestration, ...runtimeOrchestration }
-      : (runtimeOrchestration ?? entry.orchestration)
-  if (!orchestration || orchestration === entry.orchestration) {
-    return entry
-  }
-  if (entry.orchestration && orchestrationContextsEqual(entry.orchestration, orchestration)) {
-    return entry
-  }
-  // Why: runtime graph metadata can arrive after a hook status ping. Keep old
-  // fields only for the same dispatch; a reused terminal must not inherit a
-  // previous worker's stale parent.
-  return { ...entry, orchestration }
 }
 
 function countTerminalLayoutLeaves(node: TerminalPaneLayoutNode | null | undefined): number {
@@ -139,68 +93,6 @@ function isRetainedLegacyAliasOfSeenStablePane(args: {
   return countTerminalLayoutLeaves(layout?.root) === 1 && stablePaneKeys.length === 1
 }
 
-function markSeenPaneKeyForCurrentTab(args: {
-  paneKey: string | undefined
-  currentTabIds: Set<string>
-  terminalLayoutsByTabId?: Record<string, TerminalLayoutSnapshot | undefined>
-  seenPaneKeys: Set<string>
-}): void {
-  if (!args.paneKey) {
-    return
-  }
-  const parsed = parsePaneKey(args.paneKey)
-  if (parsed) {
-    if (args.currentTabIds.has(parsed.tabId)) {
-      args.seenPaneKeys.add(args.paneKey)
-    }
-    return
-  }
-
-  const legacy = parseLegacyNumericPaneKey(args.paneKey)
-  if (!legacy || !args.currentTabIds.has(legacy.tabId)) {
-    return
-  }
-  args.seenPaneKeys.add(args.paneKey)
-  const leafId = resolveRuntimePaneTitleLeafId(
-    args.terminalLayoutsByTabId?.[legacy.tabId],
-    legacy.numericPaneId
-  )
-  if (leafId) {
-    args.seenPaneKeys.add(makePaneKey(legacy.tabId, leafId))
-  }
-}
-
-function markCompletedWorkerParentPaneKeysSeen(args: {
-  entries: AgentStatusEntry[]
-  retained: RetainedAgentEntry[]
-  runtimeAgentOrchestrationByPaneKey?: Record<string, AgentStatusOrchestrationContext>
-  terminalLayoutsByTabId?: Record<string, TerminalLayoutSnapshot | undefined>
-  currentTabIds: Set<string>
-  seenPaneKeys: Set<string>
-}): void {
-  const markEntry = (entry: AgentStatusEntry): void => {
-    const rowEntry = entryWithRuntimeOrchestration(entry, args.runtimeAgentOrchestrationByPaneKey)
-    if (rowEntry.state !== 'done') {
-      return
-    }
-    // Why: completed worker rows can be attributed to a child pane while the
-    // visible parent pane still has a stale spinner title.
-    markSeenPaneKeyForCurrentTab({
-      paneKey: rowEntry.orchestration?.parentPaneKey,
-      currentTabIds: args.currentTabIds,
-      terminalLayoutsByTabId: args.terminalLayoutsByTabId,
-      seenPaneKeys: args.seenPaneKeys
-    })
-  }
-
-  for (const entry of args.entries) {
-    markEntry(entry)
-  }
-  for (const retained of args.retained) {
-    markEntry(retained.entry)
-  }
-}
-
 export function buildWorktreeAgentRows(args: {
   tabs: TerminalTab[]
   entries: AgentStatusEntry[]
@@ -208,12 +100,10 @@ export function buildWorktreeAgentRows(args: {
   runtimePaneTitlesByTabId?: Record<string, Record<number, string>>
   ptyIdsByTabId?: Record<string, string[]>
   terminalLayoutsByTabId?: Record<string, TerminalLayoutSnapshot | undefined>
-  runtimeAgentOrchestrationByPaneKey?: Record<string, AgentStatusOrchestrationContext>
   now: number
 }): DashboardAgentRow[] {
   const rows: DashboardAgentRow[] = []
   const seenPaneKeys = new Set<string>()
-  const currentTabIds = new Set(args.tabs.map((tab) => tab.id))
 
   const entriesByTabId = new Map<string, AgentStatusEntry[]>()
   for (const entry of args.entries) {
@@ -232,7 +122,7 @@ export function buildWorktreeAgentRows(args: {
   for (const tab of args.tabs) {
     const explicitEntries = entriesByTabId.get(tab.id) ?? []
     for (const entry of explicitEntries) {
-      const rowEntry = entryWithRuntimeOrchestration(entry, args.runtimeAgentOrchestrationByPaneKey)
+      const rowEntry = entry
       const isFresh = isExplicitAgentStatusFresh(rowEntry, args.now, AGENT_STATUS_STALE_AFTER_MS)
       const shouldDecay =
         !isFresh &&
@@ -254,25 +144,14 @@ export function buildWorktreeAgentRows(args: {
     }
   }
 
-  markCompletedWorkerParentPaneKeysSeen({
-    entries: args.entries,
-    retained: args.retained,
-    runtimeAgentOrchestrationByPaneKey: args.runtimeAgentOrchestrationByPaneKey,
-    terminalLayoutsByTabId: args.terminalLayoutsByTabId,
-    currentTabIds,
-    seenPaneKeys
-  })
-
   rows.push(...buildTitleDerivedAgentRows({ ...args, seenPaneKeys }))
 
-  // Why: orchestration workers can be attributed to a worktree by main before
-  // their tab is present in this renderer. Keep those live rows visible in the
-  // worktree card instead of waiting for tab membership that may never arrive.
+  // Worktree-attributed status can arrive before its tab is present in this renderer.
   for (const entry of args.entries) {
     if (seenPaneKeys.has(entry.paneKey)) {
       continue
     }
-    const rowEntry = entryWithRuntimeOrchestration(entry, args.runtimeAgentOrchestrationByPaneKey)
+    const rowEntry = entry
     const startedAt = effectiveWorktreeAgentRowStartedAt(rowEntry)
     const tab = tabFromWorktreeAttributedStatusEntry(rowEntry, startedAt)
     if (!tab) {
@@ -308,10 +187,7 @@ export function buildWorktreeAgentRows(args: {
     ) {
       continue
     }
-    const rowEntry = entryWithRuntimeOrchestration(
-      ra.entry,
-      args.runtimeAgentOrchestrationByPaneKey
-    )
+    const rowEntry = ra.entry
     rows.push({
       paneKey: rowEntry.paneKey,
       entry: rowEntry,

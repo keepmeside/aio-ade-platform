@@ -1,16 +1,8 @@
 import type { JSX } from 'react'
 import { cn } from '@/lib/utils'
-import { ClaudeIcon, OpenCodeGoIcon } from '../status-bar/icons'
-import {
-  CodexInlineIcon,
-  CursorIcon,
-  MailGlyph,
-  WorkingSpinner
-} from './feature-tour-preview-glyphs'
-import {
-  FEATURE_TOUR_ORCHESTRATION_CHILDREN,
-  FEATURE_TOUR_PREVIEW_COPY
-} from './feature-tour-preview-copy'
+import { ClaudeIcon } from '../status-bar/icons'
+import { CursorIcon, WorkingSpinner } from './feature-tour-preview-glyphs'
+import { FEATURE_TOUR_PREVIEW_COPY } from './feature-tour-preview-copy'
 import { FeatureTourWorkspaceCard } from './FeatureTourWorkspaceCard'
 import { FeatureTourTerminalFrame } from './FeatureTourTerminalFrame'
 import { translate } from '@/i18n/i18n'
@@ -60,134 +52,6 @@ function WorkspaceFrame(): JSX.Element {
           )}
           agents={[{ kind: 'claude', barWidth: '38%', state: 'working' }]}
         />
-      </div>
-    </div>
-  )
-}
-
-function OrchestrationFrame(): JSX.Element {
-  // Why: a horizontal fan (root → 3 children L→R) reads naturally as
-  // "fans out and ships parallel PRs" at the wide aspect; the previous
-  // top-down tree wasted the horizontal space. SVG paths are sized to a
-  // 600×130 viewBox and stretched non-uniformly, so the dashed lines flex
-  // with the container while the absolutely-positioned cards stay aligned
-  // to viewport-relative anchors (root left, children right column).
-  return (
-    <div className="absolute inset-0 flex flex-col gap-5 bg-card px-4 py-4">
-      <div className="text-[14.5px] font-semibold uppercase tracking-[0.07em] leading-none text-muted-foreground">
-        {translate(
-          'auto.components.feature.wall.FeatureTourPreview.e44269e97d',
-          'Agent orchestration'
-        )}
-      </div>
-      <div className="relative w-full flex-1">
-        {/* Why: viewBox is percent-units (100×100, preserveAspectRatio="none")
-            so endpoints anchor to the same percentage anchors as the cards
-            and the bubbles — root right edge at 34%, child left edge at 64%,
-            child Y centers at 18%/50%/82%. Explicit width/height attrs are
-            required because an SVG with a 1:1 viewBox and only inset-0
-            otherwise picks its intrinsic 1:1 aspect for height. */}
-        <svg
-          className="pointer-events-none absolute inset-0 text-foreground/30"
-          viewBox="0 0 100 100"
-          preserveAspectRatio="none"
-          width="100%"
-          height="100%"
-          aria-hidden
-        >
-          {/* Why: vectorEffect is NOT inheritable in SVG, so the
-              non-scaling-stroke attribute must live on each path. Hoisting
-              it onto <g> let preserveAspectRatio="none" stretch the dashes
-              into trapezoids on the diagonal connectors. */}
-          <path
-            d="M 34 50 C 49 50, 49 18, 64 18"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1"
-            strokeDasharray="2 3"
-            vectorEffect="non-scaling-stroke"
-          />
-          <path
-            d="M 34 50 L 64 50"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1"
-            strokeDasharray="2 3"
-            vectorEffect="non-scaling-stroke"
-          />
-          <path
-            d="M 34 50 C 49 50, 49 82, 64 82"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1"
-            strokeDasharray="2 3"
-            vectorEffect="non-scaling-stroke"
-          />
-        </svg>
-
-        {/* Why: parent matches WorkspaceCard composition — spinner + title row,
-            then a Claude agent row underneath — so the user reads it as "a
-            workspace running Claude as the orchestrator," consistent with how
-            workspaces look elsewhere in the app. */}
-        <div className="absolute left-0 top-1/2 flex w-[34%] -translate-y-1/2 flex-col rounded-md border border-border bg-background px-3 py-2">
-          <div className="flex items-center gap-2">
-            <WorkingSpinner />
-            <span className="truncate text-[15px] font-medium leading-none text-foreground">
-              {translate(
-                'auto.components.feature.wall.FeatureTourPreview.cebc7769cd',
-                'redesign auth flow'
-              )}
-            </span>
-          </div>
-          <div className="mt-2 flex items-center gap-1.5 pl-3.5">
-            <WorkingSpinner size="xs" />
-            <ClaudeIcon size={13} />
-            <span className="truncate text-[12.5px] leading-none text-muted-foreground">
-              {translate(
-                'auto.components.feature.wall.FeatureTourPreview.5171768676',
-                'orchestrating 3 agents'
-              )}
-            </span>
-          </div>
-        </div>
-
-        {/* Why: children mirror the parent's WorkspaceCard composition so the
-            fan reads as "coordinator workspace dispatches to 3 child
-            workspaces, each running its own agent." */}
-        {FEATURE_TOUR_ORCHESTRATION_CHILDREN.map(({ key, position, label, agent }) => (
-          <div
-            key={key}
-            className={cn(
-              'feature-tour-orch-child absolute right-0 flex w-[36%] flex-col rounded-md border border-border bg-background px-3 py-2',
-              key,
-              position
-            )}
-          >
-            <div className="flex items-center gap-2">
-              <WorkingSpinner />
-              <span className="truncate font-mono text-[14px] font-medium leading-none text-foreground">
-                {label}
-              </span>
-            </div>
-            <div className="mt-2 flex items-center gap-1.5 pl-3.5">
-              <WorkingSpinner size="xs" />
-              {agent === 'claude' ? (
-                <ClaudeIcon size={12} />
-              ) : agent === 'codex' ? (
-                <CodexInlineIcon />
-              ) : (
-                <OpenCodeGoIcon size={12} />
-              )}
-              <span className="h-2 flex-1 rounded-full bg-foreground/15" />
-            </div>
-          </div>
-        ))}
-
-        {FEATURE_TOUR_ORCHESTRATION_CHILDREN.map(({ key }) => (
-          <div key={`bubble-${key}`} className={cn('feature-tour-orch-bubble', key)}>
-            <MailGlyph />
-          </div>
-        ))}
       </div>
     </div>
   )
@@ -306,12 +170,9 @@ export function FeatureTourPreview(props: { className?: string }): JSX.Element {
         <WorkspaceFrame />
       </div>
       <div className="feature-tour-frame" data-frame="2">
-        <OrchestrationFrame />
-      </div>
-      <div className="feature-tour-frame" data-frame="3">
         <TasksFrame />
       </div>
-      <div className="feature-tour-frame" data-frame="4">
+      <div className="feature-tour-frame" data-frame="3">
         <FeatureTourTerminalFrame />
       </div>
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] h-[66px] border-t border-border/70 bg-card/95">
@@ -334,7 +195,6 @@ export function FeatureTourPreview(props: { className?: string }): JSX.Element {
         <span className="feature-tour-dot" data-frame="1" />
         <span className="feature-tour-dot" data-frame="2" />
         <span className="feature-tour-dot" data-frame="3" />
-        <span className="feature-tour-dot" data-frame="4" />
       </div>
     </div>
   )

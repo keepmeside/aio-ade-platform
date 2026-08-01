@@ -168,14 +168,8 @@ import { selectActiveTerminalChromeState } from './store/active-terminal-chrome-
 import type { VirtualizedScrollAnchor } from './hooks/useVirtualizedScrollAnchor'
 import type { RemoteWorkspacePatchResult } from '../../shared/remote-workspace-types'
 import type { OnboardingState, UpdateStatus } from '../../shared/types'
-import {
-  getFeatureTipsAppOpenDecision,
-  isCliFeatureTipCompleted
-} from './components/feature-tips/feature-tip-startup-gate'
-import {
-  trackCmdJPaletteFeatureTipShown,
-  trackOrcaCliFeatureTipShown
-} from './components/feature-tips/feature-tip-telemetry'
+import { getFeatureTipsAppOpenDecision } from './components/feature-tips/feature-tip-startup-gate'
+import { trackCmdJPaletteFeatureTipShown } from './components/feature-tips/feature-tip-telemetry'
 import {
   keybindingMatchesAction,
   type KeybindingActionId,
@@ -649,7 +643,6 @@ function App(): React.JSX.Element {
   const showSleepingWorkspaces = useAppStore((s) => s.showSleepingWorkspaces)
   const hideDefaultBranchWorkspace = useAppStore((s) => s.hideDefaultBranchWorkspace)
   const hideAutomationGeneratedWorkspaces = useAppStore((s) => s.hideAutomationGeneratedWorkspaces)
-  const hideCliCreatedWorkspaces = useAppStore((s) => s.hideCliCreatedWorkspaces)
   const hideDetachedHeadWorkspaces = useAppStore((s) => s.hideDetachedHeadWorkspaces)
   const showDotfilesByWorktree = useAppStore((s) => s.showDotfilesByWorktree)
   const filterRepoIds = useAppStore((s) => s.filterRepoIds)
@@ -701,7 +694,6 @@ function App(): React.JSX.Element {
   const featureTipsPromptedThisSessionRef = useRef(false)
   const featureTipsSuppressedByOnboardingThisSessionRef = useRef(false)
   const unmountAddRepoDialogTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [featureTipCliInstalled, setFeatureTipCliInstalled] = useState<boolean | null>(null)
   const [onboardingSettingsDetour, setOnboardingSettingsDetour] = useState(false)
   const shouldRenderOnboarding = onboarding !== null && shouldShowOnboarding(onboarding)
   const onboardingSettingsDetourActive =
@@ -767,34 +759,8 @@ function App(): React.JSX.Element {
   }, [actions, contextualToursAutoEligible, onboarding, onboardingLoaded, persistedUIReady])
 
   useEffect(() => {
-    if (!persistedUIReady) {
-      return
-    }
-
-    let cancelled = false
-    void window.api.cli
-      .getInstallStatus()
-      .then((status) => {
-        if (cancelled) {
-          return
-        }
-        setFeatureTipCliInstalled(isCliFeatureTipCompleted(status))
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setFeatureTipCliInstalled(true)
-        }
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [persistedUIReady])
-
-  useEffect(() => {
     const featureTipsDecision = getFeatureTipsAppOpenDecision({
       activeModal,
-      cliInstalled: featureTipCliInstalled,
       featureTipsSeenIds,
       featureInteractions,
       onboarding,
@@ -815,9 +781,7 @@ function App(): React.JSX.Element {
     }
 
     featureTipsPromptedThisSessionRef.current = true
-    if (featureTipsDecision.tipId === 'orca-cli') {
-      trackOrcaCliFeatureTipShown('app_open')
-    } else if (featureTipsDecision.tipId === 'cmd-j-palette') {
+    if (featureTipsDecision.tipId === 'cmd-j-palette') {
       trackCmdJPaletteFeatureTipShown('app_open')
     }
     // Why: mark seen on show so a quit/crash before dismiss doesn't reappear it next launch.
@@ -826,7 +790,6 @@ function App(): React.JSX.Element {
   }, [
     activeModal,
     actions,
-    featureTipCliInstalled,
     featureInteractions,
     featureTipsSeenIds,
     onboarding,
@@ -1354,7 +1317,6 @@ function App(): React.JSX.Element {
         showSleepingWorkspaces,
         hideDefaultBranchWorkspace,
         hideAutomationGeneratedWorkspaces,
-        hideCliCreatedWorkspaces,
         hideDetachedHeadWorkspaces,
         showDotfilesByWorktree,
         filterRepoIds,
@@ -1387,7 +1349,6 @@ function App(): React.JSX.Element {
     showSleepingWorkspaces,
     hideDefaultBranchWorkspace,
     hideAutomationGeneratedWorkspaces,
-    hideCliCreatedWorkspaces,
     hideDetachedHeadWorkspaces,
     showDotfilesByWorktree,
     filterRepoIds,

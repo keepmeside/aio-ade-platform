@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { renderToStaticMarkup } from 'react-dom/server'
-import { Bot, Mic, Network, Puzzle } from 'lucide-react'
+import { Bot, Mic, Puzzle } from 'lucide-react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getDefaultSettings } from '../../../../shared/constants'
 import { SettingsSidebar } from './SettingsSidebar'
@@ -35,7 +35,7 @@ function makeSetupGuideProgress(
 }
 
 function renderSidebar(
-  activeSectionId = 'orchestration',
+  activeSectionId = 'agents',
   settings: GlobalSettings = getDefaultSettings('/tmp')
 ): string {
   return renderToStaticMarkup(
@@ -51,12 +51,7 @@ function renderSidebar(
               {
                 id: 'agents',
                 title: 'Agents',
-                icon: Bot
-              },
-              {
-                id: 'orchestration',
-                title: 'Orchestration',
-                icon: Network,
+                icon: Bot,
                 installStatus: 'install'
               },
               {
@@ -68,13 +63,13 @@ function renderSidebar(
               {
                 id: 'computer-use',
                 title: 'Computer Use',
-                icon: Bot,
-                installStatus: 'up-to-date'
+                icon: Bot
               },
               {
                 id: 'plugins',
                 title: 'Plugins',
-                icon: Puzzle
+                icon: Puzzle,
+                installStatus: 'up-to-date'
               }
             ]
           },
@@ -113,7 +108,7 @@ describe('SettingsSidebar', () => {
   })
 
   it('applies left sidebar appearance styles to the settings navigation', () => {
-    const markup = renderSidebar('orchestration', {
+    const markup = renderSidebar('agents', {
       ...getDefaultSettings('/tmp'),
       leftSidebarAppearanceMode: 'match-terminal',
       terminalColorOverrides: {

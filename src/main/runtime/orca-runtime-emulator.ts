@@ -197,7 +197,7 @@ export class RuntimeEmulatorCommands {
   }
 
   // Why: unified device inventory across backends (iOS simulators + Android
-  // devices/AVDs) for the cross-platform `orca emulator devices` command.
+  // devices/AVDs) for the cross-platform emulator runtime.
   async emulatorListDevices(_params: { worktree?: string } = {}): Promise<EmulatorDevice[]> {
     return this.requireEmulatorBridge().listAllDevices()
   }

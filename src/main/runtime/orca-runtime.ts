@@ -4,7 +4,6 @@
 import {
   detectAgentStatusFromTitle,
   isClaudeManagementTitle,
-  isCursorAgentTitle,
   isCursorNativeAgentTitle,
   isShellProcess,
   normalizeTerminalTitle
@@ -33,7 +32,6 @@ import {
   isFreshNonDoneAgentStatus,
   type AgentStatusIpcPayload,
   type ParsedAgentStatusPayload,
-  type AgentStatusOrchestrationContext,
   type AgentStatusEntry
 } from '../../shared/agent-status-types'
 import { indexAgentStatusRowsByPaneKey } from '../agent-hooks/agent-status-pane-index'
@@ -68,7 +66,6 @@ import {
   createAgentStatusOscProcessor,
   type ProcessedAgentStatusChunk
 } from '../../shared/agent-status-osc'
-import { buildOrchestrationTaskDisplayMetadata } from '../../shared/orchestration-task-display'
 import {
   isTerminalInputTooLargeWithYield,
   TERMINAL_INPUT_TOO_LARGE_ERROR,
@@ -90,30 +87,13 @@ import {
 } from '../git/repo-clone-path'
 import { getGitCloneFailureMessage } from '../../shared/git-clone-failure-message'
 import { GIT_FETCH_SKIP_AUTO_MAINTENANCE_CONFIG_ARGS } from '../../shared/git-fetch-auto-maintenance'
+import { buildObservedSetupCommand, createSetupCompletionScanner } from './setup-completion-signal'
 import { createHash, randomUUID } from 'node:crypto'
 import { homedir } from 'node:os'
 import { isAbsolute, join, resolve } from 'node:path'
 import { mkdir, readFile, readdir, rm, stat } from 'node:fs/promises'
 import { resolveWorktreeCreateBase } from '../worktree-create-base'
 import { resolveWorktreeAddBaseRef } from '../../shared/worktree-base-ref'
-import { OrchestrationDb } from './orchestration/db'
-import { OrchestrationError } from './orchestration/orchestration-error'
-import {
-  buildObservedSetupCommand,
-  createSetupCompletionScanner
-} from './orchestration/setup-completion-signal'
-import type { RuntimeOrchestrationEnvelope } from '../../shared/runtime-rpc-envelope'
-import {
-  isOrchestrationMutation,
-  orchestrationMigrationData
-} from '../../shared/orchestration-rpc-contract'
-import type {
-  OrchestrationEnvironmentTransport,
-  OrchestrationWorkerServer
-} from './orchestration/environment-transport'
-import { syncFederatedDispatch } from './orchestration/federation-sync'
-import { formatMessagesForInjection } from './orchestration/formatter'
-import { selectExactWorkerProviderSession } from './orchestration/worker-provider-session'
 import type {
   Automation,
   AutomationCreateInput,
@@ -123,7 +103,6 @@ import type {
 } from '../../shared/automations-types'
 import type {
   AutomationWorkspaceProvenance,
-  CliWorkspaceProvenance,
   BaseRefSearchResult,
   CreateWorktreeResult,
   DetectedWorktree,
@@ -214,7 +193,6 @@ import type {
   AgentProviderSessionMetadata,
   SleepingAgentLaunchConfig
 } from '../../shared/agent-session-resume'
-import type { ExactWorkerProviderSession } from '../../shared/orchestration-worker-output'
 import type { RuntimeClientEvent } from '../../shared/runtime-client-events'
 import { toRuntimeActivateWorktreeEvent } from '../../shared/runtime-client-events'
 import {
@@ -339,10 +317,7 @@ import {
   buildSetupRunnerCommand,
   getSetupRunnerCommandPlatformForPath
 } from '../../shared/setup-runner-command'
-import {
-  createSequencedSetupAgentCommands,
-  SETUP_AGENT_SEQUENCE_STARTUP_COMMAND_ENV
-} from '../../shared/setup-agent-sequencing'
+import { createSequencedSetupAgentCommands } from '../../shared/setup-agent-sequencing'
 import { TASK_PROVIDERS } from '../../shared/task-providers'
 import { FIRST_PANE_ID } from '../../shared/pane-key'
 import { isTerminalLeafId, makePaneKey, parsePaneKey } from '../../shared/stable-pane-id'
@@ -422,8 +397,6 @@ import {
   BROWSER_HEADLESS_RUNTIME_CAPABILITY,
   BROWSER_CERTIFICATE_TRUST_RUNTIME_CAPABILITY,
   MIN_COMPATIBLE_RUNTIME_CLIENT_VERSION,
-  ORCHESTRATION_CONTRACT_RUNTIME_CAPABILITY,
-  ORCHESTRATION_CONTRACT_VERSION,
   REMOTE_RUNTIME_SHARED_CONTROL_CAPABILITY,
   RUNTIME_CAPABILITIES,
   RUNTIME_PROTOCOL_VERSION,
@@ -494,21 +467,6 @@ import type {
   PtyProcessInfo,
   PtyTransientFact
 } from '../providers/types'
-import { ClaudeAgentTeamsService } from './claude-agent-teams-service'
-import type {
-  AgentTeamsTmuxCompatRequest,
-  AgentTeamsTmuxCompatResponse
-} from './claude-agent-teams-service'
-import {
-  buildClaudeAgentTeamsLaunchPlan,
-  ensureClaudeAgentTeamsShimDir,
-  resolveClaudeAgentTeamsShimBin
-} from './claude-agent-teams-shim-env'
-import {
-  addClaudeTeammateModeAuto,
-  addClaudeTeammateModeInProcess,
-  type ClaudeAgentTeamsMode
-} from '../../shared/claude-agent-teams-tmux-compat'
 import { joinWorktreeRelativePath } from './runtime-relative-paths'
 import { collectMemorySnapshot } from '../memory/collector'
 import { BrowserWindow, ipcMain, Notification } from 'electron'
@@ -621,7 +579,6 @@ import {
 } from '../project-runtime-git-options'
 import { resolveLocalProjectRuntimeForWorktreeId } from '../local-project-runtime-resolution'
 import type { ProjectExecutionRuntimeResolution } from '../../shared/project-execution-runtime'
-import { resolveTerminalOrchestrationCliCommand } from './orchestration/cli-command'
 import {
   getLocalWorktreePathAccess,
   removeLocalWorktreePath,
@@ -1065,7 +1022,6 @@ type RuntimeStore = {
     mobileEmulatorEnabled?: boolean
     mobileEmulatorDefaultDeviceUdid?: string | null
     voice?: VoiceSettings
-    claudeAgentTeamsMode?: GlobalSettings['claudeAgentTeamsMode']
     // Why: Phase-5 query responder kill switches — read per chunk in
     // onPtyData to capture reply ownership at ingestion.
     terminalMainSideEffectAuthority?: GlobalSettings['terminalMainSideEffectAuthority']
@@ -1167,13 +1123,6 @@ type RuntimeLeafRecord = RuntimeSyncedLeaf & {
   paneTitleUpdatedAt: number | null
 }
 
-function isCursorAgentOrchestrationTarget(
-  leaf: RuntimeLeafRecord,
-  tabTitle: string | null | undefined
-): boolean {
-  return [leaf.lastOscTitle, leaf.paneTitle, tabTitle].some(isCursorAgentTitle)
-}
-
 type RuntimePtyWorktreeRecord = {
   ptyId: string
   incarnationId: PtyIncarnationId | null
@@ -1219,7 +1168,6 @@ type RuntimePtyWorktreeRecord = {
 
 type TerminalCreateOptions = {
   command?: string
-  claudeAgentTeamsSourceCommand?: string
   cwd?: string
   env?: Record<string, string>
   envToDelete?: string[]
@@ -1254,14 +1202,6 @@ type TerminalCreateOptions = {
   // intermediate pty-backed publish so the new tab doesn't briefly flash in
   // the wrong (active) group before the corrected snapshot lands.
   deferMobileSessionPublish?: boolean
-}
-
-function mergeTerminalEnvDeletionKeys(
-  first: readonly string[] | undefined,
-  second: readonly string[] | undefined
-): string[] | undefined {
-  const merged = [...new Set([...(first ?? []), ...(second ?? [])])]
-  return merged.length > 0 ? merged : undefined
 }
 
 type AgentSessionCreateOperation = {
@@ -1342,26 +1282,6 @@ function resolveBareAgentLaunchCommand(args: {
   }
 
   return null
-}
-
-function inferCapturedClaudeAgentTeamsMode(
-  launchConfig: SleepingAgentLaunchConfig | undefined,
-  command: string | undefined,
-  currentMode: ClaudeAgentTeamsMode | undefined
-): ClaudeAgentTeamsMode | undefined {
-  const capturedCommand = launchConfig?.agentCommand?.trim() || command?.trim() || ''
-  const capturedArgs = launchConfig?.agentArgs?.trim() ?? ''
-  const capturedLaunch = `${capturedCommand} ${capturedArgs}`.trim()
-  if (/(^|\s)--teammate-mode(?:=|\s+)auto(?:\s|$)/.test(capturedLaunch)) {
-    return 'native-panes-shim'
-  }
-  if (/(^|\s)--teammate-mode(?:=|\s+)in-process(?:\s|$)/.test(capturedLaunch)) {
-    return 'in-process'
-  }
-  if (launchConfig && /(^|\s)--resume(?:\s|=|$)/.test(command?.trim() ?? '')) {
-    return 'off'
-  }
-  return currentMode
 }
 
 export type RuntimeTerminalAgentStatusEvent = {
@@ -1576,7 +1496,7 @@ function createTerminalRevealWarning(handle: string, error?: unknown): string {
       : ''
   return [
     `Terminal ${handle} is running, but Orca could not make it discoverable.${reason}`,
-    `Run \`orca terminal focus --terminal ${handle}\` to reveal and focus it.`
+    'Use the terminal tab picker in Orca to reveal and focus it.'
   ].join(' ')
 }
 
@@ -1716,16 +1636,6 @@ type TerminalWaiter = {
   pollInterval: NodeJS.Timeout | null
   abortCleanup: (() => void) | null
 }
-
-type MessageWaiter = {
-  handle: string
-  typeFilter: string[] | undefined
-  resolve: (result: MessageWaitResult) => void
-  timeout: NodeJS.Timeout | null
-  abortCleanup: (() => void) | null
-}
-
-export type MessageWaitResult = 'notified' | 'timed_out' | 'cancelled' | 'waiter_exists'
 
 function omitUndefinedProperties<T extends Record<string, unknown>>(value: T): Partial<T> {
   return Object.fromEntries(
@@ -1894,7 +1804,6 @@ function mergeRuntimeFolderWorkspace(repo: Repo, worktreeId: string, meta: Workt
     ...(meta.automationProvenance !== undefined
       ? { automationProvenance: meta.automationProvenance }
       : {}),
-    ...(meta.cliProvenance !== undefined ? { cliProvenance: meta.cliProvenance } : {}),
     ...(meta.priorWorktreeIds !== undefined ? { priorWorktreeIds: meta.priorWorktreeIds } : {}),
     workspaceStatus: meta.workspaceStatus ?? DEFAULT_WORKSPACE_STATUS_ID,
     diffComments: meta.diffComments,
@@ -2276,12 +2185,6 @@ type WorktreeLineageInput = {
   noParent?: boolean
   callerTerminalHandle?: string
   comment?: string
-  orchestrationContext?: {
-    parentWorktreeId?: string
-    orchestrationRunId?: string
-    taskId?: string
-    coordinatorHandle?: string
-  }
 }
 
 type ResolvedWorkspaceParent =
@@ -2304,9 +2207,6 @@ type WorktreeLineageResolution =
       parent: ResolvedWorkspaceParent
       origin: WorktreeLineage['origin']
       capture: WorktreeLineage['capture']
-      orchestrationRunId?: string
-      taskId?: string
-      coordinatorHandle?: string
       createdByTerminalHandle?: string
     }
   | {
@@ -2332,15 +2232,8 @@ type RuntimeWorktreeScanInFlight = {
 }
 
 type WorktreeLineageCandidate = {
-  source: 'env-workspace' | 'cwd-context' | 'terminal-context' | 'orchestration-context'
+  source: 'env-workspace' | 'cwd-context' | 'terminal-context'
   parent: ResolvedWorkspaceParent
-  orchestrationRunId?: string
-  taskId?: string
-  coordinatorHandle?: string
-}
-
-function extractOrchestrationTaskId(text?: string): string | undefined {
-  return text?.match(/\btask_[A-Za-z0-9]+\b/)?.[0]
 }
 
 class RuntimeLineageError extends Error {
@@ -2359,7 +2252,7 @@ class WorktreeIdRequiresFullPathError extends Error {
 
   constructor() {
     super(
-      'Worktree id selectors must use the full <repo-id>::<path> value. Use the id from `orca worktree list --json`, or target by path:<path>, branch:<branch>, or issue:<number>.'
+      'Worktree id selectors must use the full <repo-id>::<path> value. Use the id from the worktree list response, or target by path:<path>, branch:<branch>, or issue:<number>.'
     )
   }
 }
@@ -2477,10 +2370,6 @@ export class OrcaRuntimeService {
   private readonly runtimeId = randomUUID()
   private readonly startedAt = Date.now()
   private readonly store: RuntimeStore | null
-  private readonly orchestrationEnvironmentTransport: OrchestrationEnvironmentTransport | null
-  private readonly orchestrationFederationTimers = new Map<string, ReturnType<typeof setInterval>>()
-  private readonly orchestrationFederationSyncs = new Map<string, Promise<void>>()
-  private readonly orchestrationFederationWarnings = new Set<string>()
   private rendererGraphEpoch = 0
   private graphStatus: RuntimeGraphStatus = 'unavailable'
   private authoritativeWindowId: number | null = null
@@ -2589,8 +2478,6 @@ export class OrcaRuntimeService {
   private agentDetector: AgentDetector | null = null
   private ptyForegroundAgentRefreshes = new Map<string, PtyForegroundAgentRefresh>()
   private ptyDelayedForegroundSnapshotTitleObservations = new Map<string, number>()
-  private _orchestrationDb: OrchestrationDb | null = null
-  private messageWaitersByHandle = new Map<string, Set<MessageWaiter>>()
   // Why: mobile clients subscribe to terminal output via terminal.subscribe.
   // These listeners fire on every onPtyData call, enabling real-time streaming
   // without polling. Keyed by ptyId for O(1) lookup per data event.
@@ -2971,7 +2858,6 @@ export class OrcaRuntimeService {
   private accountServices: RuntimeAccountServices | null = null
   private commitMessageAgentEnv: CommitMessageAgentEnvironmentResolvers | null = null
   private automationService: AutomationService | null = null
-  private readonly claudeAgentTeams = new ClaudeAgentTeamsService()
   private mobileDictation: {
     id: string
     owner: string
@@ -3004,7 +2890,7 @@ export class OrcaRuntimeService {
       getAgentProviderSessionRowsForPane?: (paneKey: string) => AgentStatusIpcPayload[]
       // Why: codex-home paths for the Agent Session History scan must be sourced
       // here, not via the window-only registerCoreHandlers path — that path never
-      // runs under `orca serve`, so remote/SSH hosts would silently drop
+      // runs under a headless runtime host, so remote/SSH hosts would silently drop
       // managed-Codex sessions. The runtime ctor runs in BOTH window and serve.
       getAdditionalAiVaultCodexHomePaths?: () => readonly string[]
       prepareAiVaultSessionResume?: (
@@ -3013,7 +2899,6 @@ export class OrcaRuntimeService {
       buildAgentHookPtyEnv?: () => Record<string, string>
       getDesktopWindowStatus?: () => RuntimeDesktopWindowStatus
       agentSessionClaimSigner?: AgentSessionClaimSigner
-      orchestrationEnvironmentTransport?: OrchestrationEnvironmentTransport
     }
   ) {
     this.store = store
@@ -3025,7 +2910,6 @@ export class OrcaRuntimeService {
     this.clientSessionTabSelections.setPersistListener((state) => {
       this.store?.setMobileClientTabSelections?.(state)
     })
-    this.orchestrationEnvironmentTransport = deps?.orchestrationEnvironmentTransport ?? null
     if (stats) {
       this.stats = stats
       this.agentDetector = new AgentDetector(stats)
@@ -3036,7 +2920,7 @@ export class OrcaRuntimeService {
     this.getAgentProviderSessionRowsForPaneFn = deps?.getAgentProviderSessionRowsForPane ?? null
     // Why: configure the shared AiVault scan cache from a serve-mode-reachable
     // seam so the aiVault.listSessions RPC includes managed-Codex + WSL sessions
-    // even on headless `orca serve` hosts where registerCoreHandlers never runs.
+    // even on headless runtime hosts where registerCoreHandlers never runs.
     if (deps?.getAdditionalAiVaultCodexHomePaths) {
       configureAiVaultSessionSources({
         getAdditionalCodexHomePaths: deps.getAdditionalAiVaultCodexHomePaths
@@ -3451,13 +3335,13 @@ export class OrcaRuntimeService {
         throw new Error('Selected workspace belongs to a different repo.')
       }
       if (!workspaceId || !projectId) {
-        throw new Error('Existing-workspace automation requires --workspace.')
+        throw new Error('Existing-workspace automation requires a `workspace` selector.')
       }
       return { projectId, workspaceMode, workspaceId }
     }
     const projectId = repo?.id ?? workspace?.repoId ?? current?.projectId
     if (!projectId) {
-      throw new Error('Automation requires --repo or --workspace.')
+      throw new Error('Automation requires a `repo` or `workspace` selector.')
     }
     return { projectId, workspaceMode: 'new_per_run', workspaceId: null }
   }
@@ -3465,155 +3349,12 @@ export class OrcaRuntimeService {
   // Why: lazy initialization — the DB path depends on Electron's userData
   // which may not be finalized until after app.ready. Also allows unit tests
   // to inject an in-memory DB without touching the filesystem.
-  getOrchestrationDb(): OrchestrationDb {
-    if (!this._orchestrationDb) {
-      const { app } = require('electron')
-      const dbPath = join(app.getPath('userData'), 'orchestration.db')
-      this._orchestrationDb = new OrchestrationDb(dbPath)
-    }
-    return this._orchestrationDb
-  }
-
-  setOrchestrationDb(db: OrchestrationDb): void {
-    this._orchestrationDb = db
-  }
-
   setAutomationService(service: AutomationService): void {
     this.automationService = service
   }
 
   getRuntimeId(): string {
     return this.runtimeId
-  }
-
-  resolveOrchestrationWorkerServer(selector: string): OrchestrationWorkerServer {
-    if (!this.orchestrationEnvironmentTransport) {
-      throw new OrchestrationError(
-        'server_required',
-        'Connected-server orchestration is unavailable in this runtime.'
-      )
-    }
-    return this.orchestrationEnvironmentTransport.resolve(selector)
-  }
-
-  async callOrchestrationWorkerServer(
-    selector: string,
-    method: string,
-    params: unknown,
-    timeoutMs?: number,
-    envelope?: RuntimeOrchestrationEnvelope
-  ): Promise<unknown> {
-    if (!this.orchestrationEnvironmentTransport) {
-      throw new OrchestrationError(
-        'server_required',
-        'Connected-server orchestration is unavailable in this runtime.'
-      )
-    }
-    if (isOrchestrationMutation(method, params)) {
-      const statusResponse = await this.orchestrationEnvironmentTransport.call(
-        selector,
-        'status.get',
-        undefined,
-        timeoutMs
-      )
-      if (statusResponse.ok === false) {
-        throw new OrchestrationError(
-          statusResponse.error.code,
-          statusResponse.error.message,
-          statusResponse.error.data
-        )
-      }
-      const status = statusResponse.result as RuntimeStatus
-      if (!status.capabilities?.includes(ORCHESTRATION_CONTRACT_RUNTIME_CAPABILITY)) {
-        throw new OrchestrationError(
-          'orchestration_migration_required',
-          'The connected worker server does not support the current orchestration contract. No effects were applied.',
-          orchestrationMigrationData('runtime_capability_missing')
-        )
-      }
-    }
-    const response = await this.orchestrationEnvironmentTransport.call(
-      selector,
-      method,
-      params,
-      timeoutMs,
-      method.startsWith('orchestration.')
-        ? { ...envelope, orchestrationContractVersion: ORCHESTRATION_CONTRACT_VERSION }
-        : envelope
-    )
-    if (response.ok === false) {
-      throw new OrchestrationError(response.error.code, response.error.message, response.error.data)
-    }
-    return response.result
-  }
-
-  async syncOrchestrationFederation(runId?: string): Promise<void> {
-    if (!this.orchestrationEnvironmentTransport) {
-      return
-    }
-    const dispatches = this.getOrchestrationDb().listActiveFederatedDispatches(runId)
-    await Promise.allSettled(
-      dispatches.map((dispatch) => this.syncOrchestrationFederatedDispatch(dispatch.dispatch_id))
-    )
-  }
-
-  private syncOrchestrationFederatedDispatch(dispatchId: string): Promise<void> {
-    const current = this.orchestrationFederationSyncs.get(dispatchId)
-    if (current) {
-      return current
-    }
-    const sync = syncFederatedDispatch(this, dispatchId)
-      .then(() => {
-        this.orchestrationFederationWarnings.delete(dispatchId)
-      })
-      .catch((error: unknown) => {
-        if (!this.orchestrationFederationWarnings.has(dispatchId)) {
-          console.warn(`[orchestration] Federation sync failed for ${dispatchId}:`, error)
-          this.orchestrationFederationWarnings.add(dispatchId)
-        }
-        throw error
-      })
-      .finally(() => {
-        this.orchestrationFederationSyncs.delete(dispatchId)
-      })
-    this.orchestrationFederationSyncs.set(dispatchId, sync)
-    return sync
-  }
-
-  ensureOrchestrationFederationRelay(runId?: string): void {
-    if (!this.orchestrationEnvironmentTransport) {
-      return
-    }
-    for (const dispatch of this.getOrchestrationDb().listActiveFederatedDispatches(runId)) {
-      if (this.orchestrationFederationTimers.has(dispatch.dispatch_id)) {
-        continue
-      }
-      const tick = () => {
-        const worker = this.getOrchestrationDb().getWorkerDispatch(dispatch.dispatch_id)
-        if (!worker || !['starting', 'ready', 'stopping'].includes(worker.state)) {
-          const activeTimer = this.orchestrationFederationTimers.get(dispatch.dispatch_id)
-          if (activeTimer) {
-            clearInterval(activeTimer)
-          }
-          this.orchestrationFederationTimers.delete(dispatch.dispatch_id)
-          this.orchestrationFederationWarnings.delete(dispatch.dispatch_id)
-          return
-        }
-        void this.syncOrchestrationFederatedDispatch(dispatch.dispatch_id).catch(() => undefined)
-      }
-      const timer = setInterval(tick, 1_000)
-      timer.unref?.()
-      this.orchestrationFederationTimers.set(dispatch.dispatch_id, timer)
-      tick()
-    }
-  }
-
-  stopOrchestrationFederationRelay(): void {
-    for (const timer of this.orchestrationFederationTimers.values()) {
-      clearInterval(timer)
-    }
-    this.orchestrationFederationTimers.clear()
-    this.orchestrationFederationWarnings.clear()
   }
 
   getStartedAt(): number {
@@ -3694,7 +3435,7 @@ export class OrcaRuntimeService {
       liveLeafCount: this.leaves.size,
       runtimeProtocolVersion: RUNTIME_PROTOCOL_VERSION,
       minCompatibleRuntimeClientVersion: MIN_COMPATIBLE_RUNTIME_CLIENT_VERSION,
-      // Why: headless orca serve cannot create/stream BrowserViews, so clients
+      // Why: headless runtime hosts cannot create/stream BrowserViews, so clients
       // must not treat browser panes as supported just because runtime RPC is up.
       capabilities,
       hostPlatform: process.platform,
@@ -4225,11 +3966,8 @@ export class OrcaRuntimeService {
     for (const cb of [...this.graphSyncCallbacks]) {
       cb()
     }
-
-    const agentOrchestrationByPaneKey = this.buildAgentOrchestrationByPaneKey()
     return {
-      ...this.getStatus(),
-      ...(agentOrchestrationByPaneKey ? { agentOrchestrationByPaneKey } : {})
+      ...this.getStatus()
     }
   }
 
@@ -7428,7 +7166,7 @@ export class OrcaRuntimeService {
 
   // Why: terminal handles are normally created lazily when first referenced via
   // RPC, but agents need their own handle at spawn time (via ORCA_TERMINAL_HANDLE
-  // env var) so they can self-identify in orchestration messages without an
+  // env var) so hooks and remote session claims can self-identify without an
   // extra RPC round-trip. Pre-allocating by ptyId lets issueHandle reuse it.
   preAllocateHandleForPty(ptyId: string): string {
     const existing = this.handleByPtyId.get(ptyId)
@@ -7930,7 +7668,7 @@ export class OrcaRuntimeService {
       }
     }
     // Why: hook (OSC 9999) transitions often arrive without a title change, so
-    // headless-serve snapshots would never republish and paired remote clients
+    // background-host snapshots would never republish and paired remote clients
     // kept the stale agent state until the next title change (#7970).
     if (titleTrackerEntry.chunkTouchedSessionTabs || retainedAgentStatusChanged) {
       this.touchMobileSessionSnapshotsForPty(ptyId)
@@ -8483,7 +8221,6 @@ export class OrcaRuntimeService {
       // which isn't a task-completion signal.
       if (agentStatus === 'idle' && prevStatus !== 'idle') {
         this.resolveTuiIdleWaiters(leaf)
-        this.deliverPendingMessages(leaf)
       }
     }
     return ptyRecordChanged
@@ -9226,8 +8963,8 @@ export class OrcaRuntimeService {
     })
   }
 
-  // Why: seed-derived agent status reflects historical state. Orchestration
-  // waiters (resolveTuiIdleWaiters, deliverPendingMessages) must only react
+  // Why: seed-derived agent status reflects historical state. Live waiters
+  // (resolveTuiIdleWaiters) must only react
   // to LIVE transitions, so this helper writes leaf.lastAgentStatus only and
   // never resolves waiters. detectAgentStatusFromTitle wrap mirrors the live
   // path so seeded and live values are the same union member, keeping
@@ -10023,27 +9760,6 @@ export class OrcaRuntimeService {
     return this.store && worktreeId
       ? resolveLocalProjectRuntimeForWorktreeId(this.requireStore(), worktreeId)
       : undefined
-  }
-
-  getTerminalOrchestrationCliCommand(handle: string): 'orca' | 'orca-ide' {
-    let pty: RuntimePtyWorktreeRecord | null = null
-    try {
-      const ptyId = this.resolveLeafForHandle(handle)?.ptyId
-      pty = ptyId ? (this.ptysById.get(ptyId) ?? null) : null
-    } catch {
-      return 'orca'
-    }
-    if (!pty) {
-      return 'orca'
-    }
-    return resolveTerminalOrchestrationCliCommand({
-      connectionId: pty.connectionId,
-      isWsl: pty.isWsl,
-      worktreeId: pty.worktreeId,
-      projectRuntime: this.store
-        ? resolveLocalProjectRuntimeForWorktreeId(this.requireStore(), pty.worktreeId)
-        : undefined
-    })
   }
 
   hasRecentTerminalOutputPath(handle: string, pathText: string, absolutePath: string): boolean {
@@ -11138,7 +10854,6 @@ export class OrcaRuntimeService {
     // one team per never-reused teamId for the runtime's lifetime.
     const exitedTeamLeaderHandle = this.handleByPtyId.get(ptyId)
     if (exitedTeamLeaderHandle) {
-      this.claudeAgentTeams.removeTeamForLeaderHandle(exitedTeamLeaderHandle)
     }
     // Layout state machine: clear `layouts` and `layoutQueues`. Any
     // already-queued applyLayout work for this ptyId will run, but every
@@ -11201,7 +10916,6 @@ export class OrcaRuntimeService {
       leaf.writable = false
       leaf.lastExitCode = exitCode
       this.resolveExitWaiters(leaf)
-      this.failActiveDispatchOnExit(leaf, exitCode)
     }
     this.pruneDisconnectedPtyRecords()
   }
@@ -12808,48 +12522,6 @@ export class OrcaRuntimeService {
     notifyRuntimeListeners(listeners, (listener) => listener(event), 'pty-resize')
   }
 
-  // Why: Section 7.2 — the runtime detects agent exit directly and updates
-  // dispatch contexts immediately, rather than waiting for the coordinator's
-  // next poll cycle. This catches agent crashes and unexpected exits within
-  // milliseconds. The task is set back to 'pending' so it can be re-dispatched.
-  private failActiveDispatchOnExit(leaf: RuntimeLeafRecord, exitCode: number): void {
-    if (!this._orchestrationDb) {
-      return
-    }
-
-    const handle = this.handleByLeafKey.get(this.getLeafKey(leaf.tabId, leaf.leafId))
-    if (!handle) {
-      return
-    }
-
-    const dispatch = this._orchestrationDb.getActiveDispatchForTerminal(handle)
-    if (!dispatch) {
-      return
-    }
-
-    const errorContext = `Agent exited with code ${exitCode}`
-    this._orchestrationDb.failDispatch(dispatch.id, errorContext)
-
-    // Why: create an escalation message so the coordinator is notified about
-    // the unexpected exit on its next check cycle, even if the circuit breaker
-    // hasn't tripped yet.
-    const run = this._orchestrationDb.getActiveCoordinatorRun()
-    if (run) {
-      this._orchestrationDb.insertMessage({
-        from: handle,
-        to: run.coordinator_handle,
-        subject: `Agent exited unexpectedly (code ${exitCode})`,
-        type: 'escalation',
-        priority: 'high',
-        payload: JSON.stringify({
-          taskId: dispatch.task_id,
-          exitCode,
-          handle
-        })
-      })
-    }
-  }
-
   async listTerminals(
     worktreeSelector?: string,
     limit = DEFAULT_TERMINAL_LIST_LIMIT,
@@ -13731,9 +13403,8 @@ export class OrcaRuntimeService {
     throw new Error('no_active_terminal')
   }
 
-  // Why: orchestration records the pane key as the remint-stable assignee
-  // identity at dispatch time; null (best-effort) rather than throwing so
-  // dispatch still works for handles without a resolvable pane.
+  // Why: pane keys remain stable when terminal handles are reminted. Return
+  // null rather than throwing when a stale handle has no resolvable pane.
   getTerminalPaneKey(handle: string): string | null {
     return this.getPaneKeyForTerminalHandle(handle)
   }
@@ -13791,50 +13462,6 @@ export class OrcaRuntimeService {
     }
     // Why: legacy providers may omit process incarnation; retain the prior restart-degraded fence.
     return `${this.runtimeId}:${record.ptyId}:${record.ptyGeneration}`
-  }
-
-  getExactWorkerProviderSession(
-    handle: string,
-    observedAfter: number
-  ): ExactWorkerProviderSession | null {
-    const paneKey = this.getTerminalPaneKey(handle)
-    const processIncarnation = this.getTerminalProcessIncarnation(handle)
-    if (!paneKey || !processIncarnation) {
-      return null
-    }
-    let connectionId: string | null | undefined
-    let launchToken: string | null | undefined
-    try {
-      const ptyId = this.getTerminalAgentStatusPtyId(handle)
-      const pty = this.ptysById.get(ptyId)
-      connectionId = pty?.connectionId ?? null
-      launchToken = pty?.launchToken ?? null
-    } catch {
-      // Exact worker validation rejects this in production; test/legacy providers may not expose PTY metadata.
-      connectionId = undefined
-      launchToken = undefined
-    }
-    return selectExactWorkerProviderSession({
-      paneKey,
-      processIncarnation,
-      connectionId,
-      launchToken,
-      observedAfter,
-      statuses: this.getAgentStatusSnapshotFn?.() ?? []
-    })
-  }
-
-  validateOrchestrationAgentLauncher(agent: TuiAgent): void {
-    const settings = this.store?.getSettings()
-    if (!settings) {
-      throw new Error('runtime_unavailable')
-    }
-    if (!isTuiAgentEnabled(agent, settings.disabledTuiAgents)) {
-      throw new OrchestrationError(
-        'agent_unconfigured',
-        `Agent launcher ${agent} is disabled or unavailable.`
-      )
-    }
   }
 
   resolveTerminalPane(paneKey: string, expectedWorktreeId?: string): RuntimeTerminalResolvePane {
@@ -15167,9 +14794,7 @@ export class OrcaRuntimeService {
   }
 
   // Why: maps the retained per-pane agent snapshots into each worktree's inline
-  // agent list, mirroring the desktop sidebar. Lineage parent is resolved from
-  // the orchestration db (paneKey-keyed), not the OSC payload, since spawn
-  // hierarchy is pane-level state tracked separately from terminal output.
+  // agent list, mirroring the desktop sidebar.
   private attachAgentRowsToSummaries(
     summaries: Map<string, RuntimeWorktreePsSummary>,
     runtimeWorktreeSummaryPathIndex: RuntimeWorktreeSummaryPathIndex,
@@ -15238,7 +14863,6 @@ export class OrcaRuntimeService {
     if (rowSources.size === 0) {
       return
     }
-    const orchestrationByPaneKey = this.buildAgentOrchestrationByPaneKey()
     const rowsByWorktree = new Map<string, RuntimeWorktreeAgentRow[]>()
     const now = Date.now()
     for (const src of rowSources.values()) {
@@ -15259,16 +14883,11 @@ export class OrcaRuntimeService {
       if (!summary) {
         continue
       }
-      const taskTitle = orchestrationByPaneKey?.[src.paneKey]?.taskTitle ?? null
-      const displayName = orchestrationByPaneKey?.[src.paneKey]?.displayName ?? null
       const row: RuntimeWorktreeAgentRow = {
         paneKey: src.paneKey,
-        parentPaneKey: orchestrationByPaneKey?.[src.paneKey]?.parentPaneKey ?? null,
         state: src.state,
         agentType: src.agentType,
         prompt: src.prompt,
-        taskTitle,
-        displayName,
         lastAssistantMessage: src.lastAssistantMessage,
         toolName: src.toolName,
         toolInput: src.toolInput,
@@ -15834,7 +15453,7 @@ export class OrcaRuntimeService {
     }
     if (!isAbsolute(path)) {
       // Why: remote clients may run in a different cwd than the server. Require
-      // server-side repo paths to be explicit so `orca serve` cwd is irrelevant.
+      // server-side repo paths to be explicit so the runtime host cwd is irrelevant.
       throw new Error('Project path must be an absolute path')
     }
     if (kind === 'git' && !isGitRepo(path)) {
@@ -18099,7 +17718,7 @@ export class OrcaRuntimeService {
     worktreeId: string
     activated: boolean
     /** Mobile-scoped slept-agent wake outcome. `unsupported-headless` means no
-     *  renderer holds the sleeping records (headless `orca serve`), so nothing
+     *  renderer holds the sleeping records (headless runtime host), so nothing
      *  woke — clients must not present the worktree's agents as resumed. */
     sleepingAgentWake: 'requested' | 'unsupported-headless' | 'not-applicable'
   }> {
@@ -18394,13 +18013,6 @@ export class OrcaRuntimeService {
         parentWorktreeInstanceId: parentInstanceId,
         origin: lineageResolution.origin,
         capture: lineageResolution.capture,
-        ...(lineageResolution.orchestrationRunId
-          ? { orchestrationRunId: lineageResolution.orchestrationRunId }
-          : {}),
-        ...(lineageResolution.taskId ? { taskId: lineageResolution.taskId } : {}),
-        ...(lineageResolution.coordinatorHandle
-          ? { coordinatorHandle: lineageResolution.coordinatorHandle }
-          : {}),
         ...(lineageResolution.createdByTerminalHandle
           ? { createdByTerminalHandle: lineageResolution.createdByTerminalHandle }
           : {}),
@@ -18426,13 +18038,6 @@ export class OrcaRuntimeService {
         parentInstanceId,
         origin: lineageResolution.origin,
         capture: lineageResolution.capture,
-        ...(lineageResolution.taskId ? { taskId: lineageResolution.taskId } : {}),
-        ...(lineageResolution.orchestrationRunId
-          ? { orchestrationRunId: lineageResolution.orchestrationRunId }
-          : {}),
-        ...(lineageResolution.coordinatorHandle
-          ? { coordinatorHandle: lineageResolution.coordinatorHandle }
-          : {}),
         ...(lineageResolution.createdByTerminalHandle
           ? { createdByTerminalHandle: lineageResolution.createdByTerminalHandle }
           : {}),
@@ -18725,7 +18330,6 @@ export class OrcaRuntimeService {
     startupPrompt?: string
     pendingFirstAgentMessageRename?: boolean
     automationProvenance?: AutomationWorkspaceProvenance
-    cliProvenance?: CliWorkspaceProvenance
     startup?: WorktreeStartupLaunch
     startupDraft?: string
     startupDraftPaste?: WorktreeStartupDraftPaste
@@ -18786,7 +18390,6 @@ export class OrcaRuntimeService {
           nestWorkspaces: settings.nestWorkspaces
         },
         ...(args.automationProvenance ? { automationProvenance: args.automationProvenance } : {}),
-        ...(args.cliProvenance ? { cliProvenance: args.cliProvenance } : {}),
         ...(args.linkedIssue !== undefined ? { linkedIssue: args.linkedIssue } : {}),
         ...(args.linkedPR !== undefined ? { linkedPR: args.linkedPR } : {}),
         ...(args.linkedLinearIssue !== undefined
@@ -19404,7 +19007,6 @@ export class OrcaRuntimeService {
         ? { pendingFirstAgentMessageRename: true }
         : {}),
       ...(args.automationProvenance ? { automationProvenance: args.automationProvenance } : {}),
-      ...(args.cliProvenance ? { cliProvenance: args.cliProvenance } : {}),
       ...(args.comment !== undefined ? { comment: args.comment } : {}),
       ...(args.manualOrder !== undefined ? { manualOrder: args.manualOrder } : {}),
       ...(args.workspaceStatus !== undefined ? { workspaceStatus: args.workspaceStatus } : {})
@@ -19455,12 +19057,11 @@ export class OrcaRuntimeService {
 
     let setup: CreateWorktreeResult['setup']
     let warning: string | undefined = includeCopyWarning
-    // Why: CLI-created worktrees do not have a renderer preview to mismatch
-    // against. Trust is granted by the direct CLI invocation (`--run-hooks`),
-    // so loading the setup hook from the created worktree is intentional here.
+    // Runtime-created worktrees have no renderer preview to compare against.
+    // Explicit hook settings authorize loading setup from the created worktree.
     const yamlHooks = loadHooks(worktreePath)
     const hooks = getEffectiveHooks(repo, worktreePath)
-    // Why: setupDecision lets mobile/CLI callers control whether the setup
+    // Why: setupDecision lets non-renderer callers control whether the setup
     // script runs. 'skip' suppresses it, 'run' forces it, 'inherit' (default)
     // defers to the repo's orca.yaml setupRunPolicy. runHooks === true maps
     // to 'run' for backwards compatibility with the desktop create flow.
@@ -19507,8 +19108,8 @@ export class OrcaRuntimeService {
         })
       }
     } else if (hooks?.scripts.setup && effectiveDecision !== 'skip') {
-      // Runtime RPC calls have no renderer trust prompt, so hooks require explicit CLI opt-in.
-      const setupSkipped = `orca.yaml setup hook skipped for ${worktreePath}; pass --setup run to run it.`
+      // Runtime RPC calls have no renderer trust prompt, so hooks require explicit opt-in.
+      const setupSkipped = `orca.yaml setup hook skipped for ${worktreePath}; set \`setupDecision\` to \`run\` to run it.`
       warning = warning ? `${warning} Also ${setupSkipped}` : setupSkipped
       console.warn(`[hooks] ${setupSkipped}`)
     }
@@ -19517,7 +19118,7 @@ export class OrcaRuntimeService {
     this.invalidateWorktreeScanCacheForRepo(repo.id)
     // Why: the filesystem-auth layer maintains a separate cache of registered
     // worktree roots used by git IPC handlers (branchCompare, diff, status, etc.)
-    // to authorize paths. Without invalidating it here, CLI-created worktrees
+    // to authorize paths. Without invalidating it here, runtime-created worktrees
     // are not recognized and all git operations fail with "Access denied:
     // unknown repository or worktree path".
     invalidateAuthorizedRootsCache()
@@ -19562,16 +19163,13 @@ export class OrcaRuntimeService {
       try {
         // Why: automation startup must not depend on a renderer TerminalPane
         // mounting. Runtime-spawned PTYs run immediately and the UI adopts the
-        // session later, matching `orca terminal create` background semantics.
+        // session later, matching background terminal creation semantics.
         const startupTrustAgent = effectiveDraftPaste?.agent ?? effectiveCreatedWithAgent
         if (startupTrustAgent) {
           this.markLocalWorkspaceTrustedForAgent(startupTrustAgent, worktreePath)
         }
         const terminal = await this.createTerminal(`id:${worktree.id}`, {
           command: sequencedStartup.command,
-          ...(setup && effectiveStartup
-            ? { claudeAgentTeamsSourceCommand: effectiveStartup.command }
-            : {}),
           env: sequencedStartup.env,
           ...(sequencedStartup.launchConfig ? { launchConfig: sequencedStartup.launchConfig } : {}),
           ...(effectiveCreatedWithAgent ? { launchAgent: effectiveCreatedWithAgent } : {}),
@@ -19802,7 +19400,6 @@ export class OrcaRuntimeService {
       createdWithAgent?: TuiAgent
       pendingFirstAgentMessageRename?: boolean
       automationProvenance?: AutomationWorkspaceProvenance
-      cliProvenance?: CliWorkspaceProvenance
       startup?: WorktreeStartupLaunch
       startupFollowup?: WorktreeStartupFollowup
       startupDraftPaste?: WorktreeStartupDraftPaste
@@ -19854,8 +19451,7 @@ export class OrcaRuntimeService {
         ...(args.pendingFirstAgentMessageRename === true
           ? { pendingFirstAgentMessageRename: true }
           : {}),
-        ...(args.automationProvenance ? { automationProvenance: args.automationProvenance } : {}),
-        ...(args.cliProvenance ? { cliProvenance: args.cliProvenance } : {})
+        ...(args.automationProvenance ? { automationProvenance: args.automationProvenance } : {})
       },
       repo,
       this.store as unknown as Store,
@@ -19911,9 +19507,6 @@ export class OrcaRuntimeService {
         }
         const terminal = await this.createTerminal(`path:${result.worktree.path}`, {
           command: sequencedStartup.command,
-          ...(result.setup && args.startup
-            ? { claudeAgentTeamsSourceCommand: args.startup.command }
-            : {}),
           env: sequencedStartup.env,
           ...(sequencedStartup.launchConfig ? { launchConfig: sequencedStartup.launchConfig } : {}),
           ...(args.createdWithAgent ? { launchAgent: args.createdWithAgent } : {}),
@@ -21533,8 +21126,8 @@ export class OrcaRuntimeService {
           console.error(`[hooks] archive hook failed for ${canonicalWorktreePath}:`, result.output)
         }
       } else if (hooks?.scripts.archive) {
-        // Runtime RPC calls have no renderer trust prompt, so hooks require explicit CLI opt-in.
-        warning = `orca.yaml archive hook skipped for ${canonicalWorktreePath}; pass --run-hooks to run it.`
+        // Runtime RPC calls have no renderer trust prompt, so hooks require explicit opt-in.
+        warning = `orca.yaml archive hook skipped for ${canonicalWorktreePath}; set \`runHooks\` to \`true\` to run it.`
         console.warn(`[hooks] ${warning}`)
       }
 
@@ -21760,7 +21353,6 @@ export class OrcaRuntimeService {
       opts.launchConfig ||
       opts.launchAgent ||
       opts.startupCommandDelivery ||
-      opts.claudeAgentTeamsSourceCommand ||
       !workspace.repo ||
       !this.store
     ) {
@@ -22209,7 +21801,7 @@ export class OrcaRuntimeService {
       worktreeSelector !== undefined &&
       (Boolean(opts.agentSessionClaim) ||
         (!requiresRendererFocus && opts.rendererBacked !== true) ||
-        // Why: `orca serve` exposes the local runtime without a renderer
+        // Why: the headless runtime host exposes the local runtime without a renderer
         // window. Renderer-backed Codex terminals are preferred for the app,
         // but headless CLI users still need a usable terminal handle.
         (opts.rendererBacked === true && rendererWindow === null))
@@ -22254,69 +21846,7 @@ export class OrcaRuntimeService {
         ...launchOpts.env,
         ...(launchToken ? { ORCA_AGENT_LAUNCH_TOKEN: launchToken } : {})
       }
-      const claudeAgentTeamsSourceCommand =
-        launchOpts.claudeAgentTeamsSourceCommand?.trim() || launchOpts.command?.trim() || undefined
-      const claudeAgentTeamsMode = this.store?.getSettings?.().claudeAgentTeamsMode
-      const effectiveClaudeAgentTeamsMode = inferCapturedClaudeAgentTeamsMode(
-        launchOpts.launchConfig,
-        claudeAgentTeamsSourceCommand,
-        claudeAgentTeamsMode
-      )
-      const agentTeamsPlan = await buildClaudeAgentTeamsLaunchPlan({
-        command: claudeAgentTeamsSourceCommand,
-        mode: effectiveClaudeAgentTeamsMode,
-        baseEnv: {
-          ...process.env,
-          ...baseEnv
-        },
-        createTeamEnv: (shimDir, shimBin) =>
-          this.claudeAgentTeams.createLaunchEnv({
-            leaderHandle: preAllocatedHandle,
-            baseEnv: {
-              ...process.env,
-              ...baseEnv
-            },
-            shimDir,
-            shimBin
-          }).env
-      })
-      const sequencedStartupCommand =
-        agentTeamsPlan &&
-        claudeAgentTeamsSourceCommand &&
-        launchOpts.command &&
-        claudeAgentTeamsSourceCommand !== launchOpts.command
-          ? agentTeamsPlan.command
-          : undefined
-      const effectiveLaunchConfig =
-        launchOpts.launchConfig && agentTeamsPlan
-          ? {
-              ...launchOpts.launchConfig,
-              agentCommand: launchOpts.launchConfig.agentCommand
-                ? effectiveClaudeAgentTeamsMode === 'in-process' || process.platform === 'win32'
-                  ? addClaudeTeammateModeInProcess(launchOpts.launchConfig.agentCommand)
-                  : addClaudeTeammateModeAuto(launchOpts.launchConfig.agentCommand)
-                : agentTeamsPlan.command,
-              agentEnv: {
-                ...launchOpts.launchConfig.agentEnv,
-                ...agentTeamsPlan.env
-              }
-            }
-          : launchOpts.launchConfig
-      // Why: setup/agent sequencing wraps the PTY launch in a wait shell before
-      // Claude Agent Teams runs. Preserve the direct Claude command separately
-      // so the wrapper can exec the teammate-mode variant after setup completes.
-      const env = this.buildTerminalWorkspaceEnv(
-        workspace,
-        {
-          ...baseEnv,
-          ...(sequencedStartupCommand
-            ? { [SETUP_AGENT_SEQUENCE_STARTUP_COMMAND_ENV]: sequencedStartupCommand }
-            : {})
-        },
-        paneKey,
-        tabId,
-        agentTeamsPlan?.env
-      )
+      const env = this.buildTerminalWorkspaceEnv(workspace, baseEnv, paneKey, tabId)
       const terminalColorQueryReplies =
         launchOpts.terminalColorQueryReplies ?? getTerminalViewColorQueryReplyColors()
       if (launchOpts.signal?.aborted) {
@@ -22326,17 +21856,12 @@ export class OrcaRuntimeService {
         cols: 120,
         rows: 40,
         cwd,
-        command: sequencedStartupCommand
-          ? launchOpts.command
-          : (agentTeamsPlan?.command ?? launchOpts.command),
+        command: launchOpts.command,
         launchAgent: launchOpts.launchAgent,
         commandDelivery: 'provider',
         startupCommandDelivery: launchOpts.startupCommandDelivery,
         env,
-        envToDelete: mergeTerminalEnvDeletionKeys(
-          launchOpts.envToDelete,
-          agentTeamsPlan?.envToDelete
-        ),
+        envToDelete: launchOpts.envToDelete,
         resumeProviderSession: launchOpts.resumeProviderSession,
         telemetry: launchOpts.telemetry,
         connectionId: workspace.connectionId,
@@ -22411,8 +21936,8 @@ export class OrcaRuntimeService {
         }
         pty.tabId = tabId
         pty.paneKey = paneKey
-        pty.launchConfig = effectiveLaunchConfig
-          ? copySleepingAgentLaunchConfig(effectiveLaunchConfig)
+        pty.launchConfig = launchOpts.launchConfig
+          ? copySleepingAgentLaunchConfig(launchOpts.launchConfig)
           : null
         pty.launchToken = launchToken ?? null
         pty.launchAgent = launchOpts.launchAgent ?? null
@@ -22443,7 +21968,7 @@ export class OrcaRuntimeService {
             ptyId: result.id,
             title: launchOpts.title ?? null,
             ...(cwd !== workspace.path ? { cwd } : {}),
-            ...(effectiveLaunchConfig ? { launchConfig: effectiveLaunchConfig } : {}),
+            ...(launchOpts.launchConfig ? { launchConfig: launchOpts.launchConfig } : {}),
             ...(launchToken ? { launchToken } : {}),
             ...(launchOpts.launchAgent ? { launchAgent: launchOpts.launchAgent } : {}),
             ...(launchOpts.viewMode ? { viewMode: launchOpts.viewMode } : {}),
@@ -23601,7 +23126,6 @@ export class OrcaRuntimeService {
 
   async closeTerminal(handle: string): Promise<RuntimeTerminalClose> {
     const pty = this.getLivePtyForHandle(handle)
-    this.claudeAgentTeams.removeTeamForLeaderHandle(handle)
     if (pty) {
       // Why: PTY exit can immediately replace a ready SSH publication with a pending one, so capture its durable HUB surface before killing it.
       const surface =
@@ -23655,13 +23179,11 @@ export class OrcaRuntimeService {
       // Why: a handle-addressed CLI/automation close is an explicit intent, so
       // it must stay destructive under the non-user close adjudication gate.
       await this.closeMobileSessionTab(`id:${pty.pty.worktreeId}`, tabId, { reason: 'user' })
-      this.claudeAgentTeams.removeTeamForLeaderHandle(handle)
       return { handle, tabId, closeMode: 'tab', ptyKilled: false }
     }
     this.assertGraphReady()
     const { leaf } = this.getLiveLeafForHandle(handle)
     await this.closeMobileSessionTab(`id:${leaf.worktreeId}`, leaf.tabId, { reason: 'user' })
-    this.claudeAgentTeams.removeTeamForLeaderHandle(handle)
     return { handle, tabId: leaf.tabId, closeMode: 'tab', ptyKilled: false }
   }
 
@@ -23790,51 +23312,6 @@ export class OrcaRuntimeService {
     }
 
     return { handle: this.issuePtyHandle(createdPty ?? pty), tabId: parentTabId, paneRuntimeId: -1 }
-  }
-
-  async handleAgentTeamsTmuxCompat(
-    request: AgentTeamsTmuxCompatRequest
-  ): Promise<AgentTeamsTmuxCompatResponse> {
-    return await this.claudeAgentTeams.handleTmuxCompat(request, {
-      splitTerminal: (handle, opts) => this.splitTerminal(handle, opts),
-      readTerminal: (handle, opts) => this.readTerminal(handle, opts),
-      sendTerminal: (handle, action) => this.sendTerminal(handle, action),
-      focusTerminal: (handle) => this.focusTerminal(handle),
-      closeTerminal: (handle) => this.closeTerminal(handle),
-      showTerminal: (handle) => this.showTerminal(handle)
-    })
-  }
-
-  async prepareClaudeAgentTeamsLeader(args: {
-    paneKey: string
-    baseEnv?: Record<string, string>
-  }): Promise<{ env: Record<string, string> }> {
-    const handle = this.getTerminalHandleForPaneKey(args.paneKey)
-    if (!handle) {
-      throw new Error('claude_agent_teams_requires_orca_terminal')
-    }
-    return await this.prepareClaudeAgentTeamsLeaderForHandle({
-      handle,
-      baseEnv: args.baseEnv
-    })
-  }
-
-  async prepareClaudeAgentTeamsLeaderForHandle(args: {
-    handle: string
-    baseEnv?: Record<string, string>
-  }): Promise<{ env: Record<string, string> }> {
-    const baseEnv = {
-      ...process.env,
-      ...args.baseEnv
-    }
-    const shimDir = await ensureClaudeAgentTeamsShimDir()
-    const shimBin = resolveClaudeAgentTeamsShimBin(baseEnv)
-    return this.claudeAgentTeams.createLaunchEnv({
-      leaderHandle: args.handle,
-      baseEnv,
-      shimDir,
-      shimBin
-    })
   }
 
   private waitForNewLeafInTab(
@@ -24675,8 +24152,7 @@ export class OrcaRuntimeService {
     scope: TerminalWorkspaceLaunchScope,
     baseEnv: Record<string, string>,
     paneKey: string,
-    tabId: string,
-    agentTeamsEnv?: Record<string, string>
+    tabId: string
   ): Record<string, string> {
     const cleanBaseEnv = { ...baseEnv }
     for (const key of AGENT_HOOK_RUNTIME_ENV_KEYS) {
@@ -24684,7 +24160,6 @@ export class OrcaRuntimeService {
     }
     const env = {
       ...cleanBaseEnv,
-      ...agentTeamsEnv,
       ...this.buildAgentHookPtyEnv?.(),
       ORCA_PANE_KEY: paneKey,
       ORCA_TAB_ID: tabId,
@@ -24854,8 +24329,8 @@ export class OrcaRuntimeService {
     input?: WorktreeLineageInput
   ): Promise<WorktreeLineageResolution> {
     const parentSelectorNextSteps = [
-      'Pass a valid --parent-worktree selector such as folder:<id>, worktree:<worktreeId>, id:<repo-id>::<path>, branch:<branch>, issue:<number>, path:<absolute-path>, or active/current.',
-      'Retry with --no-parent to create without lineage.'
+      'Provide a valid `parentWorktree` selector such as folder:<id>, worktree:<worktreeId>, id:<repo-id>::<path>, branch:<branch>, issue:<number>, path:<absolute-path>, or active/current.',
+      'Retry with `noParent: true` to create without lineage.'
     ]
     const parentSelectorNotFoundMessage = (err: unknown): string =>
       err instanceof WorktreeIdRequiresFullPathError
@@ -24869,13 +24344,13 @@ export class OrcaRuntimeService {
     if (input.noParent === true && (input.parentWorkspace || input.parentWorktree)) {
       throw new RuntimeLineageError(
         'LINEAGE_PARENT_CONTEXT_CONFLICT',
-        'Choose either one parent selector or --no-parent.'
+        'Choose either a parent selector or `noParent: true`.'
       )
     }
     if (input.parentWorkspace && input.parentWorktree) {
       throw new RuntimeLineageError(
         'LINEAGE_PARENT_CONTEXT_CONFLICT',
-        'Choose either one parent selector or --no-parent.'
+        'Choose either one parent selector or `noParent: true`.'
       )
     }
 
@@ -24888,8 +24363,8 @@ export class OrcaRuntimeService {
         return {
           kind: 'lineage',
           parent: await this.resolveWorkspaceParentSelector(input.parentWorkspace),
-          origin: 'cli',
-          capture: { source: 'explicit-cli-flag', confidence: 'explicit' }
+          origin: 'runtime',
+          capture: { source: 'explicit-runtime-parameter', confidence: 'explicit' }
         }
       } catch (err) {
         throw new RuntimeLineageError(
@@ -24913,8 +24388,8 @@ export class OrcaRuntimeService {
             worktree: parent,
             instanceId: parent.instanceId ?? null
           },
-          origin: 'cli',
-          capture: { source: 'explicit-cli-flag', confidence: 'explicit' }
+          origin: 'runtime',
+          capture: { source: 'explicit-runtime-parameter', confidence: 'explicit' }
         }
       } catch (err) {
         throw new RuntimeLineageError(
@@ -24947,61 +24422,16 @@ export class OrcaRuntimeService {
       }
     }
 
-    if (input.orchestrationContext?.parentWorktreeId) {
-      try {
-        const parent = await this.resolveWorktreeSelector(
-          `id:${input.orchestrationContext.parentWorktreeId}`
-        )
-        candidates.push({
-          source: 'orchestration-context',
-          parent: {
-            type: 'worktree',
-            workspaceKey: worktreeWorkspaceKey(parent.id),
-            worktree: parent,
-            instanceId: parent.instanceId ?? null
-          }
-        })
-      } catch {
-        // Keep creation recoverable; the warning below covers missing inferred context.
-      }
-    }
-
-    const commentTaskId = extractOrchestrationTaskId(input.comment)
-    if (commentTaskId) {
-      const candidate = await this.resolveLineageCandidateForTaskId(commentTaskId)
-      if (candidate) {
-        candidates.push(candidate)
-      }
-    }
-
     if (input.callerTerminalHandle) {
       try {
         const terminal = await this.showTerminal(input.callerTerminalHandle)
         const terminalParent = await this.resolveWorkspaceParentSelector(
           `id:${terminal.worktreeId}`
         )
-        const activeDispatch = this._orchestrationDb?.getActiveDispatchForTerminal(
-          input.callerTerminalHandle
-        )
-        const activeRun = this._orchestrationDb?.getActiveCoordinatorRun()
-        if (activeDispatch) {
-          candidates.push({
-            source: 'orchestration-context',
-            parent: terminalParent,
-            taskId: activeDispatch.task_id,
-            ...(activeRun
-              ? {
-                  orchestrationRunId: activeRun.id,
-                  coordinatorHandle: activeRun.coordinator_handle
-                }
-              : {})
-          })
-        } else {
-          candidates.push({
-            source: 'terminal-context',
-            parent: terminalParent
-          })
-        }
+        candidates.push({
+          source: 'terminal-context',
+          parent: terminalParent
+        })
         terminalContextResolved = true
       } catch {
         // Why: a stale terminal handle (reload/SSH reconnect) shouldn't drop lineage; keep resolving other inferred candidates.
@@ -25053,135 +24483,30 @@ export class OrcaRuntimeService {
               terminalParentWorkspaceKey: candidates.find((c) => c.source === 'terminal-context')
                 ?.parent.workspaceKey,
               envParentWorkspaceKey: candidates.find((c) => c.source === 'env-workspace')?.parent
-                .workspaceKey,
-              orchestrationParentWorkspaceKey: candidates.find(
-                (c) => c.source === 'orchestration-context'
-              )?.parent.workspaceKey
+                .workspaceKey
             }
           }
         ]
       }
     }
 
-    const preferred =
-      candidates.find((candidate) => candidate.source === 'env-workspace') ??
-      candidates.find((candidate) => candidate.source === 'orchestration-context') ??
-      first
+    const preferred = candidates.find((candidate) => candidate.source === 'env-workspace') ?? first
     return {
       kind: 'lineage',
       parent: preferred.parent,
-      origin: preferred.source === 'orchestration-context' ? 'orchestration' : 'cli',
+      origin: 'runtime',
       capture: { source: preferred.source, confidence: 'inferred' },
-      ...((preferred.orchestrationRunId ?? input.orchestrationContext?.orchestrationRunId)
-        ? {
-            orchestrationRunId:
-              preferred.orchestrationRunId ?? input.orchestrationContext?.orchestrationRunId
-          }
-        : {}),
-      ...((preferred.taskId ?? input.orchestrationContext?.taskId)
-        ? { taskId: preferred.taskId ?? input.orchestrationContext?.taskId }
-        : {}),
-      ...((preferred.coordinatorHandle ?? input.orchestrationContext?.coordinatorHandle)
-        ? {
-            coordinatorHandle:
-              preferred.coordinatorHandle ?? input.orchestrationContext?.coordinatorHandle
-          }
-        : {}),
       ...(terminalContextResolved && input.callerTerminalHandle
         ? { createdByTerminalHandle: input.callerTerminalHandle }
         : {})
     }
   }
 
-  private async resolveLineageCandidateForTaskId(
-    taskId: string
-  ): Promise<WorktreeLineageCandidate | null> {
-    const db = this.getOrchestrationDbIfAvailable()
-    const dispatch = db?.getDispatchContext(taskId)
-    // Why: agent-created tasks may never be dispatched, but the creating terminal still identifies the parent workspace.
-    const parentHandle =
-      dispatch?.assignee_handle ?? db?.getTask(taskId)?.created_by_terminal_handle
-    if (!parentHandle) {
-      return null
-    }
-    try {
-      const terminal = await this.showTerminal(parentHandle)
-      const parent = await this.resolveWorktreeSelector(`id:${terminal.worktreeId}`)
-      return {
-        source: 'orchestration-context',
-        parent: {
-          type: 'worktree',
-          workspaceKey: worktreeWorkspaceKey(parent.id),
-          worktree: parent,
-          instanceId: parent.instanceId ?? null
-        },
-        taskId
-      }
-    } catch {
-      return null
-    }
-  }
-
-  private getOrchestrationDbIfAvailable(): OrchestrationDb | null {
-    try {
-      return this._orchestrationDb ?? this.getOrchestrationDb()
-    } catch {
-      return this._orchestrationDb
-    }
-  }
-
-  async hydrateInferredWorktreeLineage(): Promise<void> {
-    const store = this.store
-    if (
-      !store ||
-      typeof store.getWorktreeLineage !== 'function' ||
-      typeof store.setWorktreeLineage !== 'function'
-    ) {
-      return
-    }
-
-    const worktrees = await this.listResolvedWorktrees()
-    for (const worktree of worktrees) {
-      if (store.getWorktreeLineage(worktree.id) || !worktree.instanceId) {
-        continue
-      }
-      const taskId = extractOrchestrationTaskId(worktree.comment)
-      if (!taskId) {
-        continue
-      }
-      const candidate = await this.resolveLineageCandidateForTaskId(taskId)
-      if (
-        !candidate?.parent.instanceId ||
-        candidate.parent.type !== 'worktree' ||
-        candidate.parent.worktree.id === worktree.id
-      ) {
-        continue
-      }
-      try {
-        this.validateLineageParent(worktree, candidate.parent.worktree)
-      } catch {
-        continue
-      }
-      store.setWorktreeLineage(worktree.id, {
-        worktreeId: worktree.id,
-        worktreeInstanceId: worktree.instanceId,
-        parentWorktreeId: candidate.parent.worktree.id,
-        parentWorktreeInstanceId: candidate.parent.instanceId,
-        origin: 'orchestration',
-        capture: { source: 'orchestration-context', confidence: 'inferred' },
-        taskId,
-        createdAt: Date.now()
-      })
-    }
-  }
-
   async listWorktreeLineage(): Promise<Record<string, WorktreeLineage>> {
-    await this.hydrateInferredWorktreeLineage()
     return this.store?.getAllWorktreeLineage?.() ?? {}
   }
 
   async listWorkspaceLineage(): Promise<Record<WorkspaceKey, WorkspaceLineage>> {
-    await this.hydrateInferredWorktreeLineage()
     return this.store?.getAllWorkspaceLineage?.() ?? {}
   }
 
@@ -26058,7 +25383,6 @@ export class OrcaRuntimeService {
     const handle = this.handleByPtyId.get(ptyId)
     if (handle) {
       // Why: pruning can remove a PTY without onPtyExit firing; release this leader's agent team so it doesn't leak.
-      this.claudeAgentTeams.removeTeamForLeaderHandle(handle)
       this.handleByPtyId.delete(ptyId)
       const record = this.handles.get(handle)
       if (record?.tabId.startsWith('pty:')) {
@@ -27110,16 +26434,6 @@ export class OrcaRuntimeService {
     }
   }
 
-  getAgentStatusOrchestrationContextForPaneKey(
-    paneKey: string
-  ): AgentStatusOrchestrationContext | undefined {
-    const handle = this.getTerminalHandleForPaneKey(paneKey)
-    if (!handle) {
-      return undefined
-    }
-    return this.getAgentStatusOrchestrationContextForHandle(handle)
-  }
-
   getAgentStatusTerminalHandleForPaneKey(paneKey: string): string | undefined {
     return this.getTerminalHandleForPaneKey(paneKey) ?? undefined
   }
@@ -27136,106 +26450,6 @@ export class OrcaRuntimeService {
       return undefined
     }
     return copySleepingAgentLaunchConfig(pty.launchConfig)
-  }
-
-  private buildAgentOrchestrationByPaneKey():
-    | Record<string, AgentStatusOrchestrationContext>
-    | undefined {
-    const db = this.getOrchestrationDbIfAvailable()
-    if (!db) {
-      return undefined
-    }
-    // Why: this runs on every 16ms graph publish (title/status churn). With no
-    // dispatch rows — the overwhelming majority who never orchestrate — the
-    // per-terminal query fan-out below can only ever yield an empty result, so
-    // skip it wholesale via the DB's cached emptiness probe. Optional call so
-    // partial test-injected DBs without the probe fall through to the scan.
-    if (db.hasAnyDispatchContexts?.() === false) {
-      return undefined
-    }
-    const contexts: Record<string, AgentStatusOrchestrationContext> = {}
-    for (const leaf of this.leaves.values()) {
-      if (!leaf.ptyId) {
-        continue
-      }
-      const handle = this.issueHandle(leaf)
-      const context = this.getAgentStatusOrchestrationContextForHandle(handle, db)
-      if (context) {
-        contexts[this.makeRuntimePaneKey(leaf)] = context
-      }
-    }
-    for (const pty of this.ptysById.values()) {
-      if (!pty.paneKey || contexts[pty.paneKey]) {
-        continue
-      }
-      const handle = this.issuePtyHandle(pty)
-      const context = this.getAgentStatusOrchestrationContextForHandle(handle, db)
-      if (context) {
-        contexts[pty.paneKey] = context
-      }
-    }
-    return Object.keys(contexts).length > 0 ? contexts : undefined
-  }
-
-  private getAgentStatusOrchestrationContextForHandle(
-    handle: string,
-    db = this.getOrchestrationDbIfAvailable()
-  ): AgentStatusOrchestrationContext | undefined {
-    // Why: active dispatch is authoritative for reused terminals; completed context stale-groups future work once its done row is gone.
-    const dispatch =
-      db?.getActiveDispatchForTerminal?.(handle) ??
-      this.getRecentCompletedDispatchForTerminal(handle, db)
-    if (!dispatch) {
-      return undefined
-    }
-    const task = db?.getTask?.(dispatch.task_id)
-    const display =
-      typeof task?.spec === 'string'
-        ? buildOrchestrationTaskDisplayMetadata({
-            spec: task.spec,
-            taskTitle: task.task_title,
-            displayName: task.display_name
-          })
-        : { taskTitle: '', displayName: '' }
-    const activeRun = dispatch.status === 'completed' ? undefined : db?.getActiveCoordinatorRun?.()
-    const parentTerminalHandle =
-      task?.created_by_terminal_handle ??
-      (activeRun?.coordinator_handle && activeRun.coordinator_handle !== handle
-        ? activeRun.coordinator_handle
-        : undefined)
-    const parentPaneKey = parentTerminalHandle
-      ? this.getPaneKeyForTerminalHandle(parentTerminalHandle)
-      : undefined
-
-    return {
-      taskId: dispatch.task_id,
-      dispatchId: dispatch.id,
-      ...(display.taskTitle ? { taskTitle: display.taskTitle } : {}),
-      ...(display.displayName ? { displayName: display.displayName } : {}),
-      ...(parentTerminalHandle ? { parentTerminalHandle } : {}),
-      ...(parentPaneKey ? { parentPaneKey } : {}),
-      ...(activeRun?.coordinator_handle ? { coordinatorHandle: activeRun.coordinator_handle } : {}),
-      ...(activeRun?.id ? { orchestrationRunId: activeRun.id } : {})
-    }
-  }
-
-  private getRecentCompletedDispatchForTerminal(
-    handle: string,
-    db = this.getOrchestrationDbIfAvailable()
-  ): ReturnType<OrchestrationDb['getLatestDispatchForTerminal']> {
-    const dispatch = db?.getLatestDispatchForTerminal?.(handle)
-    if (dispatch?.status !== 'completed' || !dispatch.completed_at) {
-      return undefined
-    }
-    const completedAtMs = Date.parse(
-      dispatch.completed_at.includes('T')
-        ? dispatch.completed_at
-        : `${dispatch.completed_at.replace(' ', 'T')}Z`
-    )
-    if (!Number.isFinite(completedAtMs)) {
-      return undefined
-    }
-    return Date.now() - completedAtMs <= AGENT_STATUS_STALE_AFTER_MS ? dispatch : undefined
   }
 
   private getTerminalHandleForPaneKey(paneKey: string): string | null {
@@ -27471,119 +26685,6 @@ export class OrcaRuntimeService {
 
   private getPrimaryLeafForPty(ptyId: string): RuntimeLeafRecord | null {
     return this.getLeavesForPty(ptyId)[0] ?? null
-  }
-
-  deliverPendingMessagesForHandle(handle: string): void {
-    try {
-      const { leaf } = this.getLiveLeafForHandle(handle)
-      if (leaf.lastAgentStatus === 'idle') {
-        this.deliverPendingMessages(leaf)
-      }
-    } catch {
-      // Unknown/stale handles can't be pushed now; the persisted message stays available via explicit check or future idle delivery.
-    }
-  }
-
-  // Why: wake blocking orchestration.check --wait calls on this handle so they return the new message immediately instead of polling.
-  notifyMessageArrived(handle: string, messageType?: string): void {
-    const waiters = this.messageWaitersByHandle.get(handle)
-    if (!waiters || waiters.size === 0) {
-      return
-    }
-    for (const waiter of [...waiters]) {
-      // Why: don't wake a coordinator waiting for worker_done/escalation on heartbeat noise it would misread as idleness.
-      if (messageType && waiter.typeFilter && !waiter.typeFilter.includes(messageType)) {
-        continue
-      }
-      this.resolveMessageWaiter(waiter, 'notified')
-    }
-  }
-
-  waitForMessage(
-    handle: string,
-    options?: {
-      typeFilter?: string[]
-      timeoutMs?: number
-      signal?: AbortSignal
-      exclusive?: boolean
-    }
-  ): Promise<MessageWaitResult> {
-    return new Promise((resolve) => {
-      const currentWaiters = this.messageWaitersByHandle.get(handle)
-      if (options?.exclusive && currentWaiters && currentWaiters.size > 0) {
-        resolve('waiter_exists')
-        return
-      }
-      const timeoutMs = options?.timeoutMs ?? MESSAGE_WAIT_DEFAULT_TIMEOUT_MS
-
-      const waiter: MessageWaiter = {
-        handle,
-        typeFilter: options?.typeFilter,
-        resolve,
-        timeout: null,
-        abortCleanup: null
-      }
-
-      // Why: on caller abort (RPC socket closed — design doc §3.1), resolve now to release the long-poll slot instead of waiting out timeoutMs.
-      const signal = options?.signal
-      const onAbort = (): void => {
-        this.removeMessageWaiter(waiter)
-        resolve('cancelled')
-      }
-      if (signal) {
-        if (signal.aborted) {
-          resolve('cancelled')
-          return
-        }
-        waiter.abortCleanup = () => signal.removeEventListener('abort', onAbort)
-        signal.addEventListener('abort', onAbort, { once: true })
-      }
-
-      waiter.timeout = setTimeout(() => {
-        this.removeMessageWaiter(waiter)
-        resolve('timed_out')
-      }, timeoutMs)
-
-      let waiters = this.messageWaitersByHandle.get(handle)
-      if (!waiters) {
-        waiters = new Set()
-        this.messageWaitersByHandle.set(handle, waiters)
-      }
-      waiters.add(waiter)
-    })
-  }
-
-  cancelMessageWaiters(handle: string): void {
-    const waiters = this.messageWaitersByHandle.get(handle)
-    if (!waiters) {
-      return
-    }
-    for (const waiter of [...waiters]) {
-      this.resolveMessageWaiter(waiter, 'cancelled')
-    }
-  }
-
-  private resolveMessageWaiter(waiter: MessageWaiter, result: MessageWaitResult): void {
-    this.removeMessageWaiter(waiter)
-    waiter.resolve(result)
-  }
-
-  private removeMessageWaiter(waiter: MessageWaiter): void {
-    if (waiter.timeout) {
-      clearTimeout(waiter.timeout)
-      waiter.timeout = null
-    }
-    if (waiter.abortCleanup) {
-      waiter.abortCleanup()
-      waiter.abortCleanup = null
-    }
-    const waiters = this.messageWaitersByHandle.get(waiter.handle)
-    if (waiters) {
-      waiters.delete(waiter)
-      if (waiters.size === 0) {
-        this.messageWaitersByHandle.delete(waiter.handle)
-      }
-    }
   }
 
   private buildPtyTerminalSummary(
@@ -28075,62 +27176,6 @@ export class OrcaRuntimeService {
   }
 
   // Why: push-on-idle delivery is event-driven (no polling) because the runtime owns both the message store and terminal status detection.
-  private deliverPendingMessages(leaf: RuntimeLeafRecord): void {
-    if (!this._orchestrationDb) {
-      return
-    }
-
-    const handle = this.handleByLeafKey.get(this.getLeafKey(leaf.tabId, leaf.leafId))
-    if (!handle) {
-      return
-    }
-
-    const unread = this._orchestrationDb.getUndeliveredUnreadMessages(handle)
-    if (unread.length === 0) {
-      return
-    }
-
-    if (!leaf.writable || !leaf.ptyId) {
-      return
-    }
-
-    const payload = formatMessagesForInjection(unread)
-    const wrote = this.ptyController?.write(leaf.ptyId, payload) ?? false
-    if (!wrote) {
-      return
-    }
-
-    // The active coordinator prompt is user-owned input, so push-on-idle must not synthesize Enter.
-    if (this._orchestrationDb.getActiveCoordinatorRun()?.coordinator_handle === handle) {
-      this._orchestrationDb.markAsDelivered(unread.map((m) => m.id))
-      return
-    }
-
-    const tabTitle = this.tabs.get(leaf.tabId)?.title
-    if (isCursorAgentOrchestrationTarget(leaf, tabTitle)) {
-      // Why: Cursor Agent treats injected PTY text as editable prompt input, so submitting must stay under user control.
-      this._orchestrationDb.markAsDelivered(unread.map((m) => m.id))
-      return
-    }
-
-    // Why: Claude Code treats a large PTY write as a paste and swallows a \r in the same write; send Enter separately after a delay, stamping delivered_at only once \r is confirmed.
-    // Important (design doc §3.2, feedback #2): stamp delivered_at, not read — read means "a check-caller consumed this"; flipping it would hide the message from check --unread.
-    const ptyId = leaf.ptyId
-    setTimeout(() => {
-      try {
-        if (!leaf.writable) {
-          return
-        }
-        const submitted = this.ptyController?.write(ptyId, '\r') ?? false
-        if (submitted) {
-          this._orchestrationDb?.markAsDelivered(unread.map((m) => m.id))
-        }
-      } catch {
-        // Terminal may have closed during the delay — messages stay queued (delivered_at NULL) and re-deliver on next idle.
-      }
-    }, 500)
-  }
-
   private resolveWaiter(waiter: TerminalWaiter, result: RuntimeTerminalWait): void {
     this.removeWaiter(waiter)
     waiter.resolve(result)
@@ -28454,7 +27499,7 @@ export class OrcaRuntimeService {
       if (!worktree) {
         throw new LinearAgentAccessError(
           'linear_issue_required',
-          'Run --current from inside an Orca-managed worktree or pass an issue id.'
+          'Set `current: true` from inside an Orca-managed worktree or pass an issue id.'
         )
       }
     }
@@ -28462,7 +27507,7 @@ export class OrcaRuntimeService {
     if (!worktree) {
       throw new LinearAgentAccessError(
         'linear_issue_required',
-        'Run --current from inside an Orca-managed worktree or pass an issue id.'
+        'Set `current: true` from inside an Orca-managed worktree or pass an issue id.'
       )
     }
 
@@ -28609,7 +27654,7 @@ export class OrcaRuntimeService {
             'Linear may have applied the state change, but Orca could not confirm it.',
             {
               nextSteps: [
-                `Run \`orca linear issue ${target.issue.identifier} --workspace ${target.workspaceId} --json\` and check the current state before retrying.`
+                `Call \`linear.issueContext\` with \`input: "${target.issue.identifier}"\` and \`workspaceId: "${target.workspaceId}"\`, then check the current state before retrying.`
               ],
               ...(cause ? { cause } : {})
             }
@@ -28657,7 +27702,7 @@ export class OrcaRuntimeService {
             'Linear may have applied the relation change, but Orca could not confirm it.',
             {
               nextSteps: [
-                `Run \`orca linear issue ${target.issue.identifier} --relations --workspace ${target.workspaceId} --json\` before retrying.`
+                `Call \`linear.issueContext\` with \`input: "${target.issue.identifier}"\`, \`workspaceId: "${target.workspaceId}"\`, and relations included before retrying.`
               ],
               ...(cause ? { cause } : {})
             }
@@ -28736,7 +27781,7 @@ export class OrcaRuntimeService {
               'Linear may have applied the issue save, but Orca could not confirm it.',
               {
                 nextSteps: [
-                  `Run \`orca linear issue ${target.issue.identifier} --workspace ${target.workspaceId} --json\` before retrying.`
+                  `Call \`linear.issueContext\` with \`input: "${target.issue.identifier}"\` and \`workspaceId: "${target.workspaceId}"\` before retrying.`
                 ],
                 ...(cause ? { cause } : {})
               }
@@ -28785,7 +27830,7 @@ export class OrcaRuntimeService {
             'Linear may have applied the task update, but Orca could not confirm it.',
             {
               nextSteps: [
-                `Run \`orca linear issue ${target.issue.identifier} --workspace ${target.workspaceId} --json\` and check the updated field before retrying.`
+                `Call \`linear.issueContext\` with \`input: "${target.issue.identifier}"\` and \`workspaceId: "${target.workspaceId}"\`, then check the updated field before retrying.`
               ],
               ...(cause ? { cause } : {})
             }
@@ -28849,7 +27894,6 @@ export class OrcaRuntimeService {
         (cause) =>
           this.linearCreateStyleUnconfirmed('comment', writeId, target, {
             parentId,
-            bodyRequired: true,
             cause
           })
       )
@@ -28864,8 +27908,7 @@ export class OrcaRuntimeService {
           target.workspaceId,
           () =>
             this.linearCreateStyleUnconfirmed('comment', writeId, target, {
-              parentId,
-              bodyRequired: true
+              parentId
             })
         )
         await this.notifyLinearLinkedIssueUpdated(target.workspaceId, target.issue.identifier)
@@ -28912,8 +27955,6 @@ export class OrcaRuntimeService {
           ),
         (cause) =>
           this.linearCreateStyleUnconfirmed('attach', writeId, target, {
-            title,
-            url: url.toString(),
             cause
           })
       )
@@ -28925,11 +27966,7 @@ export class OrcaRuntimeService {
           writeId,
           target.issue.id,
           target.workspaceId,
-          () =>
-            this.linearCreateStyleUnconfirmed('attach', writeId, target, {
-              title,
-              url: url.toString()
-            })
+          () => this.linearCreateStyleUnconfirmed('attach', writeId, target)
         )
         await this.notifyLinearLinkedIssueUpdated(target.workspaceId, target.issue.identifier)
         return this.linearAttachResult(attachment, target, writeId, true)
@@ -29027,8 +28064,6 @@ export class OrcaRuntimeService {
           this.linearCreateStyleUnconfirmed('create', writeId, null, {
             team,
             parent,
-            title: params.title,
-            bodyRequired: params.body !== undefined,
             createFields,
             cause
           })
@@ -29049,8 +28084,6 @@ export class OrcaRuntimeService {
             this.linearCreateStyleUnconfirmed('create', writeId, null, {
               team,
               parent,
-              title: params.title,
-              bodyRequired: params.body !== undefined,
               createFields
             })
         )
@@ -29448,7 +28481,9 @@ export class OrcaRuntimeService {
             name: project.name,
             teams: project.teams
           })),
-          nextSteps: ['Run `orca linear project list --query <name> --json` and retry by id.']
+          nextSteps: [
+            `Call \`linear.agentProjectList\` with \`query: "${trimmed}"\` and \`workspaceId: "${team.workspaceId}"\`, then retry by id.`
+          ]
         }
       )
     }
@@ -29461,7 +28496,9 @@ export class OrcaRuntimeService {
         name: project.name,
         teams: project.teams
       })),
-      nextSteps: ['Run `orca linear project list --query <name> --json` and retry by id.']
+      nextSteps: [
+        `Call \`linear.agentProjectList\` with \`query: "${trimmed}"\` and \`workspaceId: "${team.workspaceId}"\`, then retry by id.`
+      ]
     })
   }
 
@@ -29587,7 +28624,9 @@ export class OrcaRuntimeService {
           : `Multiple labels exactly matched "${input}".`,
         {
           labels: labels.map((label) => ({ id: label.id, name: label.name })),
-          nextSteps: ['Run `orca linear team labels --team <key-or-id> --json` and retry by id.']
+          nextSteps: [
+            `Call \`linear.agentTeamLabels\` with \`teamInput: "${issue.team.key}"\` and \`workspaceId: "${workspaceId}"\`, then retry by id.`
+          ]
         }
       )
     })
@@ -29723,7 +28762,9 @@ export class OrcaRuntimeService {
           'linear_invalid_parent',
           'The reply target is not a comment on this issue.',
           {
-            nextSteps: ['Run `orca linear issue <id> --comments --json` to list valid comment ids.']
+            nextSteps: [
+              `Call \`linear.issueContext\` with \`input: "${issueId}"\`, \`workspaceId: "${workspaceId}"\`, and comments included to list valid comment ids.`
+            ]
           }
         )
       }
@@ -30103,9 +29144,15 @@ export class OrcaRuntimeService {
       }
     }
     if (!teamInput) {
-      throw linearError('linear_team_required', 'Pass --team or create under a parent issue.', {
-        nextSteps: ['Run `orca linear create --team <key> ...` or use --parent-current.']
-      })
+      throw linearError(
+        'linear_team_required',
+        'Provide `teamInput` or create under a parent issue.',
+        {
+          nextSteps: [
+            'Retry `linear.issueCreate` with `teamInput`, or provide `parentInput`/`parentCurrent: true`.'
+          ]
+        }
+      )
     }
 
     const scope = parent?.workspaceId ?? workspaceId
@@ -30229,47 +29276,6 @@ export class OrcaRuntimeService {
     }
   }
 
-  private linearCreateFieldRetryTokens(fields: LinearCreateFieldIntent | undefined): string[] {
-    if (!fields) {
-      return []
-    }
-    return [
-      ...(fields.stateId ? [`--state=${this.commandToken(fields.stateId, 'STATE_ID')}`] : []),
-      ...(fields.assigneeId
-        ? [`--assignee=${this.commandToken(fields.assigneeId, 'ASSIGNEE_ID')}`]
-        : []),
-      ...(fields.priority !== undefined
-        ? [`--priority=${this.linearPriorityRetryToken(fields.priority)}`]
-        : []),
-      ...(fields.estimate !== undefined && fields.estimate !== null
-        ? [`--estimate=${fields.estimate}`]
-        : []),
-      ...(fields.dueDate ? [`--due-date=${fields.dueDate}`] : []),
-      ...(fields.projectId
-        ? [`--project=${this.commandToken(fields.projectId, 'PROJECT_ID')}`]
-        : []),
-      ...(fields.labelIds ?? []).map(
-        (labelId) => `--label=${this.commandToken(labelId, 'LABEL_ID')}`
-      )
-    ]
-  }
-
-  private linearPriorityRetryToken(priority: number): string {
-    if (priority === 1) {
-      return 'urgent'
-    }
-    if (priority === 2) {
-      return 'high'
-    }
-    if (priority === 3) {
-      return 'medium'
-    }
-    if (priority === 4) {
-      return 'low'
-    }
-    return 'none'
-  }
-
   private linearCreateStyleUnconfirmed(
     verb: 'comment' | 'attach' | 'create',
     writeId: string,
@@ -30278,49 +29284,17 @@ export class OrcaRuntimeService {
       parentId?: string | null
       team?: { id: string; key: string; name: string; workspaceId: string }
       parent?: LinearAgentWriteTarget | null
-      title?: string
-      url?: string
-      bodyRequired?: boolean
       createFields?: LinearCreateFieldIntent
       cause?: string
     } = {}
   ): LinearAgentAccessError {
     const workspaceId = target?.workspaceId ?? extra.team?.workspaceId ?? ''
-    // Why: the retry preserves id and target so duplicate recovery can prove intent without matching mutable content.
-    const pinned =
+    const retryMethod =
       verb === 'create'
-        ? [
-            'orca linear create',
-            `--workspace=${this.commandToken(workspaceId, 'WORKSPACE_ID')}`,
-            `--write-id=${this.commandToken(writeId, 'WRITE_ID')}`,
-            '--title TITLE_HERE',
-            ...(extra.bodyRequired ? ['--body-file -'] : []),
-            ...(extra.parent
-              ? [`--parent=${this.commandToken(extra.parent.issue.identifier, 'PARENT_ISSUE')}`]
-              : []),
-            ...(extra.team
-              ? [`--team=${this.commandToken(extra.team.key, 'TEAM_KEY')}`]
-              : []
-            ).concat(this.linearCreateFieldRetryTokens(extra.createFields))
-          ].join(' ')
-        : [
-            `orca linear ${verb === 'attach' ? 'attach' : 'comment add'}`,
-            this.commandToken(target?.issue.identifier ?? '', 'ISSUE_ID'),
-            `--workspace=${this.commandToken(workspaceId, 'WORKSPACE_ID')}`,
-            `--write-id=${this.commandToken(writeId, 'WRITE_ID')}`,
-            ...(verb === 'comment' ? ['--body-file -'] : []),
-            ...(verb === 'comment' && extra.parentId
-              ? [`--reply-to=${this.commandToken(extra.parentId, 'COMMENT_ID')}`]
-              : []),
-            ...(verb === 'attach' ? ['--url URL_HERE', '--title TITLE_HERE'] : [])
-          ].join(' ')
-    const retryPrefix = extra.bodyRequired || verb === 'comment' ? 'Pipe the same body and r' : 'R'
-    const payloadNote =
-      verb === 'attach'
-        ? ' Replace TITLE_HERE/URL_HERE with the exact original payload values before running.'
-        : verb === 'create'
-          ? ' Replace TITLE_HERE with the exact original title before running.'
-          : ''
+        ? 'linear.issueCreate'
+        : verb === 'attach'
+          ? 'linear.issueAttachLink'
+          : 'linear.issueAddComment'
     return linearError(
       'linear_write_unconfirmed',
       'Linear may have applied the write, but Orca could not confirm it.',
@@ -30333,15 +29307,11 @@ export class OrcaRuntimeService {
         parentIdentifier: extra.parent?.issue.identifier,
         createFields: extra.createFields,
         nextSteps: [
-          `${retryPrefix}etry once with the pinned command: \`${pinned}\`.${payloadNote}`
+          `Retry \`${retryMethod}\` once with the same payload and \`writeId: "${writeId}"\`.`
         ],
         ...(extra.cause ? { cause: sanitizeLinearErrorMessage(extra.cause) } : {})
       }
     )
-  }
-
-  private commandToken(value: string, placeholder: string): string {
-    return /^[A-Za-z0-9._:@%+=,/-]+$/.test(value) ? value : placeholder
   }
 
   private async notifyLinearLinkedIssueUpdated(
@@ -32542,7 +31512,6 @@ async function assertTerminalInputWithinLimitWithYield(text: string | undefined)
 const TUI_IDLE_DEFAULT_TIMEOUT_MS = 5 * 60 * 1000
 const TUI_IDLE_POLL_INTERVAL_MS = 2000
 const TUI_IDLE_QUIESCENCE_MS = 3000
-const MESSAGE_WAIT_DEFAULT_TIMEOUT_MS = 2 * 60 * 1000
 const EXPLICIT_IDLE_TITLE_RE = /(^|\s)(ready|idle|done)(\s|$|[.!?])/i
 const CLAUDE_IDLE_PREFIX = '\u2733'
 const GEMINI_IDLE_PREFIX = '\u25c7'

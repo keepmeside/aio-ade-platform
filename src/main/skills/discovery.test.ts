@@ -159,7 +159,7 @@ describe('skill discovery', () => {
       ])
     )
     // Why: these live outside ~/.agents/skills, so they must carry the shared
-    // agent-skills provider to feed per-agent orchestration coverage.
+    // agent-skills provider to feed per-agent skill coverage.
     for (const root of roots) {
       if (root.path.replace(/\\/g, '/') === '/home/test/.grok/skills') {
         expect(root.providers).toEqual(['agent-skills'])
@@ -205,11 +205,11 @@ describe('skill discovery', () => {
   it('discovers skill packages through symlinked skill directories', async () => {
     const root = await mkdtemp(join(tmpdir(), 'orca-skills-'))
     const home = join(root, 'home')
-    const realSkill = join(root, 'central-skills', 'orca-cli')
-    const linkedSkill = join(home, '.agents', 'skills', 'orca-cli')
+    const realSkill = join(root, 'central-skills', 'sample-skill')
+    const linkedSkill = join(home, '.agents', 'skills', 'sample-skill')
     await mkdir(realSkill, { recursive: true })
     await mkdir(join(home, '.agents', 'skills'), { recursive: true })
-    await writeFile(join(realSkill, 'SKILL.md'), '# Orca CLI\n\nUse the Orca CLI.')
+    await writeFile(join(realSkill, 'SKILL.md'), '# Sample Skill\n\nExercise skill discovery.')
     await symlink(realSkill, linkedSkill, process.platform === 'win32' ? 'junction' : 'dir')
 
     const result = await discoverSkills({
@@ -217,7 +217,7 @@ describe('skill discovery', () => {
       cwd: join(root, 'missing-cwd')
     })
 
-    const skill = result.skills.find((entry) => entry.name === 'Orca CLI')
+    const skill = result.skills.find((entry) => entry.name === 'Sample Skill')
     expect(skill?.sourceKind).toBe('home')
     expect(skill?.directoryPath).toBe(linkedSkill)
   })
@@ -225,11 +225,11 @@ describe('skill discovery', () => {
   it('discovers a symlinked skill inside a provider home root (#8256/#8503)', async () => {
     const root = await mkdtemp(join(tmpdir(), 'orca-skills-'))
     const home = join(root, 'home')
-    const realSkill = join(root, 'central-skills', 'orchestration')
-    const linkedSkill = join(home, '.pi', 'agent', 'skills', 'orchestration')
+    const realSkill = join(root, 'central-skills', 'control-skill')
+    const linkedSkill = join(home, '.pi', 'agent', 'skills', 'control-skill')
     await mkdir(realSkill, { recursive: true })
     await mkdir(join(home, '.pi', 'agent', 'skills'), { recursive: true })
-    await writeFile(join(realSkill, 'SKILL.md'), '# orchestration\n\nCoordinate agents.')
+    await writeFile(join(realSkill, 'SKILL.md'), '# control-skill\n\nCoordinate agents.')
     await symlink(realSkill, linkedSkill, process.platform === 'win32' ? 'junction' : 'dir')
 
     const result = await discoverSkills({
@@ -237,7 +237,7 @@ describe('skill discovery', () => {
       cwd: join(root, 'missing-cwd')
     })
 
-    const skill = result.skills.find((entry) => entry.name === 'orchestration')
+    const skill = result.skills.find((entry) => entry.name === 'control-skill')
     expect(skill?.sourceKind).toBe('home')
     expect(skill?.directoryPath).toBe(linkedSkill)
     expect(skill?.providers).toEqual(['agent-skills'])
@@ -273,11 +273,11 @@ describe('skill discovery', () => {
   it('keeps home classification when cwd points at the same directory as home', async () => {
     const root = await mkdtemp(join(tmpdir(), 'orca-skills-'))
     const home = join(root, 'home')
-    const skillDir = join(home, '.agents', 'skills', 'orca-cli')
+    const skillDir = join(home, '.agents', 'skills', 'sample-skill')
     await mkdir(skillDir, { recursive: true })
     await writeFile(
       join(skillDir, 'SKILL.md'),
-      ['---', 'name: orca-cli', 'description: Use the Orca CLI.', '---', ''].join('\n')
+      ['---', 'name: sample-skill', 'description: Exercise skill discovery.', '---', ''].join('\n')
     )
 
     const result = await discoverSkills({
@@ -286,7 +286,7 @@ describe('skill discovery', () => {
       repos: []
     })
 
-    expect(result.skills.filter((entry) => entry.name === 'orca-cli')).toMatchObject([
+    expect(result.skills.filter((entry) => entry.name === 'sample-skill')).toMatchObject([
       {
         sourceKind: 'home',
         sourceLabel: 'Agent skills home',

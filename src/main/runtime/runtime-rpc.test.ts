@@ -1,4 +1,4 @@
-/* eslint-disable max-lines -- Why: this integration-style RPC test keeps the request/response contract together so regressions in the external CLI surface are easier to spot. */
+/* eslint-disable max-lines -- Why: this integration-style RPC test keeps the request/response contract together so regressions in the external runtime surface are easier to spot. */
 import { existsSync, mkdirSync, mkdtempSync } from 'node:fs'
 import { rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -7,9 +7,7 @@ import { createConnection, type Socket } from 'node:net'
 import { EventEmitter } from 'node:events'
 import { describe, expect, it, vi } from 'vitest'
 import WebSocket from 'ws'
-import Database from '../sqlite/sync-database'
 import { OrcaRuntimeService } from './orca-runtime'
-import { OrchestrationDb } from './orchestration/db'
 import * as runtimeMetadataModule from './runtime-metadata'
 import { readRuntimeMetadata, writeRuntimeMetadata } from './runtime-metadata'
 import { createRuntimeTransportMetadata, OrcaRuntimeRpcServer } from './runtime-rpc'
@@ -26,7 +24,6 @@ import {
 import { decrypt, deriveSharedKey, encrypt, generateKeyPair } from './rpc/e2ee-crypto'
 import { DeviceRegistry } from './device-registry'
 import { DEVICE_REGISTRY_FILENAME, E2EE_KEYPAIR_FILENAME } from './runtime-pairing-files'
-import { ORCHESTRATION_CONTRACT_VERSION } from '../../shared/protocol-version'
 
 vi.mock('../git/worktree', () => ({
   listWorktrees: vi.fn().mockResolvedValue([
@@ -61,7 +58,7 @@ async function sendRequest(
       resolve(JSON.parse(message) as Record<string, unknown>)
     })
     socket.on('connect', () => {
-      socket.write(`${JSON.stringify(withCurrentOrchestrationContract(request))}\n`)
+      socket.write(`${JSON.stringify(request)}\n`)
     })
   })
 }
@@ -112,18 +109,10 @@ function openFramedSession(endpoint: string, request: Record<string, unknown>): 
       }
     })
     socket.on('connect', () => {
-      socket.write(`${JSON.stringify(withCurrentOrchestrationContract(request))}\n`)
+      socket.write(`${JSON.stringify(request)}\n`)
     })
   })
   return { socket, frames, done }
-}
-
-function withCurrentOrchestrationContract(
-  request: Record<string, unknown>
-): Record<string, unknown> {
-  return typeof request.method === 'string' && request.method.startsWith('orchestration.')
-    ? { ...request, orchestrationContractVersion: ORCHESTRATION_CONTRACT_VERSION }
-    : request
 }
 
 function sleep(ms: number): Promise<void> {
@@ -137,18 +126,6 @@ async function waitFor(predicate: () => boolean, timeoutMs = 2_000): Promise<voi
       throw new Error('timed out waiting for condition')
     }
     await sleep(20)
-  }
-}
-
-function seedSupervisedAskWorkers(db: OrchestrationDb, workerHandles: string[]): void {
-  const run = db.createRun({
-    objective: 'Exercise ask admission',
-    coordinatorHandle: 'term_coord',
-    coordinatorPaneKey: 'tab_coord:bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
-  })
-  for (const workerHandle of workerHandles) {
-    const task = db.createTask({ spec: 'Wait for coordinator input', runId: run.id })
-    db.createDispatchContext(task.id, workerHandle)
   }
 }
 
@@ -364,8 +341,8 @@ describe('OrcaRuntimeRpcServer', () => {
 
   it('reclaims runtime metadata clobbered by a second instance that has since died', async () => {
     // Why: #7848 — a launch that slips past the single-instance lock republishes
-    // orca-runtime.json with its own pid, so the CLI reports stale_bootstrap
-    // against this still-serving runtime once that instance exits.
+    // orca-runtime.json with its own pid, so external clients observe stale
+    // bootstrap metadata for this still-serving runtime once that instance exits.
     const userDataPath = mkdtempSync(join(tmpdir(), 'orca-runtime-rpc-'))
     const runtime = new OrcaRuntimeService()
     const server = new OrcaRuntimeRpcServer({ runtime, userDataPath })
@@ -450,7 +427,7 @@ describe('OrcaRuntimeRpcServer', () => {
 
     await server.start()
 
-    const offer = server.createPairingOffer({ address: '100.64.1.20', name: 'CLI test' })
+    const offer = server.createPairingOffer({ address: '100.64.1.20', name: 'runtime test' })
     expect(offer.available).toBe(true)
     if (offer.available) {
       expect(offer.endpoint).toContain('100.64.1.20')
@@ -796,170 +773,6 @@ describe('OrcaRuntimeRpcServer', () => {
     }
   }, 15_000)
 
-  it('caps WebSocket long-polls and aborts them when the socket closes', async () => {
-    const userDataPath = mkdtempSync(join(tmpdir(), 'orca-runtime-rpc-'))
-    const runtime = new OrcaRuntimeService()
-    const db = new OrchestrationDb(':memory:')
-    runtime.setOrchestrationDb(db)
-    const server = new OrcaRuntimeRpcServer({
-      runtime,
-      userDataPath,
-      enableWebSocket: false,
-      longPollCap: 1
-    })
-    const device = server['deviceRegistry'] ?? null
-    expect(device).toBeNull()
-    server['deviceRegistry'] = new DeviceRegistry(userDataPath)
-    const entry = server['deviceRegistry']!.addDevice('runtime-test', 'runtime')
-    const ws = new FakeWebSocket()
-    server['runtimeSocketWiring'] = {
-      getConnectionId: () => 'conn-test'
-    } as unknown as NonNullable<(typeof server)['runtimeSocketWiring']>
-    const replies: Record<string, unknown>[] = []
-
-    try {
-      const first = server['handleWebSocketMessage'](
-        JSON.stringify(
-          withCurrentOrchestrationContract({
-            id: 'req_wait',
-            method: 'orchestration.check',
-            deviceToken: entry.token,
-            params: { terminal: 'term_wait', wait: true, timeoutMs: 10_000 }
-          })
-        ),
-        (response) => replies.push(JSON.parse(response) as Record<string, unknown>),
-        () => {},
-        undefined,
-        ws as unknown as WebSocket
-      )
-
-      await waitFor(() => server['activeLongPolls'] === 1)
-
-      await server['handleWebSocketMessage'](
-        JSON.stringify(
-          withCurrentOrchestrationContract({
-            id: 'req_busy',
-            method: 'orchestration.check',
-            deviceToken: entry.token,
-            params: { terminal: 'term_busy', wait: true, timeoutMs: 10_000 }
-          })
-        ),
-        (response) => replies.push(JSON.parse(response) as Record<string, unknown>),
-        () => {},
-        undefined,
-        ws as unknown as WebSocket
-      )
-
-      expect(replies).toContainEqual(
-        expect.objectContaining({
-          id: 'req_busy',
-          ok: false,
-          error: expect.objectContaining({ code: 'runtime_busy' })
-        })
-      )
-      expect(server['activeLongPolls']).toBe(1)
-
-      ws.readyState = 3
-      ws.emit('close')
-      await first
-
-      expect(server['activeLongPolls']).toBe(0)
-      expect(replies).toContainEqual(expect.objectContaining({ id: 'req_wait', ok: true }))
-    } finally {
-      db.close()
-      await server.stop()
-    }
-  })
-
-  it('applies the ask sub-cap on the WebSocket path and releases both counters on close', async () => {
-    const userDataPath = mkdtempSync(join(tmpdir(), 'orca-runtime-rpc-'))
-    const runtime = new OrcaRuntimeService()
-    const db = new OrchestrationDb(':memory:')
-    runtime.setOrchestrationDb(db)
-    seedSupervisedAskWorkers(db, ['term_w0', 'term_w1', 'term_w2'])
-    // Why: cap 4 → ask sub-cap 2, so the third ask must be shed while waits keep the other half.
-    const server = new OrcaRuntimeRpcServer({
-      runtime,
-      userDataPath,
-      enableWebSocket: false,
-      longPollCap: 4
-    })
-    server['deviceRegistry'] = new DeviceRegistry(userDataPath)
-    // Why: 'runtime' scope, not 'mobile' — orchestration.ask is absent from the mobile allowlist.
-    const entry = server['deviceRegistry']!.addDevice('runtime-test', 'runtime')
-    const ws = new FakeWebSocket()
-    server['runtimeSocketWiring'] = {
-      getConnectionId: () => 'conn-test'
-    } as unknown as NonNullable<(typeof server)['runtimeSocketWiring']>
-    const replies: Record<string, unknown>[] = []
-    const push = (response: string): void => {
-      replies.push(JSON.parse(response) as Record<string, unknown>)
-    }
-    const dispatch = (id: string, method: string, params: unknown): Promise<void> =>
-      server['handleWebSocketMessage'](
-        JSON.stringify(
-          withCurrentOrchestrationContract({ id, method, deviceToken: entry.token, params })
-        ),
-        push,
-        () => {},
-        undefined,
-        ws as unknown as WebSocket
-      )
-
-    try {
-      const asks = [0, 1].map((i) =>
-        dispatch(`req_ask_${i}`, 'orchestration.ask', {
-          from: `term_w${i}`,
-          to: 'term_coord',
-          question: 'proceed?',
-          timeoutMs: 10_000
-        })
-      )
-      // Why: gate on the pre-existing total so a missing sub-cap fails on the shed below, not here.
-      await waitFor(() => server['activeLongPolls'] === 2)
-
-      await dispatch('req_ask_overflow', 'orchestration.ask', {
-        from: 'term_w2',
-        to: 'term_coord',
-        question: 'proceed?',
-        timeoutMs: 10_000
-      })
-      expect(replies).toContainEqual(
-        expect.objectContaining({
-          id: 'req_ask_overflow',
-          ok: false,
-          error: expect.objectContaining({
-            code: 'runtime_busy',
-            message: 'orchestration.ask capacity reached; retry with backoff'
-          })
-        })
-      )
-      // Shedding the ask must not burn a slot from the reserved half.
-      expect(server['activeLongPolls']).toBe(2)
-      expect(server['activeAskLongPolls']).toBe(2)
-
-      const wait = dispatch('req_check_wait', 'orchestration.check', {
-        terminal: 'term_other',
-        wait: true,
-        timeoutMs: 10_000
-      })
-      await waitFor(() => server['activeLongPolls'] === 3)
-      expect(server['activeAskLongPolls']).toBe(2)
-
-      ws.readyState = 3
-      ws.emit('close')
-      await Promise.all([...asks, wait])
-
-      expect(server['activeLongPolls']).toBe(0)
-      expect(server['activeAskLongPolls']).toBe(0)
-      expect(replies).toContainEqual(expect.objectContaining({ id: 'req_ask_0', ok: true }))
-      expect(replies).toContainEqual(expect.objectContaining({ id: 'req_check_wait', ok: true }))
-    } finally {
-      db.close()
-      await server.stop()
-    }
-  })
-
   it('shares one socket close listener across concurrent WebSocket dispatches', async () => {
     const userDataPath = mkdtempSync(join(tmpdir(), 'orca-runtime-rpc-'))
     const runtime = { getRuntimeId: () => 'test-runtime' } as unknown as OrcaRuntimeService
@@ -1039,7 +852,7 @@ describe('OrcaRuntimeRpcServer', () => {
     const server = new OrcaRuntimeRpcServer({ runtime, userDataPath, enableWebSocket: false })
     server['deviceRegistry'] = new DeviceRegistry(userDataPath)
     const channelDevice = server['deviceRegistry']!.addDevice('runtime-client', 'runtime')
-    const requestDevice = server['deviceRegistry']!.addDevice('cli', 'runtime')
+    const requestDevice = server['deviceRegistry']!.addDevice('request-client', 'runtime')
     const replies: Record<string, unknown>[] = []
 
     await server['handleWebSocketMessage'](
@@ -1073,7 +886,7 @@ describe('OrcaRuntimeRpcServer', () => {
     } as unknown as OrcaRuntimeService
     const server = new OrcaRuntimeRpcServer({ runtime, userDataPath, enableWebSocket: false })
     server['deviceRegistry'] = new DeviceRegistry(userDataPath)
-    const runtimeDevice = server['deviceRegistry']!.addDevice('cli', 'runtime')
+    const runtimeDevice = server['deviceRegistry']!.addDevice('runtime-client', 'runtime')
     const replies: Record<string, unknown>[] = []
 
     await server['handleWebSocketMessage'](
@@ -2342,103 +2155,6 @@ describe('OrcaRuntimeRpcServer', () => {
   // Exercise the real socket (not a mock) so we catch buffer/flush regressions
   // that a unit-level test would miss.
   describe('long-poll transport (§3.1)', () => {
-    it('emits keepalive frames while a check --wait handler blocks', async () => {
-      const userDataPath = mkdtempSync(join(tmpdir(), 'orca-runtime-rpc-'))
-      const runtime = new OrcaRuntimeService()
-      const db = new OrchestrationDb(':memory:')
-      runtime.setOrchestrationDb(db)
-      // Why: 50ms keepalive lets us collect ≥3 frames within a 300ms wait
-      // window without slowing the suite.
-      const server = new OrcaRuntimeRpcServer({
-        runtime,
-        userDataPath,
-        keepaliveIntervalMs: 50
-      })
-      await server.start()
-
-      try {
-        const metadata = readRuntimeMetadata(userDataPath)
-        const session = openFramedSession(metadata!.transports[0]!.endpoint, {
-          id: 'req_wait',
-          authToken: metadata!.authToken,
-          method: 'orchestration.check',
-          params: {
-            terminal: 'term_nobody',
-            wait: true,
-            timeoutMs: 300
-          }
-        })
-        await session.done
-
-        const keepalives = session.frames.filter((f) => f._keepalive === true)
-        const terminals = session.frames.filter((f) => f.ok !== undefined)
-        expect(terminals).toHaveLength(1)
-        expect(terminals[0]).toMatchObject({ id: 'req_wait', ok: true })
-        // Why: 300ms wait with 50ms keepalive → expect roughly 5 keepalives;
-        // assert ≥3 to tolerate scheduler jitter without flaking.
-        expect(keepalives.length).toBeGreaterThanOrEqual(3)
-      } finally {
-        db.close()
-        await server.stop()
-      }
-    })
-
-    it('emits keepalive frames while orchestration.ask blocks for a reply', async () => {
-      const userDataPath = mkdtempSync(join(tmpdir(), 'orca-runtime-rpc-'))
-      const runtime = new OrcaRuntimeService()
-      const db = new OrchestrationDb(':memory:')
-      runtime.setOrchestrationDb(db)
-      const askerPaneKey = 'tab_asker:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
-      vi.spyOn(runtime, 'getTerminalPaneKey').mockImplementation((handle) =>
-        handle === 'term_asker' ? askerPaneKey : null
-      )
-      const run = db.createRun({
-        objective: 'Keepalive test',
-        coordinatorHandle: 'term_nobody',
-        coordinatorPaneKey: 'tab_coord:bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
-      })
-      const task = db.createTask({ spec: 'Wait for an answer', runId: run.id })
-      db.createDispatchContext(task.id, 'term_asker', askerPaneKey)
-      const server = new OrcaRuntimeRpcServer({
-        runtime,
-        userDataPath,
-        keepaliveIntervalMs: 50
-      })
-      await server.start()
-
-      try {
-        const metadata = readRuntimeMetadata(userDataPath)
-        // Why: no reply is ever sent, so ask blocks the full window on the same
-        // hold-the-socket path check --wait uses. Without ask in the long-poll
-        // set the 30s idle timer would tear this down before it keepalives.
-        const session = openFramedSession(metadata!.transports[0]!.endpoint, {
-          id: 'req_ask',
-          authToken: metadata!.authToken,
-          method: 'orchestration.ask',
-          params: {
-            to: 'term_nobody',
-            from: 'term_asker',
-            question: 'ping?',
-            timeoutMs: 300
-          }
-        })
-        await session.done
-
-        const keepalives = session.frames.filter((f) => f._keepalive === true)
-        const terminals = session.frames.filter((f) => f.ok !== undefined)
-        expect(terminals).toHaveLength(1)
-        expect(terminals[0]).toMatchObject({
-          id: 'req_ask',
-          ok: true,
-          result: { timedOut: true }
-        })
-        expect(keepalives.length).toBeGreaterThanOrEqual(3)
-      } finally {
-        db.close()
-        await server.stop()
-      }
-    })
-
     it('emits keepalive frames while terminal.wait blocks and returns its structured timeout', async () => {
       const userDataPath = mkdtempSync(join(tmpdir(), 'orca-runtime-rpc-'))
       const runtime = new OrcaRuntimeService()
@@ -2585,324 +2301,6 @@ describe('OrcaRuntimeRpcServer', () => {
       }
     })
 
-    it('releases long-poll slot when client closes mid-wait', async () => {
-      const userDataPath = mkdtempSync(join(tmpdir(), 'orca-runtime-rpc-'))
-      const runtime = new OrcaRuntimeService()
-      const db = new OrchestrationDb(':memory:')
-      runtime.setOrchestrationDb(db)
-      const server = new OrcaRuntimeRpcServer({
-        runtime,
-        userDataPath,
-        keepaliveIntervalMs: 1000,
-        longPollCap: 2
-      })
-      await server.start()
-
-      try {
-        const metadata = readRuntimeMetadata(userDataPath)
-        const endpoint = metadata!.transports[0]!.endpoint
-
-        // Fill the cap with two long waits (10s each — we'll kill them).
-        const a = openFramedSession(endpoint, {
-          id: 'req_a',
-          authToken: metadata!.authToken,
-          method: 'orchestration.check',
-          params: { terminal: 'term_a', wait: true, timeoutMs: 10_000 }
-        })
-        const b = openFramedSession(endpoint, {
-          id: 'req_b',
-          authToken: metadata!.authToken,
-          method: 'orchestration.check',
-          params: { terminal: 'term_b', wait: true, timeoutMs: 10_000 }
-        })
-        // Let the two waits land in the handler and increment the counter.
-        await sleep(100)
-        expect(server['activeLongPolls']).toBe(2)
-
-        // Kill one client mid-wait; counter must drop to 1.
-        a.socket.destroy()
-        await a.done
-        // Give Node one tick to fire the close event on the server socket.
-        await sleep(50)
-        expect(server['activeLongPolls']).toBe(1)
-
-        // The freed slot must admit a new long-poll immediately.
-        const c = openFramedSession(endpoint, {
-          id: 'req_c',
-          authToken: metadata!.authToken,
-          method: 'orchestration.check',
-          params: { terminal: 'term_c', wait: true, timeoutMs: 100 }
-        })
-        await c.done
-        const cTerminal = c.frames.find((f) => f.ok !== undefined)
-        expect(cTerminal).toMatchObject({ ok: true, id: 'req_c' })
-
-        b.socket.destroy()
-        await b.done
-      } finally {
-        db.close()
-        await server.stop()
-      }
-    })
-
-    it('destroys active Unix socket connections when the runtime stops', async () => {
-      const userDataPath = mkdtempSync(join(tmpdir(), 'orca-runtime-rpc-'))
-      const runtime = new OrcaRuntimeService()
-      const db = new OrchestrationDb(':memory:')
-      runtime.setOrchestrationDb(db)
-      const server = new OrcaRuntimeRpcServer({
-        runtime,
-        userDataPath,
-        keepaliveIntervalMs: 1000,
-        longPollCap: 1
-      })
-      await server.start()
-
-      try {
-        const metadata = readRuntimeMetadata(userDataPath)
-        const endpoint = metadata!.transports[0]!.endpoint
-
-        const session = openFramedSession(endpoint, {
-          id: 'req_stop',
-          authToken: metadata!.authToken,
-          method: 'orchestration.check',
-          params: { terminal: 'term_stop', wait: true, timeoutMs: 10_000 }
-        })
-        await waitFor(() => server['activeLongPolls'] === 1)
-
-        const stopResult = await Promise.race([
-          server.stop().then(() => 'stopped'),
-          sleep(500).then(() => 'timeout')
-        ])
-
-        expect(stopResult).toBe('stopped')
-        await session.done
-        await waitFor(() => server['activeLongPolls'] === 0)
-        expect(session.socket.destroyed).toBe(true)
-      } finally {
-        db.close()
-        await server.stop()
-      }
-    })
-
-    it('responds runtime_busy once the long-poll cap is saturated', async () => {
-      const userDataPath = mkdtempSync(join(tmpdir(), 'orca-runtime-rpc-'))
-      const runtime = new OrcaRuntimeService()
-      const db = new OrchestrationDb(':memory:')
-      runtime.setOrchestrationDb(db)
-      const server = new OrcaRuntimeRpcServer({
-        runtime,
-        userDataPath,
-        keepaliveIntervalMs: 1000,
-        longPollCap: 1
-      })
-      await server.start()
-
-      try {
-        const metadata = readRuntimeMetadata(userDataPath)
-        const endpoint = metadata!.transports[0]!.endpoint
-
-        const a = openFramedSession(endpoint, {
-          id: 'req_a',
-          authToken: metadata!.authToken,
-          method: 'orchestration.check',
-          params: { terminal: 'term_a', wait: true, timeoutMs: 5_000 }
-        })
-        await sleep(100)
-        expect(server['activeLongPolls']).toBe(1)
-
-        // Second long-poll overflows the cap → runtime_busy.
-        const overflow = await sendRequest(endpoint, {
-          id: 'req_overflow',
-          authToken: metadata!.authToken,
-          method: 'orchestration.check',
-          params: { terminal: 'term_b', wait: true, timeoutMs: 5_000 }
-        })
-        expect(overflow).toMatchObject({
-          id: 'req_overflow',
-          ok: false,
-          error: { code: 'runtime_busy' }
-        })
-        // The failing request must not have counted against the cap.
-        expect(server['activeLongPolls']).toBe(1)
-
-        // Short RPCs still succeed even when the long-poll cap is full.
-        const short = await sendRequest(endpoint, {
-          id: 'req_short',
-          authToken: metadata!.authToken,
-          method: 'status.get'
-        })
-        expect(short).toMatchObject({ id: 'req_short', ok: true })
-
-        a.socket.destroy()
-        await a.done
-      } finally {
-        db.close()
-        await server.stop()
-      }
-    })
-
-    it('reserves long-poll headroom for terminal.wait when orchestration.ask floods', async () => {
-      const userDataPath = mkdtempSync(join(tmpdir(), 'orca-runtime-rpc-'))
-      const runtime = new OrcaRuntimeService()
-      const db = new OrchestrationDb(':memory:')
-      runtime.setOrchestrationDb(db)
-      seedSupervisedAskWorkers(db, ['term_w0', 'term_w1', 'term_w2', 'term_w3'])
-      // Why: cap 4 → ask sub-cap 2, so 4 concurrent asks can only take half the budget.
-      const server = new OrcaRuntimeRpcServer({
-        runtime,
-        userDataPath,
-        keepaliveIntervalMs: 1000,
-        longPollCap: 4
-      })
-      runtime.attachWindow(1)
-      runtime.syncWindowGraph(1, {
-        tabs: [
-          {
-            tabId: 'tab-1',
-            worktreeId: 'repo-1::/tmp/worktree-a',
-            title: 'Terminal 1',
-            activeLeafId: 'pane:1',
-            layout: null
-          }
-        ],
-        leaves: [
-          {
-            tabId: 'tab-1',
-            worktreeId: 'repo-1::/tmp/worktree-a',
-            leafId: 'pane:1',
-            paneRuntimeId: 1,
-            ptyId: 'pty-1'
-          }
-        ]
-      })
-      await server.start()
-
-      const asks: ReturnType<typeof openFramedSession>[] = []
-      try {
-        const metadata = readRuntimeMetadata(userDataPath)
-        const endpoint = metadata!.transports[0]!.endpoint
-        const listResponse = await sendRequest(endpoint, {
-          id: 'req_list',
-          authToken: metadata!.authToken,
-          method: 'terminal.list'
-        })
-        const handle = (listResponse.result as { terminals: { handle: string }[] }).terminals[0]!
-          .handle
-
-        // Four workers block in ask; distinct `from` handles so no reply wakes another.
-        for (let i = 0; i < 4; i++) {
-          asks.push(
-            openFramedSession(endpoint, {
-              id: `req_ask_${i}`,
-              authToken: metadata!.authToken,
-              method: 'orchestration.ask',
-              params: {
-                from: `term_w${i}`,
-                to: 'term_coord',
-                question: 'proceed?',
-                timeoutMs: 10_000
-              }
-            })
-          )
-        }
-        // Let every ask reach the admission fence before probing the reserved half.
-        await waitFor(() => server['activeLongPolls'] >= 2)
-        await sleep(100)
-
-        // The reserved half still admits a terminal.wait from any other client.
-        const admitted = openFramedSession(endpoint, {
-          id: 'req_terminal_wait',
-          authToken: metadata!.authToken,
-          method: 'terminal.wait',
-          params: { terminal: handle, for: 'tui-idle', timeoutMs: 50 }
-        })
-        await admitted.done
-        expect(admitted.frames.find((f) => f.ok !== undefined)).toMatchObject({
-          id: 'req_terminal_wait',
-          ok: false,
-          error: { code: 'timeout' }
-        })
-
-        // …and a check --wait too, which shares the same reserved class.
-        const check = openFramedSession(endpoint, {
-          id: 'req_check_wait',
-          authToken: metadata!.authToken,
-          method: 'orchestration.check',
-          params: { terminal: 'term_other', wait: true, timeoutMs: 100 }
-        })
-        await check.done
-        expect(check.frames.find((f) => f.ok !== undefined)).toMatchObject({
-          id: 'req_check_wait',
-          ok: true
-        })
-
-        // Overflow asks are shed, not queued: the sub-cap holds at half the budget.
-        expect(server['activeAskLongPolls']).toBe(2)
-        const shed = asks
-          .map((a) => a.frames.find((f) => f.ok !== undefined))
-          .filter((f) => f !== undefined)
-        expect(shed).toHaveLength(2)
-        expect(shed[0]).toMatchObject({ ok: false, error: { code: 'runtime_busy' } })
-      } finally {
-        for (const ask of asks) {
-          ask.socket.destroy()
-        }
-        await Promise.all(asks.map((ask) => ask.done))
-        db.close()
-        await server.stop()
-      }
-    })
-
-    it('keeps the full cap available to terminal.wait and check --wait', async () => {
-      const userDataPath = mkdtempSync(join(tmpdir(), 'orca-runtime-rpc-'))
-      const runtime = new OrcaRuntimeService()
-      const db = new OrchestrationDb(':memory:')
-      runtime.setOrchestrationDb(db)
-      const server = new OrcaRuntimeRpcServer({
-        runtime,
-        userDataPath,
-        keepaliveIntervalMs: 1000,
-        longPollCap: 4
-      })
-      await server.start()
-
-      const waits: ReturnType<typeof openFramedSession>[] = []
-      try {
-        const metadata = readRuntimeMetadata(userDataPath)
-        const endpoint = metadata!.transports[0]!.endpoint
-
-        // The ask sub-cap must not narrow the budget for the reserved class.
-        for (let i = 0; i < 4; i++) {
-          waits.push(
-            openFramedSession(endpoint, {
-              id: `req_wait_${i}`,
-              authToken: metadata!.authToken,
-              method: 'orchestration.check',
-              params: { terminal: `term_${i}`, wait: true, timeoutMs: 10_000 }
-            })
-          )
-        }
-        await waitFor(() => server['activeLongPolls'] === 4)
-        expect(server['activeAskLongPolls']).toBe(0)
-
-        const overflow = await sendRequest(endpoint, {
-          id: 'req_overflow',
-          authToken: metadata!.authToken,
-          method: 'orchestration.check',
-          params: { terminal: 'term_overflow', wait: true, timeoutMs: 5_000 }
-        })
-        expect(overflow).toMatchObject({ ok: false, error: { code: 'runtime_busy' } })
-      } finally {
-        for (const wait of waits) {
-          wait.socket.destroy()
-        }
-        await Promise.all(waits.map((wait) => wait.done))
-        db.close()
-        await server.stop()
-      }
-    })
-
     it('does not emit keepalive frames for short RPCs', async () => {
       const userDataPath = mkdtempSync(join(tmpdir(), 'orca-runtime-rpc-'))
       const runtime = new OrcaRuntimeService()
@@ -2967,80 +2365,6 @@ describe('OrcaRuntimeRpcServer', () => {
       } finally {
         server['dispatcher'].dispatch = originalDispatch
         await server.stop()
-      }
-    })
-  })
-
-  // Why: §6 test for the idempotent + hard-fail schema migration. A broken
-  // migration must crash startup loudly rather than serve traffic against a
-  // schema missing the delivered_at column.
-  describe('orchestration DB migration (§3.2)', () => {
-    it('is idempotent when delivered_at already exists', () => {
-      // First open creates the column; second open should be a no-op.
-      const db1 = new OrchestrationDb(':memory:')
-      db1.close()
-      // File path reuse is meaningless with :memory:, so use a tmp file.
-      const tmpPath = join(mkdtempSync(join(tmpdir(), 'orca-orch-mig-')), 'orch.sqlite')
-      const a = new OrchestrationDb(tmpPath)
-      a.close()
-      // Second construction must not throw "duplicate column name".
-      expect(() => {
-        const b = new OrchestrationDb(tmpPath)
-        b.close()
-      }).not.toThrow()
-    })
-
-    it('hard-fails startup when the migration cannot be applied', () => {
-      // Simulate a migration error by monkey-patching the SQLite wrapper's exec.
-      // If ALTER TABLE throws for any reason (e.g. disk full, permissions),
-      // the constructor must propagate — not swallow and serve half-broken.
-      //
-      // Why the pre-seeded v2 DB: after the schema bundle, fresh DBs are
-      // initialized directly at v3 via createTables() (which already includes
-      // `delivered_at`), so the v2 → v3 ALTER is a no-op for new installs.
-      // To exercise the hard-fail path we need a DB that actually has work
-      // to migrate — a v2-shape file without the delivered_at column — so
-      // the guarded ALTER runs and the stub can fire.
-      const tmpPath = join(mkdtempSync(join(tmpdir(), 'orca-orch-mig-')), 'orch.sqlite')
-      const seed = new Database(tmpPath)
-      seed.exec(`
-        CREATE TABLE messages (
-          id            TEXT NOT NULL,
-          from_handle   TEXT NOT NULL,
-          to_handle     TEXT NOT NULL,
-          subject       TEXT NOT NULL,
-          body          TEXT NOT NULL DEFAULT '',
-          type          TEXT NOT NULL DEFAULT 'status'
-            CHECK(type IN (
-              'status', 'dispatch', 'worker_done', 'merge_ready',
-              'escalation', 'handoff', 'decision_gate', 'heartbeat'
-            )),
-          priority      TEXT NOT NULL DEFAULT 'normal'
-            CHECK(priority IN ('normal', 'high', 'urgent')),
-          thread_id     TEXT,
-          payload       TEXT,
-          read          INTEGER NOT NULL DEFAULT 0,
-          sequence      INTEGER PRIMARY KEY AUTOINCREMENT,
-          created_at    TEXT NOT NULL DEFAULT (datetime('now'))
-        );
-      `)
-      seed.pragma('user_version = 2')
-      seed.close()
-
-      const realPrototype = Database.prototype as unknown as {
-        exec: (sql: string) => unknown
-      }
-      const originalExec = realPrototype.exec
-      realPrototype.exec = function (sql: string) {
-        if (sql.includes('ALTER TABLE messages ADD COLUMN delivered_at')) {
-          throw new Error('simulated migration failure')
-        }
-        return originalExec.call(this, sql)
-      }
-      try {
-        expect(() => new OrchestrationDb(tmpPath)).toThrow('simulated migration failure')
-      } finally {
-        realPrototype.exec = originalExec
       }
     })
   })

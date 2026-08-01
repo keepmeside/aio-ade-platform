@@ -127,20 +127,6 @@ O editor do VS Code com salvamento automático em todos os lugares — arraste a
   <a href="https://www.onorca.dev/docs/editing/file-explorer"><picture><source srcset="../assets/feature-wall/file-drag.gif" type="image/gif"><img src="../assets/feature-wall/file-drag.jpg" alt="Arraste arquivos e imagens para o prompt de um agente" width="100%" /></picture></a>
 </td>
 </tr>
-<tr>
-<td width="50%" valign="middle">
-
-### Orca CLI
-
-Agentes também controlam o Orca — automatize qualquer fluxo de trabalho com `orca worktree create`, `snapshot`, `click` e `fill`.
-
-[Docs →](https://www.onorca.dev/docs/cli/overview)
-
-</td>
-<td width="50%">
-  <a href="https://www.onorca.dev/docs/cli/overview"><picture><source srcset="../assets/feature-wall/orca-cli.gif" type="image/gif"><img src="../assets/feature-wall/orca-cli.jpg" alt="Automatize o Orca pela CLI" width="100%" /></picture></a>
-</td>
-</tr>
 </table>
 
 **Também incluído:**
@@ -148,7 +134,7 @@ Agentes também controlam o Orca — automatize qualquer fluxo de trabalho com `
 - **[Abertura rápida](https://www.onorca.dev/docs/model/quick-open)** — Pesquise entre worktrees, arquivos, agentes, comandos e contexto do repositório sem sair do seu fluxo.
 - **[Troca de contas e acompanhamento de uso](https://www.onorca.dev/docs/agents/usage-tracking)** — Veja o uso de Claude e Codex, os reinícios de limites e troque contas instantaneamente sem fazer login de novo.
 - **[Prévias ricas do repositório](https://www.onorca.dev/docs/editing/markdown)** — Pré-visualize Markdown, imagens, PDFs e documentos do repositório no workspace.
-- **[Computer Use](https://www.onorca.dev/docs/cli/computer-use)** — Deixe agentes operarem apps de desktop e UI visível quando um fluxo de trabalho precisa de interação real.
+- **Computer Use** — Deixe agentes operarem apps de desktop e UI visível quando um fluxo de trabalho precisa de interação real.
 - **[Notificações e estado de não lido](https://www.onorca.dev/docs/notifications)** — Saiba quando um agente termina ou precisa de atenção, depois marque conversas como não lidas para voltar depois.
 - **E muito, muito mais** — lançamos novidades todos os dias, então esta lista vive atrasada. O [changelog](https://github.com/stablyai/orca/releases) é a lista real de recursos.
 
@@ -199,7 +185,6 @@ Funciona com **qualquer agente CLI** — se roda em um terminal, roda no Orca.
 
 - **[Baixe em onOrca.dev](https://onorca.dev/download)**
 - Ou baixe um build diretamente: [macOS Apple Silicon](https://github.com/stablyai/orca/releases/latest/download/orca-macos-arm64.dmg) · [macOS Intel](https://github.com/stablyai/orca/releases/latest/download/orca-macos-x64.dmg) · [Windows (.exe)](https://github.com/stablyai/orca/releases/latest/download/orca-windows-setup.exe) · [Linux AppImage](https://github.com/stablyai/orca/releases/latest/download/orca-linux.AppImage) · [Todos os builds](https://github.com/stablyai/orca/releases/latest)
-- Rodando `orca serve` em um servidor Linux headless? Veja o [guia de servidor Linux headless](../reference/headless-linux-server.md).
 
 _Ou por um gerenciador de pacotes:_
 

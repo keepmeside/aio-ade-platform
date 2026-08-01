@@ -90,17 +90,17 @@ describe('SkillFreshnessStatusPill', () => {
   })
 
   it('shows Update available for an eligible outdated skill', async () => {
-    mocks.inventory = inventory([{ name: 'orca-cli', status: 'outdated' }], ['orca-cli'])
+    mocks.inventory = inventory([{ name: 'computer-use', status: 'outdated' }], ['computer-use'])
 
-    const rendered = await renderPill('orca-cli')
+    const rendered = await renderPill('computer-use')
     expect(pillText(rendered)).toBe('Update available')
     expect(detailsButton(rendered)?.textContent).toBe('Details')
   })
 
   it('shows Up to date when every placement is current', async () => {
-    mocks.inventory = inventory([{ name: 'orca-cli', status: 'current' }], [])
+    mocks.inventory = inventory([{ name: 'computer-use', status: 'current' }], [])
 
-    const rendered = await renderPill('orca-cli')
+    const rendered = await renderPill('computer-use')
     expect(pillText(rendered)).toBe('Up to date')
     // Why: nothing is out of date, so the review dialog would have no row to show.
     expect(detailsButton(rendered)).toBeNull()
@@ -109,27 +109,27 @@ describe('SkillFreshnessStatusPill', () => {
   it('flags a blocked outdated placement instead of reading as all-clear', async () => {
     mocks.inventory = inventory(
       [
-        { name: 'orca-cli', status: 'outdated' },
-        { name: 'orca-cli', status: 'unrecognized' }
+        { name: 'computer-use', status: 'outdated' },
+        { name: 'computer-use', status: 'unrecognized' }
       ],
       []
     )
 
-    const rendered = await renderPill('orca-cli')
+    const rendered = await renderPill('computer-use')
     // Why: a green pill over a copy the update cannot reach hides real drift.
     expect(pillText(rendered)).toBe('Needs attention')
     expect(detailsButton(rendered)?.textContent).toBe('Details')
   })
 
   it('falls back to Installed before the inventory loads', async () => {
-    const rendered = await renderPill('orca-cli')
+    const rendered = await renderPill('computer-use')
     expect(pillText(rendered)).toBe('Installed')
     expect(detailsButton(rendered)).toBeNull()
   })
 
   it('opens the freshness review dialog from Details', async () => {
-    mocks.inventory = inventory([{ name: 'orca-cli', status: 'outdated' }], ['orca-cli'])
-    const rendered = await renderPill('orca-cli')
+    mocks.inventory = inventory([{ name: 'computer-use', status: 'outdated' }], ['computer-use'])
+    const rendered = await renderPill('computer-use')
 
     await act(async () => {
       detailsButton(rendered)?.click()

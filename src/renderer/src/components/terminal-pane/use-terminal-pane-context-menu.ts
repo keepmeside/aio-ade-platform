@@ -178,8 +178,7 @@ export function useTerminalPaneContextMenu({
       return
     }
     await runCopyPaneId({
-      // Why: orchestration targets use ORCA_PANE_KEY, which survives renderer
-      // remounts; the numeric PaneManager id is only a local runtime handle.
+      // Why: ORCA_PANE_KEY survives renderer remounts; numeric pane ids do not.
       paneKey: makePaneKey(tabId, pane.leafId),
       writeClipboardText: window.api.ui.writeTerminalClipboardText,
       onSuccess: () =>

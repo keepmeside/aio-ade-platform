@@ -16,27 +16,18 @@ function makeEntry(overrides: Partial<AgentStatusEntry> = {}): AgentStatusEntry 
 }
 
 describe('collectAgentMetadataForTerminal', () => {
-  it('indexes orchestration task display metadata for tab search snippets', () => {
+  it('indexes prompt text for tab search snippets', () => {
     const [metadata] = collectAgentMetadataForTerminal({
       terminalTabId: 'tab-1',
       worktreeId: 'wt-1',
       agentStatusByPaneKey: {
-        'tab-1:leaf-1': makeEntry({
-          orchestration: {
-            taskId: 'task-1',
-            dispatchId: 'ctx-1',
-            taskTitle: 'Checkout race',
-            displayName: 'Fix checkout race'
-          }
-        })
+        'tab-1:leaf-1': makeEntry({ prompt: 'Fix checkout race' })
       },
       retainedAgentsByPaneKey: {},
       sleepingAgentSessionsByPaneKey: {}
     })
 
     expect(metadata?.textParts).toContain('Fix checkout race')
-    expect(metadata?.textParts).toContain('Checkout race')
     expect(metadata?.snippetCandidates).toContain('Fix checkout race')
-    expect(metadata?.snippetCandidates).toContain('Checkout race')
   })
 })

@@ -614,48 +614,12 @@ export type UISlice = {
   acknowledgeAgents: (paneKeys: string[]) => void
   unacknowledgeAgents: (paneKeys: string[]) => void
   activeView: TopLevelView
-  previousViewBeforeTasks:
-    | 'terminal'
-    | 'settings'
-    | 'activity'
-    | 'automations'
-    | 'space'
-    | 'skills'
-  previousViewBeforeSettings:
-    | 'terminal'
-    | 'tasks'
-    | 'activity'
-    | 'automations'
-    | 'space'
-    | 'skills'
-  previousViewBeforeActivity:
-    | 'terminal'
-    | 'settings'
-    | 'tasks'
-    | 'automations'
-    | 'space'
-    | 'skills'
-  previousViewBeforeAutomations:
-    | 'terminal'
-    | 'settings'
-    | 'tasks'
-    | 'activity'
-    | 'space'
-    | 'skills'
-  previousViewBeforeSpace:
-    | 'terminal'
-    | 'settings'
-    | 'tasks'
-    | 'activity'
-    | 'automations'
-    | 'skills'
-  previousViewBeforeSkills:
-    | 'terminal'
-    | 'settings'
-    | 'tasks'
-    | 'activity'
-    | 'automations'
-    | 'space'
+  previousViewBeforeTasks: 'terminal' | 'settings' | 'activity' | 'automations' | 'space' | 'skills'
+  previousViewBeforeSettings: 'terminal' | 'tasks' | 'activity' | 'automations' | 'space' | 'skills'
+  previousViewBeforeActivity: 'terminal' | 'settings' | 'tasks' | 'automations' | 'space' | 'skills'
+  previousViewBeforeAutomations: 'terminal' | 'settings' | 'tasks' | 'activity' | 'space' | 'skills'
+  previousViewBeforeSpace: 'terminal' | 'settings' | 'tasks' | 'activity' | 'automations' | 'skills'
+  previousViewBeforeSkills: 'terminal' | 'settings' | 'tasks' | 'activity' | 'automations' | 'space'
   setActiveView: (view: UISlice['activeView']) => void
   taskPageData: {
     preselectedRepoId?: string
@@ -832,8 +796,6 @@ export type UISlice = {
   setBrowserImportHintHidden: (hidden: boolean) => void
   mobileEmulatorTabIntroDismissed: boolean
   dismissMobileEmulatorTabIntro: () => void
-  mobileEmulatorAgentSetupDismissed: boolean
-  dismissMobileEmulatorAgentSetup: () => void
   projectOrderManualDefaultNoticeDismissed: boolean
   dismissProjectOrderManualDefaultNotice: () => void
   usagePercentageDisplayChangeNoticeDismissed: boolean
@@ -861,8 +823,6 @@ export type UISlice = {
   setHideDefaultBranchWorkspace: (v: boolean) => void
   hideAutomationGeneratedWorkspaces: boolean
   setHideAutomationGeneratedWorkspaces: (v: boolean) => void
-  hideCliCreatedWorkspaces: boolean
-  setHideCliCreatedWorkspaces: (v: boolean) => void
   hideDetachedHeadWorkspaces: boolean
   setHideDetachedHeadWorkspaces: (v: boolean) => void
   showDotfilesByWorktree: Record<string, boolean>
@@ -1934,15 +1894,6 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
       window.api.ui.set({ mobileEmulatorTabIntroDismissed: true }).catch(console.error)
       return { mobileEmulatorTabIntroDismissed: true }
     }),
-  mobileEmulatorAgentSetupDismissed: false,
-  dismissMobileEmulatorAgentSetup: () =>
-    set((s) => {
-      if (s.mobileEmulatorAgentSetupDismissed) {
-        return s
-      }
-      window.api.ui.set({ mobileEmulatorAgentSetupDismissed: true }).catch(console.error)
-      return { mobileEmulatorAgentSetupDismissed: true }
-    }),
   projectOrderManualDefaultNoticeDismissed: true,
   dismissProjectOrderManualDefaultNotice: () =>
     set((s) => {
@@ -2029,8 +1980,6 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
   setHideDefaultBranchWorkspace: (v) => set({ hideDefaultBranchWorkspace: v }),
   hideAutomationGeneratedWorkspaces: false,
   setHideAutomationGeneratedWorkspaces: (v) => set({ hideAutomationGeneratedWorkspaces: v }),
-  hideCliCreatedWorkspaces: false,
-  setHideCliCreatedWorkspaces: (v) => set({ hideCliCreatedWorkspaces: v }),
   hideDetachedHeadWorkspaces: false,
   setHideDetachedHeadWorkspaces: (v) => set({ hideDetachedHeadWorkspaces: v }),
 
@@ -2436,7 +2385,6 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
         repos: orderedRepos,
         hideDefaultBranchWorkspace: ui.hideDefaultBranchWorkspace ?? false,
         hideAutomationGeneratedWorkspaces: ui.hideAutomationGeneratedWorkspaces === true,
-        hideCliCreatedWorkspaces: ui.hideCliCreatedWorkspaces === true,
         hideDetachedHeadWorkspaces: ui.hideDetachedHeadWorkspaces === true,
         showDotfilesByWorktree: sanitizeShowDotfilesByWorktree(ui.showDotfilesByWorktree),
         // Why: startup hydrates UI before repo catalogs, so defer repo-filter validation to the all-host refresh.
@@ -2505,7 +2453,6 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
           ui.setupGuideBrowserMilestoneLegacyComplete === true,
         browserImportHintHidden: ui.browserImportHintHidden === true,
         mobileEmulatorTabIntroDismissed: ui.mobileEmulatorTabIntroDismissed === true,
-        mobileEmulatorAgentSetupDismissed: ui.mobileEmulatorAgentSetupDismissed === true,
         projectOrderManualDefaultNoticeDismissed:
           ui.projectOrderManualDefaultNoticeDismissed === true,
         // Why: treat only explicit true as dismissed so a false from migration still surfaces.

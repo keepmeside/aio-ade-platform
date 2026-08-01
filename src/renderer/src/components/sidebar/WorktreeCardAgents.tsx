@@ -176,7 +176,7 @@ const WorktreeCardAgentsBody = React.memo(function WorktreeCardAgentsBody({
       } else {
         const liveEntry = useAppStore.getState().agentStatusByPaneKey[paneKey]
         if (liveEntry?.worktreeId === worktreeId) {
-          // Why: orchestration worker status can be worktree-attributed before the renderer knows its tab; keep the live row instead of dismissing as stale.
+          // Why: nested-agent status can be worktree-attributed before its tab is known.
           return
         }
         dismissStaleAgentRowByKey(paneKey)
@@ -240,7 +240,7 @@ const WorktreeCardAgentsBody = React.memo(function WorktreeCardAgentsBody({
     ancestorPaneKeys: ReadonlySet<string> = new Set()
   ): React.ReactNode => {
     if (ancestorPaneKeys.has(agent.paneKey)) {
-      // Why: orchestration metadata is external and can be malformed; bail on repeated ancestors instead of recursing forever.
+      // Why: external lineage metadata can be malformed; stop on repeated ancestors.
       return null
     }
     const childAgents = childrenByParentPaneKey.get(agent.paneKey) ?? []

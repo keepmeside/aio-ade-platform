@@ -5,7 +5,7 @@ import {
 } from '../../shared/skill-freshness'
 import { eligibleSkillUpdateNames } from './skill-freshness-eligibility'
 
-const globallyUpdatableNames = new Set(['computer-use', 'orca-cli', 'orchestration'])
+const globallyUpdatableNames = new Set(['computer-use', 'sample-skill', 'control-skill'])
 
 function eligible(installations: SkillFreshnessInstallation[]): string[] {
   return eligibleSkillUpdateNames(installations, globallyUpdatableNames)
@@ -42,15 +42,15 @@ describe('skill freshness name-scoped update eligibility', () => {
   it('offers a name when at least one supported placement is outdated and all are official', () => {
     expect(
       eligible([
-        placement('orca-cli'),
-        placement('orca-cli', {
-          id: 'orca-cli-claude',
+        placement('sample-skill'),
+        placement('sample-skill', {
+          id: 'sample-skill-claude',
           rootId: 'home-claude',
           topology: 'provider-alias',
           status: 'current'
         })
       ])
-    ).toEqual(['orca-cli'])
+    ).toEqual(['sample-skill'])
   })
 
   it.each([
@@ -69,10 +69,10 @@ describe('skill freshness name-scoped update eligibility', () => {
       // stake. The canonical copy converges and the outlier is reported separately.
       expect(
         eligible([
-          placement('orca-cli'),
-          placement('orca-cli', { id: `outlier-${status}-${topology}`, status, topology })
+          placement('sample-skill'),
+          placement('sample-skill', { id: `outlier-${status}-${topology}`, status, topology })
         ])
-      ).toEqual(['orca-cli'])
+      ).toEqual(['sample-skill'])
     }
   )
 
@@ -83,9 +83,9 @@ describe('skill freshness name-scoped update eligibility', () => {
       // real data-loss case the rail exists to avoid.
       expect(
         eligible([
-          placement('orca-cli', { id: 'blocked-canonical', status }),
-          placement('orca-cli', {
-            id: 'orca-cli-claude',
+          placement('sample-skill', { id: 'blocked-canonical', status }),
+          placement('sample-skill', {
+            id: 'sample-skill-claude',
             rootId: 'home-claude',
             topology: 'provider-alias',
             status: 'outdated'
@@ -100,17 +100,17 @@ describe('skill freshness name-scoped update eligibility', () => {
     // and the duplicate row is flagged as maybe-not-reached rather than blocking.
     expect(
       eligible([
-        placement('orca-cli'),
-        placement('orca-cli', {
-          id: 'orca-cli-gemini',
+        placement('sample-skill'),
+        placement('sample-skill', {
+          id: 'sample-skill-gemini',
           rootId: 'home-gemini',
-          unresolvedPath: '/home/.gemini/skills/orca-cli',
-          resolvedPath: '/home/.gemini/skills/orca-cli',
+          unresolvedPath: '/home/.gemini/skills/sample-skill',
+          resolvedPath: '/home/.gemini/skills/sample-skill',
           topology: 'independent-copy',
           status: 'current'
         })
       ])
-    ).toEqual(['orca-cli'])
+    ).toEqual(['sample-skill'])
   })
 
   it('does not promise an update when only an unreachable duplicate is outdated', () => {
@@ -119,13 +119,13 @@ describe('skill freshness name-scoped update eligibility', () => {
     // badge could never clear; the dialog explains the duplicate as skipped instead.
     expect(
       eligible([
-        placement('orchestration', { status: 'current' }),
-        placement('orchestration', {
-          id: 'orchestration-factory',
+        placement('control-skill', { status: 'current' }),
+        placement('control-skill', {
+          id: 'control-skill-factory',
           rootId: 'home-factory',
-          unresolvedPath: '/home/.factory/skills/orchestration',
-          resolvedPath: '/home/.factory/skills/orchestration',
-          physicalIdentity: 'physical-orchestration-factory',
+          unresolvedPath: '/home/.factory/skills/control-skill',
+          resolvedPath: '/home/.factory/skills/control-skill',
+          physicalIdentity: 'physical-control-skill-factory',
           topology: 'independent-copy',
           status: 'outdated'
         })
@@ -138,10 +138,10 @@ describe('skill freshness name-scoped update eligibility', () => {
     // reliable target, so a duplicate-only skill stays unoffered.
     expect(
       eligible([
-        placement('orca-cli', {
+        placement('sample-skill', {
           rootId: 'home-gemini',
-          unresolvedPath: '/home/.gemini/skills/orca-cli',
-          resolvedPath: '/home/.gemini/skills/orca-cli',
+          unresolvedPath: '/home/.gemini/skills/sample-skill',
+          resolvedPath: '/home/.gemini/skills/sample-skill',
           topology: 'independent-copy',
           status: 'outdated'
         })
@@ -155,25 +155,25 @@ describe('skill freshness name-scoped update eligibility', () => {
     expect(
       eligible([
         placement('computer-use', { status: 'current' }),
-        placement('orchestration'),
-        placement('orchestration', {
-          id: 'orchestration-project',
+        placement('control-skill'),
+        placement('control-skill', {
+          id: 'control-skill-project',
           status: 'unrecognized',
           topology: 'repo-scope'
         })
       ])
-    ).toEqual(['orchestration'])
+    ).toEqual(['control-skill'])
   })
 
   it('does not offer an official canonical copy missing from the updater lock (#10791)', () => {
-    expect(eligibleSkillUpdateNames([placement('orca-cli')], new Set())).toEqual([])
+    expect(eligibleSkillUpdateNames([placement('sample-skill')], new Set())).toEqual([])
   })
 
   it('builds only an explicit, deterministic global command', () => {
-    expect(buildTargetedSkillUpdateCommand(['orchestration', 'orca-cli', 'orca-cli'])).toBe(
-      'npx skills update orca-cli orchestration --global'
+    expect(buildTargetedSkillUpdateCommand(['control-skill', 'sample-skill', 'sample-skill'])).toBe(
+      'npx skills update control-skill sample-skill --global'
     )
     expect(buildTargetedSkillUpdateCommand([])).toBeNull()
-    expect(buildTargetedSkillUpdateCommand(['orca-cli;echo unsafe'])).toBeNull()
+    expect(buildTargetedSkillUpdateCommand(['sample-skill;echo unsafe'])).toBeNull()
   })
 })

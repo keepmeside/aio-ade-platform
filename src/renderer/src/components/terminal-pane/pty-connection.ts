@@ -4434,10 +4434,9 @@ export function connectPanePty(
     // Why: if fitAddon resolved to 0×0, the container likely has no layout
     // dimensions (display:none, unmounted, or zero-size parent). Surface a
     // diagnostic so the user sees something instead of a blank pane.
-    // Gate on visibility: background/hidden tabs (orchestration workers, CLI
-    // `terminal create` without --focus) legitimately connect at 0×0 because
+    // Background tabs legitimately connect at 0×0 because
     // safeFit skips fitting unmeasurable panes; they refit via the pane resize
-    // observer once shown, so the diagnostic must not fire while hidden.
+    // observer once shown, so diagnostics must not fire while hidden.
     if ((cols === 0 || rows === 0) && deps.isVisibleRef.current) {
       deps.onPtyErrorRef?.current?.(pane.id, createTerminalZeroDimensionsMessage(cols, rows))
     }

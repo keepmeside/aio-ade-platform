@@ -1,7 +1,7 @@
 /* eslint-disable max-lines -- Why: daemon PTY spawning must keep platform launch setup, preflight, and lifecycle guards in one execution path. */
 import * as pty from 'node-pty'
 import { statSync } from 'node:fs'
-import { delimiter, win32 as pathWin32 } from 'node:path'
+import { win32 as pathWin32 } from 'node:path'
 import type { SubprocessHandle } from './session'
 import { DaemonProtocolError } from './types'
 import {
@@ -159,24 +159,6 @@ function removeUnspecifiedPaneIdentityEnv(
       delete env[key]
     }
   }
-}
-
-/**
- * Promotes the agent-teams shim path ahead of inherited PATH entries.
- */
-function promoteAgentTeamsShimPath(
-  env: Record<string, string>,
-  requestedPath: string | undefined
-): void {
-  if (!env.ORCA_AGENT_TEAMS_TEAM_ID || !requestedPath) {
-    return
-  }
-  const shimDir = requestedPath.split(delimiter)[0]
-  if (!shimDir) {
-    return
-  }
-  const currentParts = env.PATH?.split(delimiter).filter(Boolean) ?? []
-  env.PATH = [shimDir, ...currentParts.filter((part) => part !== shimDir)].join(delimiter)
 }
 
 /**
@@ -750,8 +732,7 @@ export function createPtySubprocess(opts: PtySubprocessOptions): SubprocessHandl
         env.ORCA_OPENCODE_CONFIG_DIR ||
         env.ORCA_MIMOCODE_HOME ||
         env.ORCA_OMP_STATUS_EXTENSION ||
-        env.ORCA_CODEX_HOME ||
-        env.ORCA_AGENT_TEAMS_SHIM_DIR
+        env.ORCA_CODEX_HOME
           ? getAttributionShellLaunchConfig(shellPath)
           : null
     }
@@ -768,8 +749,6 @@ export function createPtySubprocess(opts: PtySubprocessOptions): SubprocessHandl
   ) {
     addWslEnvKeys(env, [POWERLEVEL10K_WIZARD_DISABLE_ENV])
   }
-  promoteAgentTeamsShimPath(env, opts.env?.PATH)
-
   // Why: asar packaging can strip +x from node-pty's spawn-helper; the daemon is a separate forked process from the main-process fix.
   ensureNodePtySpawnHelperExecutable()
   preflightUnixPtySpawnEnvironment()

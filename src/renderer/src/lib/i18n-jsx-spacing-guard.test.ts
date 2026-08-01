@@ -61,7 +61,7 @@ const CASES: GuardCase[] = [
   {
     file: 'components/settings/RuntimeEnvironmentsPane.tsx',
     afterFallback: 'Run',
-    label: 'Run orca serve'
+    label: 'Run runtime host'
   },
   {
     file: 'components/settings/AutoRenameBranchFromWorkSetting.tsx',

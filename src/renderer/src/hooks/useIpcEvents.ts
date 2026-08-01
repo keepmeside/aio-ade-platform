@@ -1906,9 +1906,16 @@ export function useIpcEvents(): void {
             store.setActiveWorktree(worktreeId)
             store.markWorktreeVisited(worktreeId)
             store.setActiveView('terminal')
-            store.openDiff(worktreeId, filePath, relativePath, detectLanguage(relativePath), staged, {
-              runtimeEnvironmentId
-            })
+            store.openDiff(
+              worktreeId,
+              filePath,
+              relativePath,
+              detectLanguage(relativePath),
+              staged,
+              {
+                runtimeEnvironmentId
+              }
+            )
             store.setActiveTabType('editor')
             store.revealWorktreeInSidebar(worktreeId)
           }
@@ -3045,7 +3052,7 @@ export function useIpcEvents(): void {
         owningWorktreeId
       } = resolvePaneKey(store, paneKey)
       if (!exists && data.worktreeId && hasRuntimeBackedWorktreeAttribution(data)) {
-        // Why: orchestration worker hooks may carry worktree attribution before this renderer has a tab for the pane.
+        // Why: remote runtime hooks may carry worktree attribution before this renderer has a tab for the pane.
         // Require runtime identity too — worktreeId-only snapshots can be stale rows from closed/remounted panes.
         const fallbackOwnership = resolveWorktreeConnection(store, data.worktreeId)
         if (fallbackOwnership.worktreeExists) {
@@ -3137,12 +3144,9 @@ export function useIpcEvents(): void {
         return 'applied'
       }
       const resolvedPayload = resolveHookPayloadAgentType(payload, identityTitle ?? title)
-      const statusPayload = data.orchestration
-        ? { ...resolvedPayload, orchestration: data.orchestration }
-        : resolvedPayload
       const statusPayloadWithTurnBoundary = data.promptInteractionKey
-        ? { ...statusPayload, promptInteractionKey: data.promptInteractionKey }
-        : statusPayload
+        ? { ...resolvedPayload, promptInteractionKey: data.promptInteractionKey }
+        : resolvedPayload
       const identity = resolveAgentStatusIdentity({
         existing: existingStatus
           ? {
@@ -3151,21 +3155,21 @@ export function useIpcEvents(): void {
               updatedAt: existingStatus.updatedAt
             }
           : undefined,
-        incoming: statusPayload.agentType,
+        incoming: statusPayloadWithTurnBoundary.agentType,
         now: data.receivedAt
       })
       if (
         existingStatus &&
         shouldSuppressInheritedTerminalStatus({
           inheritedFromActivePane: identity.inheritedFromActivePane,
-          incomingState: statusPayload.state
+          incomingState: statusPayloadWithTurnBoundary.state
         })
       ) {
         // Why: guards against a stale main-process child completion resurrecting terminal status.
         return 'dropped'
       }
       if (
-        shouldSuppressCodexAutoApprovalStatus(statusPayload, {
+        shouldSuppressCodexAutoApprovalStatus(statusPayloadWithTurnBoundary, {
           paneKey,
           tabId: ownerTabId,
           terminalHandle: data.terminalHandle,
@@ -3177,7 +3181,7 @@ export function useIpcEvents(): void {
         // Why: Codex yolo permission hooks are not user-actionable; they must not drive status, titles, badges, or notifications.
         return 'dropped'
       }
-      const terminalTitle = resolveAgentStatusTerminalTitle(statusPayload, title)
+      const terminalTitle = resolveAgentStatusTerminalTitle(statusPayloadWithTurnBoundary, title)
       const statusWorktreeId = data.worktreeId ?? owningWorktreeId
       store.setAgentStatus(
         paneKey,
@@ -3493,10 +3497,7 @@ export function useIpcEvents(): void {
 }
 
 function hasRuntimeBackedWorktreeAttribution(data: AgentStatusIpcPayload): boolean {
-  return (
-    (typeof data.terminalHandle === 'string' && data.terminalHandle.length > 0) ||
-    data.orchestration !== undefined
-  )
+  return typeof data.terminalHandle === 'string' && data.terminalHandle.length > 0
 }
 
 function tryMakePaneKey(tabId: string, leafId: string): string | null {

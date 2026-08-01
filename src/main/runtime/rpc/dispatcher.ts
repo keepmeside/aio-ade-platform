@@ -29,12 +29,6 @@ import { ALL_RPC_METHODS } from './methods'
 import { emulatorProbe, emulatorProbeError } from '../../emulator/emulator-probe'
 import type { OrcaRuntimeService } from '../orca-runtime'
 import type { RuntimeCapability } from '../../../shared/protocol-version'
-import {
-  OrchestrationMutationExecutor,
-  authenticatedCallerFingerprint,
-  type DurableMutationInvocation
-} from './orchestration-mutation-executor'
-import { orchestrationMigrationFence } from './orchestration-contract-fence'
 import { getRuntimeFeatureInteractionId } from './runtime-feature-interaction'
 
 export type DispatcherOptions = {
@@ -45,12 +39,10 @@ export type DispatcherOptions = {
 export class RpcDispatcher {
   private readonly runtime: OrcaRuntimeService
   private readonly registry: RpcRegistry
-  private readonly orchestrationMutations: OrchestrationMutationExecutor
 
   constructor({ runtime, methods = ALL_RPC_METHODS }: DispatcherOptions) {
     this.runtime = runtime
     this.registry = buildRegistry(methods)
-    this.orchestrationMutations = new OrchestrationMutationExecutor(runtime)
   }
 
   async dispatch(request: RpcRequest, options?: { signal?: AbortSignal }): Promise<RpcResponse> {
@@ -63,11 +55,6 @@ export class RpcDispatcher {
         'method_not_found',
         `Unknown method: ${request.method}`
       )
-    }
-
-    const migrationFence = orchestrationMigrationFence(request, meta)
-    if (migrationFence) {
-      return migrationFence
     }
 
     const parsedParams = this.parseParams(request, method, meta)
@@ -92,17 +79,11 @@ export class RpcDispatcher {
       emulatorProbe(`rpc ${request.method}`, request.params)
     }
     try {
-      const invoke = (mutation?: DurableMutationInvocation) =>
-        method.handler(parsedParams.value, {
-          runtime: this.runtime,
-          signal: options?.signal,
-          requestId: request.id,
-          orchestrationCapability: request.orchestrationCapability,
-          authenticatedCallerFingerprint: authenticatedCallerFingerprint(request),
-          recordMutationReceipt: mutation?.recordReceipt,
-          orchestrationMutation: mutation?.identity
-        })
-      const result = await this.orchestrationMutations.run(request, parsedParams.value, invoke)
+      const result = await method.handler(parsedParams.value, {
+        runtime: this.runtime,
+        signal: options?.signal,
+        requestId: request.id
+      })
       this.recordRuntimeFeatureInteraction(request.method, result, undefined, request.params)
       return successResponse(request.id, meta, result)
     } catch (error) {
@@ -144,12 +125,6 @@ export class RpcDispatcher {
       return
     }
 
-    const migrationFence = orchestrationMigrationFence(request, meta)
-    if (migrationFence) {
-      reply(JSON.stringify(migrationFence))
-      return
-    }
-
     const parsedParams = this.parseParams(request, method, meta)
     if (parsedParams.error) {
       reply(JSON.stringify(parsedParams.error))
@@ -158,24 +133,18 @@ export class RpcDispatcher {
 
     if (!isStreamingMethod(method)) {
       try {
-        const invoke = (mutation?: DurableMutationInvocation) =>
-          method.handler(parsedParams.value, {
-            runtime: this.runtime,
-            signal: options?.signal,
-            requestId: request.id,
-            connectionId: options?.connectionId,
-            clientId: options?.clientId,
-            pairedDeviceId: options?.pairedDeviceId,
-            clientKind: options?.clientKind,
-            clientCapabilities: options?.clientCapabilities,
-            orchestrationCapability: request.orchestrationCapability,
-            authenticatedCallerFingerprint: authenticatedCallerFingerprint(request),
-            recordMutationReceipt: mutation?.recordReceipt,
-            orchestrationMutation: mutation?.identity,
-            sendBinary: options?.sendBinary,
-            registerBinaryStreamHandler: options?.registerBinaryStreamHandler
-          })
-        const result = await this.orchestrationMutations.run(request, parsedParams.value, invoke)
+        const result = await method.handler(parsedParams.value, {
+          runtime: this.runtime,
+          signal: options?.signal,
+          requestId: request.id,
+          connectionId: options?.connectionId,
+          clientId: options?.clientId,
+          pairedDeviceId: options?.pairedDeviceId,
+          clientKind: options?.clientKind,
+          clientCapabilities: options?.clientCapabilities,
+          sendBinary: options?.sendBinary,
+          registerBinaryStreamHandler: options?.registerBinaryStreamHandler
+        })
         this.recordRuntimeFeatureInteraction(request.method, result, undefined, request.params)
         reply(JSON.stringify(successResponse(request.id, meta, result)))
       } catch (error) {

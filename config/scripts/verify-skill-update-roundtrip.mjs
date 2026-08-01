@@ -44,8 +44,7 @@ const sandbox = await mkdtemp(path.join(tmpdir(), 'orca-skill-update-roundtrip-'
 const home = path.join(sandbox, 'home')
 const stateHome = path.join(home, '.state')
 const fakeBin = path.join(sandbox, 'bin')
-const targetName = 'orca-cli'
-const controlName = 'orchestration'
+const targetName = 'orca-per-workspace-env'
 const manifest = JSON.parse(await readFile('resources/skills/current-manifest.json', 'utf8'))
 const registry = JSON.parse(await readFile('resources/skills/snapshot-registry.json', 'utf8'))
 const releaseMapping = JSON.parse(await readFile('resources/skills/release-mapping.json', 'utf8'))
@@ -162,18 +161,12 @@ function execSkills(args) {
 
 try {
   const targetHistorical = historicalRelease(targetName)
-  const controlHistorical = historicalRelease(controlName)
   await installFakeAgentCommands()
   await mkdir(path.join(home, '.codex'), { recursive: true })
   await mkdir(path.join(home, '.claude'), { recursive: true })
   await seedPlacement(targetName, targetHistorical.tag)
-  await seedPlacement(controlName, controlHistorical.tag)
   const targetProvider = path.join(home, '.claude', 'skills', targetName)
-  const controlCanonical = path.join(home, '.agents', 'skills', controlName)
-  const controlProvider = path.join(home, '.claude', 'skills', controlName)
   const targetProviderBefore = await packageDigestAt(await realpath(targetProvider))
-  const controlBefore = await packageDigestAt(controlCanonical)
-  const controlProviderBefore = await packageDigestAt(await realpath(controlProvider))
 
   const timestamp = new Date().toISOString()
   const lock = {
@@ -188,16 +181,6 @@ try {
         skillFolderHash: targetHistorical.snapshot.gitTreeSha,
         installedAt: timestamp,
         updatedAt: timestamp
-      },
-      [controlName]: {
-        source,
-        sourceType: 'github',
-        sourceUrl: `https://github.com/${source}.git`,
-        ref,
-        skillPath: `skills/${controlName}/SKILL.md`,
-        skillFolderHash: controlHistorical.snapshot.gitTreeSha,
-        installedAt: timestamp,
-        updatedAt: timestamp
       }
     }
   }
@@ -206,7 +189,7 @@ try {
   await writeFile(lockPath, `${JSON.stringify(lock, null, 2)}\n`)
 
   // Why: this is the exact user-visible rail. A bare update would include
-  // unrelated vendors, while this command must leave the control skill alone.
+  // unrelated vendors, while this command updates only the retained package.
   execSkills(['update', targetName, '--global'])
   await assertCurrentCanonical(targetName)
   const targetProviderAfter = await packageDigestAt(await realpath(targetProvider))
@@ -233,16 +216,6 @@ try {
         ? 'remained a historical copy'
         : 'converged as a copy'
     console.log(`[skill-update-roundtrip] independent copy ${outcome}`)
-  }
-  if ((await packageDigestAt(controlCanonical)) !== controlBefore) {
-    throw new Error('Targeted update changed the non-targeted control skill')
-  }
-  if ((await packageDigestAt(await realpath(controlProvider))) !== controlProviderBefore) {
-    throw new Error('Targeted update changed the non-targeted control provider placement')
-  }
-  const controlProviderStat = await lstat(controlProvider)
-  if (shape === 'symlink' && !controlProviderStat.isSymbolicLink()) {
-    throw new Error('Targeted update changed the non-targeted control topology')
   }
 } finally {
   await rm(sandbox, { recursive: true, force: true })

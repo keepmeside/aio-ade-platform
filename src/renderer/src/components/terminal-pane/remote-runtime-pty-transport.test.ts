@@ -2195,9 +2195,7 @@ describe('createRemoteRuntimePtyTransport', () => {
       await import('../../../../shared/ephemeral-setup-terminal-worktree-id')
     const { createRemoteRuntimePtyTransport } = await import('./remote-runtime-pty-transport')
     const transport = createRemoteRuntimePtyTransport('env-1', {
-      worktreeId: brandEphemeralSetupTerminalWorktreeId(
-        'feature-wall-orchestration-skill-terminal'
-      ),
+      worktreeId: brandEphemeralSetupTerminalWorktreeId('feature-wall-browser-skill-terminal'),
       tabId: 'tab-1',
       leafId: 'pane:1'
     })

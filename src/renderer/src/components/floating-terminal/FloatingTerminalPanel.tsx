@@ -1,7 +1,4 @@
-/* eslint-disable max-lines -- Why: the floating panel owns window chrome,
- * resizing, orchestration setup, and mixed terminal/browser/editor tab
- * handling in one surface so the floating worktree does not drift from the
- * main tab model while still keeping the DOM-mounted panes local. */
+/* eslint-disable max-lines -- Why: the floating panel owns window chrome, resizing, and mixed terminal/browser/editor tab handling in one surface so the floating worktree does not drift from the main tab model while still keeping the DOM-mounted panes local. */
 import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { lazyWithRetry as lazy } from '@/lib/lazy-with-retry'
 import { FileText, Globe, Minus, TerminalSquare } from 'lucide-react'
@@ -15,7 +12,6 @@ import TerminalPane, { type TerminalPaneHandle } from '@/components/terminal-pan
 import { isTerminalPaneCloseChord } from '@/components/terminal-pane/terminal-shortcut-policy'
 import { isTerminalImeInputContextRefreshing } from '@/components/terminal-pane/terminal-ime-input-context-refresh'
 import { Button } from '@/components/ui/button'
-import { useMountedRef } from '@/hooks/useMountedRef'
 import { useShortcutKeyDetails, type ShortcutKeyComboDetails } from '@/hooks/useShortcutLabel'
 import {
   Dialog,
@@ -32,7 +28,6 @@ import { createUntitledMarkdownFileWithTemplateSelection } from '@/lib/create-un
 import { detectLanguage } from '@/lib/language-detect'
 import { buildDuplicatedBrowserTabOptions } from '@/lib/duplicate-browser-tab-options'
 import { focusTerminalTabSurface } from '@/lib/focus-terminal-tab-surface'
-import { isOrcaCliAvailableOnPath } from '@/lib/agent-skill-cli-prerequisite'
 import {
   countVisibleFloatingWorkspaceItems,
   isEventTargetInsideFloatingWorkspacePanel,
@@ -60,19 +55,10 @@ import { closeTerminalTab } from '@/components/terminal/terminal-tab-actions'
 import { guardPinnedTabClose, resolvePinnedTabLabel } from '@/store/pinned-tab-close-guard'
 import { extractIpcErrorMessage } from '@/lib/ipc-error'
 import { getShortcutPlatform } from '@/lib/shortcut-platform'
-import {
-  ORCHESTRATION_SETUP_DISMISSED_STORAGE_KEY,
-  ORCHESTRATION_SETUP_STATE_EVENT,
-  hasOrchestrationSetupMarker,
-  isOrchestrationSetupDismissed,
-  notifyOrchestrationSetupStateChanged
-} from '@/lib/orchestration-setup-state'
 import { useAppStore } from '@/store'
 import type { OpenFile } from '@/store/slices/editor'
 import { destroyWorkspaceWebviews } from '@/store/slices/browser-webview-cleanup'
-import {
-  createTerminalPaneHandleRegistry
-} from './terminal-pane-handle-registry'
+import { createTerminalPaneHandleRegistry } from './terminal-pane-handle-registry'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
 import {
   keybindingMatchesAction,
@@ -88,7 +74,6 @@ import {
 import type { BrowserTab as BrowserTabState, Tab, TerminalTab } from '../../../../shared/types'
 import { resolveUnifiedTabLabel } from '../../../../shared/tab-title-resolution'
 import { FloatingBrowserSlot } from './FloatingBrowserSlot'
-import { FloatingTerminalOrchestrationDialog } from './FloatingTerminalOrchestrationDialog'
 import { FloatingTerminalResizeHandles } from './FloatingTerminalResizeHandles'
 import { FloatingTerminalWindowControls } from './FloatingTerminalWindowControls'
 export { FloatingTerminalToggleButton } from './FloatingTerminalToggleButton'
@@ -268,10 +253,6 @@ export function FloatingTerminalPanel({
   )
   const [bounds, setBounds] = useState(initialBoundsStateRef.current.renderedBounds)
   const [maximized, setMaximized] = useState(false)
-  const [orchestrationDialogOpen, setOrchestrationDialogOpen] = useState(false)
-  const [showOrchestrationSetup, setShowOrchestrationSetup] = useState(
-    () => !hasOrchestrationSetupMarker() && !isOrchestrationSetupDismissed()
-  )
   const restoreBoundsRef = useRef<FloatingTerminalPanelBoundsState | null>(null)
   const stagedBoundsRef = useRef<FloatingTerminalPanelBounds | null>(null)
   const lastPersistedBoundsRef = useRef<FloatingTerminalPanelCommittedBounds | null>(
@@ -304,7 +285,6 @@ export function FloatingTerminalPanel({
     helper: HTMLElement
     leafId: string | null
   } | null>(null)
-  const mountedRef = useMountedRef()
   const dragRef = useRef<{
     pointerId: number
     startX: number
@@ -676,43 +656,6 @@ export function FloatingTerminalPanel({
     // focus on the previous page; focus the panel so immediate tab shortcuts work.
     panelRef.current?.focus({ preventScroll: true })
   }, [hasVisibleFloatingTabs, open])
-
-  const refreshOrchestrationSetupVisibility = useCallback(async (): Promise<void> => {
-    if (isOrchestrationSetupDismissed()) {
-      setShowOrchestrationSetup(false)
-      return
-    }
-    if (!hasOrchestrationSetupMarker()) {
-      setShowOrchestrationSetup(true)
-      return
-    }
-    try {
-      const status = await window.api.cli.getInstallStatus()
-      if (mountedRef.current) {
-        setShowOrchestrationSetup(!isOrcaCliAvailableOnPath(status))
-      }
-    } catch {
-      if (mountedRef.current) {
-        setShowOrchestrationSetup(true)
-      }
-    }
-  }, [mountedRef])
-
-  useEffect(() => {
-    if (open) {
-      void refreshOrchestrationSetupVisibility()
-    }
-  }, [open, refreshOrchestrationSetupVisibility])
-
-  useEffect(() => {
-    const handleSetupStateChange = (): void => {
-      void refreshOrchestrationSetupVisibility()
-    }
-    window.addEventListener(ORCHESTRATION_SETUP_STATE_EVENT, handleSetupStateChange)
-    return () => {
-      window.removeEventListener(ORCHESTRATION_SETUP_STATE_EVENT, handleSetupStateChange)
-    }
-  }, [refreshOrchestrationSetupVisibility])
 
   const activateFloatingItem = useCallback(
     (visibleId: string) => {
@@ -1702,16 +1645,8 @@ export function FloatingTerminalPanel({
     toggleMaximized()
   }
 
-  const dismissOrchestrationSetup = useCallback(() => {
-    localStorage.setItem(ORCHESTRATION_SETUP_DISMISSED_STORAGE_KEY, '1')
-    setShowOrchestrationSetup(false)
-    notifyOrchestrationSetupStateChanged()
-  }, [])
-
   return (
-    // Why: sit above the z-40 notification cards so the floating workspace is
-    // never buried behind them, but stay under the z-50 modal layer so its own
-    // orchestration/save dialogs (and every app modal) still open above it.
+    // Why: sit above notification cards while staying under the modal layer.
     // Drop shadow on the outer shell, border on an inner shell — mixing both on
     // one rounded node made corners look stubby. Floating tabs skip their top
     // border so the titlebar curve stays clean.
@@ -1910,55 +1845,6 @@ export function FloatingTerminalPanel({
           ) : null}
         </div>
       </div>
-      {showOrchestrationSetup && activeTabType === 'terminal' ? (
-        <div
-          className="absolute right-4 bottom-4 z-10 w-[280px] rounded-md border border-border/60 bg-card/95 p-3 text-card-foreground shadow-xs"
-          data-floating-terminal-no-drag
-        >
-          <div className="space-y-2">
-            <div className="space-y-0.5">
-              <p className="text-sm font-medium">
-                {translate(
-                  'auto.components.floating.terminal.FloatingTerminalPanel.2a3c5ddf5e',
-                  'Enable orchestration'
-                )}
-              </p>
-              <p className="text-xs leading-5 text-muted-foreground">
-                {translate(
-                  'auto.components.floating.terminal.FloatingTerminalPanel.8cf80db43b',
-                  'Set up the Orca CLI and agent skill so agents can coordinate through Orca.'
-                )}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="flex-1"
-                onClick={dismissOrchestrationSetup}
-              >
-                {translate(
-                  'auto.components.floating.terminal.FloatingTerminalPanel.adc281394d',
-                  'Dismiss'
-                )}
-              </Button>
-              <Button
-                type="button"
-                variant="default"
-                size="sm"
-                className="flex-1"
-                onClick={() => setOrchestrationDialogOpen(true)}
-              >
-                {translate(
-                  'auto.components.floating.terminal.FloatingTerminalPanel.bbc177f98f',
-                  'Enable'
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
       {!maximized && (
         <FloatingTerminalResizeHandles
           bounds={bounds}
@@ -1966,11 +1852,6 @@ export function FloatingTerminalPanel({
           onCommitBounds={commitUserBounds}
         />
       )}
-      <FloatingTerminalOrchestrationDialog
-        open={orchestrationDialogOpen}
-        onOpenChange={setOrchestrationDialogOpen}
-        onSetupStateChange={() => void refreshOrchestrationSetupVisibility()}
-      />
       <Dialog
         open={saveDialogFileId !== null}
         onOpenChange={(nextOpen) => {

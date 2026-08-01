@@ -9,7 +9,6 @@ import type {
   TerminalPreviewConnectResult,
   TerminalPreviewDataPayload
 } from '../shared/terminal-preview'
-import type { CliInstallStatus } from '../shared/cli-install-types'
 import type { AgentHookInstallStatus } from '../shared/agent-hook-types'
 import type { CodexConfigSyncStatus } from '../shared/codex-config-sync-types'
 import type { TerminalPaneSplitSource } from '../shared/feature-education-telemetry'
@@ -2038,18 +2037,6 @@ const api = {
       runtime?: 'host' | 'wsl'
       wslDistro?: string | null
     }): Promise<unknown> => ipcRenderer.invoke('claudeAccounts:select', args)
-  },
-
-  cli: {
-    getInstallStatus: (): Promise<CliInstallStatus> => ipcRenderer.invoke('cli:getInstallStatus'),
-    install: (): Promise<CliInstallStatus> => ipcRenderer.invoke('cli:install'),
-    remove: (): Promise<CliInstallStatus> => ipcRenderer.invoke('cli:remove'),
-    getWslInstallStatus: (args?: { distro?: string | null }): Promise<CliInstallStatus> =>
-      ipcRenderer.invoke('cli:getWslInstallStatus', args),
-    installWsl: (args?: { distro?: string | null }): Promise<CliInstallStatus> =>
-      ipcRenderer.invoke('cli:installWsl', args),
-    removeWsl: (args?: { distro?: string | null }): Promise<CliInstallStatus> =>
-      ipcRenderer.invoke('cli:removeWsl', args)
   },
 
   codexConfigSync: {

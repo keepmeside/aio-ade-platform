@@ -391,7 +391,7 @@ Run:
 pnpm test:repro:remote-agent-session
 ```
 
-The harness builds Orca, starts a real headless Electron `orca serve` process on
+The harness builds the app, starts a real headless Electron runtime-host process on
 an ephemeral port, and connects independent Node client processes over the
 normal encrypted WebSocket pairing path. It creates and registers a real Git
 repository in an isolated profile and uses the real daemon claim registry with

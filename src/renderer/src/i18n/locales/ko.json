@@ -329,25 +329,11 @@
           "0baad2d5d2": "Grok",
           "760bc6883d": "Codex",
           "a5fc0cb622": "OpenClaude",
-          "bf53f09bf8": "Claude Agent Teams",
           "0708ed89f1": "Claude",
           "fc80296033": "Devin",
           "da41abbdd4": "Ante",
           "060d152fb5": "Trae",
           "mimo_code_label": "MiMo Code"
-        },
-        "skill": {
-          "cli": {
-            "prerequisite": {
-              "79371593b0": "Orca CLI는 아직 PATH에 표시되지 않습니다.",
-              "e99d7dc36f": "Orca CLI 등록에 주의가 필요함",
-              "2db0bd7515": "Orca CLI 등록을 사용할 수 없습니다.",
-              "8d6eedf97e": "PATH에 Orca CLI를 등록하지 못했습니다.",
-              "0f116999f1": "설정하기 전에 셸을 다시 시작하거나 Orca CLI 디렉터리를 PATH에 추가하세요.",
-              "15cbedc3e3": "agent 스킬 설정을 실행하기 전에 Orca CLI를 설치하십시오.",
-              "windowsPathUnknown": "Orca could not check your Windows user PATH"
-            }
-          }
         }
       },
       "ensure": {
@@ -443,17 +429,6 @@
             "tab": {
               "bf4f2a8a72": "에뮬레이터를 시작할 수 없습니다. iOS 또는 Android 에뮬레이터 설정을 확인하고 다른 기기를 사용해 보세요."
             }
-          }
-        }
-      },
-      "orchestration": {
-        "usage": {
-          "examples": {
-            "f91fe27f2a": "큰 변경 사항을 더 작은 PR로 분할",
-            "9e37a5b1b3": "독립적인 작업을 병렬로 실행",
-            "bddc4c09b8": "단계별 워크플로 실행",
-            "ab0e9803b7": "다른 작업 트리에 넘겨주기",
-            "5e0d489fe1": "활성 작업 전달"
           }
         }
       },
@@ -686,7 +661,10 @@
         "ef223fbb6b": "A device tried to connect but is not paired",
         "11992d0337": "If this was your phone or another Orca client, re-pair it from Settings → Mobile.",
         "6573cfe955": "Open Mobile Settings",
-        "unresolvedTerminalWorktreeOwner": "Terminal creation is unavailable because the worktree owner could not be resolved"
+        "unresolvedTerminalWorktreeOwner": "Terminal creation is unavailable because the worktree owner could not be resolved",
+        "runtimeAuthFailureTitle": "A runtime client tried to connect but is not paired",
+        "runtimeAuthFailureDescription": "Generate a new pairing code in Settings → Servers, then reconnect the client.",
+        "runtimeAuthFailureAction": "Open Server Settings"
       },
       "useSettingsNavigationMetadata": {
         "4a728cd56b": "아직 구체화되고 있는 새로운 기능입니다. 한번 시도해 보세요.",
@@ -741,8 +719,6 @@
         "6a50cdcd7c": "음성",
         "0059bd17f3": "agents가 컴퓨터의 모든 앱을 제어할 수 있도록 하세요.",
         "b35e92364b": "컴퓨터 사용",
-        "cd50cec5d7": "Orca를 통해 여러 코딩 agents를 조정합니다.",
-        "58a868e8e4": "오케스트레이션",
         "7c79d3b7bf": "선택 사항",
         "b1c2f8b0ac": "Claude, Codex, Gemini, OpenCode Go, MiniMax, Grok의 선택적 계정 전환 및 사용량 설정.",
         "f70ac54d38": "AI 제공자 계정",
@@ -4300,8 +4276,7 @@
           "65a9820bd1": "Agent 상태",
           "219ebf1961": "브랜치 이름",
           "automation": "자동화",
-          "folderPathIdentity": "브랜치 / 폴더 경로",
-          "cli": "Orca CLI"
+          "folderPathIdentity": "브랜치 / 폴더 경로"
         },
         "SshDisconnectedDialog": {
           "ca4a7892af": "연결 중...",
@@ -4422,12 +4397,7 @@
           "copyLinkSuccess": "{{value0}} 복사됨",
           "copyLinkFailure": "링크 복사 실패",
           "issueLinkLabel": "이슈 링크",
-          "reviewLinkLabel": "{{value0}} 링크",
-          "cliHeader": "Orca CLI",
-          "cliCreatedFromAgent": "Created by an agent via `orca worktree create`",
-          "cliCreatedFromShell": "Created via `orca worktree create`",
-          "cliStartupAgent": "Started with {{value0}}",
-          "cliCreated": "Created by Orca CLI"
+          "reviewLinkLabel": "{{value0}} 링크"
         },
         "WorktreeCardMetadataStatusBadges": {
           "fe188062a1": "상태: 열림",
@@ -4776,43 +4746,6 @@
             }
           }
         },
-        "LinearAgentSkillSetupPrompt": {
-          "missingCliAndSkill": "Orca CLI와 Linear agent 스킬이 없습니다.",
-          "modalTitle": "Linear 티켓 접근 활성화",
-          "modalDescription": "terminal에서 Linear 스킬을 설치합니다.",
-          "modalPrompt": "agents가 첨부된 Linear 티켓을 읽고 편집할 수 있게 합니다.",
-          "dontShowAgain": "다시 표시하지 않음",
-          "missingBoth": "Orca CLI와 Linear agent 스킬이 없습니다.",
-          "missingCli": "Orca CLI가 없습니다.",
-          "missingSkill": "Linear agent 스킬이 없습니다.",
-          "title": "Linear agent 스킬 설정",
-          "remoteCopy": "호스트 설정을 설치합니다. 원격 agent 환경에는 별도 설정이 필요할 수 있습니다.",
-          "hostCopy": "연결된 Linear 작업에서 호스트 agent 인계를 위해 설치합니다.",
-          "dismiss": "Linear agent 스킬 설정 닫기",
-          "setup": "설정",
-          "recheck": "다시 확인",
-          "panelTitle": "Linear agent 스킬",
-          "panelDescription": "연결된 Linear 작업 인계를 위해 호스트 agent 스킬을 설치합니다.",
-          "terminalTitle": "Linear agent 스킬 설치",
-          "terminalAria": "Linear agent 스킬 설치 terminal",
-          "install": "CLI 및 스킬 설치",
-          "successTitle": "Linear 티켓 접근이 준비되었습니다",
-          "successDescription": "이제 agents가 이 워크스페이스에서 연결된 Linear 티켓을 읽고 업데이트할 수 있습니다.",
-          "successDescriptionWsl": "이제 WSL agents가 이 워크스페이스에서 연결된 Linear 티켓을 사용할 수 있습니다.",
-          "successDescriptionRemote": "이제 호스트 agents가 연결된 Linear 티켓을 사용할 수 있습니다. 원격 agent 환경에는 자체 설정이 여전히 필요할 수 있습니다.",
-          "successStatus": "Linear 티켓 접근 준비됨",
-          "done": "완료",
-          "wslCopy": "연결된 Linear 작업에서 WSL agent 인계를 위해 설치합니다.",
-          "wslLabel": "WSL 기본값",
-          "toastMissingCliAndSkill": "Orca CLI와 Linear 스킬이 없습니다",
-          "toastMissingCli": "Orca CLI가 없습니다",
-          "toastMissingSkill": "Linear 스킬이 없습니다",
-          "toastInstallCliAndSkillDescription": "Orca CLI와 Linear 스킬을 설치하여 agents가 Linear 작업을 읽고 편집할 수 있게 하세요.",
-          "toastInstallCliDescription": "Orca CLI를 설치하여 agents가 Linear 작업을 읽고 편집할 수 있게 하세요.",
-          "toastInstallSkillDescription": "Linear 스킬을 설치하여 agents가 Orca CLI를 통해 Linear 작업을 읽고 편집할 수 있게 하세요.",
-          "toastRemoteDescription": "{{value0}} 원격 agent 환경에는 자체 설정이 필요할 수 있습니다.",
-          "toastWslDescription": "{{value0}} 이 설정은 선택한 WSL agent 런타임에서 실행됩니다."
-        },
         "FolderWorkspaceComposerDialog": {
           "connectFailed": "프로젝트에 연결하지 못했습니다.",
           "noRepos": "GitHub 또는 GitLab 작업을 연결하려면 이 폴더 아래에 Git 프로젝트를 추가하세요.",
@@ -4973,8 +4906,7 @@
           "pairingCode": "페어링 코드",
           "pairingCodePlaceholder": "orca://pair?code=...",
           "pairingHelpPrefix": "서버에서 실행",
-          "pairingCommand": "orca serve --pairing-address <host>",
-          "pairingHelpSuffix": "한 다음 출력된 페어링 URL을 붙여넣으세요.",
+          "pairingHelpSuffix": "Aio-ADE 런타임 호스트가 발급한 페어링 URL을 붙여넣으세요.",
           "sshImportAlreadySynced": "~/.ssh/config가 이미 동기화되어 있습니다.",
           "sshImportSynced": "{{value0}} 호스트{{value1}}을(를) 동기화했습니다.",
           "sshImportFailed": "SSH 구성을 가져오지 못했습니다.",
@@ -5466,66 +5398,14 @@
           "72d4815523": "agents가 인증된 페이지에 접근할 수 있도록 기존 로그인을 Orca로 가져오세요. 기본 프로필로 가져옵니다.",
           "2eb906706c": "브라우저 쿠키 가져오기",
           "af8c83ed61": "agents가 로그인을 재사용할 수 있도록 Chrome, Edge 또는 기타 브라우저에서 쿠키를 가져옵니다.",
-          "68ea76eb71": "agents가 Orca의 브라우저를 작동할 수 있도록 브라우저 사용 스킬을 설치하세요.",
-          "2d6ead9ab2": "브라우저 사용 스킬 설치",
-          "e9f3f3b488": "설치 위치",
-          "9fca1f7f5d": "agents가 셸에서 브라우저를 조정할 수 있도록 Orca CLI 명령을 등록합니다.",
-          "c6065d205d": "Orca CLI 활성화",
-          "c79eff0213": "agents가 브라우저를 구동할 수 있도록 Orca CLI를 등록하세요.",
-          "702488a5f7": "코딩 agents가 로그인을 통해 이 브라우저를 구동하게 하세요. 아래 세 단계를 완료하세요.",
           "b8a1f2d84d": "Agent 브라우저 사용",
           "96b91c6349": "코딩 agents가 로그인을 통해 이 브라우저를 구동하게 하세요.",
           "2ea4617e3a": "{{value1}}{{value2}}에서 {{value0}} 쿠키를 가져왔습니다.",
-          "721aee31b4": "PATH에 Orca CLI를 등록했습니다.",
-          "180a9abf3a": "CLI 상태를 로드하지 못했습니다.",
           "2ccfc9cff8": "가져오기",
           "0462565413": "다시 가져오기",
-          "de9b2f32f3": "활성화",
-          "ad8cb0ee22": "경로 수정",
-          "0289434ed6": "활성화됨",
-          "8b3054dac7": "등록 중...",
           "8f2675c2f3": "파일에서 {{value0}}개의 쿠키를 가져왔습니다.",
-          "5301857d88": "{{value0}}에서"
-        },
-        "BrowserUseSkillStep": {
-          "0871b6998d": "agents가 Orca 브라우저에서 페이지를 탐색하고 확인할 수 있습니다.",
-          "459e24eebc": "Browser Use 스킬"
-        },
-        "CliSection": {
-          "8671e406f0": "취소",
-          "a4aafe46e3": "대상 경로:",
-          "e8012c03a1": "agents가 Orca 워크스페이스, terminal 및 진행 명령을 사용할 수 있도록 합니다.",
-          "cliSkillTerminalTitle": "CLI 스킬 설정",
-          "cliSkillTerminalAria": "CLI 스킬 설치 terminal",
-          "6053cf736c": "CLI 스킬",
-          "36a6f919ba": "agents에게 Orca 인식 워크스페이스, terminal 및 진행 워크플로를 제공합니다.",
-          "04873eea3e": "Agent 스킬",
-          "7f2747f7dd": "현재 이 셸의 PATH에 표시되지 않습니다.",
-          "b0c310ab46": "기존 실행기 대상:",
-          "15eaad0d31": "명령 경로:",
-          "5dae812f50": "새로고침",
-          "52e640f3a0": "CLI 상태 새로 고침",
-          "38edbb5721": "쉘 명령",
-          "6930feda9e": "terminals에서 Orca를 사용하여 앱을 열고, 작업 트리를 관리하고, Orca terminals과 상호 작용할 수 있습니다.",
-          "c5c0f2641d": "Orca CLI",
-          "d77352f2df": "PATH에서 `{{value0}}`을(를) 제거하지 못했습니다.",
-          "af5540930c": "PATH에서 `{{value0}}`을 제거했습니다.",
-          "a2b13efa94": "PATH에 `{{value0}}`을(를) 등록하지 못했습니다.",
-          "9cbcd31338": "PATH에 `{{value0}}`을 등록했습니다.",
-          "7baec27029": "CLI 상태를 로드하지 못했습니다.",
-          "d00df2e397": "등록",
-          "9a5f8a4568": "제거",
-          "b0fca411a0": "등록 중…",
-          "4c7e3e4c5f": "설치",
-          "068552b191": "제거 중…",
-          "8d96213669": "제거",
-          "aa6536977e": "Orca는 {{value0}}을 등록하므로 명령이 terminal에서 작동합니다.",
-          "a030816e3e": "그러면 쉘 명령 심볼릭 링크가 제거됩니다. Orca 자체는 설치된 상태로 유지됩니다.",
-          "fa87db3d6e": "PATH에 `{{value0}}`을 등록하시겠습니까?",
-          "14444243ba": "PATH에서 `{{value0}}`을(를) 제거하시겠습니까?",
-          "5d432fe44d": "설치됨",
-          "8a9b784c60": "오래됨",
-          "d363e5929b": "CLI 등록 확인 중…"
+          "5301857d88": "{{value0}}에서",
+          "browserControlDescription": "Let coding agents drive this browser with your logins."
         },
         "CliSkillRuntimeSetup": {
           "04325573f8": "WSL",
@@ -6046,41 +5926,13 @@
           "82436439eb": "MCP 구성 추가",
           "0a5c1ead54": "빈 구성 만들기"
         },
-        "MobileEmulatorAgentControlRow": {
-          "1861982430": "CLI 상태를 로드하지 못했습니다.",
-          "8af7a8bc38": "명령은 현재 작업 트리의 활성 에뮬레이터를 대상으로 합니다. 좌표는 0..1에서 정규화됩니다.",
-          "c7f3fe0a6e": "일반 에뮬레이터 명령",
-          "d94ca6a623": "agents가 모바일 에뮬레이터 제어를 포함하여 Orca CLI 명령을 사용할 수 있도록 합니다.",
-          "67e19ee03c": "Orca CLI 스킬",
-          "aaf62a3dd2": "설치 위치",
-          "2fef055608": "agents가 셸에서 활성 에뮬레이터를 제어할 수 있도록 Orca CLI 명령을 등록합니다.",
-          "4f2205f3b6": "Orca CLI 활성화",
-          "ff4b7e65d6": "코딩 agents가 Orca CLI 명령을 사용하여 활성 모바일 에뮬레이터를 제어하도록 합니다.",
-          "2a674aa810": "Agent 모바일 에뮬레이터 제어",
-          "cdeaed9e37": "PATH에 Orca CLI를 등록했습니다.",
-          "3d34423e88": "Orca CLI를 등록하는 중",
-          "3be27641c9": "agent 셸에서 에뮬레이터 명령을 실행할 수 있도록 합니다.",
-          "3941719a56": "스킬 설정을 열기 전에 Orca CLI를 확인하고 있습니다."
-        },
-        "MobileEmulatorExamples": {
-          "edf13dd03b": "복사",
-          "c12b253997": "예시 프롬프트 복사",
-          "d151e25078": "\"",
-          "b525ff2b12": "\"",
-          "4daa95f25a": "Orca CLI 스킬이 설치된 프로젝트의 Claude Code, Codex 또는 다른 agent에 이들 중 하나를 붙여넣으세요.",
-          "0820b3f84f": "시도해 보세요 - 예시 프롬프트",
-          "1f608e7d60": "프롬프트를 복사하지 못했습니다.",
-          "2b077b5544": "프롬프트를 복사했습니다."
-        },
         "MobileEmulatorSettingsPane": {
-          "19d39113b6": "코딩 agents가 Orca CLI 명령을 사용하여 활성 모바일 에뮬레이터를 제어하도록 합니다.",
-          "f2f8d97bb6": "Agent 모바일 에뮬레이터 제어",
           "143961d031": "기본 장치",
           "8aec2f99a0": "에뮬레이터 가용성 새로 고침",
           "ae1612c58c": "가용성",
-          "f9af91ea26": "새 모바일 에뮬레이터 작업을 표시하고 agents가 활성 에뮬레이터에 연결할 수 있도록 합니다.",
+          "f9af91ea26": "? ??? ????? ??? ???? ????? ?? ??????.",
           "700ddbf9b1": "모바일 에뮬레이터 활성화",
-          "bc39d0f115": "Orca 및 코딩 agents에 대한 모바일 에뮬레이터 지원을 구성합니다.",
+          "bc39d0f115": "Orca? ??? ????? ??? ?????.",
           "6593c9ddd3": "모바일 에뮬레이터",
           "a4f1c82d90": "비활성화됨",
           "b5e2d93e01": "확인 중...",
@@ -6090,7 +5942,7 @@
           "6d1483d4a0": "1개의 에뮬레이터 장치가 감지되었습니다.",
           "0a452d4d3b": "{{value0}} 에뮬레이터 장치가 감지되었습니다.",
           "f62a1bb759": "Orca는 장치가 감지된 후 에뮬레이터 장치를 자동으로 선택합니다.",
-          "b2fd62ea75": "새 에뮬레이터 탭 및 agent 연결 명령을 위한 기본 장치입니다. 자동 선택은 이미 실행 중인 장치를 선호합니다."
+          "b2fd62ea75": "? ????? ?? ?? ?????. ?? ??? ?? ?? ?? ??? ?????."
         },
         "MobileNetworkInterfaceSection": {
           "63d5e4ae1e": "QR 코드를 재생성하고 Orca 모바일 앱에서 스캔하세요.",
@@ -6213,34 +6065,6 @@
           "3ebe650f74": "앱 이름",
           "3743ed080c": "명령 설정",
           "f79084947b": "새로운 앱"
-        },
-        "OrchestrationPane": {
-          "52e0634e2c": "핸드오프, 작업 트리 핸드오버, 순차 또는 병렬 하위 agents에 대한 오케스트레이션을 사용하도록 코디네이터 agents에 요청하세요.",
-          "ae79504732": "사용방법",
-          "7bc082f4de": "설치 명령 복사",
-          "832f1f3ee6": "자신의 terminal을 선호하시나요?",
-          "9bedd2a6e5": "agents가 Orca를 통해 컨텍스트를 넘기고 작업을 조정할 수 있습니다.",
-          "07641b9768": "오케스트레이션 스킬",
-          "2aacdb0517": "핸드오프, 작업 트리 핸드오버, 하위 agents 작업 전반에 걸쳐 코딩 agents를 조정합니다.",
-          "191ac34567": "Agent 오케스트레이션"
-        },
-        "OrchestrationSetupCard": {
-          "e7d2a5146c": "agents가 Orca를 통해 컨텍스트를 넘기고 작업을 조정할 수 있습니다.",
-          "2777ff0fdc": "오케스트레이션 스킬"
-        },
-        "OrchestrationSkillAgentCoverage": {
-          "6dec5ce2d2": "Agent 적용 범위",
-          "ffe13e36fb": "누락",
-          "1e8f8d8fae": "준비됨"
-        },
-        "OrchestrationSkillPromptDialog": {
-          "f08d45293d": "명령 복사",
-          "35550f3b3b": "완료",
-          "1bdce1911e": "오케스트레이션 스킬 설치 명령 복사",
-          "b99f375eb2": "agents에 대한 오케스트레이션 스킬을 설치하려면 terminal에서 이 명령을 실행하세요.",
-          "2914abcfa2": "오케스트레이션 스킬 설치",
-          "d3dc559225": "설치 명령을 복사하지 못했습니다.",
-          "239bf9132b": "설치 명령을 복사했습니다."
         },
         "PrivacyDiagnosticBundleControls": {
           "dc8404a930": "진단 파일 만들기",
@@ -6557,8 +6381,7 @@
           "6e1280ca55": "이 Orca 서버 공유",
           "9a3758d983": "저장된 서버가 없습니다.",
           "9bee6bbeeb": "서버 추가",
-          "55fcc964cd": "을(를) 서버에서 실행하고 출력된 페어링 URL을 붙여넣으세요.",
-          "960e901ae4": "orca serve --pairing-address <host>",
+          "55fcc964cd": "Aio-ADE 런타임 호스트가 발급한 페어링 URL을 붙여넣으세요.",
           "163671f7b5": "실행",
           "c3d772c514": "orca://pair?code=...",
           "9bc9b83474": "페어링 코드",
@@ -6715,8 +6538,6 @@
           "5063bb47a5": "음성",
           "7118953f14": "agents가 컴퓨터의 모든 앱을 제어할 수 있도록 하세요.",
           "c9841721cb": "컴퓨터 사용",
-          "475980f53d": "Orca를 통해 여러 코딩 agents를 조정합니다.",
-          "00c3a7950d": "오케스트레이션",
           "21f09426ea": "선택 사항. Orca는 기존 공급자 로그인과 함께 작동합니다. Orca가 계정 간 전환을 돕도록 원하는 경우에만 계정을 추가하세요.",
           "ad6c529693": "AI 제공업체 계정",
           "ec1ba547f7": "AI agents를 관리하고, 기본값을 설정하고, 명령을 사용자 정의하세요.",
@@ -7280,33 +7101,6 @@
           "d72ba8dc68": "경로 {{value0}}개",
           "9ea912d811": "경로 1개"
         },
-        "WslCliRegistration": {
-          "c6f6f89d7c": "취소",
-          "119fef6cd2": "대상 경로:",
-          "1dbb0377d9": "기존 실행기 대상:",
-          "554305956d": "명령 경로:",
-          "9b6627522c": "새로고침",
-          "ab6b022a5c": "WSL CLI 상태 새로 고침",
-          "d9c6880dbd": "WSL 셸 명령",
-          "52d990420e": "WSL에서 `{{value0}}`을(를) 제거하지 못했습니다.",
-          "89c7414cf5": "WSL에서 `{{value0}}`을 제거했습니다.",
-          "6f91ad1333": "WSL에 `{{value0}}`을(를) 등록하지 못했습니다.",
-          "951536dda5": "WSL에 `{{value0}}`을(를) 등록했습니다.",
-          "26b4b3b00f": "WSL CLI 상태를 로드하지 못했습니다.",
-          "290bfff3ab": "등록",
-          "f951f85196": "제거",
-          "4c4a9178a3": "등록 중...",
-          "41a1480d3e": "설치",
-          "4598b18464": "제거 중...",
-          "7c3bb36706": "제거",
-          "7ee4e52b99": "Orca는 명령이 WSL terminals에서 작동하도록 {{value0}}을(를) 등록합니다.",
-          "d8216eb22e": "이렇게 하면 WSL 셸 명령이 제거됩니다. Orca 자체는 Windows에 설치된 상태로 유지됩니다.",
-          "e49688f67f": "WSL에 `{{value0}}`을(를) 등록하시겠습니까?",
-          "61ac55278e": "WSL에서 `{{value0}}`을(를) 제거하시겠습니까?",
-          "e2b0ee267f": "오래됨",
-          "7aa456a460": "WSL 내부의 ~/.local/bin에 `orca-ide`를 등록합니다.",
-          "0307677bb9": "WSL CLI 등록 확인 중..."
-        },
         "accounts": {
           "search": {
             "86edc96bc9": "상태 표시줄",
@@ -7688,25 +7482,7 @@
               "fb8178824f": "쿠키",
               "ba4eb53b72": "브라우저 사용",
               "2fb24d17db": "agents가 로그인을 재사용할 수 있도록 Chrome, Edge 또는 기타 브라우저에서 쿠키를 가져옵니다.",
-              "614c756ab1": "브라우저 쿠키 가져오기",
-              "cee44fb442": "오토메이션",
-              "a57c2172dc": "agent-browser",
-              "6ea88e5206": "npx",
-              "f5b8fdddf5": "orca-cli",
-              "e5a784bc54": "설치",
-              "9d97446873": "agent",
-              "a2d489263e": "스킬",
-              "a7e82445fa": "agents가 Orca의 브라우저를 작동할 수 있도록 브라우저 사용 스킬을 설치하세요.",
-              "a1414dcefb": "브라우저 사용 스킬 설치",
-              "e56c7b55c9": "설정",
-              "034c5e8d7f": "활성화",
-              "7e0dcb257a": "셸",
-              "3ffafc9b95": "명령",
-              "30c74aaa1f": "경로",
-              "ff05cbc344": "orca",
-              "85fab5e12c": "CLI",
-              "890ddf943d": "agents가 브라우저를 구동할 수 있도록 Orca CLI를 등록하세요.",
-              "50f0860e18": "Orca CLI 활성화"
+              "614c756ab1": "브라우저 쿠키 가져오기"
             }
           }
         },
@@ -7941,18 +7717,8 @@
             "f89a94773c": "업데이트",
             "79ff46776e": "앱 업데이트를 확인하고 최신 Orca 버전을 설치하세요.",
             "e15af4eb64": "업데이트 확인",
-            "6382fe9724": "npx",
-            "baa263d6d8": "에이전트",
-            "bda108e66c": "스킬",
-            "244e3fb4c8": "agents가 Orca CLI를 사용하도록 Orca 스킬을 설치하세요.",
-            "2d9f7b42df": "Agent 스킬",
-            "0a00691c06": "셸 명령",
             "dbeb1f348e": "명령",
-            "88d3df9ce9": "터미널",
             "fb4f338a3d": "경로",
-            "924a660a78": "CLI",
-            "ca529079bf": "Orca CLI 명령을 등록하거나 제거합니다.",
-            "327e3fa70d": "Orca CLI",
             "fb84767421": "전환",
             "f8f0ac213a": "순차적",
             "12ecc640a8": "mru",
@@ -8204,13 +7970,6 @@
           "emulator": {
             "search": {
               "2348045036": "Orca가 기본적으로 여는 에뮬레이터 장치를 선택합니다.",
-              "2bb2e09225": "모바일 스킬",
-              "bbe4267416": "에뮬레이터 유형",
-              "64494f03c3": "에뮬레이터 연결",
-              "6f728f1456": "에뮬레이터 탭",
-              "f8b871d655": "agent CLI",
-              "2e0b45b2ba": "Orca CLI 명령을 사용하여 모바일 에뮬레이터를 나열하고, 연결하고, 탭하고, 입력하세요.",
-              "ea3eac39bb": "Agent CLI 제어",
               "8ef0f08d36": "런타임",
               "27397fe8e9": "Xcode 명령줄 도구",
               "7650063d17": "simctl",
@@ -8224,11 +7983,7 @@
               "1dc8c52ffa": "기본 아이폰",
               "ab4814f3c5": "기본 시뮬레이터",
               "54184cb9c5": "기본 에뮬레이터 장치",
-              "b8ddd13195": "agent 에뮬레이터",
               "1ad6fb6230": "기본 장치",
-              "ac0a985873": "에뮬레이터 스킬",
-              "9353854ff3": "orca emulator",
-              "d4b7833894": "orca cli",
               "84e5706975": "serve-sim",
               "7c5a8a2bee": "Xcode",
               "bec7231663": "아이패드",
@@ -8237,7 +7992,7 @@
               "2d67f708ce": "시뮬레이터",
               "c5eca29310": "iOS 시뮬레이터",
               "25159de808": "모바일 에뮬레이터",
-              "9595354cff": "Orca 및 코딩 agents에 대한 모바일 에뮬레이터 지원을 구성합니다.",
+              "9595354cff": "Orca? ??? ????? ??? ?????.",
               "cdd3c31918": "모바일 에뮬레이터"
             }
           },
@@ -8348,27 +8103,6 @@
             "51ae2183e1": "데스크탑",
             "0534c76311": "Orca 데스크톱 알림용 마스터 스위치입니다.",
             "4a210b2f72": "알림 활성화"
-          }
-        },
-        "orchestration": {
-          "search": {
-            "f5d39af41e": "하위 agents",
-            "c766a01978": "핸드오프",
-            "08c65b12a2": "예시",
-            "f278fd04db": "codex",
-            "32c5098e7b": "claude",
-            "21c28ccdf7": "코디네이터",
-            "741dfc03fa": "워커",
-            "ca54c69806": "DAG",
-            "7ad948b714": "작업",
-            "eee028ae14": "디스패치",
-            "9a5ebdca31": "메시징",
-            "91fc8ab7e5": "코디네이션",
-            "13ba5c6cbd": "에이전트",
-            "d86705ba77": "멀티 agent",
-            "a7f76b4ca7": "오케스트레이션",
-            "e05ff36753": "메시징, 작업 DAG, 디스패치 및 결정 게이트를 통해 여러 코딩 agents를 조정합니다.",
-            "c34045764e": "Agent 오케스트레이션"
           }
         },
         "privacy": {
@@ -9478,18 +9212,6 @@
           "copyExampleAria": "{{value0}} 예시 프롬프트 복사",
           "done": "완료",
           "copyPrompt": "프롬프트 복사"
-        },
-        "LinearAgentSkillPane": {
-          "title": "Linear",
-          "description": "Give agents the skill to read and update your linked Linear tickets.",
-          "skillTitle": "Linear skill",
-          "skillDescription": "Enables agents to read linked tickets and post updates to Linear through Orca.",
-          "howToUse": "How to use it",
-          "howToUseDescription": "Ask an agent working a Linear-linked worktree to read context, post updates, move the ticket, or attach the PR.",
-          "terminalTitle": "Linear skill setup",
-          "terminalAriaLabel": "Linear skill install terminal",
-          "manageConnectionHint": "Review connected Linear workspaces and API keys in",
-          "manageConnectionLink": "Integrations settings"
         },
         "MobileRelayBetaNotice": {
           "notice": "Orca Relay is in beta."
@@ -11153,20 +10875,10 @@
           "yoloPermissionsTooltip": "중단을 줄이기 위해 agents 권한 확인을 건너뜁니다."
         },
         "FeatureSetupChecklist": {
-          "77f74946f5": "Agents는 서로 메시지를 보내고, 작업을 수행하고, 핸드오프를 조정할 수 있습니다.",
-          "399cf885c0": "Agent 오케스트레이션",
           "c5292c409d": "Agents는 요청 시 앱 창을 검사하고 로컬 앱을 작동할 수 있습니다.",
           "1ecfb490ac": "컴퓨터 사용",
           "01426f3a23": "Agents가 사이트를 탐색하고, 페이지를 검사하고, 브라우저 작업을 처리할 수 있습니다.",
-          "ea85d9e628": "Agent 브라우저 사용",
-          "linearTicketsTitle": "Linear agent 스킬",
-          "linearTicketsDescription": "Agents는 연결된 Linear 작업을 사용해 티켓 맥락을 반영한 더 풍부한 인계를 할 수 있습니다.",
-          "linearTicketsSetupSummary": "Linear 워크스페이스에 권장됩니다. Linear 연결 설정에는 영향을 주지 않습니다."
-        },
-        "FeatureSetupInlineTerminal": {
-          "789b59936e": "Enter를 눌러 명령을 실행하고 요청 시 npx를 확인합니다. 나중에 설정에서 설정할 수도 있습니다.",
-          "47fc6cc6dc": "스킬 설정 명령어",
-          "c767ab7061": "스킬 설정"
+          "ea85d9e628": "Agent 브라우저 사용"
         },
         "IntegrationsStep": {
           "277f30eb34": "Linear, GitLab, Bitbucket, Azure DevOps, Gitea 및 Jira는 설정 > 연동에 있습니다.",
@@ -11313,7 +11025,7 @@
           }
         },
         "AgentFeatureSetupStep": {
-          "97dcdc010f": "기능 활성화"
+          "setUpFeatures": "Set Up Features"
         },
         "WindowsTerminalStep": {
           "powerShell": "PowerShell",
@@ -11643,15 +11355,6 @@
             "763f5fa2c1": "플로팅 버튼으로 이동",
             "0ee79e0674": "상태 표시줄로 이동"
           },
-          "FloatingTerminalOrchestrationDialog": {
-            "f726054620": "agents가 Orca를 통해 컨텍스트를 넘기고 작업을 조정할 수 있습니다.",
-            "1cd3f8af64": "오케스트레이션 스킬",
-            "6f0aed26b8": "agents가 Orca를 통해 조정할 수 있도록 Orca CLI 및 오케스트레이션 스킬을 설치합니다.",
-            "05d7aabc20": "설치되지 않음",
-            "630c0ac8c8": "설치됨",
-            "dfd021ce46": "확인 중...",
-            "543f325a14": "오케스트레이션 활성화"
-          },
           "FloatingTerminalPanel": {
             "fc1042e92b": "최소화",
             "8b07759314": "새 브라우저",
@@ -11662,10 +11365,6 @@
             "918c2139f3": "저장하지 않음",
             "e7bf09d4d4": "취소",
             "690b6fb98a": "저장되지 않은 변경사항",
-            "bbc177f98f": "활성화",
-            "adc281394d": "닫기",
-            "8cf80db43b": "agents가 Orca를 통해 조정할 수 있도록 Orca CLI 및 agents 스킬을 설정합니다.",
-            "2a3c5ddf5e": "오케스트레이션 활성화",
             "d6b563ae24": "편집기 로드 중...",
             "8b14ba6c17": "새 브라우저 탭",
             "b085fb58b5": "이 파일에는 저장되지 않은 변경사항이 있습니다.",
@@ -11699,13 +11398,11 @@
             "362a07517d": "컴퓨터 사용",
             "5e8fe5a72d": "agents가 Orca의 브라우저에 직접 액세스할 수 있도록 하여 페이지를 테스트하고, 스크린샷을 캡처하고, 표시된 내용에 따라 조치를 취할 수 있도록 하세요.",
             "e638da007a": "Agent 브라우저 사용",
-            "c61c91e642": "agents가 Orca를 통해 조정하여 대규모 다단계 작업을 완료할 수 있도록 하세요.",
-            "ac07f8887f": "Agent 오케스트레이션",
             "e9eb197e12": "열린 컴퓨터 사용 권한",
             "3a59452a67": "리뷰를 위해 스킬 명령을 아래에 복사하여 삽입했습니다.",
             "c605f51f2b": "기능 설정 준비 완료",
             "1aa657d8f4": "일부 기능 설정에 주의가 필요합니다.",
-            "c89534cbe9": "CLI 및 스킬 설치"
+            "setUpFeatures": "Set Up Features"
           },
           "AiCommitPrSettingsCard": {
             "8d4152701a": "예: ollama run llama3.1 {{value0}}",
@@ -11740,10 +11437,6 @@
             "1bec24acc1": "@keyframes browserFlash { 0% { opacity: 0; } 20% { opacity: 0.85; } 100% { opacity: 0; } } @keyframes browserTabIn { from { opacity: 0; transform: translateY(-2px); } to { opacity: 1; transform: none; } } @keyframes browserViewIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }",
             "73bbb46073": "/pricing",
             "f39be6ca14": "/signup"
-          },
-          "BrowserUseSkillSetupCard": {
-            "cbc45022d4": "agents가 Orca 브라우저에서 페이지를 탐색하고 확인할 수 있습니다.",
-            "d5bb1cd4ba": "Browser Use 스킬"
           },
           "ComputerUseAnimatedVisual": {
             "d8401975b1": "승인됨",
@@ -11800,12 +11493,6 @@
             "fc0cc0b267": "GH #1842",
             "0688842445": "GH #1799",
             "bee6b4088d": "GitHub 및 Linear 작업",
-            "5171768676": "agents 3개 조율",
-            "cebc7769cd": "인증 흐름 재설계",
-            "e44269e97d": "Agent 오케스트레이션",
-            "ec4a73f5e6": "PR 3/3",
-            "cfdfd4d6b4": "PR 2/3",
-            "b1f17bcc74": "PR 1/3",
             "e38112b289": "청구 웹훅 리팩터링",
             "9c812e0d7c": "CI 파이프라인 속도 향상",
             "3c4adfd821": "로그인 경쟁 조건 수정",
@@ -11813,7 +11500,6 @@
             "ef737dcee1": "GitHub 및 Linear 작업",
             "ac51c061e2": "codex",
             "47f16ecf34": "여러 작업을 동시에 진행하세요. 각 워크스페이스는 브랜치, terminal, agent 활동을 함께 보관합니다.",
-            "70aa182266": "목표를 넘겨두고 자리를 비우세요. 코디네이터 agent가 작업을 나누어 병렬 PR을 만듭니다.",
             "f10c14dd9d": "탭을 오갈 필요 없이 GitHub 또는 Linear 백로그에서 선택하고 한 번의 클릭으로 워크스페이스를 시작하세요.",
             "5d6ee181b6": "워크스페이스를 열어 terminal로 돌아가고, 테스트와 로그, agents 용으로 패널을 나누세요."
           },
@@ -11946,13 +11632,14 @@
               "setup": {
                 "status": {
                   "8eccfcb314": "설치됨",
-                  "21d4f79c93": "CLI 및 스킬 설치를 클릭하여 macOS 액세스 설정을 엽니다.",
                   "5c9293e51a": "앱 액세스 확인 중",
-                  "aae94eeb52": "CLI 및 스킬 설치를 클릭하세요.",
                   "aa8e143a2f": "설치를 확인할 수 없습니다.",
                   "9b33e7fb13": "설치 확인 중",
                   "4c8e1f92a7": "이 Mac에서 Orca Desktop을 여세요",
-                  "6d2b0a84e1": "이 빌드에서는 사용할 수 없습니다"
+                  "6d2b0a84e1": "이 빌드에서는 사용할 수 없습니다",
+                  "browserReady": "Available in Orca",
+                  "clickSetUpFeatures": "Click Set Up Features",
+                  "clickSetUpFeaturesMacAccess": "click Set Up Features to open macOS access settings"
                 }
               }
             }
@@ -12002,64 +11689,6 @@
               }
             }
           },
-          "agents": {
-            "orchestration": {
-              "OrchestrationPage": {
-                "30b509a467": "하위 2개",
-                "862605d066": "2개의 하위 워크스페이스",
-                "coordinatorName": "인증 흐름 재설계",
-                "childPr1Name": "PR 1/2: users.sql 마이그레이션",
-                "childPr2Name": "PR 2/2: withSession 미들웨어"
-              },
-              "types": {
-                "coordinatorInitial": "인증 재작성을 2개의 PR로 분할 중…",
-                "codexInitial": "users 테이블 마이그레이션 작성 중…",
-                "claudeInitial": "withSession 미들웨어 스케치 중…",
-                "codexBeat1": "email_verified 컬럼 추가 중…",
-                "claudeBeat1": "withSession 미들웨어 연결 중…",
-                "coordinatorBeat1": "PR 1/2 준비 완료",
-                "coordinatorBeat2": "PR 2/2 준비 완료"
-              },
-              "steps": {
-                "name": "오케스트레이션",
-                "subtitle": "오케스트레이션",
-                "description": "에이전트가 Orca 워크스페이스를 관리하고 조정하여 더 큰 작업을 수행할 수 있도록 합니다."
-              },
-              "StatusesPage": {
-                "2f549fc0ba": "src/auth/session.test.ts",
-                "139e3d7458": "업데이트됨",
-                "7b26349cb2": "pnpm migrate latest",
-                "78f0318ac1": "실행하려고 함",
-                "79971d1539": "인증 흐름 재설계"
-              },
-              "UsageAccountsCard": {
-                "6986b36708": "사용량 한도를 표시하고 계정을 인라인으로 전환하세요.",
-                "d90d2e1f6d": "세션 및 주간 사용량을 추적합니다.",
-                "8919321417": "Codex 로그인에 실패했습니다.",
-                "c7b90c140b": "Codex 계정이 추가되었습니다.",
-                "4e71d72912": "Claude 로그인에 실패했습니다.",
-                "9ddeb558f9": "Claude 계정이 추가되었습니다.",
-                "29d0653961": "로그인",
-                "945865332e": "로그인 중"
-              },
-              "UsagePage": {
-                "64265cb295": "29% 사용 5시간",
-                "be5a165875": "다음으로 전환",
-                "277a9c65a9": "Codex 계정",
-                "4dce5ca3aa": "4일 3시간 후에 재설정됩니다.",
-                "05ce4ecdd3": "38% 사용",
-                "0470aaed99": "주간",
-                "f421abf962": "세션",
-                "5e45fb1238": "1분 전에 업데이트됨",
-                "6a4b1d3c38": "Codex"
-              },
-              "orchestration": {
-                "cards": {
-                  "da6f1f97c9": "작업 중"
-                }
-              }
-            }
-          },
           "FeatureTourWorkspaceCard": {
             "a23ed9da7f": "codex",
             "2f33dc932b": "claude",
@@ -12072,14 +11701,7 @@
           "FeatureWallBrowserAction": {
             "5022c43a88": "브라우저를 열 수 없습니다",
             "c9eb68b474": "이 워크트리에 사용할 수 있는 워크스페이스 그룹이 아직 없습니다.",
-            "c9728107c5": "사용해 보기",
-            "25dd101f15": "브라우저 설정에 주의가 필요합니다",
-            "e02b11e6b0": "브라우저 설정이 준비되었습니다",
-            "d6d15077df": "리뷰를 위해 스킬 명령을 아래에 복사하여 삽입했습니다.",
-            "78e65f19d9": "브라우저 설정에 실패했습니다",
-            "b7345c18db": "예기치 않은 오류가 발생했습니다.",
-            "5f97caf76b": "설치 중…",
-            "c2df599513": "CLI 및 스킬 설치"
+            "c9728107c5": "사용해 보기"
           },
           "ConnectIntegrationsList": {
             "3dddb2d565": "작업용으로 연결됨",
@@ -12117,39 +11739,13 @@
           }
         },
         "tips": {
-          "CliFeatureTipVisual": {
-            "badb4fc342": ">",
-            "22e62f3bab": "Claude Code 세션이 시작되었습니다."
-          },
-          "CliSkillSetupTerminal": {
-            "1953e90447": "Enter를 눌러 agents 용 Orca CLI 오케스트레이션 스킬을 설치하세요.",
-            "43b60ec5c3": "Orca CLI 및 오케스트레이션 스킬 설치 terminal",
-            "84e9576dac": "스킬 설정",
-            "5c3aee22c0": "명령 복사",
-            "5eca672aac": "스킬 설치 명령어 복사",
-            "6ff813fc1d": "스킬 명령어 복사에 실패했습니다.",
-            "b8ad063571": "스킬 설치 명령어를 복사했습니다."
-          },
           "CmdJPaletteTipDialog": {
             "c0bb9f869b": "설정 → 바로가기",
             "8241897205": "언제든지 바로가기를 다시 바인딩할 수 있습니다."
           },
           "FeatureTipActions": {
-            "eb04abece8": "나중에"
-          },
-          "FeatureTipsModal": {
-            "c169298e4d": "완료",
-            "3c6c478462": "X가 끝나면 리뷰 작업을 보냅니다.”",
-            "298301b7a0": "작업 트리",
-            "864e2db28f": "“agent가 들어오면",
-            "7fc6f02099": "각각에 대한 PR을 작성합니다.”",
-            "27c567a89c": "작업 트리",
-            "55846c7f95": "“이 PR을 두 개로 나누어",
-            "4795ac2d4a": "다음과 같이 질문해 보세요.",
-            "53905bd076": "개발 미리보기: 스킬 설정 terminal 열기.",
-            "1da82af45b": "Orca CLI에 주의가 필요합니다",
-            "ce13a742d0": "PATH에 'orca'를 등록했습니다.",
-            "d1a86c7eb5": "설정을 열어 CLI 설정을 완료하세요."
+            "eb04abece8": "나중에",
+            "working": "Working..."
           },
           "CmdJPaletteFeatureTipVisual": {
             "ab94e16d44": "작업 트리 \"{{value0}}\" 만들기",
@@ -12218,23 +11814,6 @@
             },
             "mobile": {
               "emulator": {
-                "agent": {
-                  "setup": {
-                    "state": {
-                      "fdcca1ec75": "등록 중...",
-                      "69fb2c2289": "활성화됨",
-                      "c6705092ba": "PATH 수정",
-                      "7c1b6bdb1e": "활성화",
-                      "51074ccb05": "CLI 상태를 불러오지 못했습니다.",
-                      "35dea1ae12": "agent 제어가 준비되었습니다.",
-                      "9dff3a6338": "스킬이 설치되었습니다. Orca CLI를 활성화하여 설정을 완료하세요.",
-                      "15986a1080": "Orca CLI가 준비되었습니다. 스킬을 설치하여 설정을 완료하세요.",
-                      "4c26913def": "아직 설정되지 않았습니다. agent 제어를 활성화하려면 두 단계를 모두 완료하세요.",
-                      "c94ff11e91": "설정 상태를 다시 확인할 수 없습니다.",
-                      "2b519eed94": "Orca CLI가 PATH에 등록되었습니다."
-                    }
-                  }
-                },
                 "tab": {
                   "intro": {
                     "actions": {
@@ -12245,31 +11824,9 @@
               }
             }
           },
-          "MobileEmulatorAgentSetupGuide": {
-            "2fda9ff015": "agent 제어 설정",
-            "0ac0fef514": "agent 제어가 준비되었습니다.",
-            "2bdfff8763": "agent 제어(선택 사항).",
-            "72736b051f": "agents가 이 시뮬레이터를 제어하도록 하려면 Orca CLI + 스킬을 설정하세요.",
-            "d10ae98046": "완료",
-            "3756cbeca7": "나중에",
-            "6d950431d2": "숨기기",
-            "ebceac65a4": "설정",
-            "3f003507f4": "설정에서 전체 설정 열기"
-          },
-          "MobileEmulatorAgentSetupGuideSteps": {
-            "9b49d892e3": "Orca CLI 활성화",
-            "3d8dc52c93": "agents 셸에서 에뮬레이터 제어를 위해 orca 명령을 등록합니다.",
-            "21f5687c07": "Orca CLI 스킬",
-            "64fb057667": "이 워크트리의 orca 에뮬레이터 명령을 agents에게 알려줍니다.",
-            "5c59ea96ca": "모바일 에뮬레이터 Orca CLI 스킬 설정",
-            "bff5341ac3": "모바일 에뮬레이터 Orca CLI 스킬 설치 terminal",
-            "3d34423e88": "Orca CLI를 등록하는 중",
-            "3be27641c9": "agent 셸에서 에뮬레이터 명령을 실행할 수 있도록 합니다.",
-            "3941719a56": "스킬 설정을 열기 전에 Orca CLI를 확인하고 있습니다."
-          },
           "MobileEmulatorTabIntroCallout": {
             "1924982130": "닫기",
-            "5789936d9a": "agents가 화면을 제어하는 동안 iOS 시뮬레이터를 미리 볼 수 있습니다.",
+            "5789936d9a": "?????? ??? iOS ?????? ?? ?? ?????.",
             "8014b4b80b": "유지",
             "6e051a40b7": "숨기기"
           },
@@ -14342,10 +13899,10 @@
   "runtimeRpc": {
     "startupFailure": {
       "unknownCause": "No additional error details were available.",
-      "continueButton": "Continue without CLI",
-      "title": "Orca CLI unavailable",
-      "message": "Orca couldn't start its local command transport.",
-      "detail": "Orca will continue to work, but commands such as orca status, orca terminal, and orchestration are unavailable for this session.\n\n{{guidance}}\n\nCause: {{cause}}",
+      "continueButton": "Continue without runtime",
+      "title": "Orca runtime unavailable",
+      "message": "Orca couldn't start its local runtime service.",
+      "detail": "Orca will continue to work, but in-app runtime actions such as Computer Use and Linear are unavailable for this session.\n\n{{guidance}}\n\nCause: {{cause}}",
       "guidance": {
         "permissionDenied": "Orca couldn't write its runtime file. Check permissions on Orca's data folder, then restart.",
         "storageUnavailable": "Your disk may be full or read-only. Free up space, then restart Orca.",

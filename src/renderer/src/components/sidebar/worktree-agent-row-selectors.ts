@@ -2,7 +2,6 @@ import type { RetainedAgentEntry } from '@/store/slices/agent-status'
 import type { AppState } from '@/store/types'
 import type {
   AgentStatusEntry,
-  AgentStatusOrchestrationContext,
   MigrationUnsupportedPtyEntry
 } from '../../../../shared/agent-status-types'
 import { parsePaneKey } from '../../../../shared/stable-pane-id'
@@ -12,7 +11,6 @@ import {
   patchLiveEntriesByWorktree,
   recordLiveEntriesFullRebuild
 } from './worktree-agent-live-index-patch'
-import { selectWorktreeAgentOrchestration } from './worktree-agent-orchestration-index'
 import type { TerminalLayoutSnapshot } from '../../../../shared/types'
 
 const EMPTY_LIVE_ENTRIES: AgentStatusEntry[] = []
@@ -225,23 +223,6 @@ export function selectRetainedAgentEntriesForWorktree(
   worktreeId: string
 ): RetainedAgentEntry[] {
   return getRetainedEntriesByWorktree(state).get(worktreeId) ?? EMPTY_RETAINED
-}
-
-// Why: reads a shared worktree-keyed index instead of rescanning every
-// orchestration context. Zustand re-runs each mounted card's selector on every
-// publication, so the old per-card scan was O(cards x contexts) on unrelated
-// traffic; only the first card through a given store version now pays a build.
-export function selectRuntimeAgentOrchestrationForWorktree(
-  state: Pick<
-    AppState,
-    | 'agentStatusByPaneKey'
-    | 'retainedAgentsByPaneKey'
-    | 'runtimeAgentOrchestrationByPaneKey'
-    | 'tabsByWorktree'
-  >,
-  worktreeId: string
-): Record<string, AgentStatusOrchestrationContext> {
-  return selectWorktreeAgentOrchestration(state, worktreeId)
 }
 
 export function selectTerminalLayoutsForWorktree(

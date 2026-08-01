@@ -1,5 +1,4 @@
 /* eslint-disable max-lines -- Why: PTY IPC is centralized in one main-process module so spawn env scoping, lifecycle cleanup, process inspection, and renderer IPC stay behind one audited boundary. */
-import { join, delimiter } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { statSync } from 'node:fs'
 import {
@@ -97,7 +96,6 @@ import {
   applyTerminalAttributionEnv,
   resolveAttributionShellFamily
 } from '../attribution/terminal-attribution'
-import { ensureLinuxTerminalOrcaCliShimDir } from '../cli/linux-terminal-orca-cli-shim'
 import { registerPty, unregisterPty } from '../memory/pty-registry'
 import { advertisedUrlWatcher } from '../ports/advertised-url-watcher'
 import { track } from '../telemetry/client'
@@ -381,16 +379,6 @@ function parseValidPaneKey(paneKey: unknown): ReturnType<typeof parsePaneKey> {
 
 function isValidPaneKey(paneKey: unknown): paneKey is string {
   return parseValidPaneKey(paneKey) !== null
-}
-
-function shouldRefreshNativeClaudeAgentTeamsEnv(args: {
-  command?: string
-  launchConfig?: SleepingAgentLaunchConfig
-}): boolean {
-  const capturedCommand = args.launchConfig?.agentCommand?.trim() || args.command?.trim() || ''
-  const capturedArgs = args.launchConfig?.agentArgs?.trim() ?? ''
-  const capturedLaunch = `${capturedCommand} ${capturedArgs}`.trim()
-  return /(^|\s)--teammate-mode(?:=|\s+)auto(?:\s|$)/.test(capturedLaunch)
 }
 
 function rememberPaneKeyForPty(ptyId: string, paneKey: unknown): string | null {
@@ -716,29 +704,17 @@ function readInheritedPath(baseEnv: Record<string, string>): string {
   return baseEnv.PATH ?? baseEnv.Path ?? process.env.PATH ?? process.env.Path ?? ''
 }
 
-function firstPathEntry(pathValue: string | undefined): string | null {
-  const first = pathValue?.split(delimiter).find((entry) => entry.trim().length > 0)
-  return first ?? null
-}
-
-function promoteAgentTeamsShimPath(
-  env: Record<string, string> | undefined,
-  requestedPath: string | undefined
-): void {
-  if (!env?.ORCA_AGENT_TEAMS_TEAM_ID) {
+function ensureInheritedPath(baseEnv: Record<string, string>): void {
+  if (baseEnv.PATH !== undefined || baseEnv.Path !== undefined) {
     return
   }
-  const shimPath = firstPathEntry(requestedPath)
-  if (!shimPath) {
+  const inheritedPath = readInheritedPath(baseEnv)
+  if (!inheritedPath) {
     return
   }
-  const currentPathKey = env.PATH !== undefined || env.Path === undefined ? 'PATH' : 'Path'
-  const currentPath = env[currentPathKey] ?? ''
-  const remaining = currentPath
-    .split(delimiter)
-    .filter((entry) => entry.length > 0 && entry !== shimPath)
-  // Why: host env injection prepends Orca's shims; Claude Agent Teams must still resolve our fake tmux before any real tmux.
-  env[currentPathKey] = [shimPath, ...remaining].join(delimiter)
+  const inheritedPathKey =
+    process.env.Path !== undefined && process.env.PATH === undefined ? 'Path' : 'PATH'
+  baseEnv[inheritedPathKey] = inheritedPath
 }
 
 function deleteRequestedEnvKeys(
@@ -1069,6 +1045,7 @@ export function buildPtyHostEnv(
   baseEnv: Record<string, string>,
   opts: BuildPtyHostEnvOptions
 ): Record<string, string> {
+  ensureInheritedPath(baseEnv)
   mergePersistedWindowsPath(baseEnv)
   Object.assign(baseEnv, buildConfiguredProxyEnv(opts.networkProxySettings))
 
@@ -1203,34 +1180,12 @@ export function buildPtyHostEnv(
     stripInheritedOrcaCodexHomeOverride(baseEnv)
   }
 
-  // Why: WSL shells need the managed userData root for shell-ready wrappers; dev-mode terminals need the same export so `orca` targets the live dev instance.
+  // Shell-ready wrappers resolve their managed root from the desktop profile.
   if (opts.isWsl) {
     baseEnv.ORCA_USER_DATA_PATH = opts.userDataPath
-    // Why: managed WSL registration uses `orca-ide`; exposing that literal scopes agent guidance to WSL without a bare-orca shim.
-    baseEnv.ORCA_CLI_COMMAND = opts.isPackaged ? 'orca-ide' : 'orca-dev'
-  } else {
-    if (!opts.isPackaged) {
-      baseEnv.ORCA_USER_DATA_PATH ??= opts.userDataPath
-    }
-    delete baseEnv.ORCA_CLI_COMMAND
+  } else if (!opts.isPackaged) {
+    baseEnv.ORCA_USER_DATA_PATH ??= opts.userDataPath
   }
-  // Why: dev mode needs the launcher PATH override so `orca` resolves to the dev build instead of the production binary at /usr/local/bin/orca.
-  if (!opts.isPackaged) {
-    const devCliBin = join(opts.userDataPath, 'cli', 'bin')
-    const inheritedPath = readInheritedPath(baseEnv)
-    // Why: an empty PATH segment resolves as `.` in some shells (commands run from cwd); avoid a trailing delimiter.
-    baseEnv.PATH = inheritedPath ? `${devCliBin}${delimiter}${inheritedPath}` : devCliBin
-  } else if (process.platform === 'linux') {
-    // Why: bare-`orca` shim scoped to Orca PTYs — Linux CLI installs as `orca-ide` to avoid shadowing GNOME's /usr/bin/orca screen reader (stablyai/orca#7904).
-    const shimDir = ensureLinuxTerminalOrcaCliShimDir({ userDataPath: opts.userDataPath })
-    if (shimDir) {
-      const inheritedEntries = readInheritedPath(baseEnv)
-        .split(delimiter)
-        .filter((entry) => entry.length > 0 && entry !== shimDir)
-      baseEnv.PATH = [shimDir, ...inheritedEntries].join(delimiter)
-    }
-  }
-
   // Why: PATH shims keep GitHub attribution scoped to Orca's own PTYs without rewriting user git config.
   if (!opts.githubAttributionEnabled) {
     delete baseEnv.ORCA_ENABLE_GIT_ATTRIBUTION
@@ -3449,7 +3404,6 @@ export function registerPtyHandlers(
       let env: Record<string, string> | undefined = claudeAuth
         ? { ...sshScopedEnv, ...claudeAuth.envPatch }
         : sshScopedEnv
-      const requestedAgentTeamsPath = env?.ORCA_AGENT_TEAMS_TEAM_ID ? env.PATH : undefined
       env = stripSequencedStartupResumeArgv(env, codexResumeLaunch)
       if (args.preAllocatedHandle) {
         env = { ...env, ORCA_TERMINAL_HANDLE: args.preAllocatedHandle }
@@ -3497,7 +3451,6 @@ export function registerPtyHandlers(
           networkProxySettings: getSettings?.(),
           deferGitConfigGuardToDaemon: provider.supportsGitCredentialGuardHost?.(sessionId) === true
         })
-        promoteAgentTeamsShimPath(env, requestedAgentTeamsPath)
       }
 
       const authEnvToDelete = claudeAuth?.stripAuthEnv
@@ -3551,7 +3504,6 @@ export function registerPtyHandlers(
         spawnOptions.envToDelete = removeCodexHomeDeletionRequests(spawnOptions.envToDelete)
       }
       deleteRequestedEnvKeys(env, spawnOptions.envToDelete)
-      promoteAgentTeamsShimPath(env, requestedAgentTeamsPath)
       if (launchCommand !== undefined) {
         spawnOptions.command = launchCommand
       }
@@ -4531,46 +4483,13 @@ export function registerPtyHandlers(
           : null
       const stablePaneKey = verifiedPaneKey ?? migrationUnsupportedPaneKey
       let baseEnv = baseEnvWithAuth ? { ...baseEnvWithAuth } : undefined
-      const shouldRefreshAgentTeamsEnv =
-        !args.connectionId &&
-        runtime !== undefined &&
-        stablePaneKey !== null &&
-        shouldRefreshNativeClaudeAgentTeamsEnv({
-          command: args.command,
-          launchConfig: args.launchConfig
-        })
-      let effectiveLaunchConfig = args.launchConfig
       const shouldPreAllocateTerminalHandle =
         runtime !== undefined &&
-        ((!(provider instanceof LocalPtyProvider) && !routesFreshSpawnsToLocalProvider(provider)) ||
-          shouldRefreshAgentTeamsEnv)
+        !(provider instanceof LocalPtyProvider) &&
+        !routesFreshSpawnsToLocalProvider(provider)
       const preAllocatedHandle = shouldPreAllocateTerminalHandle
         ? runtime.createPreAllocatedTerminalHandle()
         : null
-      if (shouldRefreshAgentTeamsEnv && preAllocatedHandle) {
-        // Why: Agent Teams ids/tokens are process-local, so the team env must be regenerated for the new leader PTY.
-        const prepared = await runtime.prepareClaudeAgentTeamsLeaderForHandle({
-          handle: preAllocatedHandle,
-          baseEnv: baseEnv ?? {}
-        })
-        baseEnv = {
-          ...baseEnv,
-          ...prepared.env
-        }
-        if (args.launchConfig) {
-          effectiveLaunchConfig = {
-            ...args.launchConfig,
-            agentEnv: {
-              ...args.launchConfig.agentEnv,
-              ...prepared.env
-            }
-          }
-        }
-      }
-      const requestedAgentTeamsPath = baseEnv?.ORCA_AGENT_TEAMS_TEAM_ID ? baseEnv.PATH : undefined
-      const agentTeamsEnvToDelete = shouldRefreshAgentTeamsEnv
-        ? ['TERM_PROGRAM', 'ORCA_ATTRIBUTION_SHIM_DIR']
-        : undefined
       if (baseEnv && stablePaneKey) {
         baseEnv.ORCA_PANE_KEY = stablePaneKey
         if (typeof args.tabId === 'string') {
@@ -4676,7 +4595,6 @@ export function registerPtyHandlers(
             deferGitConfigGuardToDaemon:
               provider.supportsGitCredentialGuardHost?.(effectiveSessionId) === true
           })
-          promoteAgentTeamsShimPath(env, requestedAgentTeamsPath)
         } catch (err) {
           // Why: buildPtyHostEnv has fs side-effects (Pi/OMP install); clear per-PTY state on throw, but only minted ids — caller ids may name existing PTYs.
           if (isMintedSessionId) {
@@ -4695,7 +4613,6 @@ export function registerPtyHandlers(
       let combinedEnvToDelete = mergePtyEnvDeletions(
         envToDelete,
         args.envToDelete ?? [],
-        agentTeamsEnvToDelete ?? [],
         isDaemonHostSpawn ? getInheritedAgentHookEnvKeysToDelete(spawnEnv) : [],
         getInheritedClaudeSessionStampEnvKeysToDelete(spawnEnv),
         skipCodexHomeEnv ? CODEX_HOME_ENV_KEYS : [],
@@ -4707,7 +4624,6 @@ export function registerPtyHandlers(
         combinedEnvToDelete = removeCodexHomeDeletionRequests(combinedEnvToDelete)
       }
       deleteRequestedEnvKeys(spawnEnv, combinedEnvToDelete)
-      promoteAgentTeamsShimPath(spawnEnv, requestedAgentTeamsPath)
       const spawnOptions: PtySpawnOptions = {
         cols: args.cols,
         rows: args.rows,
@@ -5174,9 +5090,7 @@ export function registerPtyHandlers(
         }
         const response = {
           ...result,
-          ...(!result.isReattach && effectiveLaunchConfig
-            ? { launchConfig: effectiveLaunchConfig }
-            : {}),
+          ...(!result.isReattach && args.launchConfig ? { launchConfig: args.launchConfig } : {}),
           // Why: a daemon-retry race can surface isReattach even for a minted session id, and a reattach must never claim its cwd was remapped.
           ...(startupCwdFallback && !result.isReattach ? { startupCwdFallback } : {}),
           // Why: the pane asked to resume and got a fresh session instead; only the
@@ -5949,7 +5863,7 @@ export function registerHeadlessPtyRuntime(
   store?: Store,
   prepareCodexSessionResume?: PrepareCodexSessionResume
 ): void {
-  // Why: headless `orca serve` has no renderer window but still needs the same PTY handlers so remote clients can drive terminals.
+  // Why: headless runtime hosts have no renderer window but still need the same PTY handlers so remote clients can drive terminals.
   const headlessWindow = {
     isDestroyed: () => true,
     webContents: {

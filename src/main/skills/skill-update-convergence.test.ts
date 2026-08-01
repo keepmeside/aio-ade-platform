@@ -55,54 +55,54 @@ describe('convergableSkillNames', () => {
   // has simply moved ahead of what this build bundles. The update really can converge.
   it('keeps a skill whose lock matches disk even when it is outdated', () => {
     const result = convergableSkillNames(
-      [placement('orca-cli', 'digest-installed')],
-      new Map([['orca-cli', 'aaaa1111']]),
-      { 'orca-cli': [revision('digest-installed', 'aaaa1111')] }
+      [placement('sample-skill', 'digest-installed')],
+      new Map([['sample-skill', 'aaaa1111']]),
+      { 'sample-skill': [revision('digest-installed', 'aaaa1111')] }
     )
-    expect([...result]).toEqual(['orca-cli'])
+    expect([...result]).toEqual(['sample-skill'])
   })
 
   it('keeps a skill whose disk content matches no known revision', () => {
     const result = convergableSkillNames(
-      [placement('orca-cli', 'digest-unknown')],
-      new Map([['orca-cli', 'aaaa1111']]),
-      { 'orca-cli': [revision('digest-other', 'bbbb2222')] }
+      [placement('sample-skill', 'digest-unknown')],
+      new Map([['sample-skill', 'aaaa1111']]),
+      { 'sample-skill': [revision('digest-other', 'bbbb2222')] }
     )
-    expect([...result]).toEqual(['orca-cli'])
+    expect([...result]).toEqual(['sample-skill'])
   })
 
   it('keeps a skill with no observable placement', () => {
     const result = convergableSkillNames(
-      [placement('orca-cli', null)],
-      new Map([['orca-cli', 'aaaa1111']]),
-      { 'orca-cli': [revision('digest-installed', 'aaaa1111')] }
+      [placement('sample-skill', null)],
+      new Map([['sample-skill', 'aaaa1111']]),
+      { 'sample-skill': [revision('digest-installed', 'aaaa1111')] }
     )
-    expect([...result]).toEqual(['orca-cli'])
+    expect([...result]).toEqual(['sample-skill'])
   })
 
   // One placement still matching the lock means the command has an anchor to write.
   it('keeps a skill when any placement still matches the lock', () => {
     const result = convergableSkillNames(
-      [placement('orca-cli', 'digest-installed'), placement('orca-cli', 'digest-pre-stub')],
-      new Map([['orca-cli', 'aaaa1111']]),
+      [placement('sample-skill', 'digest-installed'), placement('sample-skill', 'digest-pre-stub')],
+      new Map([['sample-skill', 'aaaa1111']]),
       {
-        'orca-cli': [
+        'sample-skill': [
           revision('digest-installed', 'aaaa1111'),
           revision('digest-pre-stub', 'f3727995')
         ]
       }
     )
-    expect([...result]).toEqual(['orca-cli'])
+    expect([...result]).toEqual(['sample-skill'])
   })
 
   // A lock hash we cannot place is not evidence the command is stuck.
   it('keeps a skill whose lock names no revision we know', () => {
     const result = convergableSkillNames(
-      [placement('orca-cli', 'digest-pre-stub')],
-      new Map([['orca-cli', 'not-a-known-tree']]),
-      { 'orca-cli': [revision('digest-pre-stub', 'f3727995')] }
+      [placement('sample-skill', 'digest-pre-stub')],
+      new Map([['sample-skill', 'not-a-known-tree']]),
+      { 'sample-skill': [revision('digest-pre-stub', 'f3727995')] }
     )
-    expect([...result]).toEqual(['orca-cli'])
+    expect([...result]).toEqual(['sample-skill'])
   })
 
   // Why: `diskTreeShas` silently drops digests that match no known revision, so a
@@ -110,13 +110,16 @@ describe('convergableSkillNames', () => {
   // unknown half could be anything, including a copy the command would converge.
   it('keeps a skill when one placement is stale but another is unidentifiable', () => {
     const result = convergableSkillNames(
-      [placement('orca-cli', 'digest-pre-stub'), placement('orca-cli', 'digest-unknown')],
-      new Map([['orca-cli', '091d9bcc']]),
+      [placement('sample-skill', 'digest-pre-stub'), placement('sample-skill', 'digest-unknown')],
+      new Map([['sample-skill', '091d9bcc']]),
       {
-        'orca-cli': [revision('digest-pre-stub', 'f3727995'), revision('digest-stub', '091d9bcc')]
+        'sample-skill': [
+          revision('digest-pre-stub', 'f3727995'),
+          revision('digest-stub', '091d9bcc')
+        ]
       }
     )
-    expect([...result]).toEqual(['orca-cli'])
+    expect([...result]).toEqual(['sample-skill'])
   })
 
   // Why: copies the command never writes must not defeat the gate. An
@@ -160,19 +163,19 @@ describe('convergableSkillNames', () => {
 
   it('judges each locked skill independently', () => {
     const result = convergableSkillNames(
-      [placement('orca-linear', 'digest-pre-stub'), placement('orca-cli', 'digest-installed')],
+      [placement('orca-linear', 'digest-pre-stub'), placement('sample-skill', 'digest-installed')],
       new Map([
         ['orca-linear', '091d9bcc'],
-        ['orca-cli', 'aaaa1111']
+        ['sample-skill', 'aaaa1111']
       ]),
       {
         'orca-linear': [
           revision('digest-pre-stub', 'f3727995'),
           revision('digest-stub', '091d9bcc')
         ],
-        'orca-cli': [revision('digest-installed', 'aaaa1111')]
+        'sample-skill': [revision('digest-installed', 'aaaa1111')]
       }
     )
-    expect([...result]).toEqual(['orca-cli'])
+    expect([...result]).toEqual(['sample-skill'])
   })
 })

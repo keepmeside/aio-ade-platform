@@ -1,10 +1,5 @@
 /* eslint-disable max-lines -- Why: shared type definitions for all runtime RPC methods live in one file for discoverability and import simplicity. */
-import type {
-  AgentStatusEntry,
-  AgentStatusOrchestrationContext,
-  AgentStatusState,
-  AgentType
-} from './agent-status-types'
+import type { AgentStatusEntry, AgentStatusState, AgentType } from './agent-status-types'
 import type {
   BaseRefSearchResult,
   BrowserCookieImportResult,
@@ -146,11 +141,7 @@ export type RuntimeSyncWindowGraph = {
   mobileSessionTabs?: RuntimeMobileSessionTabsSnapshot[]
 }
 
-export type RuntimeSyncWindowGraphResult = RuntimeStatus & {
-  /** Main owns terminal handles/dispatches, so renderer graph sync returns the
-   *  parent metadata needed by title-derived agent rows without name guessing. */
-  agentOrchestrationByPaneKey?: Record<string, AgentStatusOrchestrationContext>
-}
+export type RuntimeSyncWindowGraphResult = RuntimeStatus
 
 export type RuntimeMobileSessionTerminalTab = {
   type: 'terminal'
@@ -697,21 +688,13 @@ export type RuntimeTerminalWait = {
   blockedReason?: RuntimeTerminalWaitBlockedReason
 }
 
-/** One agent's live status as carried to mobile in a worktree.ps summary.
- *  Flat shape (parentPaneKey points to another row in the same worktree's list)
- *  so the client can rebuild the spawn-lineage tree desktop renders inline. */
+/** One agent's live status carried in a worktree.ps summary. */
 export type RuntimeWorktreeAgentRow = {
   paneKey: string
-  /** paneKey of the orchestration parent, or null for a root agent. */
-  parentPaneKey: string | null
   state: AgentStatusState
   agentType: AgentType | null
   /** Raw hook-reported prompt. Display surfaces can prefer displayName. */
   prompt: string
-  /** Explicit orchestration task title, or null outside dispatch. */
-  taskTitle: string | null
-  /** Explicit UI label for orchestration task rows, or null outside dispatch. */
-  displayName: string | null
   lastAssistantMessage: string | null
   toolName: string | null
   toolInput: string | null

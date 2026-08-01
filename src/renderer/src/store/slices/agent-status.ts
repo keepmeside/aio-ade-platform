@@ -7,7 +7,6 @@ import {
   agentSubagentsEqual,
   type AgentStateHistoryEntry,
   type AgentStatusEntry,
-  type AgentStatusOrchestrationContext,
   type AgentType,
   type MigrationUnsupportedPtyEntry,
   type ParsedAgentStatusPayload
@@ -33,12 +32,7 @@ import {
 } from '../../../../shared/execution-host'
 import { isExplicitAgentStatusFresh } from '@/lib/agent-status'
 import { readLastTerminalInputAt } from '@/lib/terminal-input-activity-coalescing'
-import {
-  getAgentRowGeneratedTitleText,
-  getOrcaDispatchTaskId,
-  isOrcaDispatchPrompt,
-  orchestrationLabelsMatchLiveDispatch
-} from '@/lib/agent-row-primary-text'
+import { getAgentRowGeneratedTitleText } from '@/lib/agent-row-primary-text'
 import { isCompletedPiCompatibleAgentWithLiveRecoveryRecord } from '@/lib/pi-compatible-live-recovery-record'
 import {
   resolveAgentPaneAuthorityKey,
@@ -110,8 +104,6 @@ type AgentLaunchConfigRegistryEntry = {
 export type AgentStatusSlice = {
   /** Explicit agent status entries keyed by `${tabId}:${leafId}`; real-time only, not persisted. */
   agentStatusByPaneKey: Record<string, AgentStatusEntry>
-  /** Main-synced dispatch metadata for live panes that may only have title-derived status in the renderer. */
-  runtimeAgentOrchestrationByPaneKey: Record<string, AgentStatusOrchestrationContext>
   /** PTYs still reporting legacy numeric pane keys but with registry-backed UUID proof; stored separately from normal hook-reported status. */
   migrationUnsupportedByPtyId: Record<string, MigrationUnsupportedPtyEntry>
   /** Monotonic tick that advances when agent-status freshness boundaries pass. */
@@ -151,7 +143,6 @@ export type AgentStatusSlice = {
   setAgentStatus: (
     paneKey: string,
     payload: ParsedAgentStatusPayload & {
-      orchestration?: AgentStatusOrchestrationContext
       promptInteractionKey?: string
     },
     terminalTitle?: string,
@@ -191,10 +182,6 @@ export type AgentStatusSlice = {
     metadata: AgentLaunchConfigStatusMetadata
   ) => SleepingAgentLaunchConfig | undefined
   clearAgentLaunchConfig: (paneKey: string) => void
-
-  setRuntimeAgentOrchestrationByPaneKey: (
-    entries: Record<string, AgentStatusOrchestrationContext>
-  ) => void
 
   setMigrationUnsupportedPty: (entry: MigrationUnsupportedPtyEntry) => void
   clearMigrationUnsupportedPty: (ptyId: string) => void
@@ -365,34 +352,6 @@ function getTabIdFromPaneKey(paneKey: string): string | null {
     return null
   }
   return paneKey.slice(0, separator)
-}
-
-/** True when auto-title generation would no-op without replace (custom/quick/generated). */
-function agentStatusTabAlreadyHasProtectedOrGeneratedTitle(
-  state: AppState,
-  tabId: string | null,
-  worktreeId?: string | null
-): boolean {
-  if (!tabId) {
-    return false
-  }
-  const ownerTabs = worktreeId ? state.tabsByWorktree[worktreeId] : undefined
-  if (ownerTabs) {
-    const tab = ownerTabs.find((candidate) => candidate.id === tabId)
-    return Boolean(
-      tab?.customTitle?.trim() || tab?.quickCommandLabel?.trim() || tab?.generatedTitle?.trim()
-    )
-  }
-  for (const tabs of Object.values(state.tabsByWorktree)) {
-    const tab = tabs.find((candidate) => candidate.id === tabId)
-    if (!tab) {
-      continue
-    }
-    return Boolean(
-      tab.customTitle?.trim() || tab.quickCommandLabel?.trim() || tab.generatedTitle?.trim()
-    )
-  }
-  return false
 }
 
 function getLeafIdFromPaneKey(paneKey: string): string | null {
@@ -1079,50 +1038,6 @@ function pruneMigrationUnsupportedEntries(
   return { next: changed ? next : entries, changed }
 }
 
-function orchestrationContextsEqual(
-  a: AgentStatusOrchestrationContext,
-  b: AgentStatusOrchestrationContext
-): boolean {
-  return (
-    a.taskId === b.taskId &&
-    a.dispatchId === b.dispatchId &&
-    a.taskTitle === b.taskTitle &&
-    a.displayName === b.displayName &&
-    a.parentTerminalHandle === b.parentTerminalHandle &&
-    a.parentPaneKey === b.parentPaneKey &&
-    a.coordinatorHandle === b.coordinatorHandle &&
-    a.orchestrationRunId === b.orchestrationRunId
-  )
-}
-
-function orchestrationMapsEqual(
-  a: Record<string, AgentStatusOrchestrationContext>,
-  b: Record<string, AgentStatusOrchestrationContext>
-): boolean {
-  const aKeys = Object.keys(a)
-  const bKeys = Object.keys(b)
-  if (aKeys.length !== bKeys.length) {
-    return false
-  }
-  return aKeys.every((key) => b[key] !== undefined && orchestrationContextsEqual(a[key]!, b[key]!))
-}
-
-function mergeCurrentOrchestrationContext(
-  existing: AgentStatusOrchestrationContext | undefined,
-  current: AgentStatusOrchestrationContext
-): AgentStatusOrchestrationContext {
-  if (!existing) {
-    return current
-  }
-  const sameDispatch =
-    existing.taskId === current.taskId && existing.dispatchId === current.dispatchId
-  if (!sameDispatch) {
-    return current
-  }
-  const merged = { ...existing, ...current }
-  return orchestrationContextsEqual(existing, merged) ? existing : merged
-}
-
 // Why: relay/daemon teardown drops main's rows, but renderer entries whose connectionId stamp never
 // matched (unstamped over SSH) survive and stay "fresh" 30 min (#9030). Resolve each worktree's host
 // via the canonical hostId-first precedence and keep only ids UNAMBIGUOUSLY on this connection — a
@@ -1211,7 +1126,6 @@ export const createAgentStatusSlice: StateCreator<AppState, [], [], AgentStatusS
 
   return {
     agentStatusByPaneKey: {},
-    runtimeAgentOrchestrationByPaneKey: {},
     migrationUnsupportedByPtyId: {},
     agentStatusEpoch: 0,
     transientClearedAgentStatusConnectionIds: {},
@@ -1246,10 +1160,6 @@ export const createAgentStatusSlice: StateCreator<AppState, [], [], AgentStatusS
         }
         return {
           agentStatusByPaneKey: removePaneKeys(s.agentStatusByPaneKey, retiredPaneKeySet),
-          runtimeAgentOrchestrationByPaneKey: removePaneKeys(
-            s.runtimeAgentOrchestrationByPaneKey,
-            retiredPaneKeySet
-          ),
           retainedAgentsByPaneKey: removePaneKeys(s.retainedAgentsByPaneKey, retiredPaneKeySet),
           sleepingAgentSessionsByPaneKey: removePaneKeys(
             s.sleepingAgentSessionsByPaneKey,
@@ -1314,11 +1224,6 @@ export const createAgentStatusSlice: StateCreator<AppState, [], [], AgentStatusS
         ...(from in s.agentStatusByPaneKey
           ? { agentStatusEpoch: s.agentStatusEpoch + 1, sortEpoch: s.sortEpoch + 1 }
           : {}),
-        runtimeAgentOrchestrationByPaneKey: movePaneKeyedRecord(
-          s.runtimeAgentOrchestrationByPaneKey,
-          from,
-          to
-        ),
         retainedAgentsByPaneKey: movePaneKeyedRecord(
           s.retainedAgentsByPaneKey,
           from,
@@ -1358,86 +1263,6 @@ export const createAgentStatusSlice: StateCreator<AppState, [], [], AgentStatusS
           toPaneKey: to,
           ...(transfer.ptyId ? { ptyId: transfer.ptyId } : {})
         })
-      }
-    },
-
-    setRuntimeAgentOrchestrationByPaneKey: (entries) => {
-      const generatedTitleUpdates: AgentStatusEntry[] = []
-      set((s) => {
-        const runtimeMapChanged = !orchestrationMapsEqual(
-          s.runtimeAgentOrchestrationByPaneKey,
-          entries
-        )
-        let nextLive = s.agentStatusByPaneKey
-        let liveChanged = false
-        let nextRetained = s.retainedAgentsByPaneKey
-        let retainedChanged = false
-
-        for (const [paneKey, runtimeOrchestration] of Object.entries(entries)) {
-          const liveEntry = nextLive[paneKey]
-          if (liveEntry) {
-            const merged = mergeCurrentOrchestrationContext(
-              liveEntry.orchestration,
-              runtimeOrchestration
-            )
-            if (merged !== liveEntry.orchestration) {
-              if (!liveChanged) {
-                nextLive = { ...nextLive }
-                liveChanged = true
-              }
-              const nextEntry = { ...liveEntry, orchestration: merged }
-              nextLive[paneKey] = nextEntry
-              // Why: only replace titles when labels match the live dispatch taskId; sticky completed context must not rename a later turn.
-              if (
-                (merged.displayName?.trim() || merged.taskTitle?.trim()) &&
-                orchestrationLabelsMatchLiveDispatch({
-                  prompt: nextEntry.prompt,
-                  orchestration: merged
-                })
-              ) {
-                generatedTitleUpdates.push(nextEntry)
-              }
-            }
-          }
-
-          const retainedEntry = nextRetained[paneKey]
-          if (retainedEntry) {
-            const merged = mergeCurrentOrchestrationContext(
-              retainedEntry.entry.orchestration,
-              runtimeOrchestration
-            )
-            if (merged !== retainedEntry.entry.orchestration) {
-              if (!retainedChanged) {
-                nextRetained = { ...nextRetained }
-                retainedChanged = true
-              }
-              nextRetained[paneKey] = {
-                ...retainedEntry,
-                entry: { ...retainedEntry.entry, orchestration: merged }
-              }
-            }
-          }
-        }
-
-        if (!runtimeMapChanged && !liveChanged && !retainedChanged) {
-          return s
-        }
-
-        return {
-          ...(runtimeMapChanged ? { runtimeAgentOrchestrationByPaneKey: entries } : {}),
-          ...(liveChanged ? { agentStatusByPaneKey: nextLive } : {}),
-          ...(retainedChanged ? { retainedAgentsByPaneKey: nextRetained } : {}),
-          ...(liveChanged ? { agentStatusEpoch: s.agentStatusEpoch + 1 } : {})
-        }
-      })
-      for (const entry of generatedTitleUpdates) {
-        get().setGeneratedTabTitleFromAgentPrompt(
-          entry.paneKey,
-          getAgentRowGeneratedTitleText(entry),
-          {
-            replaceExistingGeneratedTitle: true
-          }
-        )
       }
     },
 
@@ -1745,22 +1570,6 @@ export const createAgentStatusSlice: StateCreator<AppState, [], [], AgentStatusS
           return s
         }
 
-        // Why: tool/assistant fields arrive pre-merged and authoritative from main (resolveToolState
-        // in server.ts), so write them through directly — no fallback — so UserPromptSubmit clears stale tool lines.
-        const runtimeOrchestration = s.runtimeAgentOrchestrationByPaneKey[paneKey]
-        const runtimeMergedOrchestration = runtimeOrchestration
-          ? mergeCurrentOrchestrationContext(existing?.orchestration, runtimeOrchestration)
-          : undefined
-        const payloadMergedOrchestration = payload.orchestration
-          ? mergeCurrentOrchestrationContext(
-              runtimeMergedOrchestration ?? existing?.orchestration,
-              payload.orchestration
-            )
-          : undefined
-        const completedFallbackOrchestration =
-          payload.state === 'done' ? existing?.orchestration : undefined
-        const orchestration =
-          payloadMergedOrchestration ?? runtimeMergedOrchestration ?? completedFallbackOrchestration
         // Why: waiting/blocked are still the same resumable turn; child permission hooks omit the root session id.
         const canReuseExistingProviderSession =
           existing?.agentType === identity.agentType &&
@@ -1855,9 +1664,6 @@ export const createAgentStatusSlice: StateCreator<AppState, [], [], AgentStatusS
           // card; parseAgentStatusPayload clears it on tool/state change.
           interactivePrompt: payload.interactivePrompt,
           lastAssistantMessage: payload.lastAssistantMessage,
-          // Why: reused panes can start non-orchestrated work; only final done rows keep the
-          // previous lineage fallback so completed children stay grouped.
-          orchestration,
           // Why: reuse the prior array ref when the roster is unchanged so identity-comparing subscribers skip re-renders.
           subagents: agentSubagentsEqual(existing?.subagents, payload.subagents)
             ? existing?.subagents
@@ -1908,7 +1714,6 @@ export const createAgentStatusSlice: StateCreator<AppState, [], [], AgentStatusS
             entry.toolName !== existing.toolName ||
             entry.toolInput !== existing.toolInput ||
             entry.lastAssistantMessage !== existing.lastAssistantMessage ||
-            entry.orchestration !== existing.orchestration ||
             entry.subagents !== existing.subagents ||
             entry.providerSession !== existing.providerSession ||
             entry.interrupted !== existing.interrupted)
@@ -2029,45 +1834,10 @@ export const createAgentStatusSlice: StateCreator<AppState, [], [], AgentStatusS
       }
       const entryForGeneratedTitle = generatedTitleEntry.current
       if (entryForGeneratedTitle) {
-        // Why: sticky orchestration (~30m) can outlive the dispatch turn, so replace the title on matching labels or a re-dispatch's mismatched taskId.
-        const hasMatchingOrchestrationLabels = Boolean(
-          (entryForGeneratedTitle.orchestration?.displayName?.trim() ||
-            entryForGeneratedTitle.orchestration?.taskTitle?.trim()) &&
-          orchestrationLabelsMatchLiveDispatch(entryForGeneratedTitle)
+        get().setGeneratedTabTitleFromAgentPrompt(
+          paneKey,
+          getAgentRowGeneratedTitleText(entryForGeneratedTitle)
         )
-        const liveIsDispatchPrompt = isOrcaDispatchPrompt(entryForGeneratedTitle.prompt)
-        const liveDispatchTaskId = liveIsDispatchPrompt
-          ? getOrcaDispatchTaskId(entryForGeneratedTitle.prompt)
-          : null
-        const stickyOrchestrationTaskId =
-          entryForGeneratedTitle.orchestration?.taskId?.trim() || null
-        const isNewDispatchAgainstStickyOrchestration = Boolean(
-          liveDispatchTaskId &&
-          stickyOrchestrationTaskId &&
-          liveDispatchTaskId !== stickyOrchestrationTaskId
-        )
-        const shouldReplaceGeneratedTitle =
-          hasMatchingOrchestrationLabels || isNewDispatchAgainstStickyOrchestration
-        // Why: setAgentStatus is high-frequency, so only parse dispatch preambles when a title write is actually possible.
-        const mayWriteGeneratedTitle =
-          get().settings?.tabAutoGenerateTitle === true &&
-          (shouldReplaceGeneratedTitle ||
-            !agentStatusTabAlreadyHasProtectedOrGeneratedTitle(
-              get(),
-              entryForGeneratedTitle.tabId ?? getTabIdFromPaneKey(paneKey),
-              entryForGeneratedTitle.worktreeId
-            ))
-        const generatedTitlePrompt =
-          liveIsDispatchPrompt && mayWriteGeneratedTitle
-            ? getAgentRowGeneratedTitleText(entryForGeneratedTitle)
-            : entryForGeneratedTitle.prompt
-        if (shouldReplaceGeneratedTitle) {
-          get().setGeneratedTabTitleFromAgentPrompt(paneKey, generatedTitlePrompt, {
-            replaceExistingGeneratedTitle: true
-          })
-        } else {
-          get().setGeneratedTabTitleFromAgentPrompt(paneKey, generatedTitlePrompt)
-        }
       }
       // Why: schedule via queueMicrotask after set so the timer reads the updated map without re-entering the store during set.
       queueMicrotask(() => freshness.schedule())
@@ -2878,17 +2648,8 @@ export const createAgentStatusSlice: StateCreator<AppState, [], [], AgentStatusS
         }
         const next = { ...s.retainedAgentsByPaneKey }
         for (const retained of entries) {
-          const runtimeOrchestration = s.runtimeAgentOrchestrationByPaneKey[retained.entry.paneKey]
-          const mergedOrchestration = runtimeOrchestration
-            ? mergeCurrentOrchestrationContext(retained.entry.orchestration, runtimeOrchestration)
-            : retained.entry.orchestration
-          const entry =
-            mergedOrchestration !== retained.entry.orchestration
-              ? { ...retained.entry, orchestration: mergedOrchestration }
-              : retained.entry
           // INVARIANT: map key equals retained.entry.paneKey, so callers look up retained rows by the same paneKey as agentStatusByPaneKey.
-          next[retained.entry.paneKey] =
-            entry === retained.entry ? retained : { ...retained, entry }
+          next[retained.entry.paneKey] = retained
         }
         // Why: cap the map so a long multi-agent session can't leak the renderer heap (retainAgents is the only growth path); evicts oldest-retained first.
         return { retainedAgentsByPaneKey: capRetainedAgents(next) }

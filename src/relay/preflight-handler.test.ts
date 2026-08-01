@@ -236,8 +236,8 @@ describe('PreflightHandler', () => {
   it('honors required commands when reporting detected agents', async () => {
     execFileAsyncMock.mockImplementation(async (_file, args) => {
       const script = String(args[1])
-      if (script.includes("'orca'")) {
-        return { stdout: '__ORCA_AGENT_PATH__/relay/path/orca\n' }
+      if (script.includes("'codex'")) {
+        return { stdout: '__ORCA_AGENT_PATH__/relay/path/codex\n' }
       }
       throw new Error('not found')
     })
@@ -256,10 +256,7 @@ describe('PreflightHandler', () => {
     expect(handler).toBeDefined()
     await expect(
       handler!({
-        commands: [
-          { id: 'claude-agent-teams', cmd: 'orca', requiredCommands: ['claude'] },
-          { id: 'claude', cmd: 'claude' }
-        ]
+        commands: [{ id: 'codex', cmd: 'codex', requiredCommands: ['claude'] }]
       })
     ).resolves.toEqual({ agents: [] })
   })
@@ -273,9 +270,6 @@ describe('PreflightHandler', () => {
     execFileAsyncMock.mockImplementation(async (_file, args) => {
       if (String(args[0]) === 'claude') {
         return { stdout: 'C:\\Users\\test\\AppData\\Roaming\\npm\\claude.cmd\r\n' }
-      }
-      if (String(args[0]) === 'orca') {
-        return { stdout: 'C:\\Program Files\\Orca\\orca.cmd\r\n' }
       }
       throw new Error('not found')
     })
@@ -295,12 +289,7 @@ describe('PreflightHandler', () => {
       await expect(
         handler!({
           commands: [
-            {
-              id: 'claude-agent-teams',
-              cmd: 'orca',
-              requiredCommands: ['claude'],
-              unsupportedRuntimes: ['win32']
-            },
+            { id: 'codex', cmd: 'codex', unsupportedRuntimes: ['win32'] },
             { id: 'claude', cmd: 'claude' }
           ]
         })

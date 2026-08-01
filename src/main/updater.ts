@@ -37,12 +37,6 @@ import {
   getReleaseDownloadUrl
 } from './updater-prerelease-feed'
 import { fetchNudge, shouldApplyNudge } from './updater-nudge'
-import {
-  failServeUpdateHandoff,
-  getServeUpdateHandoffFailure,
-  hasServeUpdateSupervisor,
-  requestServeUpdateHandoff
-} from './serve-update-handoff'
 import type { LocalBuildFeed } from './local-builds/local-build-feed-server'
 
 type CheckFailureSource = 'event' | 'promise' | 'fallback-promise'
@@ -62,10 +56,7 @@ class ReleaseFeedPreflightError extends Error {
   }
 }
 type ReleaseFeedPreflightResult = 'ready' | 'not-available'
-export type UpdateInstallMode =
-  | 'interactive'
-  | 'supervised-headless-serve'
-  | 'unsupported-headless-serve'
+export type UpdateInstallMode = 'interactive' | 'supervised-headless-serve'
 
 const AUTO_UPDATE_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000
 const AUTO_UPDATE_RETRY_INTERVAL_MS = 60 * 60 * 1000
@@ -94,7 +85,6 @@ let nudgeCheckTimer: ReturnType<typeof setTimeout> | null = null
 let pendingQuitAndInstallTimer: ReturnType<typeof setTimeout> | null = null
 let quitAndInstallInProgress = false
 let updateInstallMode: UpdateInstallMode = 'interactive'
-let lastInstallDeferralVersion = { download: null as string | null, install: null as string | null }
 // Why: once install has committed, late 'error' events must not clear quittingForUpdate — that would re-enable dock activate mid-installer.
 let updateInstallCommitted = false
 // Why: recovery must only run after the native quitAndInstall call; pre-native errors must not clear quittingForUpdate or look like install recovery.
@@ -587,36 +577,6 @@ function getPendingInstallVersion(): string {
   return ''
 }
 
-function deferHeadlessServeInstall(phase: 'download' | 'install', version: string): boolean {
-  if (updateInstallMode !== 'unsupported-headless-serve') {
-    return false
-  }
-  const diagnosticVersion = version || 'unknown'
-  if (lastInstallDeferralVersion[phase] !== diagnosticVersion) {
-    lastInstallDeferralVersion[phase] = diagnosticVersion
-    recordUpdaterLifecycle(
-      'headless_serve_install_deferred',
-      { phase, version: version || null },
-      {
-        level: 'warn',
-        message: 'Update install deferred while hosting orca serve'
-      }
-    )
-  }
-  sendErrorStatus(
-    'This orca serve process was not started by an update-capable supervisor. Keep it running and update Orca through its service manager.',
-    true
-  )
-  return true
-}
-
-export function resolveUpdateInstallMode(isServeMode: boolean): UpdateInstallMode {
-  if (!isServeMode) {
-    return 'interactive'
-  }
-  return hasServeUpdateSupervisor() ? 'supervised-headless-serve' : 'unsupported-headless-serve'
-}
-
 function getCheckFailureKey(message: string, userInitiated?: boolean): string {
   return `${userInitiated ? 'user' : 'auto'}:${message}`
 }
@@ -645,9 +605,6 @@ async function performQuitAndInstall(): Promise<void> {
   }
 
   const pendingVersion = getPendingInstallVersion()
-  if (deferHeadlessServeInstall('install', pendingVersion)) {
-    return
-  }
   quitAndInstallInProgress = true
 
   markMacQuitAndInstallInFlight()
@@ -671,26 +628,6 @@ async function performQuitAndInstall(): Promise<void> {
       await runBeforeUpdateQuitCleanup()
       span.addEvent('pre_quit_cleanup_done')
 
-      if (
-        updateInstallMode === 'supervised-headless-serve' &&
-        !requestServeUpdateHandoff(pendingVersion)
-      ) {
-        recordUpdaterLifecycle(
-          'headless_serve_handoff_failed',
-          { version: pendingVersion || null },
-          {
-            level: 'warn',
-            message: 'Could not persist supervised serve update handoff'
-          }
-        )
-        sendErrorStatus(
-          'Could not prepare the supervised server restart. Orca remains running.',
-          true
-        )
-        resetQuitForUpdateState()
-        return
-      }
-
       recordUpdaterLifecycle('quit_and_install_invoking_native', {
         version: pendingVersion || null
       })
@@ -701,8 +638,7 @@ async function performQuitAndInstall(): Promise<void> {
       // Why: mark before the call so a sync 'error' during quitAndInstall can recover; pre-native errors must not look like install failure.
       quitAndInstallNativeInvoked = true
       // Why: invoke before killAllPty/removing close listeners so a sync 'error' (the "no filepath" path) can recover while windows and PTYs are intact.
-      const supervisorOwnsRelaunch = updateInstallMode === 'supervised-headless-serve'
-      getAutoUpdater().quitAndInstall(supervisorOwnsRelaunch, !supervisorOwnsRelaunch)
+      getAutoUpdater().quitAndInstall(false, true)
       span.addEvent('native_quit_and_install_invoked')
 
       // Why: quitAndInstall can synchronously clear quitAndInstallInProgress via recovery (Win/Linux dispatchError); skip destructive prep if it already ran.
@@ -728,7 +664,6 @@ async function performQuitAndInstall(): Promise<void> {
       }
     })
   } catch (error) {
-    failServeUpdateHandoff('Could not invoke the native updater.')
     resetQuitForUpdateState()
     recordUpdaterLifecycle(
       'quit_and_install_failed',
@@ -758,7 +693,6 @@ function handleQuitAndInstallFailure(): boolean {
   if (!quitAndInstallInProgress || !quitAndInstallNativeInvoked || updateInstallCommitted) {
     return false
   }
-  failServeUpdateHandoff('The native updater rejected the install request.')
   resetQuitForUpdateState()
   recordUpdaterLifecycle('quit_and_install_failed_via_event', undefined, {
     level: 'warn',
@@ -931,13 +865,6 @@ export function getRemoteServerUpdateSupport(): RemoteServerUpdateSupport {
       installMode: updateInstallMode,
       automatic: false,
       reason: 'updater-unavailable'
-    }
-  }
-  if (updateInstallMode === 'unsupported-headless-serve') {
-    return {
-      installMode: updateInstallMode,
-      automatic: false,
-      reason: 'manual-service-update-required'
     }
   }
   return { installMode: updateInstallMode, automatic: true, reason: 'available' }
@@ -1475,10 +1402,6 @@ export function quitAndInstall(): void {
     return
   }
 
-  if (deferHeadlessServeInstall('install', getPendingInstallVersion())) {
-    return
-  }
-
   if (
     deferMacQuitUntilInstallerReady(
       currentStatus,
@@ -1601,17 +1524,6 @@ export function setupAutoUpdater(
   _setPendingUpdateNudgeId = opts?.setPendingUpdateNudgeId ?? null
   _setDismissedUpdateNudgeId = opts?.setDismissedUpdateNudgeId ?? null
   updateInstallMode = opts?.installMode ?? 'interactive'
-  lastInstallDeferralVersion = { download: null, install: null }
-
-  const serveHandoffFailure = getServeUpdateHandoffFailure()
-  if (serveHandoffFailure) {
-    recordUpdaterLifecycle(
-      'headless_serve_handoff_failed',
-      { reason: serveHandoffFailure },
-      { level: 'warn', message: 'Supervised serve update did not complete' }
-    )
-    sendErrorStatus(`The server update did not complete: ${serveHandoffFailure}`, true)
-  }
 
   if (!app.isPackaged && !is.dev) {
     return
@@ -1626,9 +1538,9 @@ export function setupAutoUpdater(
     autoUpdater.allowDowngrade = false
     autoUpdater.disableDifferentialDownload = false
   }
-  // Why: supervised serve installs require an explicit handoff; ordinary service quits must never install implicitly.
+  // Why: service-managed runtimes must never install implicitly on ordinary quits.
   autoUpdater.autoInstallOnAppQuit = updateInstallMode === 'interactive'
-  // Why: MacUpdater ignores quitAndInstall arguments; the surviving CLI supervisor must be the only serve relaunch owner.
+  // Why: MacUpdater ignores quitAndInstall arguments; the interactive desktop app owns relaunch.
   autoUpdater.autoRunAppAfterInstall = updateInstallMode === 'interactive'
 
   // Why: our only on-machine window into electron-updater; otherwise an unexpected update-not-available or failed fetch is invisible.
@@ -1745,9 +1657,6 @@ export function downloadUpdate(): void {
   }
   const version = currentStatus.state === 'available' ? currentStatus.version : availableVersion
   if (!version) {
-    return
-  }
-  if (deferHeadlessServeInstall('download', version)) {
     return
   }
   downloadInFlight = true

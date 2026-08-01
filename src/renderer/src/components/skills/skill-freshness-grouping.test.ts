@@ -31,19 +31,19 @@ function placement(
 
 describe('groupSkillFreshness', () => {
   it('marks an eligible outdated skill as update-available with one location', () => {
-    const groups = groupSkillFreshness([placement('orca-cli')], ['orca-cli'])
+    const groups = groupSkillFreshness([placement('computer-use')], ['computer-use'])
     expect(groups).toHaveLength(1)
-    expect(groups[0]).toMatchObject({ name: 'orca-cli', status: 'update-available' })
+    expect(groups[0]).toMatchObject({ name: 'computer-use', status: 'update-available' })
     expect(groups[0]?.locations).toEqual([
-      { id: expect.any(String), path: '/home/.agents/skills/orca-cli', chip: null }
+      { id: expect.any(String), path: '/home/.agents/skills/computer-use', chip: null }
     ])
   })
 
   it('hides skills whose every copy is current', () => {
     const groups = groupSkillFreshness(
       [
-        placement('orca-cli', { status: 'current' }),
-        placement('orca-cli', { status: 'current', topology: 'provider-alias' })
+        placement('computer-use', { status: 'current' }),
+        placement('computer-use', { status: 'current', topology: 'provider-alias' })
       ],
       []
     )
@@ -93,7 +93,7 @@ describe('groupSkillFreshness', () => {
   })
 
   it('lists an edited canonical copy, which is what an update would overwrite', () => {
-    const groups = groupSkillFreshness([placement('orchestration', { status: 'unrecognized' })], [])
+    const groups = groupSkillFreshness([placement('code-review', { status: 'unrecognized' })], [])
     expect(groups).toHaveLength(1)
     expect(groups[0]?.status).toBe('cannot-update')
     expect(groups[0]?.locations[0]?.chip).toBe('unrecognized')
@@ -103,17 +103,17 @@ describe('groupSkillFreshness', () => {
     // Why: 'newer-known' is recognized official content — the updater's own install
     // or a newer release's bytes. The badge stays green for it, so a row here would
     // recreate the badge/dialog disagreement #11128 removed, from the other side.
-    const groups = groupSkillFreshness([placement('orchestration', { status: 'newer-known' })], [])
+    const groups = groupSkillFreshness([placement('code-review', { status: 'newer-known' })], [])
     expect(groups).toEqual([])
   })
 
   it('groups a blocked skill and flags the culprit location, not the main copy', () => {
     const groups = groupSkillFreshness(
       [
-        placement('orchestration'),
-        placement('orchestration', {
+        placement('code-review'),
+        placement('code-review', {
           rootId: 'home-claude',
-          unresolvedPath: '/home/.claude/skills/orchestration',
+          unresolvedPath: '/home/.claude/skills/code-review',
           status: 'unrecognized',
           topology: 'independent-copy'
         })
@@ -124,8 +124,8 @@ describe('groupSkillFreshness', () => {
     expect(groups[0]?.status).toBe('cannot-update')
     // Why: the out-of-date main copy is bare; only the poisoning copy carries a chip.
     expect(groups[0]?.locations).toEqual([
-      { id: expect.any(String), path: '/home/.agents/skills/orchestration', chip: null },
-      { id: expect.any(String), path: '/home/.claude/skills/orchestration', chip: 'unrecognized' }
+      { id: expect.any(String), path: '/home/.agents/skills/code-review', chip: null },
+      { id: expect.any(String), path: '/home/.claude/skills/code-review', chip: 'unrecognized' }
     ])
   })
 
@@ -134,10 +134,10 @@ describe('groupSkillFreshness', () => {
     // read as skipped with the duplicate flagged rather than promising an update.
     const groups = groupSkillFreshness(
       [
-        placement('orchestration', { status: 'current' }),
-        placement('orchestration', {
+        placement('code-review', { status: 'current' }),
+        placement('code-review', {
           rootId: 'home-factory',
-          unresolvedPath: '/home/.factory/skills/orchestration',
+          unresolvedPath: '/home/.factory/skills/code-review',
           topology: 'independent-copy'
         })
       ],
@@ -146,8 +146,8 @@ describe('groupSkillFreshness', () => {
     expect(groups).toHaveLength(1)
     expect(groups[0]?.status).toBe('cannot-update')
     expect(groups[0]?.locations).toEqual([
-      { id: expect.any(String), path: '/home/.agents/skills/orchestration', chip: 'current' },
-      { id: expect.any(String), path: '/home/.factory/skills/orchestration', chip: 'duplicate' }
+      { id: expect.any(String), path: '/home/.agents/skills/code-review', chip: 'current' },
+      { id: expect.any(String), path: '/home/.factory/skills/code-review', chip: 'duplicate' }
     ])
   })
 

@@ -2,8 +2,8 @@
 
 ## Problem
 
-Orca ships a built-in mobile emulator surface (live pane + `orca emulator` CLI +
-agent skill), but it is **iOS Simulator only and macOS only**:
+Orca ships a built-in mobile emulator surface (live pane + runtime API), but it
+is **iOS Simulator only and macOS only**:
 
 - `src/main/emulator/emulator-availability.ts:32` hard-returns "unavailable" for
   any `platform() !== 'darwin'`, so Windows and Linux users get nothing.
@@ -15,13 +15,12 @@ Android emulators run on Windows, Linux, and macOS via the Android SDK that
 Android Studio installs. We want Android emulation as a first-class peer of the
 iOS feature: full AVD lifecycle management, a live ~60fps pane, the full
 tap/gesture/type/button/rotate control surface, accessibility tree, app
-install/launch, runtime permissions, logcat, plus a dedicated
-`orca-emulator-android` agent skill.
+install/launch, runtime permissions, and logcat.
 
 ## Current architecture (what we reuse vs. replace)
 
 The existing stack already separates a backend from everything above it. The
-renderer pane, session registry, RPC/CLI shape, and tab system are effectively
+renderer pane, session registry, runtime RPC shape, and tab system are effectively
 **backend-agnostic** and are reused unchanged:
 
 - **Frame transport is main-owned.** `src/main/ipc/emulator-frame-stream.ts:40`
@@ -35,7 +34,6 @@ renderer pane, session registry, RPC/CLI shape, and tab system are effectively
   tab). Backend-agnostic.
 - **RPC** is declared in `src/main/runtime/rpc/methods/emulator.ts` and
   implemented in `src/main/runtime/orca-runtime-emulator.ts`.
-- **CLI** is `src/cli/specs/emulator.ts` + `src/cli/handlers/emulator.ts`.
 - **Pane** is `src/renderer/src/components/emulator-pane/**` (~50 files).
 
 What is iOS-bound and needs an Android sibling:
@@ -59,7 +57,7 @@ What is iOS-bound and needs an Android sibling:
 - Extra capabilities: accessibility tree (`uiautomator dump`), app
   install/launch (`adb install` / `am start`), runtime permissions
   (`pm grant/revoke/reset`), logcat capture.
-- A dedicated `skills/orca-emulator-android/SKILL.md`.
+- In-app setup guidance for the Android SDK and device lifecycle.
 
 ## Non-goals (v1)
 
@@ -77,7 +75,7 @@ What is iOS-bound and needs an Android sibling:
 
 Today `EmulatorBridge` *is* the iOS implementation. Refactor it into a thin
 router over a backend interface so iOS and Android share the session registry,
-RPC/CLI shape, frame IPC, and tab system. This is the only change to existing
+  runtime RPC shape, frame IPC, and tab system. This is the only change to existing
 iOS behavior, and it is a pure extraction (no semantic change).
 
 New module `src/main/emulator/backends/emulator-backend.ts`:
@@ -142,7 +140,7 @@ export interface EmulatorBackend {
   delegates. The session registry record gains a `backend: EmulatorBackendKind`
   field; `EmulatorSessionInfo` gains `streamCodec`. The existing `deviceUdid`
   field is retained as the opaque `id` to preserve wire-compat across the
-  renderer and CLI.
+  renderer and runtime API.
 
 ### New Android modules — `src/main/emulator/android/`
 
@@ -182,7 +180,7 @@ the existing `serve-sim-*` / `simctl-*` granularity (no file approaches the
 ### Streaming & control data flow
 
 **Control currently uses `adb shell input` commands.** Coordinates stay
-normalized 0–1 at every public boundary (CLI, RPC, renderer); the Android backend
+normalized 0–1 at every public boundary (runtime RPC, renderer); the Android backend
 maps them to device pixels before issuing adb-backed tap/gesture/button commands.
 The scrcpy control protocol encoders are present for a future low-latency input
 path, but video streaming does not require that path.
@@ -205,7 +203,7 @@ path, but video streaming does not require that path.
 
 ## Coordinate & input mapping
 
-- Public API (CLI/RPC/pane gestures) stays normalized 0–1, top-left origin, as
+- Public API (runtime RPC and pane gestures) stays normalized 0-1, top-left origin, as the iOS path already mandates.
   the iOS path already mandates.
 - `android-input-mapping.ts` multiplies by the current device display size before
   adb input commands are built. Rotation changes the effective frame size; the
@@ -214,21 +212,20 @@ path, but video streaming does not require that path.
   **Back** and **Recents** (no iOS equivalent); the button name → keycode map
   and the renderer's hardware-button row gain Android variants.
 
-## RPC + CLI surface
+## Runtime RPC surface
 
 Extend `src/main/runtime/rpc/methods/emulator.ts`,
-`src/main/runtime/orca-runtime-emulator.ts`, `src/cli/specs/emulator.ts`, and
-`src/cli/handlers/emulator.ts`:
+and `src/main/runtime/orca-runtime-emulator.ts`:
 
-- `orca emulator list` gains a **platform column** and shows iOS + Android
-  devices/AVDs together; device selection resolves the backend automatically
+- The emulator device-list runtime method returns iOS + Android devices/AVDs
+  together; device selection resolves the backend automatically
   (by recorded session tag, else by which backend's `listDevices()` owns the id).
-- Existing verbs (`attach`, `tap`, `gesture`, `type`, `button`, `rotate`,
+- Existing runtime actions (`attach`, `tap`, `gesture`, `type`, `button`, `rotate`,
   `exec`, `kill`, `shutdown`) route unchanged to the resolved backend.
-- New capability-gated verbs: `install`, `launch`, `permissions`, `ax`,
+- Capability-gated actions include `install`, `launch`, `permissions`, `ax`,
   `logcat`. On a backend lacking the capability they fail with a clear
   `emulator_unsupported` error rather than silently no-op.
-- Existing `--worktree` / `--device` targeting is unchanged.
+- Existing worktree and device targeting remains available through runtime params.
 
 ## Renderer pane
 
@@ -237,8 +234,8 @@ Extend `src/main/runtime/rpc/methods/emulator.ts`,
   kind.
 - Android device bezel/frame + Android entries (and a "boot AVD" affordance) in
   the attach/list UI.
-- `MobileEmulatorAgentSetupGuide*` → Android prerequisites step (install Android
-  Studio / SDK, set `ANDROID_HOME`).
+- `MobileEmulatorAvailabilityDetails` surfaces Android Studio / SDK prerequisites
+  and lets users configure the SDK path.
 - Codec-aware stream content (the canvas path above).
 - All UI follows `docs/STYLEGUIDE.md`: existing tokens from
   `src/renderer/src/assets/main.css` and shadcn primitives in
@@ -259,20 +256,12 @@ Extend `src/main/runtime/rpc/methods/emulator.ts`,
   Electron's Chromium). The wasm-decoder fallback (see Risks) would add a dep
   only if the WebCodecs spike fails.
 
-## Skill
+## Agent access
 
-New `skills/orca-emulator-android/SKILL.md`, mirroring
-`skills/orca-emulator/SKILL.md`:
-
-- Prerequisites: Android Studio / SDK installed, `ANDROID_HOME` (or
-  `ANDROID_SDK_ROOT`) set, at least one AVD or a connected device.
-- The `orca emulator ...` command table (shared CLI; Android examples).
-- Gotchas: Orca handles pixel ↔ normalized conversion (agents always pass 0–1);
-  adb device/serial targeting; no camera injection in v1; scrcpy version
-  coupling.
-- Cross-reference from the iOS skill's "When NOT to use" (which already
-  anticipates an Android backend under the same namespace).
-- Register it the same way `orca-emulator` is registered.
+Agents use the in-app emulator tools backed by the runtime methods. The runtime
+handles pixel-to-normalized conversion, device targeting, and backend capability
+checks. Android prerequisites remain Android Studio or SDK tools, `ANDROID_HOME`
+(or `ANDROID_SDK_ROOT`), and at least one AVD or connected device.
 
 ## Availability & platform gating
 
@@ -356,21 +345,21 @@ Electron validation (manual, on a machine with the Android SDK):
    refactor); keep all iOS tests green.
 3. Android device management (`android-sdk-discovery`, `adb-devices`,
    `avd-manager`, `android-availability`) + availability aggregation; surface
-   Android devices in `orca emulator list`.
+   Android devices in the emulator pane and runtime device list.
 4. scrcpy streaming (`scrcpy-server-deploy`, `scrcpy-video-stream`) + the video
    IPC channel + the renderer WebCodecs canvas path; live pane renders.
 5. scrcpy control (`scrcpy-control-channel`, `android-input-mapping`) +
    tap/gesture/type/button/rotate end-to-end.
 6. Extra capabilities: `ax`, `install`/`launch`, `permissions`, `logcat`.
 7. Renderer polish: Android hardware buttons, bezel, setup guide.
-8. Packaging (`scrcpy-server.jar` resource) + the `orca-emulator-android` skill.
+8. Packaging (`scrcpy-server.jar` resource) and setup guidance.
 9. Tests at each step; typecheck + lint; Electron validation on Windows + macOS.
 
 ## Open decisions
 
-- Whether `orca emulator install`/`launch`/`logcat` should also be exposed for
+- Whether install, launch, and logcat runtime actions should also be exposed for
   iOS later (iOS install is `xcrun simctl install`); v1 leaves them
   Android-only via capability flags.
-- Whether to expose an explicit `orca emulator boot <avd>` verb vs. folding boot
-  into `attach`; initial version folds boot into `attach` (parity with iOS,
-  which boots on attach) and adds a `--no-boot` opt-out.
+- Whether to expose an explicit boot action vs. folding boot into `attach`;
+  initial version folds boot into `attach` (parity with iOS, which boots on
+  attach) and accepts a runtime opt-out.

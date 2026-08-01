@@ -201,8 +201,8 @@ function makeLineage(worktree: Worktree, parent: Worktree): WorktreeLineage {
     worktreeInstanceId: worktree.instanceId!,
     parentWorktreeId: parent.id,
     parentWorktreeInstanceId: parent.instanceId!,
-    origin: 'orchestration',
-    capture: { source: 'orchestration-context', confidence: 'explicit' },
+    origin: 'manual',
+    capture: { source: 'manual-action', confidence: 'explicit' },
     createdAt: 1
   }
 }

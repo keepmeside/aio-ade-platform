@@ -1,11 +1,9 @@
 import type { PtySpawnOptions } from './types'
-import type { RemoteCliBridgeEnv } from './ssh-pty-provider-contract'
 import { buildSshPtySpawnEnv } from './ssh-pty-spawn-env'
 import { PTY_STARTUP_INGRESS_VERSION } from '../../shared/pty-startup-ingress'
 
 export function buildSshPtySpawnRequest(args: {
   options: PtySpawnOptions
-  remoteCliBridgeEnv?: RemoteCliBridgeEnv
   supportsCreateOperation: boolean
 }): Record<string, unknown> {
   const { options } = args
@@ -15,8 +13,7 @@ export function buildSshPtySpawnRequest(args: {
     cwd: options.cwd,
     env: buildSshPtySpawnEnv({
       env: options.env,
-      envToDelete: options.envToDelete,
-      remoteCliBridgeEnv: args.remoteCliBridgeEnv
+      envToDelete: options.envToDelete
     }),
     ...(options.envToDelete?.length ? { envToDelete: options.envToDelete } : {}),
     // Why: the relay needs launch identity for plugin env overlays and provider-side delivery.

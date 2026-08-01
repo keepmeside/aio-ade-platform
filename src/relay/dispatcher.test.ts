@@ -224,19 +224,17 @@ describe('RelayDispatcher', () => {
     const ownerId = dispatcher.attachClient((data) => {
       ownerWritten.push(Buffer.from(data))
     })
-    const cliId = dispatcher.attachClient(() => {})
+    const callerId = dispatcher.attachClient(() => {})
 
-    const pending = dispatcher.requestAnyClient(
-      'orca.cli',
-      { argv: ['status'] },
-      { excludeClientId: cliId }
-    )
+    const pending = dispatcher.requestAnyClient('status.get', undefined, {
+      excludeClientId: callerId
+    })
 
     expect(ownerWritten).toHaveLength(1)
     const requestFrame = decodeFirstFrame(ownerWritten[0])
     const request = JSON.parse(requestFrame.payload.toString('utf-8')) as JsonRpcRequest
-    expect(request.method).toBe('orca.cli')
-    expect(request.params).toEqual({ argv: ['status'] })
+    expect(request.method).toBe('status.get')
+    expect(request.params).toBeUndefined()
 
     dispatcher.feedClient(
       ownerId,
@@ -251,19 +249,17 @@ describe('RelayDispatcher', () => {
     const ownerId = dispatcher.attachClient((data) => {
       ownerWritten.push(Buffer.from(data))
     })
-    const cliId = dispatcher.attachClient(() => {})
+    const callerId = dispatcher.attachClient(() => {})
 
-    const pending = dispatcher.requestAnyClient(
-      'orca.cli',
-      { argv: ['status'] },
-      { excludeClientId: cliId }
-    )
+    const pending = dispatcher.requestAnyClient('status.get', undefined, {
+      excludeClientId: callerId
+    })
 
     expect(written).toHaveLength(0)
     expect(ownerWritten).toHaveLength(1)
     const requestFrame = decodeFirstFrame(ownerWritten[0])
     const request = JSON.parse(requestFrame.payload.toString('utf-8')) as JsonRpcRequest
-    expect(request.method).toBe('orca.cli')
+    expect(request.method).toBe('status.get')
 
     dispatcher.feedClient(
       ownerId,

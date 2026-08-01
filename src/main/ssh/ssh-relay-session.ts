@@ -3,7 +3,6 @@
 
 import type { BrowserWindow } from 'electron'
 import { deployAndLaunchRelay } from './ssh-relay-deploy'
-import { execCommand } from './ssh-relay-deploy-helpers'
 import { isRelayVersionMismatchError } from './ssh-relay-version-mismatch-error'
 import type { RelayVersionMismatchError } from './ssh-relay-version-mismatch-error'
 import { SshChannelMultiplexer } from './ssh-channel-multiplexer'
@@ -52,9 +51,7 @@ import { PortScanner } from './ssh-port-scanner'
 import { isMainWindowVisible, onMainWindowBecameVisible } from '../window/main-window-visibility'
 import type { SshPortForwardManager } from './ssh-port-forward'
 import type { SshConnection } from './ssh-connection'
-import { joinRemotePath, isWindowsRemoteHost, type RemoteHostPlatform } from './ssh-remote-platform'
-import { makeRemoteDirectoryCommand } from './ssh-remote-commands'
-import { createRemoteCliInstallPlan } from './ssh-remote-cli-launcher'
+import { isWindowsRemoteHost, type RemoteHostPlatform } from './ssh-remote-platform'
 import {
   DEFAULT_SSH_RELAY_GRACE_PERIOD_SECONDS,
   type DetectedPort,
@@ -64,7 +61,6 @@ import {
 } from '../../shared/ssh-types'
 import type { Store } from '../persistence'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
-import { runRemoteOrcaCli } from './ssh-remote-orca-cli'
 import { toSshExecutionHostId, type ExecutionHostId } from '../../shared/execution-host'
 import { isTerminalLeafId, makePaneKey } from '../../shared/stable-pane-id'
 import { isValidTerminalTabId } from '../../shared/terminal-tab-id'
@@ -74,14 +70,9 @@ export type RelaySessionState = 'idle' | 'deploying' | 'ready' | 'reconnecting' 
 type SshPtyExitPayload = Parameters<SshPtyExitCallback>[0]
 type PendingPtyReattach = { exits: SshPtyExitPayload[] }
 
-type RemoteCliBridgeEnv = {
+type RemoteRelayHostInfo = {
   remoteHome: string
-  binDir: string
-  relayDir: string
-  nodePath: string
-  sockPath: string
   hostPlatform: RemoteHostPlatform
-  pathDelimiter?: ':' | ';'
 }
 
 type ExpectedPtyIdentity = { paneKey?: string; tabId?: string }
@@ -148,7 +139,7 @@ export class SshRelaySession {
   private portScanner: PortScanner | null = null
   private currentConnection: SshConnection | null = null
   private hostPlatform: RemoteHostPlatform | null = null
-  private remoteCliBridgeEnv: RemoteCliBridgeEnv | null = null
+  private remoteRelayHostInfo: RemoteRelayHostInfo | null = null
   private forwardedReattachReplayByPty = new Map<string, ForwardedReplayFingerprint>()
   private pendingPtyReattaches = new Map<string, PendingPtyReattach>()
 
@@ -212,19 +203,19 @@ export class SshRelaySession {
   }
 
   getHostPlatform(): RemoteHostPlatform | null {
-    return this.remoteCliBridgeEnv?.hostPlatform ?? this.hostPlatform
+    return this.remoteRelayHostInfo?.hostPlatform ?? this.hostPlatform
   }
 
   getAiVaultHostInfo(): SshRelayAiVaultHostInfo | null {
-    const env = this.remoteCliBridgeEnv
-    if (!env) {
+    const hostInfo = this.remoteRelayHostInfo
+    if (!hostInfo) {
       return null
     }
     return {
       targetId: this.targetId,
       executionHostId: toSshExecutionHostId(this.targetId),
-      remoteHome: env.remoteHome,
-      hostPlatform: env.hostPlatform
+      remoteHome: hostInfo.remoteHome,
+      hostPlatform: hostInfo.hostPlatform
     }
   }
 
@@ -249,21 +240,14 @@ export class SshRelaySession {
     this.currentConnection = conn
 
     try {
-      const { transport, remoteHome, remoteRelayDir, nodePath, sockPath, hostPlatform } =
-        await deployAndLaunchRelay(conn, undefined, graceTimeSeconds, this.targetId)
+      const { transport, remoteHome, hostPlatform } = await deployAndLaunchRelay(
+        conn,
+        undefined,
+        graceTimeSeconds,
+        this.targetId
+      )
       this.hostPlatform = hostPlatform ?? null
-      this.remoteCliBridgeEnv =
-        remoteHome && remoteRelayDir && nodePath && sockPath && hostPlatform
-          ? {
-              remoteHome,
-              binDir: joinRemotePath(hostPlatform, remoteHome, '.orca-relay', 'bin'),
-              relayDir: remoteRelayDir,
-              nodePath,
-              sockPath,
-              hostPlatform,
-              pathDelimiter: hostPlatform.pathDelimiter
-            }
-          : null
+      this.remoteRelayHostInfo = remoteHome && hostPlatform ? { remoteHome, hostPlatform } : null
 
       // Why: dispose() can fire during the await above; if it did, creating a mux/providers now would leak with no owner to dispose them.
       if (this.isDisposed()) {
@@ -348,21 +332,14 @@ export class SshRelaySession {
     this.teardownProviders('connection_lost')
 
     try {
-      const { transport, remoteHome, remoteRelayDir, nodePath, sockPath, hostPlatform } =
-        await deployAndLaunchRelay(conn, undefined, graceTimeSeconds, this.targetId)
+      const { transport, remoteHome, hostPlatform } = await deployAndLaunchRelay(
+        conn,
+        undefined,
+        graceTimeSeconds,
+        this.targetId
+      )
       this.hostPlatform = hostPlatform ?? null
-      this.remoteCliBridgeEnv =
-        remoteHome && remoteRelayDir && nodePath && sockPath && hostPlatform
-          ? {
-              remoteHome,
-              binDir: joinRemotePath(hostPlatform, remoteHome, '.orca-relay', 'bin'),
-              relayDir: remoteRelayDir,
-              nodePath,
-              sockPath,
-              hostPlatform,
-              pathDelimiter: hostPlatform.pathDelimiter
-            }
-          : null
+      this.remoteRelayHostInfo = remoteHome && hostPlatform ? { remoteHome, hostPlatform } : null
 
       if (abortController.signal.aborted || this.isDisposed()) {
         // Why: relay is already running remotely — a throwaway mux we immediately dispose sends a clean shutdown so it doesn't linger until grace expires.
@@ -516,23 +493,7 @@ export class SshRelaySession {
       return false
     }
 
-    try {
-      await this.installRemoteOrcaCliLauncher()
-    } catch (error) {
-      // Why: on MaxSessions=1 remotes the relay holds the only slot, so this raw-connection install can fail — don't fail the whole connection.
-      console.warn(
-        `[ssh-relay-session] remote orca CLI launcher install failed for ${this.targetId}: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      )
-    }
-    if (shouldContinue && !shouldContinue()) {
-      return false
-    }
-
-    this.wireUpRemoteOrcaCli(mux)
-
-    const ptyProvider = new SshPtyProvider(this.targetId, mux, this.remoteCliBridgeEnv ?? undefined)
+    const ptyProvider = new SshPtyProvider(this.targetId, mux)
     registerSshPtyProvider(this.targetId, ptyProvider)
 
     const connection = this.requireReadyConnection()
@@ -540,7 +501,7 @@ export class SshRelaySession {
       connection.usesSystemSshTransport?.() === true
         ? undefined
         : (options?: { signal?: AbortSignal }) => this.requireReadyConnection().sftp(options)
-    // Why: getHostPlatform() falls back to this.hostPlatform when bridge env is incomplete, so path rules still match the host.
+    // Why: platform detection may be absent on older relays, so provider paths still accept an unknown host.
     const hostPlatform = this.getHostPlatform() ?? undefined
     const fsProvider = new SshFilesystemProvider(
       this.targetId,
@@ -566,11 +527,7 @@ export class SshRelaySession {
     )
     registerSshFilesystemProvider(this.targetId, fsProvider)
 
-    const gitProvider = new SshGitProvider(
-      this.targetId,
-      mux,
-      this.remoteCliBridgeEnv?.hostPlatform ?? null
-    )
+    const gitProvider = new SshGitProvider(this.targetId, mux, this.getHostPlatform())
     registerSshGitProvider(this.targetId, gitProvider)
 
     this.wireUpPtyEvents(ptyProvider)
@@ -594,8 +551,8 @@ export class SshRelaySession {
       return
     }
     if (
-      this.remoteCliBridgeEnv?.hostPlatform &&
-      isWindowsRemoteHost(this.remoteCliBridgeEnv.hostPlatform)
+      this.getHostPlatform() &&
+      isWindowsRemoteHost(this.getHostPlatform() as RemoteHostPlatform)
     ) {
       // Why: managed hook installers emit POSIX-only scripts/paths; Windows remotes rely on relay-injected env + plugin overlays instead.
       return
@@ -630,70 +587,6 @@ export class SshRelaySession {
         }`
       )
     }
-  }
-
-  private async installRemoteOrcaCliLauncher(): Promise<void> {
-    if (!this.remoteCliBridgeEnv) {
-      return
-    }
-    const { binDir, hostPlatform } = this.remoteCliBridgeEnv
-    const plan = createRemoteCliInstallPlan(this.remoteCliBridgeEnv)
-    const conn = this.requireReadyConnection()
-    await execCommand(conn, makeRemoteDirectoryCommand(hostPlatform, binDir), {
-      wrapCommand: !isWindowsRemoteHost(hostPlatform)
-    })
-    if (typeof conn.writeFile === 'function') {
-      for (const file of plan.files) {
-        await conn.writeFile(file.path, file.contents, { hostPlatform })
-      }
-    } else {
-      const sftp = await conn.sftp()
-      try {
-        for (const file of plan.files) {
-          await new Promise<void>((resolve, reject) => {
-            const ws = sftp.createWriteStream(file.path)
-            sftp.once('error', reject)
-            ws.once('close', resolve)
-            ws.once('error', reject)
-            ws.end(file.contents)
-          })
-        }
-      } finally {
-        sftp.end()
-      }
-    }
-    for (const command of plan.postWriteCommands) {
-      await execCommand(conn, command, { wrapCommand: !isWindowsRemoteHost(hostPlatform) })
-    }
-  }
-
-  private wireUpRemoteOrcaCli(mux: SshChannelMultiplexer): void {
-    mux.onRequest('orca.cli', async (params) => {
-      if (!this.runtime) {
-        throw new Error('Orca runtime is unavailable')
-      }
-      const argv = Array.isArray(params.argv)
-        ? params.argv.filter((item): item is string => typeof item === 'string')
-        : []
-      const cwd = typeof params.cwd === 'string' && params.cwd.length > 0 ? params.cwd : '/'
-      const rawEnv = params.env
-      const env =
-        rawEnv && typeof rawEnv === 'object' && !Array.isArray(rawEnv)
-          ? Object.fromEntries(
-              Object.entries(rawEnv).filter(
-                (entry): entry is [string, string] =>
-                  typeof entry[0] === 'string' && typeof entry[1] === 'string'
-              )
-            )
-          : {}
-      const stdin = typeof params.stdin === 'string' ? params.stdin : undefined
-      return await runRemoteOrcaCli(this.runtime, {
-        argv,
-        cwd,
-        env,
-        ...(stdin !== undefined ? { stdin } : {})
-      })
-    })
   }
 
   // Why: ship plugin/extension source from Orca so agent-event changes don't force a relay redeploy (agent-status-over-ssh.md §4/§8). Best-effort.

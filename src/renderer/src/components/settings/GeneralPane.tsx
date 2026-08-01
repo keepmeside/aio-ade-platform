@@ -2,13 +2,11 @@ import type React from 'react'
 import type { GlobalSettings } from '../../../../shared/types'
 import { useAppStore } from '../../store'
 import { Separator } from '../ui/separator'
-import { CliSection } from './CliSection'
 import { GeneralEditorSettingsSection } from './GeneralEditorSettingsSection'
 import { GeneralSupportSection } from './GeneralSupportSection'
 import { GeneralUpdateSettingsSection } from './GeneralUpdateSettingsSection'
 import { GeneralWorkspaceSettingsSection } from './GeneralWorkspaceSettingsSection'
 import {
-  getGeneralCliSearchEntries,
   getGeneralEditorSearchEntries,
   getGeneralNavigationSearchEntries,
   getGeneralPaneSearchEntries,
@@ -183,16 +181,6 @@ export function GeneralPane({
         updateSettings={updateSettings}
         fontSuggestions={fontSuggestions}
         onRequestFontSuggestions={onRequestFontSuggestions}
-      />
-    ) : null,
-    matchesSettingsSearch(searchQuery, getGeneralCliSearchEntries()) ? (
-      <CliSection
-        key="cli"
-        currentPlatform={getDesktopPlatformFromUserAgent(navigator.userAgent)}
-        settings={settings}
-        wslSupportedPlatform={wslSupportedPlatform}
-        wslAvailable={wslAvailable}
-        wslCapabilitiesLoading={wslCapabilitiesLoading}
       />
     ) : null,
     matchesSettingsSearch(searchQuery, getGeneralUpdateSearchEntries()) ? (

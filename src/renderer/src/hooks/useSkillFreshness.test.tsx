@@ -107,12 +107,12 @@ describe('useSkillFreshness', () => {
     const second = deferred<SkillFreshnessInventory>()
     const freshnessInventory = vi
       .fn()
-      .mockResolvedValueOnce(inventory(1, ['orca-cli']))
+      .mockResolvedValueOnce(inventory(1, ['computer-use']))
       .mockReturnValueOnce(second.promise)
     window.api = { skills: { freshnessInventory } } as never
 
     await act(async () => root?.render(<Probe />))
-    expect(state?.inventory?.eligibleUpdateNames).toEqual(['orca-cli'])
+    expect(state?.inventory?.eligibleUpdateNames).toEqual(['computer-use'])
 
     await act(async () => window.dispatchEvent(new Event('focus')))
     expect(freshnessInventory).toHaveBeenCalledTimes(1)

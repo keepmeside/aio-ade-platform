@@ -7,8 +7,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AgentSkillSetupPanel } from './AgentSkillSetupPanel'
 import { TooltipProvider } from '../ui/tooltip'
 
-const INSTALL_COMMAND = 'npx skills add https://github.com/stablyai/orca --skill orca-cli --global'
-const UPDATE_COMMAND = 'npx skills update orca-cli --global'
+const INSTALL_COMMAND =
+  'npx skills add https://github.com/stablyai/orca --skill computer-use --global'
+const UPDATE_COMMAND = 'npx skills update computer-use --global'
 
 const mocks = vi.hoisted(() => ({
   clipboardWrite: vi.fn(),
@@ -165,37 +166,6 @@ describe('AgentSkillSetupPanel', () => {
     expect(buttonLabels(html)).not.toContain('Re-check')
   })
 
-  it('keeps update copy until the installed panel checks CLI prerequisites', () => {
-    const html = renderPanel({
-      installed: true,
-      installLabel: 'Install CLI & Skill',
-      preInstallNotice: 'Install the Orca CLI before running agent skill setup.'
-    })
-
-    expect(html).toContain('Installed')
-    expect(buttonLabels(html)).toContain('Update')
-    expect(buttonLabels(html)).not.toContain('Install CLI &amp; Skill')
-  })
-
-  it('keeps the installed action label when CLI prerequisites are missing', async () => {
-    await renderInteractivePanel({
-      installed: true,
-      installedCommand: UPDATE_COMMAND,
-      installLabel: 'Install CLI & Skill',
-      preInstallNotice: 'Install the Orca CLI before running agent skill setup.',
-      getPrerequisiteStatus: vi.fn(
-        async () =>
-          ({
-            state: 'not_installed'
-          }) as Awaited<ReturnType<typeof window.api.cli.getInstallStatus>>
-      ),
-      isPrerequisiteAvailable: () => false
-    })
-
-    expect(findButton('Update').disabled).toBe(false)
-    expect(container?.textContent).not.toContain('Install CLI & Skill')
-  })
-
   it('can hide install after the skill is detected', () => {
     const html = renderPanel({ installed: true, showInstallWhenInstalled: false })
 
@@ -238,7 +208,7 @@ describe('AgentSkillSetupPanel', () => {
     expect(mocks.toastSuccess).toHaveBeenCalledWith('Copied command.')
   })
 
-  it('shows a visible pending state while CLI setup preflight is running', async () => {
+  it('shows a visible pending state while setup preflight is running', async () => {
     let resolvePreflight: (() => void) | null = null
     const preflight = new Promise<void>((resolve) => {
       resolvePreflight = resolve

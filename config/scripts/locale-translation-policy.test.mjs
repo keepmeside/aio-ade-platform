@@ -131,22 +131,6 @@ describe('locale-translation-policy', () => {
     ).toBe('보내기')
     expect(
       repairTranslatedValue({
-        key: 'auto.components.settings.orchestration.search.ca54c69806',
-        enValue: 'DAG',
-        localeValue: '가리비',
-        locale: 'ko'
-      })
-    ).toBe('DAG')
-    expect(
-      repairTranslatedValue({
-        key: 'auto.components.settings.CliSection.068552b191',
-        enValue: 'Removing…',
-        localeValue: '풀이…',
-        locale: 'ko'
-      })
-    ).toBe('제거 중…')
-    expect(
-      repairTranslatedValue({
         key: 'auto.components.status.bar.SshStatusSegment.63a2b965f6',
         enValue: 'pulling',
         localeValue: '풀 중',

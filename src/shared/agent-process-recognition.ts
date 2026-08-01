@@ -70,9 +70,6 @@ for (const [agent, config] of Object.entries(TUI_AGENT_CONFIG) as [
   ]) {
     const normalized = normalizeProcessName(candidate)
     if (normalized) {
-      // Why: claude-agent-teams is an Orca wrapper whose child process is the
-      // real `claude` binary. Do not let wrapper configs overwrite canonical
-      // CLI ownership for the same foreground process name.
       if (!PROCESS_TO_AGENT.has(normalized)) {
         PROCESS_TO_AGENT.set(normalized, agent)
       }
@@ -290,10 +287,6 @@ export function recognizeAgentProcessFromCommandLine(
   const tokens = tokenizeCommandLine(commandLine)
   const firstNormalized = normalizeProcessName(tokens[0])
   let direct = recognizeAgentProcess(tokens[0])
-  // Why: the generic Orca CLI is not an agent; only this subcommand launches its TUI mode.
-  if (direct?.agent === 'claude-agent-teams' && tokens[1]?.toLowerCase() !== 'claude-teams') {
-    direct = null
-  }
   const directRecognition = keep ? direct : filterHeadlessOneShotAgentCommand(direct, tokens)
   if (directRecognition) {
     return directRecognition
@@ -305,12 +298,6 @@ export function recognizeAgentProcessFromCommandLine(
   const viaEntrypoint = isPythonProcessName(firstNormalized)
     ? recognizePythonEntrypoint(tokens, entrypoint)
     : (recognizeAgentProcess(entrypoint) ?? recognizeNodeScriptEntrypoint(entrypoint))
-  if (
-    viaEntrypoint?.agent === 'claude-agent-teams' &&
-    tokens[tokens.indexOf(entrypoint, 1) + 1]?.toLowerCase() !== 'claude-teams'
-  ) {
-    return null
-  }
   return keep ? viaEntrypoint : filterHeadlessOneShotAgentCommand(viaEntrypoint, tokens)
 }
 export function isAgentForegroundWrapperProcess(processName: string | null | undefined): boolean {

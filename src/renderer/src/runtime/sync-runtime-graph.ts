@@ -733,10 +733,7 @@ async function syncRuntimeGraph(): Promise<void> {
   }
 
   try {
-    const result = await window.api.runtime.syncWindowGraph(graph)
-    getStoreState()?.setRuntimeAgentOrchestrationByPaneKey?.(
-      result?.agentOrchestrationByPaneKey ?? {}
-    )
+    await window.api.runtime.syncWindowGraph(graph)
   } catch (error) {
     console.error('[runtime] Failed to sync renderer graph:', error)
   }

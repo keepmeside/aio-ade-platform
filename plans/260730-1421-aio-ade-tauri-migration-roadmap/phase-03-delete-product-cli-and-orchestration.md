@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Xóa product CLI, Agent Teams và orchestration bridge"
-status: pending
+status: completed
 priority: P1
 effort: "3-5 ngày"
 dependencies: [2]
@@ -64,7 +64,7 @@ Focused CLI-deletion/PTY/SSH tests, rồi `pnpm typecheck && pnpm test && pnpm l
 
 ## Success Criteria
 
-- [ ] `src/cli`, Agent Teams, orchestration bridge, headless serve và installers/shims không còn.
-- [ ] Generic PTY/headless emulator/SSH/file/remote runtime xanh.
-- [ ] Root build/lint/reliability gates không tham chiếu mobile/CLI đã xóa.
-- [ ] Không ghost command, orphan artifact hoặc Linux name collision.
+- [x] `src/cli`, Agent Teams, orchestration bridge, headless serve và installers/shims không còn.
+- [x] Generic PTY/headless emulator/SSH/file/remote runtime xanh.
+- [x] Root build/lint/reliability gates không tham chiếu mobile/CLI đã xóa.
+- [x] Không ghost command, orphan artifact hoặc Linux name collision.

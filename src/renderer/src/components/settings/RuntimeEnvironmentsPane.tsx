@@ -846,16 +846,9 @@ export function RuntimeEnvironmentsPane({
                   className="h-8 min-w-0 font-mono text-xs"
                 />
                 <p id="runtime-server-pairing-code-help" className="text-xs text-muted-foreground">
-                  {translate('auto.components.settings.RuntimeEnvironmentsPane.163671f7b5', 'Run')}{' '}
-                  <span className="font-mono">
-                    {translate(
-                      'auto.components.settings.RuntimeEnvironmentsPane.960e901ae4',
-                      'orca serve --pairing-address <host>'
-                    )}
-                  </span>{' '}
                   {translate(
                     'auto.components.settings.RuntimeEnvironmentsPane.55fcc964cd',
-                    'on the server and paste the printed pairing URL.'
+                    'Paste a pairing URL issued by the Aio-ADE runtime host.'
                   )}
                 </p>
               </div>

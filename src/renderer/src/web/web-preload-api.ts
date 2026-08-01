@@ -801,7 +801,6 @@ function createWebPreloadApi(): Partial<PreloadApi> {
     grokAccounts: createGrokAccountsApi(),
     codexAccounts: createAccountsApi(),
     claudeAccounts: createAccountsApi(),
-    cli: createCliApi(),
     agentHooks: createAgentHooksApi(),
     macosTccPrompts: createMacosTccPromptsApi(),
     // Why: the desktop derives this from the host filesystem, which the web
@@ -1307,8 +1306,7 @@ function createRuntimeApi(): NonNullable<Partial<PreloadApi>['runtime']> {
     getPairingUrl: () => Promise.resolve({ available: false as const }),
     listAccessGrants: () => Promise.resolve({ grants: [] }),
     revokeAccess: () => Promise.resolve({ revoked: false }),
-    isWebSocketReady: () =>
-      Promise.resolve({ ready: Boolean(activeEnvironment), endpoint: null }),
+    isWebSocketReady: () => Promise.resolve({ ready: Boolean(activeEnvironment), endpoint: null }),
     consumeAuthFailure: () => Promise.resolve(false),
     getTerminalFitOverrides: () => Promise.resolve([]),
     getTerminalDrivers: () => Promise.resolve([]),
@@ -2679,31 +2677,6 @@ function createPreflightApi(): NonNullable<Partial<PreloadApi>['preflight']> {
           ).catch(() => fallbackWindowsTerminalCapabilities)
         : Promise.resolve(fallbackWindowsTerminalCapabilities)
   }
-}
-
-function createCliApi(): NonNullable<Partial<PreloadApi>['cli']> {
-  const status = {
-    platform: getBrowserPlatform(),
-    commandName: getBrowserPlatform() === 'linux' ? 'orca-ide' : 'orca',
-    commandPath: null,
-    pathDirectory: null,
-    pathConfigured: false,
-    launcherPath: null,
-    installMethod: null,
-    supported: false,
-    state: 'unsupported',
-    currentTarget: null,
-    unsupportedReason: 'launch_mode_unavailable',
-    detail: 'CLI registration is managed on the Orca server, not in the web browser.'
-  } as const
-  return {
-    getInstallStatus: () => Promise.resolve(status),
-    install: () => Promise.resolve(status),
-    remove: () => Promise.resolve(status),
-    getWslInstallStatus: (_args?: { distro?: string | null }) => Promise.resolve(status),
-    installWsl: (_args?: { distro?: string | null }) => Promise.resolve(status),
-    removeWsl: (_args?: { distro?: string | null }) => Promise.resolve(status)
-  } as NonNullable<Partial<PreloadApi>['cli']>
 }
 
 function createAgentHooksApi(): NonNullable<Partial<PreloadApi>['agentHooks']> {

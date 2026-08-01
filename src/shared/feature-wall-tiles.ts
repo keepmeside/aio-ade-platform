@@ -7,7 +7,6 @@ export type FeatureWallTileId =
   | 'tile-06'
   | 'tile-07'
   | 'tile-08'
-  | 'tile-09'
   | 'tile-10'
   | 'tile-11'
   | 'tile-12'
@@ -40,7 +39,6 @@ export const FEATURE_WALL_MEDIA_TILE_IDS = [
   'tile-06',
   'tile-07',
   'tile-08',
-  'tile-09',
   'tile-10',
   'tile-11',
   'tile-12'
@@ -149,17 +147,6 @@ export const FEATURE_WALL_TILES: readonly FeatureWallTile[] = [
     recordedAtPath: 'tile-08.recorded-at.json',
     owner: 'diff-review',
     docsUrl: 'https://www.onorca.dev/docs/review/annotate-ai-diff'
-  },
-  {
-    id: 'tile-09',
-    kind: 'media',
-    title: 'Orca CLI',
-    caption: 'Agents can drive Orca too: create workspaces, snapshot screens, click, and fill.',
-    gifPath: 'tile-09.gif',
-    posterPath: 'tile-09.poster.jpg',
-    recordedAtPath: 'tile-09.recorded-at.json',
-    owner: 'orca-cli',
-    docsUrl: 'https://www.onorca.dev/docs/cli/overview'
   },
   {
     id: 'tile-10',

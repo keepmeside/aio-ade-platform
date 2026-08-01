@@ -24,7 +24,7 @@ const LinearWorkspaceRead = z.object({
 const LinearTeamLookup = z.object({
   teamInput: requiredString('Missing team'),
   workspaceId: OptionalString.refine((value) => value !== 'all', {
-    message: '--workspace all is only valid for team list'
+    message: '`workspaceId: "all"` is only valid for team list'
   })
 })
 
@@ -62,7 +62,7 @@ const LinearWriteTarget = z.object({
   input: OptionalString,
   current: z.boolean().optional(),
   workspaceId: OptionalString.refine((value) => value !== 'all', {
-    message: '--workspace all is not valid for Linear writes'
+    message: '`workspaceId: "all"` is not valid for Linear writes'
   }),
   context: LinearCurrentContext
 })
@@ -124,7 +124,7 @@ const LinearIssueCreate = z.object({
   parentInput: OptionalString,
   parentCurrent: z.boolean().optional(),
   workspaceId: OptionalString.refine((value) => value !== 'all', {
-    message: '--workspace all is not valid for Linear writes'
+    message: '`workspaceId: "all"` is not valid for Linear writes'
   }),
   writeId: OptionalString,
   context: LinearCurrentContext
@@ -150,7 +150,7 @@ function parseLinearWriteId(writeId: string | undefined): string | undefined {
     return undefined
   }
   if (!isLinearUuid(writeId)) {
-    throw linearError('linear_invalid_write_id', '--write-id must be a UUID')
+    throw linearError('linear_invalid_write_id', '`writeId` must be a UUID')
   }
   return writeId
 }

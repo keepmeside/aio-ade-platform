@@ -8,7 +8,6 @@ import { Button } from '../ui/button'
 import { Label } from '../ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
 import { AndroidLogo, IosBrandIcon } from './mobile-emulator-platform-icons'
-import { MobileEmulatorAgentControlRow } from './MobileEmulatorAgentControlRow'
 import { MobileEmulatorAvailabilityDetails } from './MobileEmulatorAvailabilityDetails'
 import { SearchableSetting } from './SearchableSetting'
 import { SettingsRow, SettingsSwitchRow } from './SettingsFormControls'
@@ -172,7 +171,7 @@ export function MobileEmulatorSettingsPane({
     }
     return translate(
       'auto.components.settings.MobileEmulatorSettingsPane.b2fd62ea75',
-      'Default device for new emulator tabs and agent attach commands. Auto-select prefers an already running device.'
+      'Default device for new emulator tabs. Auto-select prefers an already running device.'
     )
   }, [devices.length])
 
@@ -185,7 +184,7 @@ export function MobileEmulatorSettingsPane({
         )}
         description={translate(
           'auto.components.settings.MobileEmulatorSettingsPane.bc39d0f115',
-          'Configure mobile emulator support for Orca and coding agents.'
+          'Configure mobile emulator support for Orca.'
         )}
         keywords={getMobileEmulatorSearchEntries().flatMap((entry) => entry.keywords ?? [])}
         className="divide-y divide-border/40"
@@ -197,7 +196,7 @@ export function MobileEmulatorSettingsPane({
           )}
           description={translate(
             'auto.components.settings.MobileEmulatorSettingsPane.f9af91ea26',
-            'Shows the New Mobile Emulator action and allows agents to attach to the active emulator.'
+            'Shows the New Mobile Emulator action and enables emulator tabs.'
           )}
           checked={enabled}
           onChange={() => updateSettings({ mobileEmulatorEnabled: !enabled })}
@@ -291,22 +290,6 @@ export function MobileEmulatorSettingsPane({
           }
         />
       </SearchableSetting>
-
-      {enabled ? (
-        <SearchableSetting
-          title={translate(
-            'auto.components.settings.MobileEmulatorSettingsPane.f2f8d97bb6',
-            'Agent Mobile Emulator Control'
-          )}
-          description={translate(
-            'auto.components.settings.MobileEmulatorSettingsPane.19d39113b6',
-            'Let coding agents control the active mobile emulator with Orca CLI commands.'
-          )}
-          keywords={getMobileEmulatorSearchEntries()[3]?.keywords}
-        >
-          <MobileEmulatorAgentControlRow />
-        </SearchableSetting>
-      ) : null}
     </div>
   )
 }

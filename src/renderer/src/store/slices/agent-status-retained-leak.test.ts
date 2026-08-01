@@ -14,7 +14,7 @@
  * paneKeys observed. The only removal paths are worktree removal
  * (`pruneRetainedAgents`) and explicit user dismissal — neither of which runs
  * while a long-lived worktree stays open. Under a multi-hour multi-agent /
- * orchestration session (sub-agents complete continuously), this large-payload
+ * nested-agent session (sub-agents complete continuously), this large-payload
  * accumulator is the dominant driver of the renderer JS-heap OOM seen in the
  * Windows crash bundles (heap climbing to the 3586 MB old-space limit).
  *

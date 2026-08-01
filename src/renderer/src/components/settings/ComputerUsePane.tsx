@@ -9,7 +9,6 @@ import type {
 import { useAppStore } from '@/store'
 import { Button } from '../ui/button'
 import { Badge } from '../ui/badge'
-import { ComputerUseSkillSetupPanel } from './ComputerUseSkillSetupPanel'
 import { translate } from '@/i18n/i18n'
 export { getComputerUsePaneSearchEntries } from './computer-use-search'
 
@@ -354,8 +353,6 @@ export function ComputerUsePane(): React.JSX.Element {
           </div>
         </>
       ) : null}
-
-      <ComputerUseSkillSetupPanel />
     </div>
   )
 }

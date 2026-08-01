@@ -4,7 +4,7 @@ import { mapRuntimeError } from './errors'
 class LineageError extends Error {
   code = 'LINEAGE_PARENT_NOT_FOUND'
   data = {
-    nextSteps: ['Run `orca worktree list`.', 'Retry with --no-parent.']
+    nextSteps: ['Refresh the worktree list.', 'Retry with `noParent: true`.']
   }
 }
 
@@ -42,10 +42,25 @@ describe('mapRuntimeError', () => {
     }
   )
 
+  it('does not expose removed orchestration bridge error codes', () => {
+    const error = Object.assign(new Error('The orchestration bridge is unavailable.'), {
+      code: 'orchestration_migration_required',
+      data: { retry: false }
+    })
+
+    expect(mapRuntimeError('req_1', { runtimeId: 'runtime-1' }, error)).toMatchObject({
+      ok: false,
+      error: {
+        code: 'runtime_error',
+        message: 'The orchestration bridge is unavailable.'
+      }
+    })
+  })
+
   it.each([
-    ['window_not_focused', 'keyboard input requires focus', 'restore-window'],
+    ['window_not_focused', 'keyboard input requires focus', 'restoreWindow'],
     ['permission_denied', 'missing DBUS_SESSION_BUS_ADDRESS', 'permissions'],
-    ['element_not_found', 'fresh element index required', 'get-app-state'],
+    ['element_not_found', 'fresh element index required', 'computer.getAppState'],
     ['unsupported_capability', 'hotkey combinations require xdotool', 'capabilities'],
     [
       'action_not_supported',
@@ -56,7 +71,7 @@ describe('mapRuntimeError', () => {
     ['element_not_clickable', 'element has no actionable frame', 'actionable frame'],
     ['invalid_argument', 'click_count must be a positive integer', 'Do not retry'],
     ['action_timeout', 'computer sidecar click timed out', 'do not repeat'],
-    ['screenshot_failed', 'screenshot capture returned no image', '--no-screenshot'],
+    ['screenshot_failed', 'screenshot capture returned no image', 'noScreenshot'],
     ['accessibility_error', 'desktop script provider is not available', 'capabilities']
   ])('adds recovery steps for computer-use %s errors', (code, message, recoveryFragment) => {
     const error = new Error(message)
@@ -84,10 +99,10 @@ describe('mapRuntimeError', () => {
       message: 'app not found: Gmail',
       data: {
         nextSteps: [
-          expect.stringContaining('list-apps'),
+          expect.stringContaining('computer.listApps'),
           expect.stringContaining('desktop browser app/window'),
-          expect.stringContaining('--app <web app>'),
-          expect.stringContaining('list-windows --app <browser>')
+          expect.stringContaining('`app` value'),
+          expect.stringContaining('computer.listWindows')
         ]
       }
     })
@@ -103,17 +118,17 @@ describe('mapRuntimeError', () => {
       code: 'window_not_found',
       data: {
         nextSteps: [
-          expect.stringContaining('list-windows'),
-          expect.stringContaining('--restore-window'),
+          expect.stringContaining('computer.listWindows'),
+          expect.stringContaining('restoreWindow: true'),
           expect.stringContaining('does not launch closed desktop apps')
         ]
       }
     })
   })
 
-  it('preserves structured computer-use focus error codes for CLI recovery hints', () => {
+  it('preserves structured computer-use focus error codes for runtime recovery hints', () => {
     const error = new Error(
-      'keyboard input requires the target window to be focused; retry with --restore-window'
+      'keyboard input requires the target window to be focused; retry with restoreWindow enabled'
     )
     Object.assign(error, { code: 'window_not_focused' })
 
@@ -125,11 +140,11 @@ describe('mapRuntimeError', () => {
       error: {
         code: 'window_not_focused',
         message:
-          'keyboard input requires the target window to be focused; retry with --restore-window',
+          'keyboard input requires the target window to be focused; retry with restoreWindow enabled',
         data: {
           nextSteps: [
-            'Retry once with `--restore-window`.',
-            'If `--restore-window` was already used, stop retrying restore; bring the app forward manually, check permissions, or prefer `set-value` for editable fields.'
+            'Retry once with `restoreWindow: true`.',
+            'If restoration was already requested, stop retrying it; bring the app forward manually, check permissions, or prefer `computer.setValue` for editable fields.'
           ]
         }
       },
@@ -137,7 +152,7 @@ describe('mapRuntimeError', () => {
     })
   })
 
-  it('preserves structured lineage error codes and data for CLI recovery hints', () => {
+  it('preserves structured lineage error codes and data for runtime recovery hints', () => {
     const response = mapRuntimeError(
       'req_1',
       { runtimeId: 'runtime-1' },
@@ -151,7 +166,7 @@ describe('mapRuntimeError', () => {
         code: 'LINEAGE_PARENT_NOT_FOUND',
         message: 'Parent selector was not found.',
         data: {
-          nextSteps: ['Run `orca worktree list`.', 'Retry with --no-parent.']
+          nextSteps: ['Refresh the worktree list.', 'Retry with `noParent: true`.']
         }
       },
       _meta: { runtimeId: 'runtime-1' }

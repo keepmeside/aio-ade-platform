@@ -17,7 +17,7 @@ authors: [Keepmeside, SalyyS1]
 
 > **Artifact review chính:** [plan.html](./plan.html). Markdown này là index/cook handoff; phase files giữ contract thực thi chi tiết.
 
-**Tiến độ:** 2/12 phase hoàn thành.
+**Tiến độ:** 3/12 phase hoàn thành.
 
 ## Phạm vi
 
@@ -51,7 +51,7 @@ Chuyển fork Orca thành `aio-ade`, giữ React 19/xterm.js và hành vi PTY/SS
 |---|---|---|---|
 | 01 | Preflight, baseline, runtime contracts | completed | [Preflight](./phase-01-baseline-and-contracts.md) |
 | 02 | Xóa mobile/web companion | completed | [Delete mobile](./phase-02-delete-mobile-companion.md) |
-| 03 | Xóa product CLI/orchestration | pending | [Delete CLI](./phase-03-delete-product-cli-and-orchestration.md) |
+| 03 | Xóa product CLI/orchestration | completed | [Delete CLI](./phase-03-delete-product-cli-and-orchestration.md) |
 | 04 | Thu roster Claude/Codex, giữ Fable | pending | [Reduce providers](./phase-04-reduce-providers-to-claude-and-codex.md) |
 | 05 | Rebrand `aio-ade`, compatibility readers | pending | [Rebrand](./phase-05-rebrand-identity-and-compatibility.md) |
 | 06 | Freeze host/runtime contracts và Electron oracle | pending | [Feasibility](./phase-06-prove-tauri-shell-feasibility.md) |

@@ -1,6 +1,5 @@
 import { app } from 'electron'
 import { registerAppHandlers } from './app'
-import { registerCliHandlers } from './cli'
 import { registerPreflightHandlers } from './preflight'
 import type { Store } from '../persistence'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
@@ -139,7 +138,6 @@ export function registerCoreHandlers(
   registered = true
 
   registerAppHandlers(store, { onBeforeRelaunch: lifecycleOptions.onBeforeRelaunch })
-  registerCliHandlers()
   registerPreflightHandlers()
   registerClaudeUsageHandlers(claudeUsage)
   registerCodexUsageHandlers(codexUsage)

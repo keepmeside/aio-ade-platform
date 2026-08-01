@@ -10,7 +10,7 @@ export const getMobileEmulatorSearchEntries = createLocalizedCatalog(() => [
     ),
     description: translate(
       'auto.components.settings.mobile.emulator.search.9595354cff',
-      'Configure mobile emulator support for Orca and coding agents.'
+      'Configure mobile emulator support for Orca.'
     ),
     keywords: [
       ...translateSearchKeyword(
@@ -46,24 +46,8 @@ export const getMobileEmulatorSearchEntries = createLocalizedCatalog(() => [
         'serve-sim'
       ),
       ...translateSearchKeyword(
-        'auto.components.settings.mobile.emulator.search.d4b7833894',
-        'orca cli'
-      ),
-      ...translateSearchKeyword(
-        'auto.components.settings.mobile.emulator.search.9353854ff3',
-        'orca emulator'
-      ),
-      ...translateSearchKeyword(
-        'auto.components.settings.mobile.emulator.search.ac0a985873',
-        'emulator skill'
-      ),
-      ...translateSearchKeyword(
         'auto.components.settings.mobile.emulator.search.1ad6fb6230',
         'default device'
-      ),
-      ...translateSearchKeyword(
-        'auto.components.settings.mobile.emulator.search.b8ddd13195',
-        'agent emulator'
       )
     ]
   },
@@ -128,38 +112,6 @@ export const getMobileEmulatorSearchEntries = createLocalizedCatalog(() => [
       ...translateSearchKeyword(
         'auto.components.settings.mobile.emulator.search.8ef0f08d36',
         'runtime'
-      )
-    ]
-  },
-  {
-    title: translate(
-      'auto.components.settings.mobile.emulator.search.ea3eac39bb',
-      'Agent CLI Control'
-    ),
-    description: translate(
-      'auto.components.settings.mobile.emulator.search.2e0b45b2ba',
-      'Use Orca CLI commands to list, attach, tap, and type into a mobile emulator.'
-    ),
-    keywords: [
-      ...translateSearchKeyword(
-        'auto.components.settings.mobile.emulator.search.f8b871d655',
-        'agent cli'
-      ),
-      ...translateSearchKeyword(
-        'auto.components.settings.mobile.emulator.search.6f728f1456',
-        'emulator tap'
-      ),
-      ...translateSearchKeyword(
-        'auto.components.settings.mobile.emulator.search.64494f03c3',
-        'emulator attach'
-      ),
-      ...translateSearchKeyword(
-        'auto.components.settings.mobile.emulator.search.bbe4267416',
-        'emulator type'
-      ),
-      ...translateSearchKeyword(
-        'auto.components.settings.mobile.emulator.search.2bb2e09225',
-        'mobile skill'
       )
     ]
   }

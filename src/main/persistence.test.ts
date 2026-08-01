@@ -5300,19 +5300,12 @@ describe('Store', () => {
     )
     const store = await createStore()
 
-    expect(store.getSettings().disabledTuiAgents).toEqual(['codex', 'claude', 'claude-agent-teams'])
+    expect(store.getSettings().disabledTuiAgents).toEqual(['codex', 'claude'])
 
     const updated = store.updateSettings({
       disabledTuiAgents: ['gemini', 'not-real', 'gemini', 'opencode'] as never
     })
     expect(updated.disabledTuiAgents).toEqual(['gemini', 'opencode'])
-  })
-
-  it('enables Claude Agent Teams by default for fresh installs', async () => {
-    const store = await createStore()
-
-    expect(store.getSettings().disabledTuiAgents).toEqual([])
-    expect(store.getSettings().claudeAgentTeamsDefaultDisabledMigrated).toBe(true)
   })
 
   it('migrates yolo default args onto untouched agent launch settings', async () => {
@@ -7072,7 +7065,6 @@ describe('Store', () => {
       'linear-issue',
       'pr',
       'automation',
-      'cli',
       'comment',
       'ports',
       'inline-agents'

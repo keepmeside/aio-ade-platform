@@ -1,5 +1,4 @@
 import type { TuiAgent } from './types'
-import { getOrcaCliCommandNameForPlatform } from './orca-cli-command-name'
 
 export type AgentPromptInjectionMode =
   | 'argv'
@@ -51,22 +50,6 @@ export const TUI_AGENT_CONFIG: Record<TuiAgent, TuiAgentConfig> = {
     promptInjectionMode: 'argv',
     // Why: `claude --prefill <text>` seeds the input without submitting, avoiding the paste-after-ready race (PR https://github.com/stablyai/orca/pull/926).
     draftPromptFlag: '--prefill'
-  },
-  'claude-agent-teams': {
-    // Why: an Orca-provided launch mode, not a separate binary; detection follows the Orca CLI.
-    detectCmd: 'orca',
-    detectCmdAliases: ['orca-dev', 'orca-ide'],
-    // Why: require Claude too so fresh installs (Orca shim always present) don't report Agent Teams without an agent CLI.
-    detectRequiredCommands: ['claude'],
-    // Why: Windows/WSL use Claude's in-process Agent Teams fallback, not this Orca native-pane/tmux-shim wrapper.
-    detectUnsupportedRuntimes: ['win32', 'wsl'],
-    launchCmd: 'orca claude-teams',
-    launchCmdByPlatform: {
-      linux: `${getOrcaCliCommandNameForPlatform('linux')} claude-teams`,
-      win32: `${getOrcaCliCommandNameForPlatform('win32')} claude-teams`
-    },
-    expectedProcess: 'claude',
-    promptInjectionMode: 'stdin-after-start'
   },
   openclaude: {
     detectCmd: 'openclaude',

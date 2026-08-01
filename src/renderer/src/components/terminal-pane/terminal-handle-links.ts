@@ -6,14 +6,6 @@ import { focusTerminalTabSurface } from '@/lib/focus-terminal-tab-surface'
 import { callRuntimeRpc } from '@/runtime/runtime-rpc-client'
 import { parseRemoteRuntimePtyId } from '@/runtime/runtime-terminal-stream'
 import { buildWrappedLogicalLine, rangeForParsedFileLink } from './wrapped-terminal-link-ranges'
-import {
-  extractOrchestrationTaskLinks,
-  focusRuntimeOrchestrationTask,
-  ORCHESTRATION_TASK_PREFIX
-} from './terminal-orchestration-task-links'
-
-export { extractOrchestrationTaskLinks } from './terminal-orchestration-task-links'
-export type { ParsedOrchestrationTaskLink } from './terminal-orchestration-task-links'
 
 export type ParsedTerminalHandleLink = {
   handle: string
@@ -156,29 +148,18 @@ export function createTerminalHandleLinkProvider(
         return
       }
       const logicalLine = buildWrappedLogicalLine(terminal.buffer.active, bufferLineNumber)
-      if (
-        !logicalLine ||
-        (!logicalLine.text.includes(TERMINAL_HANDLE_PREFIX) &&
-          !logicalLine.text.includes(ORCHESTRATION_TASK_PREFIX))
-      ) {
+      if (!logicalLine || !logicalLine.text.includes(TERMINAL_HANDLE_PREFIX)) {
         callback(undefined)
         return
       }
 
-      const terminalLinks = extractTerminalHandleLinks(logicalLine.text).map((parsed) => ({
-        kind: 'terminal' as const,
-        text: parsed.handle,
-        startIndex: parsed.startIndex,
-        endIndex: parsed.endIndex
-      }))
-      const taskLinks = extractOrchestrationTaskLinks(logicalLine.text).map((parsed) => ({
-        kind: 'task' as const,
-        text: parsed.taskId,
-        startIndex: parsed.startIndex,
-        endIndex: parsed.endIndex
-      }))
-      const links = [...terminalLinks, ...taskLinks]
-        .sort((a, b) => a.startIndex - b.startIndex)
+      const links = extractTerminalHandleLinks(logicalLine.text)
+        .map((parsed) => ({
+          kind: 'terminal' as const,
+          text: parsed.handle,
+          startIndex: parsed.startIndex,
+          endIndex: parsed.endIndex
+        }))
         .map((parsed): ILink | null => {
           const range = rangeForParsedFileLink(logicalLine, parsed.startIndex, parsed.endIndex)
           if (!range) {
@@ -192,7 +173,7 @@ export function createTerminalHandleLinkProvider(
                 return
               }
               event?.preventDefault()
-              void activateParsedLink(parsed, deps.getRuntimeEnvironmentId())
+              void activateTerminalHandleLink(parsed.text, deps.getRuntimeEnvironmentId())
               terminal.clearSelection()
             },
             hover: () => {
@@ -211,22 +192,14 @@ export function createTerminalHandleLinkProvider(
   }
 }
 
-async function activateParsedLink(
-  parsed: { kind: 'terminal' | 'task'; text: string },
+async function activateTerminalHandleLink(
+  handle: string,
   runtimeEnvironmentId: string | null
 ): Promise<void> {
   try {
-    if (parsed.kind === 'terminal') {
-      if (!focusRendererTerminalHandle(parsed.text, runtimeEnvironmentId)) {
-        await focusRuntimeTerminalHandle(parsed.text, runtimeEnvironmentId)
-      }
-      return
+    if (!focusRendererTerminalHandle(handle, runtimeEnvironmentId)) {
+      await focusRuntimeTerminalHandle(handle, runtimeEnvironmentId)
     }
-    // Why: a task can be retried onto a new dispatch; runtime DB is the
-    // authority for the latest terminal assigned to a stable task ID.
-    await focusRuntimeOrchestrationTask(parsed.text, runtimeEnvironmentId, (handle) =>
-      focusRendererTerminalHandle(handle, runtimeEnvironmentId)
-    )
   } catch (error: unknown) {
     console.warn('[terminal-handle-link] focus failed:', error)
   }

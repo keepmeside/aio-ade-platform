@@ -36,8 +36,6 @@ export type SettingsNavTarget =
   | 'experimental'
   | 'plugins'
   | 'agents'
-  | 'orchestration'
-  | 'linear'
   | 'servers'
   | 'mobile-emulator'
   | 'repo'

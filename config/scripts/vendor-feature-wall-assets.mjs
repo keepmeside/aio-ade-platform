@@ -59,11 +59,6 @@ const TILES = [
     posterRelativePath: 'public/whats-new/posters/annotate-ai-diff.jpg'
   },
   {
-    id: 'tile-09',
-    gifRelativePath: 'public/whats-new/orca-cli-demo.gif',
-    posterRelativePath: 'public/whats-new/posters/orca-cli-demo.jpg'
-  },
-  {
     id: 'tile-10',
     gifRelativePath: 'public/whats-new/keyboard-native.gif',
     posterRelativePath: 'public/whats-new/posters/keyboard-native.jpg'

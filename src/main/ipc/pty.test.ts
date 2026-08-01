@@ -1,7 +1,7 @@
 /* eslint-disable max-lines -- Why: stateful registration helper + shared mocked IPC/node-pty harness keep spawn-env assertions in one focused file. */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { userInfo } from 'node:os'
-import { delimiter, join, posix } from 'node:path'
+import { join, posix } from 'node:path'
 import { prepareCodexSessionResume } from '../codex/codex-session-resume-preparation'
 import {
   TERMINAL_INPUT_CHUNK_MAX_BYTES,
@@ -182,12 +182,6 @@ vi.mock('../telemetry/client', () => ({
 
 vi.mock('../telemetry/classify-error', () => ({
   classifyError: classifyErrorMock
-}))
-
-// Why: the real ensure writes to process.resourcesPath (absent under vitest); env assembly only needs the returned dir path.
-vi.mock('../cli/linux-terminal-orca-cli-shim', () => ({
-  ensureLinuxTerminalOrcaCliShimDir: (options: { userDataPath: string }) =>
-    join(options.userDataPath, 'linux-orca-cli-shim')
 }))
 
 vi.mock('../memory/pty-registry', () => ({
@@ -3336,31 +3330,6 @@ describe('registerPtyHandlers', () => {
         expect(spawnOptions.env.CLAUDE_CODE_CHILD_SESSION).toBe('1')
       })
 
-      it('prepends the bare-orca CLI shim dir to PATH for packaged Linux spawns', async () => {
-        const originalPlatform = process.platform
-        Object.defineProperty(process, 'platform', {
-          configurable: true,
-          value: 'linux'
-        })
-        try {
-          // Why: overriding process.platform doesn't change the loaded node:path dialect; keep this synthetic PATH consistent.
-          const env = await daemonSpawnAndGetEnv({
-            PATH: ['/usr/local/bin', '/usr/bin'].join(delimiter)
-          })
-          const entries = env.PATH.split(delimiter)
-          const shimDir = join('/tmp/orca-user-data', 'linux-orca-cli-shim')
-          // Why: bare `orca` must resolve to the Orca CLI before /usr/bin/orca (the GNOME screen reader) in Orca terminals (#7904).
-          expect(entries.indexOf(shimDir)).toBeGreaterThanOrEqual(0)
-          expect(entries.indexOf(shimDir)).toBeLessThan(entries.indexOf('/usr/bin'))
-          expect(env.ORCA_CLI_COMMAND).toBeUndefined()
-        } finally {
-          Object.defineProperty(process, 'platform', {
-            configurable: true,
-            value: originalPlatform
-          })
-        }
-      })
-
       it('injects the agent-hook receiver env on the daemon path', async () => {
         const env = await daemonSpawnAndGetEnv({})
         expect(env.ORCA_AGENT_HOOK_PORT).toBe('5678')
@@ -3713,56 +3682,6 @@ describe('registerPtyHandlers', () => {
         })
       })
 
-      it('keeps the Agent Teams tmux shim ahead of host PATH shims for runtime-created daemon PTYs', async () => {
-        type RuntimeSpawnController = {
-          spawn(args: {
-            cols: number
-            rows: number
-            worktreeId?: string
-            env?: Record<string, string>
-            envToDelete?: string[]
-            command?: string
-          }): Promise<{ id: string }>
-        }
-        const daemonSpawn = setupDaemonAdapter()
-        const runtime = {
-          setPtyController: vi.fn(),
-          registerPty: vi.fn(),
-          noteTerminalSpawnCommand: vi.fn(),
-          onPtySpawned: vi.fn(),
-          onPtyExit: vi.fn(),
-          onPtyData: vi.fn()
-        }
-        handlers.clear()
-        registerPtyHandlers(mainWindow as never, runtime as never, undefined, (() => ({
-          enableGitHubAttribution: true
-        })) as never)
-        const controller = runtime.setPtyController.mock.calls[0]?.[0] as RuntimeSpawnController
-
-        await controller.spawn({
-          cols: 80,
-          rows: 24,
-          worktreeId: 'wt-runtime',
-          command: 'claude',
-          env: {
-            PATH: `/tmp/orca-agent-teams-bin${delimiter}/usr/bin`,
-            ORCA_AGENT_TEAMS_TEAM_ID: 'team-test',
-            TERM_PROGRAM: 'Orca',
-            ORCA_ATTRIBUTION_SHIM_DIR: '/tmp/stale-attribution'
-          },
-          envToDelete: ['TERM_PROGRAM', 'ORCA_ATTRIBUTION_SHIM_DIR']
-        })
-
-        const spawnOptions = daemonSpawn.mock.calls.at(-1)?.[0] as DaemonSpawnCall
-        expect(spawnOptions.env.PATH.split(delimiter)[0]).toBe('/tmp/orca-agent-teams-bin')
-        expect(spawnOptions.env.PATH).toContain(expectedAttributionShimDir())
-        expect(spawnOptions.env.TERM_PROGRAM).toBeUndefined()
-        expect(spawnOptions.env.ORCA_ATTRIBUTION_SHIM_DIR).toBeUndefined()
-        expect(spawnOptions.envToDelete).toEqual(
-          expect.arrayContaining(['TERM_PROGRAM', 'ORCA_ATTRIBUTION_SHIM_DIR'])
-        )
-      })
-
       it('strips inherited agent-hook endpoint env from development daemon PTYs', async () => {
         const { app } = await import('electron')
         const mockedApp = app as unknown as { isPackaged: boolean }
@@ -3788,33 +3707,7 @@ describe('registerPtyHandlers', () => {
         expect(env.PATH).toContain(expectedAttributionShimDir())
       })
 
-      it('keeps the Agent Teams tmux shim ahead of host PATH shims on daemon pty:spawn', async () => {
-        const spawnOptions = await daemonSpawnAndGetOptions(
-          {
-            PATH: `/tmp/orca-agent-teams-bin${delimiter}/usr/bin`,
-            ORCA_AGENT_TEAMS_TEAM_ID: 'team-test',
-            TERM_PROGRAM: 'Orca',
-            ORCA_ATTRIBUTION_SHIM_DIR: '/tmp/stale-attribution'
-          },
-          undefined,
-          () => ({ enableGitHubAttribution: true }),
-          undefined,
-          {
-            command: 'claude',
-            envToDelete: ['TERM_PROGRAM', 'ORCA_ATTRIBUTION_SHIM_DIR']
-          }
-        )
-
-        expect(spawnOptions.env.PATH.split(delimiter)[0]).toBe('/tmp/orca-agent-teams-bin')
-        expect(spawnOptions.env.PATH).toContain(expectedAttributionShimDir())
-        expect(spawnOptions.env.TERM_PROGRAM).toBeUndefined()
-        expect(spawnOptions.env.ORCA_ATTRIBUTION_SHIM_DIR).toBeUndefined()
-        expect(spawnOptions.envToDelete).toEqual(
-          expect.arrayContaining(['TERM_PROGRAM', 'ORCA_ATTRIBUTION_SHIM_DIR'])
-        )
-      })
-
-      it('injects dev-mode ORCA_USER_DATA_PATH + dev CLI PATH on the daemon path', async () => {
+      it('injects dev-mode ORCA_USER_DATA_PATH without a product CLI path', async () => {
         // Why: the mocked `app` is a plain object, so we can flip isPackaged for the test's scope.
         const { app } = await import('electron')
         const mockedApp = app as unknown as { isPackaged: boolean }
@@ -3823,7 +3716,7 @@ describe('registerPtyHandlers', () => {
         try {
           const env = await daemonSpawnAndGetEnv({ PATH: '/usr/bin' })
           expect(env.ORCA_USER_DATA_PATH).toBe('/tmp/orca-user-data')
-          expect(env.PATH).toContain(join('/tmp/orca-user-data', 'cli', 'bin'))
+          expect(env.PATH).not.toContain(join('/tmp/orca-user-data', 'cli', 'bin'))
         } finally {
           mockedApp.isPackaged = prev
         }
@@ -3839,9 +3732,8 @@ describe('registerPtyHandlers', () => {
             PATH: '/system/bin'
           })
           expect(env.ORCA_USER_DATA_PATH).toBe('/tmp/orca-user-data')
-          expect(env.PATH).toContain(
-            `${join('/tmp/orca-user-data', 'cli', 'bin')}${delimiter}/system/bin`
-          )
+          expect(env.PATH).toContain('/system/bin')
+          expect(env.PATH).not.toContain(join('/tmp/orca-user-data', 'cli', 'bin'))
         } finally {
           mockedApp.isPackaged = prev
         }
@@ -6853,95 +6745,6 @@ describe('registerPtyHandlers', () => {
     )
   })
 
-  it('refreshes captured native Agent Teams env for renderer PTY spawns', async () => {
-    const leafId = '11111111-1111-4111-8111-111111111111'
-    const runtime = {
-      setPtyController: vi.fn(),
-      createPreAllocatedTerminalHandle: vi.fn(() => 'term_agent_teams'),
-      prepareClaudeAgentTeamsLeaderForHandle: vi.fn(async () => ({
-        env: {
-          CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: '1',
-          PATH: `/tmp/fresh-agent-teams${delimiter}/usr/bin`,
-          TMUX: '/tmp/orca-claude-agent-teams/team-fresh,0,1',
-          TMUX_PANE: '%1',
-          ORCA_AGENT_TEAMS_TEAM_ID: 'team-fresh',
-          ORCA_AGENT_TEAMS_TOKEN: 'fresh-token'
-        }
-      })),
-      registerPreAllocatedHandleForPty: vi.fn(),
-      registerPty: vi.fn(),
-      getDriver: vi.fn(() => ({ kind: 'host' })),
-      onPtySpawned: vi.fn(),
-      onPtyExit: vi.fn(),
-      onPtyData: vi.fn()
-    }
-
-    registerPtyHandlers(mainWindow as never, runtime as never)
-    const result = (await handlers.get('pty:spawn')!(mainWindowIpcEvent, {
-      cols: 80,
-      rows: 24,
-      cwd: '/repo',
-      command: 'claude --teammate-mode auto --resume claude-session',
-      tabId: 'tab-1',
-      leafId,
-      worktreeId: 'wt-1',
-      env: {
-        ORCA_PANE_KEY: `tab-1:${leafId}`,
-        ORCA_TAB_ID: 'tab-1',
-        ORCA_WORKTREE_ID: 'wt-1',
-        CLAUDE_PROFILE: 'captured',
-        PATH: `/tmp/stale-agent-teams${delimiter}/usr/bin`,
-        TMUX: '/tmp/orca-claude-agent-teams/team-stale,0,1',
-        ORCA_AGENT_TEAMS_TEAM_ID: 'team-stale',
-        ORCA_AGENT_TEAMS_TOKEN: 'stale-token',
-        TERM_PROGRAM: 'Orca',
-        ORCA_ATTRIBUTION_SHIM_DIR: '/tmp/stale-attribution'
-      },
-      launchConfig: {
-        agentCommand: 'claude --teammate-mode auto',
-        agentArgs: '',
-        agentEnv: {
-          CLAUDE_PROFILE: 'captured',
-          ORCA_AGENT_TEAMS_TEAM_ID: 'team-stale',
-          ORCA_AGENT_TEAMS_TOKEN: 'stale-token'
-        }
-      },
-      launchAgent: 'claude'
-    })) as { launchConfig?: { agentEnv: Record<string, string> } }
-
-    const spawnOptions = spawnMock.mock.calls.at(-1)?.[2] as { env: Record<string, string> }
-    expect(runtime.prepareClaudeAgentTeamsLeaderForHandle).toHaveBeenCalledWith({
-      handle: 'term_agent_teams',
-      baseEnv: expect.objectContaining({
-        CLAUDE_PROFILE: 'captured',
-        ORCA_AGENT_TEAMS_TEAM_ID: 'team-stale'
-      })
-    })
-    expect(spawnOptions.env).toMatchObject({
-      CLAUDE_PROFILE: 'captured',
-      CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: '1',
-      ORCA_TERMINAL_HANDLE: 'term_agent_teams',
-      ORCA_AGENT_TEAMS_TEAM_ID: 'team-fresh',
-      ORCA_AGENT_TEAMS_TOKEN: 'fresh-token',
-      TMUX: '/tmp/orca-claude-agent-teams/team-fresh,0,1',
-      TMUX_PANE: '%1'
-    })
-    expect(spawnOptions.env.PATH.split(delimiter)[0]).toBe('/tmp/fresh-agent-teams')
-    expect(spawnOptions.env.TERM_PROGRAM).toBeUndefined()
-    expect(spawnOptions.env.ORCA_ATTRIBUTION_SHIM_DIR).toBeUndefined()
-    expect(result.launchConfig?.agentEnv).toMatchObject({
-      CLAUDE_PROFILE: 'captured',
-      CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: '1',
-      ORCA_AGENT_TEAMS_TEAM_ID: 'team-fresh',
-      ORCA_AGENT_TEAMS_TOKEN: 'fresh-token',
-      TMUX: '/tmp/orca-claude-agent-teams/team-fresh,0,1'
-    })
-    expect(runtime.registerPreAllocatedHandleForPty).toHaveBeenCalledWith(
-      expect.any(String),
-      'term_agent_teams'
-    )
-  })
-
   it('threads the validated pane identity into registerPty for a renderer PTY spawn (#7587)', async () => {
     const leafId = '88888888-8888-4888-8888-888888888888'
     const runtime = {
@@ -7007,54 +6810,6 @@ describe('registerPtyHandlers', () => {
       undefined,
       false
     )
-  })
-
-  it('refreshes native Agent Teams env when captured teammate mode lives in launch args', async () => {
-    const leafId = '11111111-1111-4111-8111-111111111111'
-    const runtime = {
-      setPtyController: vi.fn(),
-      createPreAllocatedTerminalHandle: vi.fn(() => 'term_agent_teams'),
-      prepareClaudeAgentTeamsLeaderForHandle: vi.fn(async () => ({
-        env: {
-          CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: '1',
-          ORCA_AGENT_TEAMS_TEAM_ID: 'team-fresh',
-          ORCA_AGENT_TEAMS_TOKEN: 'fresh-token'
-        }
-      })),
-      registerPreAllocatedHandleForPty: vi.fn(),
-      registerPty: vi.fn(),
-      getDriver: vi.fn(() => ({ kind: 'host' })),
-      onPtySpawned: vi.fn(),
-      onPtyExit: vi.fn(),
-      onPtyData: vi.fn()
-    }
-
-    registerPtyHandlers(mainWindow as never, runtime as never)
-    await handlers.get('pty:spawn')!(mainWindowIpcEvent, {
-      cols: 80,
-      rows: 24,
-      cwd: '/repo',
-      command: 'claude --resume claude-session',
-      tabId: 'tab-1',
-      leafId,
-      worktreeId: 'wt-1',
-      env: {
-        ORCA_PANE_KEY: `tab-1:${leafId}`,
-        ORCA_TAB_ID: 'tab-1',
-        ORCA_WORKTREE_ID: 'wt-1'
-      },
-      launchConfig: {
-        agentCommand: 'claude',
-        agentArgs: '--teammate-mode auto',
-        agentEnv: {}
-      },
-      launchAgent: 'claude'
-    })
-
-    expect(runtime.prepareClaudeAgentTeamsLeaderForHandle).toHaveBeenCalledWith({
-      handle: 'term_agent_teams',
-      baseEnv: expect.any(Object)
-    })
   })
 
   it('does not echo launch config for provider reattach results', async () => {
@@ -8759,12 +8514,10 @@ describe('registerPtyHandlers', () => {
     expect(spawnCall[0]).toBe('wsl.exe')
     expect(env.ORCA_TERMINAL_HANDLE).toBe('term_wsl')
     expect(env.ORCA_USER_DATA_PATH).toBe('/tmp/orca-user-data')
-    expect(env.ORCA_CLI_COMMAND).toBe('orca-ide')
     expect(env.WSLENV?.split(':')).toEqual(
       expect.arrayContaining([
         'ORCA_TERMINAL_HANDLE/u',
         'ORCA_USER_DATA_PATH/p',
-        'ORCA_CLI_COMMAND/u',
         'ORCA_AGENT_HOOK_PORT/u',
         'ORCA_AGENT_HOOK_TOKEN/u',
         'ORCA_OMP_SOURCE_AGENT_DIR/p',

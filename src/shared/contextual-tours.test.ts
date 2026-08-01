@@ -44,8 +44,7 @@ describe('contextual tour definitions', () => {
       | ContextualTour
       | undefined
 
-    // Two steps only: tasks and orchestration education lives in their own
-    // page tours, so the in-app tour ends after the worktree CTA.
+    // The in-app tour stays focused on the split and worktree actions.
     expect(tour?.steps.map((step) => step.title)).toEqual([
       'Split a terminal pane',
       'Start another task in parallel'

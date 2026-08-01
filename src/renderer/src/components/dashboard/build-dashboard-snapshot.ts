@@ -25,14 +25,8 @@ import {
   selectLiveAgentStatusEntriesForWorktree,
   selectMigrationUnsupportedEntriesForWorktree,
   selectRetainedAgentEntriesForWorktree,
-  selectRuntimeAgentOrchestrationForWorktree,
   selectTerminalLayoutsForWorktree
 } from '../sidebar/worktree-agent-row-selectors'
-import {
-  EMPTY_WORKTREE_AGENT_ORCHESTRATION,
-  releaseRuntimeAgentOrchestrationBatchCache,
-  selectRuntimeAgentOrchestrationBatch
-} from '../sidebar/worktree-agent-orchestration-batch'
 import {
   selectLivePtyIdsForWorktree,
   selectRuntimePaneTitlesForWorktree
@@ -52,7 +46,6 @@ export type DashboardSnapshotState = Pick<
   | 'agentStatusByPaneKey'
   | 'retainedAgentsByPaneKey'
   | 'migrationUnsupportedByPtyId'
-  | 'runtimeAgentOrchestrationByPaneKey'
   | 'terminalLayoutsByTabId'
   | 'ptyIdsByTabId'
   | 'runtimePaneTitlesByTabId'
@@ -78,7 +71,7 @@ function bucketForState(state: DashboardAgentRow['state']): DashboardBucket {
 }
 
 function rowTask(row: DashboardAgentRow): string {
-  return (row.entry.orchestration?.taskTitle ?? '').trim() || (row.entry.prompt ?? '').trim()
+  return (row.entry.prompt ?? '').trim()
 }
 
 function nonEmpty(value: string | undefined): string | undefined {
@@ -104,13 +97,8 @@ function rowConversationName(
   row: DashboardAgentRow,
   generatedTitlesEnabled: boolean
 ): string | undefined {
-  const parentPaneKey = row.entry.orchestration?.parentPaneKey
-  // Why: a child row rendered on its parent's tab does not own that tab's name.
-  if (
-    row.lineage?.depth === 1 &&
-    parentPaneKey !== undefined &&
-    parsePaneKey(parentPaneKey)?.tabId === row.tab.id
-  ) {
+  // A child row rendered on its parent's tab does not own that tab's name.
+  if (row.lineage?.depth === 1 && row.activationPaneKey) {
     return undefined
   }
   return getAgentRowConversationName(row.tab, row.agentType, generatedTitlesEnabled) ?? undefined
@@ -163,24 +151,6 @@ export function buildDashboardSnapshot(
             color: status.color
           }))
         }
-  let singletonOrchestration: ReturnType<typeof selectRuntimeAgentOrchestrationForWorktree> | null =
-    null
-  let orchestrationByWorktree: ReturnType<typeof selectRuntimeAgentOrchestrationBatch> | null = null
-  if (activeWorktrees.length >= 2) {
-    orchestrationByWorktree = selectRuntimeAgentOrchestrationBatch(
-      state,
-      activeWorktrees.map(({ worktree }) => worktree.id)
-    )
-  } else {
-    releaseRuntimeAgentOrchestrationBatchCache()
-    if (activeWorktrees.length === 1) {
-      singletonOrchestration = selectRuntimeAgentOrchestrationForWorktree(
-        state,
-        activeWorktrees[0].worktree.id
-      )
-    }
-  }
-
   for (const { repo, worktree } of activeWorktrees) {
     const worktreeId = worktree.id
     const liveEntries = selectLiveAgentStatusEntriesForWorktree(state, worktreeId)
@@ -205,10 +175,6 @@ export function buildDashboardSnapshot(
         runtimePaneTitlesByTabId: selectRuntimePaneTitlesForWorktree(state, worktreeId),
         ptyIdsByTabId: selectLivePtyIdsForWorktree(state, worktreeId),
         terminalLayoutsByTabId,
-        runtimeAgentOrchestrationByPaneKey:
-          singletonOrchestration ??
-          orchestrationByWorktree?.get(worktreeId) ??
-          EMPTY_WORKTREE_AGENT_ORCHESTRATION,
         now
       })
     )
@@ -220,16 +186,13 @@ export function buildDashboardSnapshot(
         if (row.rowSource !== 'subagent') {
           continue
         }
-        const parentPaneKey = row.entry.orchestration?.parentPaneKey
+        const parentPaneKey = row.activationPaneKey
         if (!parentPaneKey) {
           continue
         }
         const subagent: DashboardCardSubagent = {
           id: row.paneKey,
-          name:
-            nonEmpty(row.entry.orchestration?.displayName) ??
-            nonEmpty(row.entry.prompt) ??
-            row.agentType,
+          name: nonEmpty(row.entry.prompt) ?? row.agentType,
           dotState: row.state
         }
         const existing = subagentsByParentPaneKey.get(parentPaneKey)

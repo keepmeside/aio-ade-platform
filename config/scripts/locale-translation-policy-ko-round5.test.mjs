@@ -40,14 +40,6 @@ describe('locale-translation-policy ko round 5', () => {
     ).toBe('Linear, GitLab, Bitbucket, Azure DevOps, Gitea 및 Jira는 설정 > 연동에 있습니다.')
     expect(
       repairTranslatedValue({
-        key: 'auto.components.settings.general.search.244e3fb4c8',
-        enValue: 'Install the Orca skill so agents know to use the Orca CLI.',
-        localeValue: '에이전트가 Orca CLI 사용 방법을 알 수 있도록 Orca 기술을 설치합니다.',
-        locale: 'ko'
-      })
-    ).toBe('agents가 Orca CLI를 사용하도록 Orca 스킬을 설치하세요.')
-    expect(
-      repairTranslatedValue({
         key: 'auto.components.editor.MarkdownPreview.322afab6ff',
         enValue: 'Review notes',
         localeValue: '메모 검토',

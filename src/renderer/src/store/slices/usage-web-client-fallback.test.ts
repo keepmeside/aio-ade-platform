@@ -5,7 +5,7 @@ import { createClaudeUsageSlice } from './claude-usage'
 import { createCodexUsageSlice } from './codex-usage'
 import { createOpenCodeUsageSlice } from './opencode-usage'
 
-// Regression: in the web client (paired `orca serve` runtime) the desktop-only
+// Regression: in the web client (paired runtime host) the desktop-only
 // usage IPC is not bridged, so the preload fallback proxy resolves every
 // `window.api.<provider>Usage.*` call to `undefined`. Before the guards, the
 // slices read `scanState.enabled` off that `undefined` and threw

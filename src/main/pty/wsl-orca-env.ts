@@ -65,7 +65,6 @@ export function addOrcaWslInteropEnv(env: Record<string, string>): void {
   const passthroughEntries = [
     'ORCA_TERMINAL_HANDLE/u',
     'ORCA_USER_DATA_PATH/p',
-    'ORCA_CLI_COMMAND/u',
     'ORCA_PANE_KEY/u',
     'ORCA_TAB_ID/u',
     'ORCA_WORKTREE_ID/u',

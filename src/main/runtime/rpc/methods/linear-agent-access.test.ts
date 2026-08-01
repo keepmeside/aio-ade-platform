@@ -278,7 +278,7 @@ describe('Linear agent access RPC methods', () => {
 
     expect(response.ok).toBe(false)
     expect(response.ok === false ? response.error.message : '').toContain(
-      '--workspace all is not valid for Linear writes'
+      '`workspaceId: "all"` is not valid for Linear writes'
     )
     expect(runtime.linearIssueSetState).not.toHaveBeenCalled()
   })
@@ -299,7 +299,7 @@ describe('Linear agent access RPC methods', () => {
 
     expect(response.ok).toBe(false)
     expect(response.ok === false ? response.error.message : '').toContain(
-      '--workspace all is only valid for team list'
+      '`workspaceId: "all"` is only valid for team list'
     )
     expect(runtime.linearTeamMembersForAgents).not.toHaveBeenCalled()
   })
@@ -418,7 +418,7 @@ describe('Linear agent write recovery helpers', () => {
     })
   })
 
-  it('keeps pinned retry guidance for unconfirmed writes while adding sanitized cause text', async () => {
+  it('keeps RPC retry guidance for unconfirmed writes while adding sanitized cause text', async () => {
     const runtime = new OrcaRuntimeService()
     const runner = runtime as unknown as LinearWriteRunner
     const builder = runtime as unknown as LinearUnconfirmedBuilder
@@ -447,7 +447,7 @@ describe('Linear agent write recovery helpers', () => {
       code: 'linear_write_unconfirmed',
       data: {
         cause: 'fetch failed: socket hang up Authorization: Bearer [REDACTED]',
-        nextSteps: [expect.stringContaining(`--write-id=${writeId}`)]
+        nextSteps: [expect.stringContaining(`writeId: "${writeId}"`)]
       }
     })
   })
@@ -491,7 +491,7 @@ describe('Linear agent write recovery helpers', () => {
     }
   })
 
-  it('keeps payload and destination details in pinned retries', () => {
+  it('keeps runtime method and write id details in retries', () => {
     const runtime = new OrcaRuntimeService()
     const builder = runtime as unknown as LinearUnconfirmedBuilder
     const writeId = '11111111-1111-4111-8111-111111111111'
@@ -505,18 +505,12 @@ describe('Linear agent write recovery helpers', () => {
     }
 
     const comment = builder.linearCreateStyleUnconfirmed('comment', writeId, target, {
-      parentId: 'comment-root',
-      bodyRequired: true
+      parentId: 'comment-root'
     })
-    const attach = builder.linearCreateStyleUnconfirmed('attach', writeId, target, {
-      title: 'Review link',
-      url: 'https://example.invalid/review/1'
-    })
+    const attach = builder.linearCreateStyleUnconfirmed('attach', writeId, target)
     const create = builder.linearCreateStyleUnconfirmed('create', writeId, null, {
       parent,
       team: { id: 'team-2', key: 'OTHER', name: 'Other', workspaceId: 'workspace-1' },
-      title: 'Follow up',
-      bodyRequired: true,
       createFields: {
         priority: 2,
         estimate: 3,
@@ -526,21 +520,13 @@ describe('Linear agent write recovery helpers', () => {
       }
     })
 
-    expect(comment.data?.nextSteps?.[0]).toContain('--body-file -')
-    expect(comment.data?.nextSteps?.[0]).toContain('--reply-to=comment-root')
-    expect(attach.data?.nextSteps?.[0]).toContain('--url URL_HERE')
-    expect(attach.data?.nextSteps?.[0]).toContain('--title TITLE_HERE')
-    expect(attach.data?.nextSteps?.[0]).toContain('Replace TITLE_HERE/URL_HERE')
-    expect(create.data?.nextSteps?.[0]).toContain('--title TITLE_HERE')
-    expect(create.data?.nextSteps?.[0]).toContain('--body-file -')
-    expect(create.data?.nextSteps?.[0]).toContain('--parent=ENG-123')
-    expect(create.data?.nextSteps?.[0]).toContain('--team=OTHER')
-    expect(create.data?.nextSteps?.[0]).toContain('--priority=high')
-    expect(create.data?.nextSteps?.[0]).toContain('--estimate=3')
-    expect(create.data?.nextSteps?.[0]).toContain('--due-date=2026-06-30')
-    expect(create.data?.nextSteps?.[0]).toContain('--project=project-1')
-    expect(create.data?.nextSteps?.[0]).toContain('--label=label-1')
-    expect(create.data?.nextSteps?.[0]).toContain('Replace TITLE_HERE')
+    expect(comment.data?.nextSteps?.[0]).toContain('linear.issueAddComment')
+    expect(comment.data?.nextSteps?.[0]).toContain(`writeId: "${writeId}"`)
+    expect(comment.data?.nextSteps?.[0]).toContain('same payload')
+    expect(attach.data?.nextSteps?.[0]).toContain('linear.issueAttachLink')
+    expect(attach.data?.nextSteps?.[0]).toContain(`writeId: "${writeId}"`)
+    expect(create.data?.nextSteps?.[0]).toContain('linear.issueCreate')
+    expect(create.data?.nextSteps?.[0]).toContain(`writeId: "${writeId}"`)
   })
 
   it('requires created issue readback to match enriched field intent', () => {
@@ -706,7 +692,7 @@ describe('Linear agent write recovery helpers', () => {
   it('keeps the unconfirmed retry envelope when duplicate recovery lookup fails', async () => {
     const runtime = new OrcaRuntimeService()
     const tester = runtime as unknown as LinearRetryLookupTester
-    const unconfirmed = Object.assign(new Error('try pinned retry again'), {
+    const unconfirmed = Object.assign(new Error('try the runtime retry again'), {
       code: 'linear_write_unconfirmed',
       data: { writeId: '11111111-1111-4111-8111-111111111111' }
     })

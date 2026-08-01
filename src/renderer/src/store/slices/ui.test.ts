@@ -2527,41 +2527,6 @@ describe('createUISlice setup guide sidebar dismissal', () => {
   })
 })
 
-describe('createUISlice mobile emulator agent setup dismissal', () => {
-  it('persists mobile emulator agent setup dismissal once', () => {
-    const setMock = vi.fn(() => Promise.resolve())
-    vi.stubGlobal('window', {
-      api: {
-        ui: {
-          set: setMock
-        }
-      }
-    })
-    const store = createUIStore()
-
-    store.getState().dismissMobileEmulatorAgentSetup()
-    store.getState().dismissMobileEmulatorAgentSetup()
-
-    expect(store.getState().mobileEmulatorAgentSetupDismissed).toBe(true)
-    expect(setMock).toHaveBeenCalledTimes(1)
-    expect(setMock).toHaveBeenCalledWith({ mobileEmulatorAgentSetupDismissed: true })
-  })
-
-  it('hydrates only explicit mobile emulator agent setup dismissals', () => {
-    const store = createUIStore()
-
-    store
-      .getState()
-      .hydratePersistedUI(makePersistedUI({ mobileEmulatorAgentSetupDismissed: true }))
-    expect(store.getState().mobileEmulatorAgentSetupDismissed).toBe(true)
-
-    store
-      .getState()
-      .hydratePersistedUI(makePersistedUI({ mobileEmulatorAgentSetupDismissed: undefined }))
-    expect(store.getState().mobileEmulatorAgentSetupDismissed).toBe(false)
-  })
-})
-
 describe('createUISlice mobile emulator tab intro dismissal', () => {
   it('persists mobile emulator tab intro dismissal once', () => {
     const setMock = vi.fn(() => Promise.resolve())

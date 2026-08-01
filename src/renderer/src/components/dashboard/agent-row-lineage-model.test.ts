@@ -26,7 +26,7 @@ function makeRow(
     coordinatorHandle?: string
   } = {}
 ): DashboardAgentRow {
-  const orchestration =
+  const lineageMetadata =
     options.parentPaneKey || options.parentTerminalHandle || options.coordinatorHandle
       ? {
           taskId: `${paneKey}-task`,
@@ -47,7 +47,7 @@ function makeRow(
     stateHistory: [],
     agentType: 'codex',
     ...(options.terminalHandle ? { terminalHandle: options.terminalHandle } : {}),
-    ...(orchestration ? { orchestration } : {})
+    ...(lineageMetadata ? { orchestration: lineageMetadata } : {})
   }
 
   return {

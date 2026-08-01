@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ComponentProps, type ReactNode } from 'react'
+import { useState, type ComponentProps, type ReactNode } from 'react'
 import { Copy, Loader2, RefreshCw, Terminal } from 'lucide-react'
 import { toast } from 'sonner'
 import { IntegrationStatusPill } from '../integration-status-pill'
@@ -8,13 +8,10 @@ import { Button } from '../ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip'
 import { notifyInstalledAgentSkillsChanged } from '@/hooks/useInstalledAgentSkills'
 import { useMountedRef } from '@/hooks/useMountedRef'
-import { isOrcaCliAvailableOnPath } from '@/lib/agent-skill-cli-prerequisite'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
 
 type AgentSkillSetupPanelVariant = 'card' | 'inline'
-type SkillPrerequisiteStatus = Awaited<ReturnType<typeof window.api.cli.getInstallStatus>>
-
 type AgentSkillSetupPanelProps = {
   title: string
   description: ReactNode
@@ -36,9 +33,6 @@ type AgentSkillSetupPanelProps = {
   // Why: when an enclosing surface (e.g. a modal) already shows the title and
   // status, hide the panel's own header row to avoid a duplicate heading.
   hideHeader?: boolean
-  preInstallNotice?: ReactNode
-  getPrerequisiteStatus?: () => Promise<SkillPrerequisiteStatus>
-  isPrerequisiteAvailable?: (status: SkillPrerequisiteStatus) => boolean
   onBeforeOpenTerminal?: () => void | Promise<void>
   showInstallWhenInstalled?: boolean
   showRecheckWhenInstalled?: boolean
@@ -76,9 +70,6 @@ export function AgentSkillSetupPanel({
   variant = 'card',
   className,
   hideHeader = false,
-  preInstallNotice,
-  getPrerequisiteStatus,
-  isPrerequisiteAvailable = isOrcaCliAvailableOnPath,
   onBeforeOpenTerminal,
   showInstallWhenInstalled = true,
   showRecheckWhenInstalled = true,
@@ -94,62 +85,11 @@ export function AgentSkillSetupPanel({
   const [terminalOpen, setTerminalOpen] = useState(false)
   const [terminalCommand, setTerminalCommand] = useState<string | null>(null)
   const [terminalOpening, setTerminalOpening] = useState(false)
-  const [preInstallNoticeVisible, setPreInstallNoticeVisible] = useState(
-    Boolean(preInstallNotice && !installed)
-  )
   const mountedRef = useMountedRef()
-  const readPrerequisiteStatus = useCallback(
-    () => (getPrerequisiteStatus ?? window.api.cli.getInstallStatus)(),
-    [getPrerequisiteStatus]
-  )
   const activeCommand = installed ? (installedCommand ?? command) : command
   // Why: the inline terminal auto-inserts when its command changes, so keep an
   // already-open terminal pinned to the command selected by the user's click.
   const openTerminalCommand = terminalCommand ?? activeCommand
-
-  useEffect(() => {
-    if (!preInstallNotice) {
-      setPreInstallNoticeVisible(false)
-      return
-    }
-
-    let canceled = false
-    const refreshCliNotice = async (): Promise<void> => {
-      try {
-        const status = await readPrerequisiteStatus()
-        if (!canceled) {
-          setPreInstallNoticeVisible(!isPrerequisiteAvailable(status))
-        }
-      } catch {
-        if (!canceled) {
-          setPreInstallNoticeVisible(true)
-        }
-      }
-    }
-
-    void refreshCliNotice()
-    window.addEventListener('focus', refreshCliNotice)
-    return () => {
-      canceled = true
-      window.removeEventListener('focus', refreshCliNotice)
-    }
-  }, [isPrerequisiteAvailable, preInstallNotice, readPrerequisiteStatus])
-
-  const refreshPreInstallNotice = async (): Promise<void> => {
-    if (!preInstallNotice) {
-      return
-    }
-    try {
-      const status = await readPrerequisiteStatus()
-      if (mountedRef.current) {
-        setPreInstallNoticeVisible(!isPrerequisiteAvailable(status))
-      }
-    } catch {
-      if (mountedRef.current) {
-        setPreInstallNoticeVisible(true)
-      }
-    }
-  }
 
   const copyActiveCommand = async (): Promise<void> => {
     try {
@@ -186,7 +126,6 @@ export function AgentSkillSetupPanel({
               let shouldOpenTerminal = false
               try {
                 await onBeforeOpenTerminal?.()
-                await refreshPreInstallNotice()
                 shouldOpenTerminal = true
               } catch {
                 shouldOpenTerminal = false
@@ -306,11 +245,6 @@ export function AgentSkillSetupPanel({
           <p className="text-[13px] leading-snug text-muted-foreground">{description}</p>
           {actionRow}
           {actionHint ? <div className="mt-2">{actionHint}</div> : null}
-          {!installed && preInstallNotice && preInstallNoticeVisible ? (
-            <p className="mt-3 text-[12px] leading-snug text-muted-foreground">
-              {preInstallNotice}
-            </p>
-          ) : null}
         </div>
         {footer ? (
           <div

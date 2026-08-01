@@ -151,30 +151,15 @@ describe('getSetupGuideProgressReady', () => {
     linearStatusChecked: true,
     jiraStatusChecked: true,
     browserUseSkillDiscoveryLoading: false,
-    computerUseSkillDiscoveryLoading: false,
-    orchestrationSkillDiscoveryLoading: false,
     setupScriptProbeReady: true,
-    computerUseSkillInstalled: false,
-    computerUsePermissionStatusChecked: false
+    computerUsePermissionStatusChecked: true
   }
 
-  it('waits for every setup-guide skill discovery scan to settle', () => {
+  it('waits for the Browser Use capability check to settle', () => {
     expect(
       getSetupGuideProgressReady({
         ...readyInput,
         browserUseSkillDiscoveryLoading: true
-      })
-    ).toBe(false)
-    expect(
-      getSetupGuideProgressReady({
-        ...readyInput,
-        computerUseSkillDiscoveryLoading: true
-      })
-    ).toBe(false)
-    expect(
-      getSetupGuideProgressReady({
-        ...readyInput,
-        orchestrationSkillDiscoveryLoading: true
       })
     ).toBe(false)
   })
@@ -191,17 +176,15 @@ describe('getSetupGuideProgressReady', () => {
     expect(
       getSetupGuideProgressReady({
         ...readyInput,
-        computerUseSkillInstalled: true,
         computerUsePermissionStatusChecked: true
       })
     ).toBe(true)
   })
 
-  it('waits for Computer Use permission status when the skill is installed', () => {
+  it('waits for Computer Use permission status', () => {
     expect(
       getSetupGuideProgressReady({
         ...readyInput,
-        computerUseSkillInstalled: true,
         computerUsePermissionStatusChecked: false
       })
     ).toBe(false)

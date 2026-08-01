@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import {
   chmod,
+  cp,
   copyFile,
   mkdir,
   mkdtemp,
@@ -115,16 +116,16 @@ describe('skill bundle manifest generator', () => {
   it('rejects rewrites of released snapshots and allows floating-tail replacement', () => {
     const snapshot = (releaseRevision, packageDigest) => ({ releaseRevision, packageDigest })
     const artifacts = {
-      releasedSnapshotCounts: { 'orca-cli': 2 },
+      releasedSnapshotCounts: { 'computer-use': 2 },
       snapshotRegistry: {
         schemaVersion: 1,
-        skills: { 'orca-cli': [snapshot(1, 'aaa'), snapshot(2, 'bbb'), snapshot(3, 'ccc')] }
+        skills: { 'computer-use': [snapshot(1, 'aaa'), snapshot(2, 'bbb'), snapshot(3, 'ccc')] }
       }
     }
 
     expect(() =>
       assertReleasedHistoryPreserved(
-        { schemaVersion: 1, skills: { 'orca-cli': [snapshot(1, 'aaa'), snapshot(2, 'bbb')] } },
+        { schemaVersion: 1, skills: { 'computer-use': [snapshot(1, 'aaa'), snapshot(2, 'bbb')] } },
         artifacts
       )
     ).not.toThrow()
@@ -132,7 +133,7 @@ describe('skill bundle manifest generator', () => {
       assertReleasedHistoryPreserved(
         {
           schemaVersion: 1,
-          skills: { 'orca-cli': [snapshot(1, 'aaa'), snapshot(2, 'bbb'), snapshot(3, 'stale')] }
+          skills: { 'computer-use': [snapshot(1, 'aaa'), snapshot(2, 'bbb'), snapshot(3, 'stale')] }
         },
         artifacts
       )
@@ -141,33 +142,33 @@ describe('skill bundle manifest generator', () => {
       assertReleasedHistoryPreserved(
         {
           schemaVersion: 1,
-          skills: { 'orca-cli': [snapshot(1, 'aaa'), snapshot(2, 'rewritten')] }
+          skills: { 'computer-use': [snapshot(1, 'aaa'), snapshot(2, 'rewritten')] }
         },
         artifacts
       )
-    ).toThrow('Released snapshot history changed for orca-cli at revision 2')
+    ).toThrow('Released snapshot history changed for computer-use at revision 2')
     expect(() =>
       assertReleasedHistoryPreserved(
         {
           schemaVersion: 1,
           skills: {
-            'orca-cli': [snapshot(1, 'aaa'), { ...snapshot(2, 'bbb'), gitTreeSha: 'rewritten' }]
+            'computer-use': [snapshot(1, 'aaa'), { ...snapshot(2, 'bbb'), gitTreeSha: 'rewritten' }]
           }
         },
         artifacts
       )
-    ).toThrow('Released snapshot history changed for orca-cli at revision 2')
+    ).toThrow('Released snapshot history changed for computer-use at revision 2')
     expect(() =>
       assertReleasedHistoryPreserved(
         {
           schemaVersion: 1,
           skills: {
-            'orca-cli': [snapshot(1, 'aaa'), snapshot(2, 'bbb'), snapshot(3, 'stale')]
+            'computer-use': [snapshot(1, 'aaa'), snapshot(2, 'bbb'), snapshot(3, 'stale')]
           }
         },
-        { ...artifacts, releasedSnapshotCounts: { 'orca-cli': 1 } }
+        { ...artifacts, releasedSnapshotCounts: { 'computer-use': 1 } }
       )
-    ).toThrow('Released snapshot history is incomplete for orca-cli')
+    ).toThrow('Released snapshot history is incomplete for computer-use')
     expect(() => assertReleasedHistoryPreserved(null, artifacts)).not.toThrow()
   })
 
@@ -204,11 +205,11 @@ describe('skill bundle manifest generator', () => {
   it('tolerates only redundant trailing release-mapping rows', () => {
     const serialized = (value) => `${JSON.stringify(value, null, 2)}\n`
     const rows = [
-      { appVersion: '1.0.0', skills: { 'orca-cli': 1 } },
-      { appVersion: '1.1.0', skills: { 'orca-cli': 2 } }
+      { appVersion: '1.0.0', skills: { 'computer-use': 1 } },
+      { appVersion: '1.1.0', skills: { 'computer-use': 2 } }
     ]
     const artifacts = {
-      currentManifest: { skills: [{ name: 'orca-cli', releaseRevision: 2 }] },
+      currentManifest: { skills: [{ name: 'computer-use', releaseRevision: 2 }] },
       releaseMapping: { schemaVersion: 1, releases: rows }
     }
     const committedPrefix = serialized({ schemaVersion: 1, releases: [rows[0]] })
@@ -223,7 +224,7 @@ describe('skill bundle manifest generator', () => {
     expect(
       isToleratedReleaseMappingPrefix(committedPrefix, {
         ...artifacts,
-        currentManifest: { skills: [{ name: 'orca-cli', releaseRevision: 3 }] }
+        currentManifest: { skills: [{ name: 'computer-use', releaseRevision: 3 }] }
       })
     ).toBe(false)
     expect(
@@ -231,7 +232,7 @@ describe('skill bundle manifest generator', () => {
         ...artifacts,
         currentManifest: {
           skills: [
-            { name: 'orca-cli', releaseRevision: 2 },
+            { name: 'computer-use', releaseRevision: 2 },
             { name: 'orca-linear', releaseRevision: 1 }
           ]
         }
@@ -242,7 +243,7 @@ describe('skill bundle manifest generator', () => {
       isToleratedReleaseMappingPrefix(
         serialized({
           schemaVersion: 1,
-          releases: [{ appVersion: '0.9.0', skills: { 'orca-cli': 1 } }]
+          releases: [{ appVersion: '0.9.0', skills: { 'computer-use': 1 } }]
         }),
         artifacts
       )
@@ -257,22 +258,22 @@ describe('skill bundle manifest generator', () => {
       schemaVersion: 1,
       skills: {
         // released revs 1..2 named by the mapping, plus an unreleased tail at 3
-        'orca-cli': [snapshot(1, 'aaa'), snapshot(2, 'bbb'), snapshot(3, 'unreleased')],
+        'computer-use': [snapshot(1, 'aaa'), snapshot(2, 'bbb'), snapshot(3, 'unreleased')],
         // no mapping row -> fall back to all-but-tail
         'orca-linear': [snapshot(1, 'ccc'), snapshot(2, 'tail')]
       }
     }
     const committedMapping = {
       schemaVersion: 1,
-      releases: [{ appVersion: '1.0.0', skills: { 'orca-cli': 2 } }]
+      releases: [{ appVersion: '1.0.0', skills: { 'computer-use': 2 } }]
     }
 
     const seeded = releasedHistoryFromCommitted(committedRegistry, committedMapping)
 
     // The unreleased tail is dropped; only mapping-named revisions survive.
-    expect(seeded.registry.skills['orca-cli']).toEqual([snapshot(1, 'aaa'), snapshot(2, 'bbb')])
+    expect(seeded.registry.skills['computer-use']).toEqual([snapshot(1, 'aaa'), snapshot(2, 'bbb')])
     expect(seeded.registry.skills['orca-linear']).toEqual([snapshot(1, 'ccc')])
-    expect(seeded.releasedSnapshotCounts).toEqual({ 'orca-cli': 2, 'orca-linear': 1 })
+    expect(seeded.releasedSnapshotCounts).toEqual({ 'computer-use': 2, 'orca-linear': 1 })
     // The seed clones the mapping so a later release append cannot alias committed state.
     expect(seeded.mapping).toEqual(committedMapping)
     expect(seeded.mapping).not.toBe(committedMapping)
@@ -289,20 +290,20 @@ describe('skill bundle manifest generator', () => {
     const artifacts = {
       currentManifest: {
         skills: [
-          { name: 'orca-cli', releaseRevision: 36 },
+          { name: 'computer-use', releaseRevision: 36 },
           { name: 'orca-linear', releaseRevision: 8 }
         ]
       },
       releaseMapping: {
         schemaVersion: 1,
-        releases: [{ appVersion: '1.4.151', skills: { 'orca-cli': 35, 'orca-linear': 8 } }]
+        releases: [{ appVersion: '1.4.151', skills: { 'computer-use': 35, 'orca-linear': 8 } }]
       }
     }
 
     appendReleaseRow(artifacts, 'v1.4.160')
     expect(artifacts.releaseMapping.releases.at(-1)).toEqual({
       appVersion: '1.4.160',
-      skills: { 'orca-cli': 36, 'orca-linear': 8 }
+      skills: { 'computer-use': 36, 'orca-linear': 8 }
     })
 
     // A second release over identical revisions adds no row.
@@ -312,13 +313,13 @@ describe('skill bundle manifest generator', () => {
 
   it('overwrites the trailing row when a failed cut is re-cut at the same version', () => {
     const artifacts = {
-      currentManifest: { skills: [{ name: 'orca-cli', releaseRevision: 37 }] },
+      currentManifest: { skills: [{ name: 'computer-use', releaseRevision: 37 }] },
       releaseMapping: {
         schemaVersion: 1,
         releases: [
-          { appVersion: '1.4.151', skills: { 'orca-cli': 35 } },
+          { appVersion: '1.4.151', skills: { 'computer-use': 35 } },
           // The failed cut already pushed this row to main at revision 36.
-          { appVersion: '1.4.160', skills: { 'orca-cli': 36 } }
+          { appVersion: '1.4.160', skills: { 'computer-use': 36 } }
         ]
       }
     }
@@ -327,19 +328,19 @@ describe('skill bundle manifest generator', () => {
 
     // One row per version: the tag ships revision 37, so 36 must not linger.
     expect(artifacts.releaseMapping.releases).toEqual([
-      { appVersion: '1.4.151', skills: { 'orca-cli': 35 } },
-      { appVersion: '1.4.160', skills: { 'orca-cli': 37 } }
+      { appVersion: '1.4.151', skills: { 'computer-use': 35 } },
+      { appVersion: '1.4.160', skills: { 'computer-use': 37 } }
     ])
   })
 
   it('refuses to rewrite an already-shipped version behind the trailing row', () => {
     const artifacts = {
-      currentManifest: { skills: [{ name: 'orca-cli', releaseRevision: 37 }] },
+      currentManifest: { skills: [{ name: 'computer-use', releaseRevision: 37 }] },
       releaseMapping: {
         schemaVersion: 1,
         releases: [
-          { appVersion: '1.4.151', skills: { 'orca-cli': 35 } },
-          { appVersion: '1.4.160', skills: { 'orca-cli': 36 } }
+          { appVersion: '1.4.151', skills: { 'computer-use': 35 } },
+          { appVersion: '1.4.160', skills: { 'computer-use': 36 } }
         ]
       }
     }
@@ -437,13 +438,13 @@ describe('skill bundle manifest generator', () => {
   })
 
   it('computes the same Git tree identity as Git', async () => {
-    const packageRoot = path.resolve('skills', 'orca-cli')
+    const packageRoot = path.resolve('skills', 'orca-per-workspace-env')
     const files = await collectPackageFiles(packageRoot)
-    const expected = execFileSync('git', ['ls-tree', 'HEAD:skills', 'orca-cli'], {
-      encoding: 'utf8'
-    })
-      .trim()
-      .split(/\s+/)[2]
+    const gitRoot = path.join(await createPackage(), 'orca-per-workspace-env')
+    await cp(packageRoot, gitRoot, { recursive: true })
+    execFileSync('git', ['init', '--quiet'], { cwd: gitRoot })
+    execFileSync('git', ['add', '-A'], { cwd: gitRoot })
+    const expected = execFileSync('git', ['write-tree'], { cwd: gitRoot, encoding: 'utf8' }).trim()
 
     expect(gitTreeSha(files)).toBe(expected)
   })

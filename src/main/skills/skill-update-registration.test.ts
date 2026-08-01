@@ -25,9 +25,9 @@ describe('global skill update registration', () => {
       JSON.stringify({
         version: 3,
         skills: {
-          orchestration: {
+          'control-skill': {
             skillFolderHash: 'hash',
-            skillPath: 'skills/orchestration/SKILL.md',
+            skillPath: 'skills/control-skill/SKILL.md',
             source: 'stablyai/orca'
           },
           copied: {},
@@ -46,7 +46,7 @@ describe('global skill update registration', () => {
     )
 
     await expect(readGloballyUpdatableSkillNames({ homeDir, stateHome: null })).resolves.toEqual(
-      new Set(['orchestration'])
+      new Set(['control-skill'])
     )
   })
 
@@ -59,9 +59,9 @@ describe('global skill update registration', () => {
       JSON.stringify({
         version: 3,
         skills: {
-          'orca-cli': {
+          'sample-skill': {
             skillFolderHash: 'hash',
-            skillPath: 'skills/orca-cli/SKILL.md',
+            skillPath: 'skills/sample-skill/SKILL.md',
             source: 'stablyai/orca'
           }
         }
@@ -69,7 +69,7 @@ describe('global skill update registration', () => {
     )
 
     await expect(readGloballyUpdatableSkillNames({ homeDir: root, stateHome })).resolves.toEqual(
-      new Set(['orca-cli'])
+      new Set(['sample-skill'])
     )
   })
 })

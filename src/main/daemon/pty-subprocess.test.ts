@@ -1845,36 +1845,6 @@ describe('createPtySubprocess', () => {
     expect(lastCall[2].env.ORCA_SHELL_READY_MARKER).toBe('0')
   })
 
-  it('uses shell wrapper when Agent Teams shim path must survive shell startup', () => {
-    const proc = mockPtyProcess()
-    spawnMock.mockReturnValue(proc)
-    const platform = Object.getOwnPropertyDescriptor(process, 'platform')
-    Object.defineProperty(process, 'platform', { value: 'linux' })
-
-    try {
-      createPtySubprocess({
-        sessionId: 'test',
-        cols: 80,
-        rows: 24,
-        env: {
-          SHELL: '/bin/zsh',
-          PATH: '/tmp/orca-agent-teams-bin:/usr/bin',
-          ORCA_AGENT_TEAMS_TEAM_ID: 'team-test',
-          ORCA_AGENT_TEAMS_SHIM_DIR: '/tmp/orca-agent-teams-bin'
-        }
-      })
-    } finally {
-      if (platform) {
-        Object.defineProperty(process, 'platform', platform)
-      }
-    }
-
-    const lastCall = spawnMock.mock.calls.at(-1)!
-    expect(lastCall[1]).toEqual(['-l'])
-    expect(lastCall[2].env.ZDOTDIR).toMatch(ZSH_SHELL_READY_DIR)
-    expect(lastCall[2].env.ORCA_SHELL_READY_MARKER).toBe('0')
-  })
-
   it('keeps plain Codex startup commands on the no-marker wrapper', () => {
     const proc = mockPtyProcess()
     spawnMock.mockReturnValue(proc)
@@ -2057,10 +2027,12 @@ describe('createPtySubprocess', () => {
   it('preserves a daemon-owned custom Codex home while deleting a stale private marker', () => {
     const proc = mockPtyProcess()
     spawnMock.mockReturnValue(proc)
+    const platform = Object.getOwnPropertyDescriptor(process, 'platform')
     const previousCodexHome = process.env.CODEX_HOME
     const previousOrcaCodexHome = process.env.ORCA_CODEX_HOME
     process.env.CODEX_HOME = '/daemon/user/codex-home'
     process.env.ORCA_CODEX_HOME = '/daemon/stale/managed-home'
+    Object.defineProperty(process, 'platform', { value: 'linux' })
 
     try {
       createPtySubprocess({
@@ -2071,6 +2043,9 @@ describe('createPtySubprocess', () => {
         envToDelete: ['ORCA_CODEX_HOME']
       })
     } finally {
+      if (platform) {
+        Object.defineProperty(process, 'platform', platform)
+      }
       if (previousCodexHome === undefined) {
         delete process.env.CODEX_HOME
       } else {
@@ -2099,8 +2074,7 @@ describe('createPtySubprocess', () => {
       env: {
         SHELL: '/bin/bash',
         TERM: 'screen-256color',
-        PATH: '/tmp/orca-agent-teams-bin:/usr/bin',
-        ORCA_AGENT_TEAMS_TEAM_ID: 'team-test'
+        PATH: '/tmp/custom-bin:/usr/bin'
       },
       envToDelete: ['TERM_PROGRAM', 'ORCA_ATTRIBUTION_SHIM_DIR']
     })
@@ -2108,7 +2082,7 @@ describe('createPtySubprocess', () => {
     const lastCall = spawnMock.mock.calls.at(-1)!
     expect(lastCall[2].name).toBe('screen-256color')
     expect(lastCall[2].env.TERM).toBe('screen-256color')
-    expect(lastCall[2].env.PATH.split(':')[0]).toBe('/tmp/orca-agent-teams-bin')
+    expect(lastCall[2].env.PATH.split(':')[0]).toBe('/tmp/custom-bin')
     expect(lastCall[2].env.TERM_PROGRAM).toBeUndefined()
     expect(lastCall[2].env.ORCA_ATTRIBUTION_SHIM_DIR).toBeUndefined()
   })

@@ -302,9 +302,6 @@ export function activateAndRevealWorktree(
   ) {
     state.setHideAutomationGeneratedWorkspaces(false)
   }
-  if (state.hideCliCreatedWorkspaces && wt.cliProvenance?.kind === 'created-by-cli') {
-    state.setHideCliCreatedWorkspaces(false)
-  }
   if (state.hideDetachedHeadWorkspaces && isDetachedHeadWorkspace(wt)) {
     state.setHideDetachedHeadWorkspaces(false)
   }

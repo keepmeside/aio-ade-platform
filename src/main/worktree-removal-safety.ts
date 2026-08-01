@@ -15,15 +15,13 @@ type PathOps = typeof posix
 const ORCA_CREATION_SOURCES = new Set<NonNullable<WorktreeMeta['orcaCreationSource']>>([
   'desktop',
   'runtime',
-  'cli',
   'ssh'
 ])
 const ORCA_OWNED_PROVENANCE_META_KEYS = [
   'orcaCreatedAt',
   'orcaCreationSource',
   'orcaCreationWorkspaceLayout',
-  'automationProvenance',
-  'cliProvenance'
+  'automationProvenance'
 ] as const
 type UnregisteredOrcaCleanupMeta = Pick<
   WorktreeMeta,

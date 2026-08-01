@@ -84,7 +84,7 @@ type Props = {
   hideExpand?: boolean
   /** Reuse the row's hover tint to show the focused terminal pane's agent. */
   isFocusedPane?: boolean
-  // Why: inline-card orchestration rows fold children under a leading chevron.
+  // Why: inline nested-agent rows fold children under a leading chevron.
   childAgentCount?: number
   childAgentsExpanded?: boolean
   onToggleChildAgents?: () => void

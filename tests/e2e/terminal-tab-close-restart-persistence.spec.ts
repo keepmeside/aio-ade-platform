@@ -11,12 +11,12 @@ import {
   waitForSessionReady
 } from './helpers/store'
 import { attachRepoAndOpenTerminal, createRestartSession } from './helpers/orca-restart'
-import { RuntimeClient } from '../../src/cli/runtime/client'
 import type {
   RuntimeTerminalClose,
   RuntimeTerminalListResult,
   RuntimeTerminalSplit
 } from '../../src/shared/runtime-types'
+import { LocalRuntimeRpcClient } from './helpers/local-runtime-rpc-client'
 
 test.describe.configure({ mode: 'serial' })
 
@@ -55,7 +55,7 @@ test('durable whole-tab close removes a split tab across restart', async (// oxl
     }
     expect(await getWorktreeTabs(firstLaunch.page, worktreeId)).toHaveLength(1)
 
-    const client = new RuntimeClient(session.userDataDir, 30_000)
+    const client = new LocalRuntimeRpcClient(session.userDataDir, 30_000)
     let activeHandle: string | null = null
     await expect
       .poll(

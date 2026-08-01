@@ -61,7 +61,6 @@ import type {
 // Mirrors `TuiAgent` launch surface; `claude`↔`claude-code` (product, not CLI string). `other` is the escape hatch; see `tuiAgentToAgentKind`.
 export const AGENT_KIND_VALUES = [
   'claude-code',
-  'claude-agent-teams',
   'openclaude',
   'codex',
   'autohand',
@@ -203,7 +202,6 @@ export const featureWallTileIdSchema = z.enum([
   'tile-06',
   'tile-07',
   'tile-08',
-  'tile-09',
   'tile-10',
   'tile-11',
   'tile-12'
@@ -213,13 +211,7 @@ export type FeatureWallTileIdTelemetry = z.infer<typeof featureWallTileIdSchema>
 export const featureWallOpenSourceSchema = z.enum(['help_menu', 'popup', 'onboarding', 'unknown'])
 export type FeatureWallOpenSourceTelemetry = z.infer<typeof featureWallOpenSourceSchema>
 
-export const featureWallWorkflowIdSchema = z.enum([
-  'tasks',
-  'workspaces',
-  'agents-orchestration',
-  'workbench',
-  'review'
-])
+export const featureWallWorkflowIdSchema = z.enum(['tasks', 'workspaces', 'workbench', 'review'])
 export type FeatureWallWorkflowIdTelemetry = z.infer<typeof featureWallWorkflowIdSchema>
 
 export const featureWallTourDepthStepSchema = z.enum(FEATURE_WALL_TOUR_DEPTH_STEPS)
@@ -501,36 +493,17 @@ const nativeChatSkillDiscoverySchema = z
 const telemetryOptedInSchema = z.object({ via: optInViaSchema }).strict()
 const telemetryOptedOutSchema = z.object({ via: optInViaSchema }).strict()
 
-const orcaCliFeatureTipSourceSchema = z.enum(['app_open', 'manual'])
-const orcaCliFeatureTipShownSchema = z
-  .object({
-    source: orcaCliFeatureTipSourceSchema,
-    nth_repo_added: nthRepoAddedSchema
-  })
-  .strict()
-const orcaCliFeatureTipSetupClickedSchema = z
-  .object({
-    source: orcaCliFeatureTipSourceSchema,
-    nth_repo_added: nthRepoAddedSchema
-  })
-  .strict()
-const orcaCliFeatureTipSetupResultSchema = z
-  .object({
-    source: orcaCliFeatureTipSourceSchema,
-    result: z.enum(['installed', 'needs_attention', 'dev_preview', 'failed']),
-    nth_repo_added: nthRepoAddedSchema
-  })
-  .strict()
+const featureTipSourceSchema = z.enum(['app_open', 'manual'])
 
 const cmdJPaletteFeatureTipShownSchema = z
   .object({
-    source: orcaCliFeatureTipSourceSchema,
+    source: featureTipSourceSchema,
     nth_repo_added: nthRepoAddedSchema
   })
   .strict()
 const cmdJPaletteFeatureTipAcknowledgedSchema = z
   .object({
-    source: orcaCliFeatureTipSourceSchema,
+    source: featureTipSourceSchema,
     nth_repo_added: nthRepoAddedSchema
   })
   .strict()
@@ -807,21 +780,18 @@ const onboardingChecklistItemSchema = z.enum([
 const onboardingFeatureSetupFeatureSchema = z.enum([
   'browser_use',
   'computer_use',
-  'orchestration',
   'linear_tickets'
 ])
 const onboardingFeatureSetupSelectionSchema = {
   browser_use: z.boolean(),
   computer_use: z.boolean(),
   linear_tickets: z.boolean(),
-  orchestration: z.boolean(),
-  selected_count: z.number().int().min(0).max(3)
+  selected_count: z.number().int().min(0).max(2)
 } as const
 type OnboardingFeatureSetupSelectionTelemetry = {
   browser_use: boolean
   computer_use: boolean
   linear_tickets: boolean
-  orchestration: boolean
   selected_count: number
 }
 const onboardingFeatureSetupSelectedCountRefinement = {
@@ -833,8 +803,7 @@ function hasMatchingOnboardingFeatureSetupSelectedCount(
   props: OnboardingFeatureSetupSelectionTelemetry
 ): boolean {
   // Why: Linear ticket setup is a recommended add-on and excluded from progress metrics.
-  const selectedCount =
-    (props.browser_use ? 1 : 0) + (props.computer_use ? 1 : 0) + (props.orchestration ? 1 : 0)
+  const selectedCount = (props.browser_use ? 1 : 0) + (props.computer_use ? 1 : 0)
   return props.selected_count === selectedCount
 }
 
@@ -1183,7 +1152,6 @@ const onboardingFeatureSetupToggledSchema = z
 const onboardingFeatureSetupRunSchema = z
   .object({
     ...onboardingFeatureSetupSelectionSchema,
-    cli_touched: z.boolean(),
     skill_commands_copied: z.boolean(),
     skill_install_command_prepared: z.boolean(),
     computer_use_permissions_opened: z.boolean(),
@@ -1427,9 +1395,6 @@ export const eventSchemas = {
   telemetry_opted_in: telemetryOptedInSchema,
   telemetry_opted_out: telemetryOptedOutSchema,
 
-  orca_cli_feature_tip_shown: orcaCliFeatureTipShownSchema,
-  orca_cli_feature_tip_setup_clicked: orcaCliFeatureTipSetupClickedSchema,
-  orca_cli_feature_tip_setup_result: orcaCliFeatureTipSetupResultSchema,
   cmd_j_palette_feature_tip_shown: cmdJPaletteFeatureTipShownSchema,
   cmd_j_palette_feature_tip_acknowledged: cmdJPaletteFeatureTipAcknowledgedSchema,
 
@@ -1532,9 +1497,6 @@ type _CohortExtendedRoster =
   | 'agent_started'
   | 'agent_prompt_sent'
   | 'agent_error'
-  | 'orca_cli_feature_tip_shown'
-  | 'orca_cli_feature_tip_setup_clicked'
-  | 'orca_cli_feature_tip_setup_result'
   | 'cmd_j_palette_feature_tip_shown'
   | 'cmd_j_palette_feature_tip_acknowledged'
 // Why: strict empty payloads infer a string index signature; ignore index-only keys so they aren't pulled into keyed rosters.

@@ -34,7 +34,7 @@ export function getRuntimeFeatureInteractionId(
   ) {
     return 'computer-use'
   }
-  return method.startsWith('orchestration.') ? 'agent-orchestration' : null
+  return null
 }
 
 function hasBooleanResult(value: unknown, key: string): boolean {

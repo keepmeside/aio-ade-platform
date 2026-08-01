@@ -4,37 +4,16 @@ import { getDefaultAgentCapabilitySetupSelection } from './agent-capability-setu
 const READY_INPUT = {
   browserUseSkillInstalled: true,
   browserUseSkillLoading: false,
-  computerUseSkillInstalled: true,
-  computerUseSkillLoading: false,
   computerUseReady: true,
   computerUseChecking: false,
-  computerUseUnavailable: false,
-  orchestrationSkillInstalled: true,
-  orchestrationSkillLoading: false
+  computerUseUnavailable: false
 }
 
 describe('getDefaultAgentCapabilitySetupSelection', () => {
   it('leaves already-ready capabilities unchecked by default', () => {
     expect(getDefaultAgentCapabilitySetupSelection(READY_INPUT)).toEqual({
       browserUse: false,
-      computerUse: false,
-      orchestration: false,
-      linearTickets: false
-    })
-  })
-
-  it('keeps missing skills selected by default', () => {
-    expect(
-      getDefaultAgentCapabilitySetupSelection({
-        ...READY_INPUT,
-        browserUseSkillInstalled: false,
-        orchestrationSkillInstalled: false
-      })
-    ).toEqual({
-      browserUse: true,
-      computerUse: false,
-      orchestration: true,
-      linearTickets: false
+      computerUse: false
     })
   })
 
@@ -46,9 +25,7 @@ describe('getDefaultAgentCapabilitySetupSelection', () => {
       })
     ).toEqual({
       browserUse: false,
-      computerUse: true,
-      orchestration: false,
-      linearTickets: false
+      computerUse: true
     })
   })
 
@@ -61,9 +38,7 @@ describe('getDefaultAgentCapabilitySetupSelection', () => {
       })
     ).toEqual({
       browserUse: false,
-      computerUse: false,
-      orchestration: false,
-      linearTickets: false
+      computerUse: false
     })
   })
 })

@@ -15,8 +15,8 @@ describe('computerUseErrorRecoveryData', () => {
     const recovery = computerUseErrorRecoveryData('screenshot_failed')
 
     expect(recovery?.nextSteps).toEqual([
-      expect.stringContaining('--no-screenshot'),
-      expect.stringContaining('--id screenshots'),
+      expect.stringContaining('noScreenshot: true'),
+      expect.stringContaining('id: "screenshots"'),
       expect.stringContaining('payload cap')
     ])
   })
@@ -25,7 +25,7 @@ describe('computerUseErrorRecoveryData', () => {
     const recovery = computerUseErrorRecoveryData('permission_denied')
 
     expect(recovery?.nextSteps).toEqual([
-      expect.stringContaining('--id accessibility'),
+      expect.stringContaining('id: "accessibility"'),
       expect.stringContaining('graphical desktop session')
     ])
   })
@@ -34,8 +34,8 @@ describe('computerUseErrorRecoveryData', () => {
     const recovery = computerUseErrorRecoveryData('window_not_found')
 
     expect(recovery?.nextSteps).toEqual([
-      expect.stringContaining('list-windows'),
-      expect.stringContaining('--restore-window'),
+      expect.stringContaining('computer.listWindows'),
+      expect.stringContaining('restoreWindow: true'),
       expect.stringContaining('does not launch closed desktop apps')
     ])
   })
@@ -44,11 +44,11 @@ describe('computerUseErrorRecoveryData', () => {
     const recovery = computerUseErrorRecoveryData('app_not_found')
 
     expect(recovery?.nextSteps).toEqual([
-      expect.stringContaining('list-apps'),
+      expect.stringContaining('computer.listApps'),
       expect.stringContaining('desktop browser app/window'),
-      expect.stringContaining('--app <web app>'),
-      expect.stringContaining('list-windows --app <browser>')
+      expect.stringContaining('`app` value'),
+      expect.stringContaining('computer.listWindows')
     ])
-    expect(recovery?.nextSteps.join('\n')).not.toContain('orca goto')
+    expect(recovery?.nextSteps.join('\n')).not.toContain('orca computer')
   })
 })

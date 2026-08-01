@@ -29,13 +29,6 @@ const AutomationWorkspaceProvenanceRequest = z.object({
   createRequestId: z.string()
 })
 
-// Why no dispatch token (unlike automation provenance): this is a descriptive
-// origin marker for sidebar filtering, not an authority grant. The host stamps
-// createdAt itself so a client clock can't skew sort order.
-const CliWorkspaceProvenanceRequest = z.object({
-  callerTerminalHandle: OptionalString
-})
-
 export const WorktreeListParams = z.object({
   repo: OptionalString,
   limit: OptionalFiniteNumber
@@ -120,14 +113,6 @@ export const WorktreeCreate = z
     cwdParentWorktree: OptionalString,
     noParent: OptionalBoolean,
     callerTerminalHandle: OptionalString,
-    orchestrationContext: z
-      .object({
-        parentWorktreeId: OptionalString,
-        orchestrationRunId: OptionalString,
-        taskId: OptionalString,
-        coordinatorHandle: OptionalString
-      })
-      .optional(),
     setupDecision: z
       .unknown()
       .transform((v) =>
@@ -142,7 +127,7 @@ export const WorktreeCreate = z
     startupEnv: z.record(z.string(), z.string()).optional(),
     startupLaunchConfig: sleepingAgentLaunchConfigSchema,
     startupCommandDelivery: z.enum(['fast', 'shell-ready']).optional(),
-    // Why: CLI clients should not hardcode agent launch quoting because SSH
+    // Why: remote clients should not hardcode agent launch quoting because SSH
     // workspaces execute in a different shell than the client process.
     startupAgent: OptionalTuiAgent,
     startupPrompt: OptionalString,
@@ -156,20 +141,19 @@ export const WorktreeCreate = z
     // Why: mobile retries a create interrupted by a connection migration with the
     // same key so the host dedupes instead of spawning a duplicate worktree.
     clientMutationId: z.string().min(1).max(128).optional(),
-    automationProvenanceRequest: AutomationWorkspaceProvenanceRequest.optional(),
-    cliProvenanceRequest: CliWorkspaceProvenanceRequest.optional()
+    automationProvenanceRequest: AutomationWorkspaceProvenanceRequest.optional()
   })
   .superRefine((params, ctx) => {
     if ((params.parentWorkspace || params.parentWorktree) && params.noParent === true) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Choose either one parent selector or --no-parent.'
+        message: 'Choose either one parent selector or `noParent: true`.'
       })
     }
     if (params.parentWorkspace && params.parentWorktree) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Choose either one parent selector or --no-parent.'
+        message: 'Choose either one parent selector or `noParent: true`.'
       })
     }
     if (params.startupPrompt !== undefined && params.startupAgent === undefined) {
@@ -234,7 +218,7 @@ export const WorktreeSet = WorktreeSelector.extend({
   if (params.parentWorktree && params.noParent === true) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: 'Choose either --parent-worktree or --no-parent, not both.'
+      message: 'Choose either `parentWorktree` or `noParent: true`, not both.'
     })
   }
 })

@@ -7,20 +7,20 @@ import {
 
 describe('ephemeral setup terminal worktree id', () => {
   it('brands a panel id with the ephemeral prefix', () => {
-    expect(brandEphemeralSetupTerminalWorktreeId('feature-wall-orchestration-skill-terminal')).toBe(
-      `${EPHEMERAL_SETUP_TERMINAL_WORKTREE_ID_PREFIX}feature-wall-orchestration-skill-terminal`
+    expect(brandEphemeralSetupTerminalWorktreeId('feature-wall-browser-skill-terminal')).toBe(
+      `${EPHEMERAL_SETUP_TERMINAL_WORKTREE_ID_PREFIX}feature-wall-browser-skill-terminal`
     )
   })
 
   it('is idempotent for already-branded ids', () => {
-    const branded = brandEphemeralSetupTerminalWorktreeId('settings-orchestration-skill-terminal')
+    const branded = brandEphemeralSetupTerminalWorktreeId('settings-browser-skill-terminal')
     expect(brandEphemeralSetupTerminalWorktreeId(branded)).toBe(branded)
   })
 
   it('recognizes branded ids and rejects real worktree ids', () => {
     expect(
       isEphemeralSetupTerminalWorktreeId(
-        brandEphemeralSetupTerminalWorktreeId('feature-tip-cli-skills-terminal')
+        brandEphemeralSetupTerminalWorktreeId('feature-tip-agent-skills-terminal')
       )
     ).toBe(true)
     expect(isEphemeralSetupTerminalWorktreeId('repo-1::/work/orca/wt')).toBe(false)

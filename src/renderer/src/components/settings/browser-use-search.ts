@@ -4,64 +4,6 @@ import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 
 export const getBrowserUsePaneSearchEntries = createLocalizedCatalog(() => [
   {
-    title: translate('auto.components.settings.browser.use.search.50f0860e18', 'Enable Orca CLI'),
-    description: translate(
-      'auto.components.settings.browser.use.search.890ddf943d',
-      'Register the Orca CLI so agents can drive the browser.'
-    ),
-    keywords: [
-      ...translateSearchKeyword(
-        'auto.components.settings.browser.use.search.ba4eb53b72',
-        'browser use'
-      ),
-      ...translateSearchKeyword('auto.components.settings.browser.use.search.85fab5e12c', 'cli'),
-      ...translateSearchKeyword('auto.components.settings.browser.use.search.ff05cbc344', 'orca'),
-      ...translateSearchKeyword('auto.components.settings.browser.use.search.30c74aaa1f', 'path'),
-      ...translateSearchKeyword(
-        'auto.components.settings.browser.use.search.3ffafc9b95',
-        'command'
-      ),
-      ...translateSearchKeyword('auto.components.settings.browser.use.search.7e0dcb257a', 'shell'),
-      ...translateSearchKeyword('auto.components.settings.browser.use.search.034c5e8d7f', 'enable'),
-      ...translateSearchKeyword('auto.components.settings.browser.use.search.e56c7b55c9', 'setup')
-    ]
-  },
-  {
-    title: translate(
-      'auto.components.settings.browser.use.search.a1414dcefb',
-      'Install Browser Use Skill'
-    ),
-    description: translate(
-      'auto.components.settings.browser.use.search.a7e82445fa',
-      "Install the Browser Use skill so agents can operate Orca's browser."
-    ),
-    keywords: [
-      ...translateSearchKeyword(
-        'auto.components.settings.browser.use.search.ba4eb53b72',
-        'browser use'
-      ),
-      ...translateSearchKeyword('auto.components.settings.browser.use.search.a2d489263e', 'skill'),
-      ...translateSearchKeyword('auto.components.settings.browser.use.search.9d97446873', 'agent'),
-      ...translateSearchKeyword(
-        'auto.components.settings.browser.use.search.e5a784bc54',
-        'install'
-      ),
-      ...translateSearchKeyword(
-        'auto.components.settings.browser.use.search.f5b8fdddf5',
-        'orca-cli'
-      ),
-      ...translateSearchKeyword('auto.components.settings.browser.use.search.6ea88e5206', 'npx'),
-      ...translateSearchKeyword(
-        'auto.components.settings.browser.use.search.a57c2172dc',
-        'agent-browser'
-      ),
-      ...translateSearchKeyword(
-        'auto.components.settings.browser.use.search.cee44fb442',
-        'automation'
-      )
-    ]
-  },
-  {
     title: translate(
       'auto.components.settings.browser.use.search.614c756ab1',
       'Import Browser Cookies'

@@ -90,7 +90,7 @@ export function SidebarSettingsHelpMenu(): React.JSX.Element {
   const openSettingsPage = useAppStore((s) => s.openSettingsPage)
   const openSettingsTarget = useAppStore((s) => s.openSettingsTarget)
   const updateStatus = useAppStore((s) => s.updateStatus)
-  const setupProgress = useSetupGuideProgress(true, false, false)
+  const setupProgress = useSetupGuideProgress(true, false)
 
   const settingsShortcut = useShortcutKeyDetails('app.settings')
   const [menuOpen, setMenuOpen] = useState(false)

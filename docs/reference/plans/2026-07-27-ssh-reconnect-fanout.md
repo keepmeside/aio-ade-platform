@@ -135,7 +135,7 @@ ORCA_E2E_SSH_DOCKER=1 SKIP_BUILD=1 pnpm exec playwright test \
 
 The four-test relay suite and the cold-restore journey passed. The relay suite covered streaming, a background ACK-stalled PTY, file/Git pressure, and live terminal input/output before and after SSH disconnect/reconnect; the reconnect case independently read the post-reconnect proof file inside the Linux container. The cold-restore journey proved all six restored SSH terminals remounted and accepted remote input after renderer reload. Repo registration waits on exact renderer catalog ownership and full authority, requires an authoritative host-qualified worktree response, and uses no timing sleep.
 
-Remaining live gaps are headed paired-Orca-server and headless `orca serve` non-interference, WSL, physical Windows and Linux desktop clients, and a multi-target live fan-out/large-terminal-map benchmark. Docker SSH proves the direct SSH provider/relay path, not paired-runtime parity.
+Remaining live gaps are headed paired-runtime and headless runtime-host non-interference, WSL, physical Windows and Linux desktop clients, and a multi-target live fan-out/large-terminal-map benchmark. Docker SSH proves the direct SSH provider/relay path, not paired-runtime parity.
 
 Current-main reconciliation:
 

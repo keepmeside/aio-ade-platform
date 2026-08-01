@@ -18,7 +18,7 @@ export function MobileEmulatorTabIntroCallout(): React.JSX.Element {
       <p className="min-w-0 flex-1 text-[11px] leading-4 text-foreground/85">
         {translate(
           'auto.components.emulator.pane.MobileEmulatorTabIntroCallout.5789936d9a',
-          'Preview iOS simulators while agents drive the screen.'
+          'Preview and control iOS simulators from a workspace tab.'
         )}
       </p>
       <div className="flex shrink-0 items-center gap-1">

@@ -8,80 +8,14 @@ const componentsRoot = path.join(repoRoot, 'src/renderer/src/components')
 
 const updateCapableCallers = new Map<string, readonly string[]>([
   [
-    'src/renderer/src/components/settings/OrchestrationPane.tsx',
-    ['ORCHESTRATION_SKILL_UPDATE_COMMAND', 'installedCommand={orchestrationUpdateCommand}']
-  ],
-  [
-    'src/renderer/src/components/settings/OrchestrationSetupCard.tsx',
-    ['ORCHESTRATION_SKILL_UPDATE_COMMAND', 'installedCommand={updateCommand}']
-  ],
-  [
-    'src/renderer/src/components/floating-terminal/FloatingTerminalOrchestrationDialog.tsx',
-    ['ORCHESTRATION_SKILL_UPDATE_COMMAND', 'installedCommand={updateCommand}']
-  ],
-  [
-    'src/renderer/src/components/settings/ComputerUseSkillSetupPanel.tsx',
-    ['COMPUTER_USE_SKILL_UPDATE_COMMAND', 'installedCommand={updateCommand}']
-  ],
-  [
-    // Why: the Linear settings section shares the update-target resolver so
-    // legacy-only installs keep the command and freshness identity aligned.
-    'src/renderer/src/components/settings/LinearAgentSkillPane.tsx',
-    ['getLinearAgentSkillUpdateTarget', 'installedCommand={updateCommand}']
-  ],
-  [
     'src/renderer/src/components/settings/EphemeralVmsPane.tsx',
     ['EPHEMERAL_VMS_SKILL_UPDATE_COMMAND', 'installedCommand={updateCommand}']
-  ],
-  [
-    'src/renderer/src/components/settings/CliSection.tsx',
-    ['ORCA_CLI_SKILL_UPDATE_COMMAND', 'installedCommand={cliSkillUpdateCommand}']
-  ],
-  [
-    'src/renderer/src/components/settings/BrowserUsePane.tsx',
-    ['ORCA_CLI_SKILL_UPDATE_COMMAND', 'installedCommand={browserUseUpdateCommand}']
-  ],
-  [
-    'src/renderer/src/components/settings/BrowserUseSkillStep.tsx',
-    ['installedCommand={installedCommand}']
-  ],
-  [
-    'src/renderer/src/components/feature-wall/BrowserUseSkillSetupCard.tsx',
-    ['ORCA_CLI_SKILL_UPDATE_COMMAND', 'installedCommand={updateCommand}']
-  ],
-  [
-    // Why: the single-skill update command selection moved into
-    // getLinearAgentSkillUpdateCommand so the settings install CTA shares it.
-    'src/renderer/src/components/sidebar/LinearAgentSkillSetupPrompt.tsx',
-    ['getLinearAgentSkillUpdateCommand', 'installedCommand={installedCommand}']
-  ],
-  [
-    'src/renderer/src/components/sidebar/LinearAgentSkillSetupDialog.tsx',
-    ['installedCommand={installedCommand}']
-  ],
-  [
-    'src/renderer/src/components/settings/MobileEmulatorAgentControlRow.tsx',
-    ['ORCA_CLI_SKILL_UPDATE_COMMAND', 'installedCommand={cliSkillUpdateCommand}']
   ]
 ])
 
-const installOnlyCallers = new Map<string, readonly string[]>([
-  [
-    'src/renderer/src/components/emulator-pane/MobileEmulatorAgentSetupGuideSteps.tsx',
-    ['showInstallWhenInstalled={!setup.cliSkillInstalled}']
-  ]
-])
+const installOnlyCallers = new Map<string, readonly string[]>()
 
-const directPanelCallers = new Set([
-  // BrowserUsePane and LinearAgentSkillSetupPrompt delegate through child setup
-  // components that forward installedCommand and are validated separately above.
-  ...[...updateCapableCallers.keys()].filter(
-    (relativePath) =>
-      relativePath !== 'src/renderer/src/components/settings/BrowserUsePane.tsx' &&
-      relativePath !== 'src/renderer/src/components/sidebar/LinearAgentSkillSetupPrompt.tsx'
-  ),
-  ...installOnlyCallers.keys()
-])
+const directPanelCallers = new Set([...updateCapableCallers.keys(), ...installOnlyCallers.keys()])
 
 function relativeRepoPath(filePath: string): string {
   return path.relative(repoRoot, filePath).split(path.sep).join('/')
@@ -119,14 +53,6 @@ describe('AgentSkillSetupPanel installed-command call sites', () => {
         expect(source, `${relativePath} should include ${snippet}`).toContain(snippet)
       }
     }
-  })
-
-  it('keeps orchestration installed updates on the primary panel only', () => {
-    const source = readRepoFile('src/renderer/src/components/settings/OrchestrationPane.tsx')
-
-    expect(source).toContain('installedCommand={orchestrationUpdateCommand}')
-    expect(source).not.toContain('Copy update command')
-    expect(source).not.toContain('copyUpdateCommand')
   })
 
   it('fails when a production caller can show the default Update action without installedCommand', () => {

@@ -27,14 +27,16 @@ export function resolveWorkspaceSelector(
       'linear_invalid_workspace',
       `Linear organization ${selectors.organizationUrlKey} is not connected.`,
       {
-        nextSteps: ['Connect that Linear workspace or pass --workspace for a connected workspace.']
+        nextSteps: [
+          'Connect that Linear workspace or retry `linear.issueContext` with `workspaceId` set to a connected workspace.'
+        ]
       }
     )
   }
   if (byId && byOrg && byId.id !== byOrg.id) {
-    throw linearError('linear_invalid_workspace', 'The issue URL and --workspace do not match.', {
+    throw linearError('linear_invalid_workspace', 'The issue URL and `workspaceId` do not match.', {
       nextSteps: [
-        `Retry with --workspace ${byOrg.id} or use an issue URL from ${byId.organizationName}.`
+        `Retry \`linear.issueContext\` with \`workspaceId: "${byOrg.id}"\` or use an issue URL from ${byId.organizationName}.`
       ]
     })
   }
@@ -43,7 +45,9 @@ export function resolveWorkspaceSelector(
 
 export function unknownWorkspace(workspaceId: string): ReturnType<typeof linearError> {
   return linearError('linear_invalid_workspace', `Unknown Linear workspace ${workspaceId}.`, {
-    nextSteps: ['Run `orca linear search <query> --workspace all --json` to inspect workspace ids.']
+    nextSteps: [
+      'Call `linear.agentSearchIssues` with a `query` and `workspaceId: "all"` to inspect workspace ids.'
+    ]
   })
 }
 
@@ -61,7 +65,8 @@ export function ambiguousWorkspace(
     {
       candidates,
       nextSteps: candidates.map(
-        (candidate) => `Retry with --workspace ${candidate.id} for ${candidate.name}.`
+        (candidate) =>
+          `Retry \`linear.issueContext\` with \`workspaceId: "${candidate.id}"\` for ${candidate.name}.`
       )
     }
   )

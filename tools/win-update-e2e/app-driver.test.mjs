@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { dismissOverlays, ensureTerminal } from './app-driver.mjs'
+import { ensureTerminal } from './app-driver.mjs'
 import { buildFreshProfile } from './onboarding-profile.mjs'
 
 function hiddenButton() {
@@ -10,47 +10,7 @@ function hiddenButton() {
   }
 }
 
-describe('dismissOverlays', () => {
-  it('dismisses a dialog without clicking the desktop window Close button', async () => {
-    const dialogClose = {
-      first: vi.fn(),
-      isVisible: vi.fn().mockResolvedValue(true),
-      click: vi.fn().mockResolvedValue(undefined)
-    }
-    dialogClose.first.mockReturnValue(dialogClose)
-    const windowClose = {
-      first: vi.fn(),
-      isVisible: vi.fn().mockResolvedValue(true),
-      click: vi.fn().mockRejectedValue(new Error('window closed'))
-    }
-    windowClose.first.mockReturnValue(windowClose)
-    const featureTipDialog = {
-      first: vi.fn(),
-      isVisible: vi.fn().mockResolvedValue(true),
-      locator: vi.fn().mockReturnValue(dialogClose)
-    }
-    featureTipDialog.first.mockReturnValue(featureTipDialog)
-
-    const page = {
-      getByRole: vi.fn((role, { name }) => {
-        if (role === 'dialog') {
-          return featureTipDialog
-        }
-        return name === 'Close' ? windowClose : hiddenButton()
-      }),
-      keyboard: { press: vi.fn().mockResolvedValue(undefined) },
-      waitForTimeout: vi.fn().mockResolvedValue(undefined)
-    }
-
-    await dismissOverlays(page, 1)
-
-    expect(dialogClose.click).toHaveBeenCalledOnce()
-    expect(windowClose.click).not.toHaveBeenCalled()
-    expect(page.getByRole).toHaveBeenCalledWith('dialog', {
-      name: 'Let agents drive Orca with the Orca CLI'
-    })
-  })
-
+describe('ensureTerminal', () => {
   it('keeps overlay retries within the caller timeout budget', async () => {
     vi.useFakeTimers()
     try {
@@ -143,43 +103,6 @@ describe('dismissOverlays', () => {
     } finally {
       vi.useRealTimers()
     }
-  })
-
-  it('dismisses the CLI tip without sending Escape into an already-restored terminal', async () => {
-    const dialogClose = {
-      first: vi.fn(),
-      isVisible: vi.fn().mockResolvedValue(true),
-      click: vi.fn().mockResolvedValue(undefined)
-    }
-    dialogClose.first.mockReturnValue(dialogClose)
-    const featureTipDialog = {
-      first: vi.fn(),
-      isVisible: vi.fn().mockResolvedValue(true),
-      locator: vi.fn().mockReturnValue(dialogClose)
-    }
-    featureTipDialog.first.mockReturnValue(featureTipDialog)
-    const xterm = {
-      first: vi.fn(),
-      waitFor: vi.fn().mockResolvedValue(undefined)
-    }
-    xterm.first.mockReturnValue(xterm)
-    const terminalSurface = {
-      first: vi.fn(),
-      isVisible: vi.fn().mockResolvedValue(true),
-      waitFor: vi.fn().mockResolvedValue(undefined),
-      locator: vi.fn().mockReturnValue(xterm)
-    }
-    terminalSurface.first.mockReturnValue(terminalSurface)
-    const page = {
-      locator: vi.fn().mockReturnValue(terminalSurface),
-      getByRole: vi.fn((role) => (role === 'dialog' ? featureTipDialog : hiddenButton())),
-      keyboard: { press: vi.fn().mockResolvedValue(undefined) }
-    }
-
-    await ensureTerminal(page, { allowCreate: false })
-
-    expect(dialogClose.click).toHaveBeenCalledOnce()
-    expect(page.keyboard.press).not.toHaveBeenCalled()
   })
 
   it('submits within the composer without dismissing and reopening it', async () => {

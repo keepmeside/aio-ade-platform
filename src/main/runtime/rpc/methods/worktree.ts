@@ -3,7 +3,6 @@ import {
   releaseAutomationWorkspaceProvenanceRequest,
   resolveAutomationWorkspaceProvenance
 } from '../../../automations/workspace-provenance'
-import { buildCliWorkspaceProvenance } from '../../../../shared/cli-workspace-provenance'
 import { defineMethod, type RpcMethod } from '../core'
 import { resolveRuntimeNavigationTarget } from '../../../../shared/runtime-navigation'
 import {
@@ -80,7 +79,7 @@ export const WORKTREE_METHODS: RpcMethod[] = [
     handler: async (params, { runtime }) =>
       // Why: a mobile create interrupted by a connection migration is retried with
       // the same clientMutationId; dedupe so the host returns the in-flight/created
-      // worktree instead of spawning a duplicate. No key (desktop/CLI) runs plainly.
+      // worktree instead of spawning a duplicate. Requests without a key run plainly.
       runtime.dedupeWorktreeCreate(params.repo, params.clientMutationId, async () => {
         const repo = await runtime.showRepo(params.repo)
         const automationProvenance = resolveAutomationWorkspaceProvenance({
@@ -120,10 +119,6 @@ export const WORKTREE_METHODS: RpcMethod[] = [
             setupDecision: params.setupDecision,
             createdWithAgent: params.createdWithAgent ?? params.startupAgent,
             automationProvenance,
-            cliProvenance: buildCliWorkspaceProvenance(params.cliProvenanceRequest, {
-              startupAgent: params.startupAgent ?? params.createdWithAgent,
-              createdAt: Date.now()
-            }),
             startup: params.startupCommand
               ? {
                   command: params.startupCommand,
@@ -145,8 +140,7 @@ export const WORKTREE_METHODS: RpcMethod[] = [
               parentWorktree: params.parentWorktree,
               ...(params.cwdParentWorktree ? { cwdParentWorktree: params.cwdParentWorktree } : {}),
               noParent: params.noParent === true,
-              callerTerminalHandle: params.callerTerminalHandle,
-              orchestrationContext: params.orchestrationContext
+              callerTerminalHandle: params.callerTerminalHandle
             }
           })
           finishAutomationWorkspaceProvenanceRequest(params.automationProvenanceRequest)

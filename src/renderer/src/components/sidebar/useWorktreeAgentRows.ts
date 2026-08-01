@@ -12,7 +12,6 @@ import { buildWorktreeAgentRows } from './worktree-agent-rows'
 import {
   selectLiveAgentStatusEntriesForWorktree,
   selectMigrationUnsupportedEntriesForWorktree,
-  selectRuntimeAgentOrchestrationForWorktree,
   selectRetainedAgentEntriesForWorktree,
   selectTerminalLayoutsForWorktree
 } from './worktree-agent-row-selectors'
@@ -25,7 +24,6 @@ export { buildWorktreeAgentRows } from './worktree-agent-rows'
 export {
   selectLiveAgentStatusEntriesForWorktree,
   selectMigrationUnsupportedEntriesForWorktree,
-  selectRuntimeAgentOrchestrationForWorktree,
   selectRetainedAgentEntriesForWorktree
 } from './worktree-agent-row-selectors'
 
@@ -71,9 +69,6 @@ export function useWorktreeAgentRows(worktreeId: string, active = true): Dashboa
   const terminalLayoutsByTabId = useAppStore(
     useShallow((s) => (active ? selectTerminalLayoutsForWorktree(s, worktreeId) : {}))
   )
-  const runtimeAgentOrchestrationByPaneKey = useAppStore(
-    useShallow((s) => (active ? selectRuntimeAgentOrchestrationForWorktree(s, worktreeId) : {}))
-  )
   const agentFreshnessSignature = useAppStore((s) =>
     active ? selectAgentFreshness(s) : EMPTY_WORKTREE_AGENT_FRESHNESS_SIGNATURE
   )
@@ -103,7 +98,6 @@ export function useWorktreeAgentRows(worktreeId: string, active = true): Dashboa
         runtimePaneTitlesByTabId,
         ptyIdsByTabId,
         terminalLayoutsByTabId,
-        runtimeAgentOrchestrationByPaneKey,
         now
       })
     )
@@ -117,7 +111,6 @@ export function useWorktreeAgentRows(worktreeId: string, active = true): Dashboa
     runtimePaneTitlesByTabId,
     ptyIdsByTabId,
     terminalLayoutsByTabId,
-    runtimeAgentOrchestrationByPaneKey,
     agentFreshnessSignature
   ])
 }

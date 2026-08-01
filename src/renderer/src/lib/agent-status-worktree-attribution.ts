@@ -1,7 +1,4 @@
-import type {
-  AgentStatusEntry,
-  AgentStatusOrchestrationContext
-} from '../../../shared/agent-status-types'
+import type { AgentStatusEntry } from '../../../shared/agent-status-types'
 import { parseLegacyNumericPaneKey, parsePaneKey } from '../../../shared/stable-pane-id'
 
 export type AgentStatusPaneIdentity = { tabId: string; paneId: string }
@@ -21,33 +18,9 @@ export function parseAgentStatusPaneIdentity(
 }
 
 export function resolveAgentStatusWorktreeId(
-  entry: Pick<AgentStatusEntry, 'paneKey' | 'worktreeId' | 'orchestration'>,
-  worktreeIdByTabId: ReadonlyMap<string, string>,
-  orchestration = entry.orchestration
+  entry: Pick<AgentStatusEntry, 'paneKey' | 'worktreeId'>,
+  worktreeIdByTabId: ReadonlyMap<string, string>
 ): string | null {
   const paneIdentity = parseAgentStatusPaneIdentity(entry.paneKey)
-  const parentIdentity = parseAgentStatusPaneIdentity(orchestration?.parentPaneKey)
-  return (
-    worktreeIdByTabId.get(paneIdentity?.tabId ?? '') ??
-    entry.worktreeId ??
-    worktreeIdByTabId.get(parentIdentity?.tabId ?? '') ??
-    null
-  )
-}
-
-export function mergeAgentStatusOrchestration(
-  entry: Pick<AgentStatusEntry, 'orchestration'>,
-  runtimeOrchestration: AgentStatusOrchestrationContext | undefined
-): AgentStatusOrchestrationContext | undefined {
-  if (!entry.orchestration) {
-    return runtimeOrchestration
-  }
-  if (
-    !runtimeOrchestration ||
-    entry.orchestration.taskId !== runtimeOrchestration.taskId ||
-    entry.orchestration.dispatchId !== runtimeOrchestration.dispatchId
-  ) {
-    return entry.orchestration
-  }
-  return { ...entry.orchestration, ...runtimeOrchestration }
+  return worktreeIdByTabId.get(paneIdentity?.tabId ?? '') ?? entry.worktreeId ?? null
 }

@@ -1,5 +1,5 @@
 /* eslint-disable max-lines -- Why: splitting spawn() would scatter tightly coupled PTY lifecycle logic (scan → ready → write → exit) with no cleaner ownership seam. */
-import { basename, delimiter, win32 as pathWin32 } from 'node:path'
+import { basename, win32 as pathWin32 } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { resolveWindowsShellLaunchArgs } from './windows-shell-args'
 import {
@@ -146,24 +146,6 @@ function removeUnspecifiedPaneIdentityEnv(
       delete env[key]
     }
   }
-}
-
-/**
- * Promotes the agent-teams shim path ahead of inherited PATH entries.
- */
-function promoteAgentTeamsShimPath(
-  env: Record<string, string>,
-  requestedPath: string | undefined
-): void {
-  if (!env.ORCA_AGENT_TEAMS_TEAM_ID || !requestedPath) {
-    return
-  }
-  const shimDir = requestedPath.split(delimiter)[0]
-  if (!shimDir) {
-    return
-  }
-  const currentParts = env.PATH?.split(delimiter).filter(Boolean) ?? []
-  env.PATH = [shimDir, ...currentParts.filter((part) => part !== shimDir)].join(delimiter)
 }
 
 /**
@@ -685,7 +667,7 @@ export class LocalPtyProvider implements IPtyProvider {
           wslDistro: launchWslDistro
         })
       : spawnEnv
-    // Why: app-level env hooks can re-add scrubbed vars; delete last so shims like Claude Agent Teams keep their PATH.
+    // Why: app-level env hooks can re-add scrubbed vars; delete last so explicit terminal env deletions win.
     for (const key of args.envToDelete ?? []) {
       delete finalEnv[key]
     }
@@ -751,8 +733,7 @@ export class LocalPtyProvider implements IPtyProvider {
         finalEnv.ORCA_OPENCODE_CONFIG_DIR ||
         finalEnv.ORCA_MIMOCODE_HOME ||
         finalEnv.ORCA_OMP_STATUS_EXTENSION ||
-        finalEnv.ORCA_CODEX_HOME ||
-        finalEnv.ORCA_AGENT_TEAMS_SHIM_DIR
+        finalEnv.ORCA_CODEX_HOME
       const isCodexStartupCommand = startupAgentRecognition?.agent === 'codex'
       let shellLaunch: ReturnType<typeof getShellReadyLaunchConfig> | null = null
       if (args.command && isCodexStartupCommand) {
@@ -783,8 +764,6 @@ export class LocalPtyProvider implements IPtyProvider {
         shellReadyLaunch = args.command ? shellLaunch : null
       }
     }
-    promoteAgentTeamsShimPath(finalEnv, args.env?.PATH)
-
     // Why: worktree-scoped HISTFILE — without it worktrees share one global history (terminal-history-scope-design §7–§10).
     const worktreeId = args.worktreeId
     const historyEnabled = worktreeId && (this.opts.isHistoryEnabled?.() ?? true)

@@ -1,6 +1,6 @@
 // Why: every RPC response needs the same runtimeId envelope, and the
-// runtime/browser error allowlists define the contract the CLI relies on to
-// format human-facing messages. Centralizing this mapping keeps the allowlist
+// runtime/browser error allowlists define the contract external clients rely on.
+// Centralizing this mapping keeps the allowlist
 // auditable in one place instead of spread across per-method branches.
 import type { RpcEnvelopeMeta, RpcFailure, RpcSuccess } from './core'
 import { computerUseErrorRecoveryData } from '../../../shared/computer-use-error-recovery'
@@ -33,9 +33,7 @@ export function errorResponse(
 }
 
 // Why: the OrcaRuntimeService throws plain Error objects whose `message` is
-// actually a stable error code. This allowlist is the contract the CLI relies
-// on — expanding or renaming entries without updating the CLI would silently
-// change user-visible error codes.
+// actually a stable error code. Keep the externally visible codes explicit.
 const RUNTIME_PASSTHROUGH_CODES: ReadonlySet<string> = new Set([
   'runtime_unavailable',
   'selector_not_found',
@@ -61,39 +59,9 @@ const COMPUTER_PASSTHROUGH_CODES: ReadonlySet<string> = new Set(Object.values(CO
 const LINEAR_PASSTHROUGH_CODES: ReadonlySet<string> = new Set(LINEAR_ERROR_CODES)
 const STRUCTURED_RUNTIME_PASSTHROUGH_CODES: ReadonlySet<string> = new Set([
   'worktree_id_requires_full_path',
-  'run_not_found',
-  'run_required',
-  'stable_pane_required',
-  'consumer_fenced',
-  'task_not_found',
-  'task_not_startable',
-  'dispatch_not_found',
-  'dispatch_run_mismatch',
-  'dispatch_inactive',
-  'worker_identity_changed',
-  'cursor_invalid',
-  'cursor_dispatch_mismatch',
-  'source_changed',
-  'transcript_required',
-  'server_required',
-  'worktree_not_found_on_server',
-  'resource_server_mismatch',
-  'peer_changed',
   'remote_runtime_unavailable',
   'runtime_timeout',
   'invalid_runtime_response',
-  'capability_unsupported',
-  'relay_quota_exceeded',
-  'dispatch_capability_invalid',
-  'agent_unconfigured',
-  'terminal_worktree_mismatch',
-  'request_mismatch',
-  'orchestration_migration_required',
-  'operation_unknown',
-  'question_not_found',
-  'answer_conflict',
-  'stale_delivery',
-  'waiter_exists',
   'invalid_argument'
 ])
 

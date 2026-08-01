@@ -220,7 +220,6 @@ const UiUpdateFields = z
     // Why: rides App.tsx's debounced writer, so omitting it rejected that entire
     // payload (sidebar widths, filters, agent acks) for every paired client.
     showDotfilesByWorktree: z.record(z.string(), z.boolean()).optional(),
-    hideCliCreatedWorkspaces: z.boolean().optional(),
     hideDetachedHeadWorkspaces: z.boolean().optional(),
     filterRepoIds: StringArray.optional(),
     collapsedGroups: StringArray.optional(),
@@ -283,7 +282,6 @@ const UiUpdateFields = z
     setupGuideBrowserMilestoneLegacyComplete: z.boolean().optional(),
     browserImportHintHidden: z.boolean().optional(),
     mobileEmulatorTabIntroDismissed: z.boolean().optional(),
-    mobileEmulatorAgentSetupDismissed: z.boolean().optional(),
     projectOrderManualDefaultNoticeDismissed: z.boolean().optional(),
     usagePercentageDisplayChangeNoticeDismissed: z.boolean().optional(),
     usageEmptyStateDismissed: z.boolean().optional(),

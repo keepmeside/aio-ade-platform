@@ -115,14 +115,6 @@ __orca_restore_attribution_path() {
   export PATH="\${ORCA_ATTRIBUTION_SHIM_DIR}:$PATH"
 }
 __orca_restore_attribution_path
-__orca_restore_agent_teams_path() {
-  [[ -n "\${ORCA_AGENT_TEAMS_SHIM_DIR:-}" ]] || return 0
-  case "$PATH" in
-    "\${ORCA_AGENT_TEAMS_SHIM_DIR}"|"\${ORCA_AGENT_TEAMS_SHIM_DIR}:"*) return 0 ;;
-  esac
-  export PATH="\${ORCA_AGENT_TEAMS_SHIM_DIR}:$PATH"
-}
-__orca_restore_agent_teams_path
 # Why: user startup files may set the default OpenCode config after Orca's
 # spawn env; restore the Orca-managed config dir before the first prompt.
 [[ -n "\${ORCA_OPENCODE_CONFIG_DIR:-}" ]] && export OPENCODE_CONFIG_DIR="\${ORCA_OPENCODE_CONFIG_DIR}"
@@ -231,14 +223,6 @@ __orca_restore_attribution_path() {
   export PATH="\${ORCA_ATTRIBUTION_SHIM_DIR}:$PATH"
 }
 [[ ! -o login ]] && __orca_restore_attribution_path
-__orca_restore_agent_teams_path() {
-  [[ -n "\${ORCA_AGENT_TEAMS_SHIM_DIR:-}" ]] || return 0
-  case "$PATH" in
-    "\${ORCA_AGENT_TEAMS_SHIM_DIR}"|"\${ORCA_AGENT_TEAMS_SHIM_DIR}:"*) return 0 ;;
-  esac
-  export PATH="\${ORCA_AGENT_TEAMS_SHIM_DIR}:$PATH"
-}
-[[ ! -o login ]] && __orca_restore_agent_teams_path
 if [[ ! -o login ]]; then
   # Why: ~/.zshrc can export the user's default OpenCode config after spawn.
   [[ -n "\${ORCA_OPENCODE_CONFIG_DIR:-}" ]] && export OPENCODE_CONFIG_DIR="\${ORCA_OPENCODE_CONFIG_DIR}"
@@ -292,14 +276,6 @@ __orca_restore_attribution_path() {
   export PATH="\${ORCA_ATTRIBUTION_SHIM_DIR}:$PATH"
 }
 __orca_restore_attribution_path
-__orca_restore_agent_teams_path() {
-  [[ -n "\${ORCA_AGENT_TEAMS_SHIM_DIR:-}" ]] || return 0
-  case "$PATH" in
-    "\${ORCA_AGENT_TEAMS_SHIM_DIR}"|"\${ORCA_AGENT_TEAMS_SHIM_DIR}:"*) return 0 ;;
-  esac
-  export PATH="\${ORCA_AGENT_TEAMS_SHIM_DIR}:$PATH"
-}
-__orca_restore_agent_teams_path
 # Why: .zlogin is the final login startup file before the prompt is shown.
 [[ -n "\${ORCA_OPENCODE_CONFIG_DIR:-}" ]] && export OPENCODE_CONFIG_DIR="\${ORCA_OPENCODE_CONFIG_DIR}"
 [[ -n "\${ORCA_MIMOCODE_HOME:-}" ]] && export MIMOCODE_HOME="\${ORCA_MIMOCODE_HOME}"

@@ -57,17 +57,6 @@ export type AgentStateHistoryEntry = {
 /** Maximum number of history entries kept per agent to bound memory. */
 export const AGENT_STATE_HISTORY_MAX = 20
 
-export type AgentStatusOrchestrationContext = {
-  taskId: string
-  dispatchId: string
-  taskTitle?: string
-  displayName?: string
-  parentTerminalHandle?: string
-  parentPaneKey?: string
-  coordinatorHandle?: string
-  orchestrationRunId?: string
-}
-
 export type AgentSubagentState = 'working' | 'blocked' | 'waiting' | 'idle'
 
 /** A live in-process child of the pane's provider session. Rendered as an
@@ -102,8 +91,7 @@ export type AgentStatusEntry = {
   /** Runtime terminal handle for matching retained parent rows when the parent
    *  pane key cannot be re-derived after terminal teardown. */
   terminalHandle?: string
-  /** Worktree attribution stamped by main when a hook resolves there.
-   *  Why: orchestration workers can report before their tab exists in a renderer, so retaining this keeps them attributed instead of dropped. */
+  /** Worktree attribution stamped by main when a hook resolves there. */
   worktreeId?: string
   /** Accepted transport authority for this live row; null means local. */
   connectionId?: string | null
@@ -124,9 +112,6 @@ export type AgentStatusEntry = {
   /** True when this `done` was reached via interrupt, not normal completion
    *  (agent-reported or Orca's guarded fallback). Undefined otherwise. */
   interrupted?: boolean
-  /** Orchestration dispatch context for panes spawned by another agent.
-   *  Why: parent/child hierarchy is pane-level state, not worktree lineage — workers often share the coordinator's worktree. */
-  orchestration?: AgentStatusOrchestrationContext
   /** Live in-process subagents/teammates of this pane's session. Absent when
    *  none are tracked; the sidebar derives indented child rows from it. */
   subagents?: AgentSubagentSnapshot[]
@@ -192,7 +177,6 @@ export type AgentStatusIpcPayload = ParsedAgentStatusPayload & {
   receivedAt: number
   /** Timestamp (ms) when the current state first appeared for this pane. */
   stateStartedAt: number
-  orchestration?: AgentStatusOrchestrationContext
   providerSession?: AgentProviderSessionMetadata
   /** Resume identity update only; the status-shaped fields are transport placeholders. */
   providerSessionOnly?: boolean

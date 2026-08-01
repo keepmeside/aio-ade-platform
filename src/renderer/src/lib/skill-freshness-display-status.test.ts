@@ -10,7 +10,7 @@ import {
   hasSkillCopyNeedingAttention
 } from './skill-freshness-display-status'
 
-const SKILL_NAME = 'orca-cli'
+const SKILL_NAME = 'computer-use'
 
 function scanIssue(
   reason: SkillFreshnessScanIssueReason

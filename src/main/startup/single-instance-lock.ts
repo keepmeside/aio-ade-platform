@@ -10,11 +10,11 @@ export const SINGLE_INSTANCE_LOCK_BYPASS_MESSAGE =
 
 /**
  * Why: Orca writes two canonical discovery files into `<userData>/`:
- * `orca-runtime.json` (RPC endpoint + authToken for the bundled CLI) and
+ * `orca-runtime.json` (RPC endpoint + authToken for runtime clients) and
  * `agent-hooks/endpoint.env` (hook port + token for cursor-agent/claude/codex
  * scripts). Without a single-instance lock, every AppImage/.app double-click
  * boots a fresh Electron main that clobbers both files. When the most recent
- * instance quits, metadata points at a dead pid and `orca status` reports
+ * instance quits, metadata points at a dead pid and runtime status reports
  * `stale_bootstrap` even though the original process is still running.
  *
  * This helper centralises the lock gate so it is testable in isolation and
@@ -37,26 +37,19 @@ export function acquireSingleInstanceLock(app: App, onSecondInstance: () => void
 export function shouldBypassSingleInstanceLock(options: {
   env?: NodeJS.ProcessEnv
   isDev: boolean
-  isServeMode: boolean
   platform?: NodeJS.Platform
 }): boolean {
   const env = options.env ?? process.env
   const platform = options.platform ?? process.platform
-  return (
-    platform === 'darwin' &&
-    !options.isDev &&
-    !options.isServeMode &&
-    env[SINGLE_INSTANCE_LOCK_BYPASS_ENV] === '1'
-  )
+  return platform === 'darwin' && !options.isDev && env[SINGLE_INSTANCE_LOCK_BYPASS_ENV] === '1'
 }
 
 export function shouldSkipSingleInstanceLock(options: {
   env?: NodeJS.ProcessEnv
   isDev: boolean
-  isServeMode: boolean
 }): boolean {
   const env = options.env ?? process.env
-  return options.isDev && !options.isServeMode && env[SINGLE_INSTANCE_LOCK_E2E_ENFORCE_ENV] !== '1'
+  return options.isDev && env[SINGLE_INSTANCE_LOCK_E2E_ENFORCE_ENV] !== '1'
 }
 
 export function logSingleInstanceLockFailure(write?: StartupDiagnosticSink): void {

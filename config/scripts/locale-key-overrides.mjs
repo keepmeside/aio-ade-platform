@@ -281,11 +281,6 @@ const BASE_LOCALE_KEY_OVERRIDES = {
     zh: 'USB 设备',
     ja: 'USB デバイス'
   },
-  'auto.components.settings.OrchestrationSkillAgentCoverage.ffe13e36fb': {
-    ko: '누락',
-    zh: '缺失',
-    ja: '不足'
-  },
   'auto.components.settings.GitPane.eec3995dc6': {
     ko: 'Git AI Author',
     zh: 'Git AI Author',

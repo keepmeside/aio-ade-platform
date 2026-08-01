@@ -30,7 +30,7 @@ function getWslOuterShellScript(command: string): string {
 
 describe('CliSkillRuntimeSetup runtime helpers', () => {
   it('wraps WSL skill installs as a directly runnable selected-distro command', () => {
-    const skillCommand = 'npx skills add orchestration --global'
+    const skillCommand = 'npx skills add computer-use --global'
     const command = buildSkillInstallCommandForRuntime(skillCommand, {
       runtime: 'wsl',
       wslDistro: 'Ubuntu',
@@ -42,24 +42,24 @@ describe('CliSkillRuntimeSetup runtime helpers', () => {
       `& { $PSNativeCommandArgumentPassing = 'Legacy'; wsl.exe -d 'Ubuntu' -- sh -c 'eval \\"\`printf %s ${encoded} | base64 -d\`\\"' } # Runs: ${skillCommand}`
     )
     expect(decodeWslLoginShellScript(command)).toContain(
-      'exec "$_orca_wsl_shell" -ilc \'npx skills add orchestration --global\''
+      'exec "$_orca_wsl_shell" -ilc \'npx skills add computer-use --global\''
     )
   })
 
   it('wraps WSL skill updates as a directly runnable selected-distro command', () => {
-    const command = buildSkillCommandForRuntime('npx skills update orchestration --global', {
+    const command = buildSkillCommandForRuntime('npx skills update computer-use --global', {
       runtime: 'wsl',
       wslDistro: 'Fedora Remix',
       label: 'WSL Fedora Remix'
     })
 
     expect(decodeWslLoginShellScript(command)).toContain(
-      'exec "$_orca_wsl_shell" -ilc \'npx skills update orchestration --global\''
+      'exec "$_orca_wsl_shell" -ilc \'npx skills update computer-use --global\''
     )
   })
 
   it('scopes the PS5-compatible argv mode when pasted into PowerShell 7', () => {
-    const command = buildSkillCommandForRuntime('npx skills update orchestration --global', {
+    const command = buildSkillCommandForRuntime('npx skills update computer-use --global', {
       runtime: 'wsl',
       label: 'WSL'
     })
@@ -67,7 +67,7 @@ describe('CliSkillRuntimeSetup runtime helpers', () => {
     expect(command).toMatch(
       /^& \{ \$PSNativeCommandArgumentPassing = 'Legacy'; wsl\.exe -- sh -c 'eval \\"`printf/
     )
-    expect(command).toContain('`\\"\' } # Runs: npx skills update orchestration --global')
+    expect(command).toContain('`\\"\' } # Runs: npx skills update computer-use --global')
   })
 
   it.skipIf(process.platform === 'win32')(
@@ -96,7 +96,7 @@ describe('CliSkillRuntimeSetup runtime helpers', () => {
       chmodSync(join(npxBin, 'npx'), 0o755)
 
       try {
-        const wrapped = buildSkillCommandForRuntime('npx skills update orchestration --global', {
+        const wrapped = buildSkillCommandForRuntime('npx skills update computer-use --global', {
           runtime: 'wsl',
           label: 'WSL'
         })
@@ -111,7 +111,7 @@ describe('CliSkillRuntimeSetup runtime helpers', () => {
               ORCA_TEST_NPX_BIN: npxBin
             }
           })
-        ).toBe('skills update orchestration --global:terminal-input')
+        ).toBe('skills update computer-use --global:terminal-input')
       } finally {
         rmSync(root, { recursive: true, force: true })
       }
@@ -121,33 +121,33 @@ describe('CliSkillRuntimeSetup runtime helpers', () => {
   it('reinstalls Windows-host skill updates through the add path', () => {
     expect(
       buildSkillCommandForRuntime(
-        'npx skills update orchestration --global',
+        'npx skills update computer-use --global',
         {
           runtime: 'host',
           label: 'Windows'
         },
         'win32'
       )
-    ).toBe(buildAgentFeatureSkillInstallCommand(['orchestration']))
+    ).toBe(buildAgentFeatureSkillInstallCommand(['computer-use']))
   })
 
   it('treats missing runtime as a Windows host fallback for skill updates', () => {
     expect(
-      buildSkillCommandForRuntime('npx skills update orca-cli --global', undefined, 'win32')
-    ).toBe(buildAgentFeatureSkillInstallCommand(['orca-cli']))
+      buildSkillCommandForRuntime('npx skills update orca-linear --global', undefined, 'win32')
+    ).toBe(buildAgentFeatureSkillInstallCommand(['orca-linear']))
   })
 
   it('keeps non-Windows host skill updates on the update path', () => {
     expect(
       buildSkillCommandForRuntime(
-        'npx skills update orchestration --global',
+        'npx skills update computer-use --global',
         {
           runtime: 'host',
           label: 'This device'
         },
         'linux'
       )
-    ).toBe('npx skills update orchestration --global')
+    ).toBe('npx skills update computer-use --global')
   })
 
   it('preserves the selected WSL distro for skill discovery', () => {

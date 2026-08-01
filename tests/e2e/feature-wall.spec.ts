@@ -71,7 +71,6 @@ test.describe('Feature tour modal', () => {
       orcaPage.getByText("Enables agents to navigate and verify pages in Orca's browser.")
     ).toBeVisible()
     await expect(orcaPage.getByRole('heading', { name: 'CLI skill' })).toHaveCount(0)
-    await expect(orcaPage.getByText('With the Orca CLI skill', { exact: false })).toHaveCount(0)
   })
 
   test('shows unified task copy without leaving the walkthrough', async ({ orcaPage }) => {
@@ -152,16 +151,6 @@ test.describe('Feature tour modal', () => {
     )
 
     await continueButton.click()
-    await expect(rail.getByRole('button', { name: /Orchestration/i })).toHaveAttribute(
-      'aria-current',
-      'step'
-    )
-    await expect(rail.getByRole('tab', { name: /Workbench/i })).toHaveAttribute(
-      'aria-selected',
-      'false'
-    )
-
-    await continueButton.click()
     await expect(rail.getByRole('button', { name: /Usage/i })).toHaveAttribute(
       'aria-current',
       'step'
@@ -237,14 +226,10 @@ test.describe('Feature tour modal', () => {
     await expect(workspacesTab.locator('[aria-label="Completed"]')).toHaveCount(1)
   })
 
-  test('keeps persisted completed setup-backed substeps checked when reopened', async ({
+  test('keeps persisted completed workbench substeps checked when reopened', async ({
     orcaPage
   }) => {
     await orcaPage.evaluate(() => {
-      localStorage.setItem(
-        'orca.featureWall.completedAgentSteps.v1',
-        JSON.stringify(['orchestration'])
-      )
       localStorage.setItem(
         'orca.featureWall.completedWorkbenchSteps.v1',
         JSON.stringify(['browser'])
@@ -257,11 +242,6 @@ test.describe('Feature tour modal', () => {
     })
 
     const rail = orcaPage.getByRole('navigation', { name: 'Workflows' })
-
-    await rail.getByRole('tab', { name: /Agents/i }).click()
-    await expect(
-      rail.getByRole('button', { name: /Orchestration/i }).locator('[aria-label="Completed"]')
-    ).toHaveCount(1)
 
     await rail.getByRole('tab', { name: /Workbench/i }).click()
     await expect(

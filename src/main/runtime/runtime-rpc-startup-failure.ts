@@ -96,18 +96,20 @@ function createRuntimeRpcStartupFailureDialogOptions(error: unknown): MessageBox
   const { key, fallback } = GUIDANCE_BY_ERROR_CLASS[classifyRuntimeRpcStartFailure(error)]
   return {
     type: 'error',
-    buttons: [translateMain('runtimeRpc.startupFailure.continueButton', 'Continue without CLI')],
+    buttons: [
+      translateMain('runtimeRpc.startupFailure.continueButton', 'Continue without runtime')
+    ],
     defaultId: 0,
     cancelId: 0,
     noLink: true,
-    title: translateMain('runtimeRpc.startupFailure.title', 'Orca CLI unavailable'),
+    title: translateMain('runtimeRpc.startupFailure.title', 'Orca runtime unavailable'),
     message: translateMain(
       'runtimeRpc.startupFailure.message',
-      "Orca couldn't start its local command transport."
+      "Orca couldn't start its local runtime service."
     ),
     detail: translateMain(
       'runtimeRpc.startupFailure.detail',
-      'Orca will continue to work, but commands such as orca status, orca terminal, and orchestration are unavailable for this session.\n\n{{guidance}}\n\nCause: {{cause}}',
+      'Orca will continue to work, but in-app runtime actions such as Computer Use and Linear are unavailable for this session.\n\n{{guidance}}\n\nCause: {{cause}}',
       { cause, guidance: translateMain(key, fallback) }
     )
   }

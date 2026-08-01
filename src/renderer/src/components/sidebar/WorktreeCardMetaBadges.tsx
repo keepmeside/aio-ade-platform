@@ -1,5 +1,5 @@
 import React from 'react'
-import { CalendarClock, CircleDot, SquareTerminal, StickyNote } from 'lucide-react'
+import { CalendarClock, CircleDot, StickyNote } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { LinearIcon } from '@/components/icons/LinearIcon'
 import { MetaIconBadge } from './WorktreeCardMetadataControls'
@@ -19,19 +19,16 @@ export function hasWorktreeCardDetails({
   linearIssue,
   review,
   comment,
-  automationProvenance,
-  cliProvenance
+  automationProvenance
 }: WorktreeCardMetaBadgesProps): boolean {
-  return Boolean(
-    issue || linearIssue || review || hasComment(comment) || automationProvenance || cliProvenance
-  )
+  return Boolean(issue || linearIssue || review || hasComment(comment) || automationProvenance)
 }
 
 export const WorktreeCardMetaBadges = React.forwardRef<
   HTMLDivElement,
   WorktreeCardMetaBadgesRootProps
 >(function WorktreeCardMetaBadges(
-  { issue, linearIssue, review, comment, automationProvenance, cliProvenance, className, ...props },
+  { issue, linearIssue, review, comment, automationProvenance, className, ...props },
   ref
 ): React.JSX.Element | null {
   if (
@@ -40,8 +37,7 @@ export const WorktreeCardMetaBadges = React.forwardRef<
       linearIssue,
       review,
       comment,
-      automationProvenance,
-      cliProvenance
+      automationProvenance
     })
   ) {
     return null
@@ -77,16 +73,6 @@ export const WorktreeCardMetaBadges = React.forwardRef<
           )}
         >
           <CalendarClock className="text-muted-foreground" />
-        </MetaIconBadge>
-      )}
-      {cliProvenance && (
-        <MetaIconBadge
-          label={translate(
-            'auto.components.sidebar.WorktreeCardMeta.cliCreated',
-            'Created by Orca CLI'
-          )}
-        >
-          <SquareTerminal className="text-muted-foreground" />
         </MetaIconBadge>
       )}
       {issue && (

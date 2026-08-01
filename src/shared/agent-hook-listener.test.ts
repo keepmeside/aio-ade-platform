@@ -3111,7 +3111,7 @@ describe('shared agent-hook-listener', () => {
     })
 
     it('parks a teammate as a persistent idle row across its stop/idle/lead-Stop cycle', () => {
-      // Why: the interactive agent-teams shape observed live on 2.1.217 —
+      // Why: the interactive subagent shape observed live on 2.1.217 —
       // lifecycle events use `a<name>-<hex>` agent ids while background_tasks
       // uses unrelated `type: "teammate"` task ids. SubagentStop + TeammateIdle
       // fire at every TURN end while the teammate stays alive awaiting mail,

@@ -143,7 +143,7 @@ describe('runtime RPC startup failure reporting', () => {
     consoleError.mockRestore()
   })
 
-  it('shows the CLI impact and local cause', async () => {
+  it('shows the runtime impact and local cause', async () => {
     const parentWindow = createParentWindow()
     const error = new Error('metadata write failed')
 
@@ -153,11 +153,9 @@ describe('runtime RPC startup failure reporting', () => {
       parentWindow,
       expect.objectContaining({
         type: 'error',
-        title: 'Orca CLI unavailable',
-        message: "Orca couldn't start its local command transport.",
-        detail: expect.stringMatching(
-          /orca status.*orca terminal.*orchestration.*Cause: metadata write failed/s
-        )
+        title: 'Orca runtime unavailable',
+        message: "Orca couldn't start its local runtime service.",
+        detail: expect.stringMatching(/Computer Use.*Linear.*Cause: metadata write failed/s)
       })
     )
   })

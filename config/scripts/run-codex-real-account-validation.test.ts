@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 const cleanupPaths: string[] = []
 const validationModuleUrl = pathToFileURL(
-  path.resolve('config/scripts/run-codex-real-account-validation.mjs')
+  path.resolve('config/scripts/codex-real-account-validation-support.mjs')
 ).href
 
 afterEach(async () => {
@@ -163,7 +163,7 @@ describe('Codex real-account validation harness', () => {
     )
 
     expect(error).toContain('Refusing to place the disposable validation root')
-    expect(error).toContain('--temp-parent')
+    expect(error).toContain('tempParent')
     expect(error).toContain('ORCA_CODEX_VALIDATION_TEMP_PARENT')
   })
 

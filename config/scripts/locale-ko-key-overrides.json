@@ -950,17 +950,8 @@
   "auto.components.editor.rich.markdown.slash.commands.f82c78a2ee": {
     "ko": "토글 텍스트"
   },
-  "auto.components.emulator.pane.MobileEmulatorAgentSetupGuideSteps.5c59ea96ca": {
-    "ko": "모바일 에뮬레이터 Orca CLI 스킬 설정"
-  },
-  "auto.components.emulator.pane.MobileEmulatorAgentSetupGuideSteps.bff5341ac3": {
-    "ko": "모바일 에뮬레이터 Orca CLI 스킬 설치 terminal"
-  },
   "auto.components.emulator.pane.emulator.pane.toolbar.868c0f2938": {
     "ko": "작업 중…"
-  },
-  "auto.components.feature.tips.CliSkillSetupTerminal.1953e90447": {
-    "ko": "Enter를 눌러 agents 용 Orca CLI 오케스트레이션 스킬을 설치하세요."
   },
   "auto.components.feature.tips.CmdJPaletteFeatureTipVisual.379d776971": {
     "ko": "입력 중"
@@ -1144,24 +1135,6 @@
   },
   "auto.components.feature.wall.WorkbenchAnimatedVisual.e370fa8c2b": {
     "ko": "Terminal을 오른쪽으로 분할"
-  },
-  "auto.components.feature.wall.agents.orchestration.OrchestrationPage.30b509a467": {
-    "ko": "하위 2개"
-  },
-  "auto.components.feature.wall.agents.orchestration.StatusesPage.78f0318ac1": {
-    "ko": "실행하려고 함"
-  },
-  "auto.components.feature.wall.agents.orchestration.StatusesPage.7b26349cb2": {
-    "ko": "pnpm migrate latest"
-  },
-  "auto.components.feature.wall.agents.orchestration.UsageAccountsCard.6986b36708": {
-    "ko": "사용량 한도를 표시하고 계정을 인라인으로 전환하세요."
-  },
-  "auto.components.feature.wall.agents.orchestration.UsageAccountsCard.945865332e": {
-    "ko": "로그인 중"
-  },
-  "auto.components.feature.wall.agents.orchestration.orchestration.cards.da6f1f97c9": {
-    "ko": "작업 중"
   },
   "auto.components.feature.wall.review.notes.diff.rows.f621c734f8": {
     "ko": "메모 · 줄"
@@ -2192,9 +2165,6 @@
   "auto.components.settings.BrowserUseComputerUseNotice.15b5e680ba": {
     "ko": "컴퓨터 사용 열기"
   },
-  "auto.components.settings.CliSection.8a9b784c60": {
-    "ko": "오래됨"
-  },
   "auto.components.settings.CommitMessageAiPane.15b60d54b2": {
     "ko": "예: ollama run llama3.1 {prompt}"
   },
@@ -2356,9 +2326,6 @@
   },
   "auto.components.settings.McpConfigSection.6bac9ddfc6": {
     "ko": "SSH repos는 원격 파일 시스템을 통해 읽힙니다. 스타터 생성은 워크스페이스 루트 구성으로 제한됩니다."
-  },
-  "auto.components.settings.MobileEmulatorExamples.4daa95f25a": {
-    "ko": "Orca CLI 스킬이 설치된 프로젝트의 Claude Code, Codex 또는 다른 agent에 이들 중 하나를 붙여넣으세요."
   },
   "auto.components.settings.MobileEmulatorSettingsPane.a4f1c82d90": {
     "ko": "비활성화됨"
@@ -2981,21 +2948,6 @@
   "auto.components.settings.WorktreeSymlinksSection.d72ba8dc68": {
     "ko": "경로 {{value0}}개"
   },
-  "auto.components.settings.WslCliRegistration.6f91ad1333": {
-    "ko": "WSL에 `{{value0}}`을(를) 등록하지 못했습니다."
-  },
-  "auto.components.settings.WslCliRegistration.7ee4e52b99": {
-    "ko": "Orca는 명령이 WSL terminals에서 작동하도록 {{value0}}을(를) 등록합니다."
-  },
-  "auto.components.settings.WslCliRegistration.951536dda5": {
-    "ko": "WSL에 `{{value0}}`을(를) 등록했습니다."
-  },
-  "auto.components.settings.WslCliRegistration.e2b0ee267f": {
-    "ko": "오래됨"
-  },
-  "auto.components.settings.WslCliRegistration.e49688f67f": {
-    "ko": "WSL에 `{{value0}}`을(를) 등록하시겠습니까?"
-  },
   "auto.components.settings.YamlThemeImportButton.label": {
     "ko": "YAML에서 가져오기"
   },
@@ -3463,9 +3415,6 @@
   },
   "auto.components.settings.mobile.emulator.search.8ef0f08d36": {
     "ko": "런타임"
-  },
-  "auto.components.settings.mobile.emulator.search.d4b7833894": {
-    "ko": "orca cli"
   },
   "auto.components.settings.mobile.emulator.search.ea1f51b980": {
     "ko": "Xcode, simctl, serve-sim 및 에뮬레이터 장치가 준비되었는지 확인하세요."
