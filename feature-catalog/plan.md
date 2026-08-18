@@ -126,7 +126,7 @@ Unverified: trạng thái 470 thay đổi chưa commit + stash `da62fd6` trong w
 
 ## Red Team Review
 
-Ngày 2026-08-18. 4 reviewer lens (Security Adversary, Assumption Destroyer, Failure Mode Analyst, Scope & Complexity Critic) chạy gộp vì bằng chứng trùng nhau; mọi finding đều có bằng chứng repo.
+Ngày 2026-08-18. Một lượt review đối kháng duy nhất (không spawn subagent) áp 4 lens — Security Adversary, Assumption Destroyer, Failure Mode Analyst, Scope & Complexity Critic — vì các bằng chứng trùng nhau; mọi finding đều có bằng chứng repo kiểm chứng được.
 
 | # | Severity | Finding | Evidence | Disposition |
 |---|---|---|---|---|
