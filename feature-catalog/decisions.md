@@ -6,8 +6,8 @@
 
 | Gate | State | Lựa chọn/khuyến nghị | approvedBy | approvedAt | Compatibility window | Rollback trigger |
 |---|---|---|---|---|---|---|
-| CLI agent bridge | pending | Giữ bridge tối thiểu vì external agent không gọi Electron IPC | — | — | Legacy command/transport tối thiểu 1 release | orchestration round-trip hoặc packaged smoke fail |
-| Claude Agent Teams | pending | Giữ chỉ khi bridge và launch-mode tests chứng minh còn consumer | — | — | N/A | worker timeout, stale heartbeat hoặc UX không có owner |
+| CLI agent bridge | **approved: xoá toàn bộ** | Xoá hết `src/cli/`. Người dùng chọn ngược khuyến nghị, nên Phase 03 phải xoá kèm orchestration CLI surface, Claude Agent Teams và e2e phụ thuộc, đồng thời xử lý `src/main/cli/` installer để không trỏ vào binary không tồn tại | User | 2026-08-03 | Không giữ legacy command | orchestration worker timeout hoặc packaged smoke fail sau khi xoá |
+| Claude Agent Teams | **approved: xoá theo CLI** | Hệ quả trực tiếp của quyết định xoá CLI: Agent Teams đi qua CLI bridge nên phải xoá cùng | User (implied by CLI gate) | 2026-08-03 | N/A | phát hiện consumer còn sống sau khi xoá |
 | Headless `serve` | pending | Quyết định độc lập; defer nếu không có product use case | — | — | N/A | kéo lại browser/updater surface không cần thiết |
 | Canvas | pending | Excalidraw trước; XYFlow deferred; tldraw chỉ với negotiated downstream license | — | — | tldraw không có trong default build | license, offline, accessibility hoặc bundle gate fail |
 | Secret store | required | Encrypted `safeStorage`; fail closed/explicit-consent encrypted fallback, ACL chỉ harden ciphertext | Maintainer security baseline | 2026-07-30 | Không plaintext migration | secret xuất hiện trong state/log/export hoặc corrupt recovery fail |
@@ -15,6 +15,13 @@
 | Account model | required | `accounts` cho OAuth/subscription, `profiles` cho API/base URL; provider-specific runtime resolver | Maintainer architecture baseline | 2026-07-30 | Dual-read legacy account metadata trong migration window | OAuth regression hoặc provider config corruption |
 | Telemetry/diagnostics | pending | Disabled mặc định cho tới khi có fork-owned endpoints, privacy policy và redaction tests | — | — | Không gửi upstream | traffic tới upstream hoặc secret/PII leak |
 | Release/update channel | pending | Workflows inert; updater disabled cho tới khi signing/notarization và fork-owned channel được duyệt | — | — | Không auto-update từ upstream | tag/publish/mutate `main` hoặc tải artifact upstream |
+
+## Quyết định vận hành (2026-08-03)
+
+| Vấn đề | Quyết định | approvedBy | Ghi chú |
+|---|---|---|---|
+| 4 file scratch `.mf_*.ts` làm `pnpm lint` đỏ | Thêm `.mf_*.ts` vào `ignorePatterns` trong `.oxlintrc.json` | User, 2026-08-03 | Đã thực hiện và verify `oxlint` exit 0. Giữ nguyên file research của user |
+| D: còn 22 GB sau prune | Đủ để tiếp tục, không dọn thêm | User, 2026-08-03 | Theo dõi lại trước `build:desktop` hoặc e2e; disk-full từng làm corrupt `node_modules` và mất `resources/build/` |
 
 ## Đã xác minh
 
