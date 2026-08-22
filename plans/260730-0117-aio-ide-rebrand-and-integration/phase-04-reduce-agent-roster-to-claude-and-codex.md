@@ -11,7 +11,9 @@ dependencies: [2, 3]
 
 ## Overview
 
-Narrow `TuiAgent` từ roster 35 thành `claude | codex`, dùng compiler errors làm worklist, rồi xoá implementation/assets/tests/docs của agent không còn hỗ trợ. `claude-agent-teams` là launch mode cũ phụ thuộc CLI, không phải binary Claude Code.
+Narrow `TuiAgent` từ roster 35 thành `claude | codex`, dùng compiler errors làm worklist, rồi xoá implementation/assets/tests/docs của agent không còn hỗ trợ. **`claude-agent-teams` được GIỮ** (quyết định user 2026-08-21) — nó là launch mode của Claude phụ thuộc CLI bridge, không phải binary riêng, và Option A phase 03 đã giữ bridge nên consumer còn sống.
+
+**Quyết định 2026-08-21:** các agent khác không bị bỏ vĩnh viễn — chúng quay lại qua generic ACP slot ở phase 10. Phase này chỉ xoá per-agent native integration. Seam cho phase 10 là **tầng picker/catalog**: `acp` sẽ là agent-kind riêng, KHÔNG phải member mới của `TuiAgent` union (tiêu chí "compile-time chỉ claude|codex" giữ nguyên vĩnh viễn), và ACP config persist trong namespace riêng nằm ngoài mọi sanitizer roster-keyed của phase này — sanitizer coerce `gemini`/`droid`/`cursor` chỉ áp dụng cho TuiAgent fields, không đụng namespace ACP tương lai.
 
 ## Requirements
 

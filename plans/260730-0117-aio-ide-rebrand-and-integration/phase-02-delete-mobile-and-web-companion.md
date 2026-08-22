@@ -22,7 +22,8 @@ Loại React Native mobile tree và mọi release/CI/docs coupling, nhưng giữ
 ## Related Code Files
 
 - Delete: `mobile/`, `.github/workflows/mobile*.yml`, mobile-only scripts/assets/docs sau khi cross-reference.
-- Modify: `package.json`, `pnpm-workspace.yaml`, `config/reliability-gates.jsonc`, `config/oxlint*`, `config/max-lines-baseline.txt`, mobile IPC/notification bridge.
+- Modify: `package.json`, `pnpm-workspace.yaml`, `config/reliability-gates.jsonc` (gồm gate ids `mobile-ui.*`, `mobile-relay.*`), `.oxlintrc.json` root, `config/max-lines-baseline.txt`, mobile IPC/notification bridge.
+- Delete cùng mobile tree: `mobile/.oxlintrc.json`.
 - Verify: `src/main/ipc/`, `src/main/notifications/`, `tests/e2e/` không còn import mobile-only modules.
 
 ## Implementation Steps
@@ -38,7 +39,7 @@ Loại React Native mobile tree và mọi release/CI/docs coupling, nhưng giữ
 - [ ] `Test-Path mobile` false và không còn package script/workflow build mobile.
 - [ ] `pnpm lint` không fail vì path mobile hoặc stale reliability gate.
 - [ ] Desktop notification/unread state vẫn hoạt động; không còn mobile bridge trong renderer bundle.
-- [ ] Không còn link tải APK/iOS trong README user-facing Aio-IDE.
+- [ ] Không còn link tải APK/iOS trong README user-facing aio-ade.
 
 ## Risk Assessment
 
