@@ -162,3 +162,49 @@ help section fails the suite and names it.
 | `src/cli` suite | 624 passed / 4 skipped, 51 files |
 | `generate-bundled-skill-guides.mjs --check` | unchanged |
 | `src/cli/browser-group-removal.test.ts` | 19 assertions, written first (3 red → green) |
+
+## Tranche 2 audit (2026-08-22): emulator and computer are NOT safe removals
+
+Ran the same six-way audit on the remaining candidate groups. Both fail it, for different reasons —
+so the earlier recommendation of "drop emulator + computer, keep Linear" was wrong on evidence.
+
+| Check | emulator (16 cmds) | computer (14 cmds) |
+|---|---:|---:|
+| Importers outside `src/cli` | 0 | **1** (`config/scripts/computer-e2e-workflow.test.mjs`) |
+| `orca <group>` references outside `src/cli` | **22** | **28** |
+| Shipped skill-guide references | **2** | **6** |
+| e2e specs | 0 | **1** (`tests/e2e/computer-mac.e2e.ts`) |
+| Reliability gates | 0 | 0 |
+
+Compare browser, which was all zeros except one dependency-name coincidence in `package.json`.
+
+### The blocking findings
+
+**`computer` is wired into a live runtime error path.** `src/shared/computer-use-error-recovery.ts`
+returns agent-facing recovery instructions that literally say:
+
+> "Run `orca computer list-apps --json` and retry with the exact app name or bundle ID."
+
+That data is consumed by `src/main/runtime/rpc/errors.ts:109` and `dispatcher.ts:281`, so **the
+desktop runtime tells agents to run these CLI commands whenever a `computer.*` RPC fails**. Deleting
+the CLI group would leave the app handing out instructions for a command it no longer ships. This is
+not a docs problem; it is a runtime contract between the RPC error surface and the CLI.
+
+There is also a native sidecar (`native/computer-use-macos/`) and a macOS e2e spec in the same
+neighbourhood.
+
+**`emulator` is taught by the desktop UI.** `MobileEmulatorAgentSetupGuideSteps.tsx:150` describes a
+setting as "Teaches agents the orca emulator commands for this worktree", and the emulator pane
+(`src/main/emulator/`, `src/renderer/src/components/emulator-pane/`) survived phase 02 as a desktop
+surface. Localization catalogs carry the strings in all five locales. Removing the CLI group orphans a
+UI affordance that exists to advertise it.
+
+### Revised recommendation
+
+Only **Linear** remains a candidate whose blockers are purely documentation (115 guide references,
+regenerable). Emulator and computer each have a **runtime or UI consumer** that would have to be
+removed or rewritten first, which is a larger scope change than "carve the CLI" and belongs in its own
+decision — or in phase 09 cleanup once the ACP work (phase 10) has settled what agents reach.
+
+Net: the minimal bridge lands at **139 commands** rather than the ~82 originally imagined, unless the
+user accepts also changing the computer-use error surface and the emulator UI copy.

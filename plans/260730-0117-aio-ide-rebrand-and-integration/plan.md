@@ -101,7 +101,11 @@ Plan này chỉ tạo roadmap và artifact review. Sau khi duyệt gate, chạy 
 
 ## Câu hỏi cần user quyết định
 
-**Đang chặn (2026-08-22): scope carve CLI ở phase 03.** Xem row `CLI carve scope` trong [decisions.md](decisions.md). 216 command, keep-set đã xác minh; câu hỏi là xoá bao nhiêu. Rủi ro chính: 115 reference `orca linear` trong shipped skill guides, và `verify:bundled-skill-guides` nằm trong `pnpm lint`. Ba option (A/B/C) đã trình, khuyến nghị B.
+**Đang chặn (2026-08-22): scope carve CLI ở phase 03 — chỉ còn Linear.** Xem row `CLI carve scope` trong [decisions.md](decisions.md).
+
+- **browser (77 command) đã xoá** — 0 consumer, 0 guide ref. CLI: 216 → **139 command**.
+- **emulator + computer: audit đã đảo khuyến nghị, nên GIỮ.** `computer` có consumer runtime thật (RPC error path phát hướng dẫn `orca computer …` cho agent); `emulator` được UI desktop quảng cáo + locale 5 thứ tiếng.
+- **Linear (27 command)** là candidate duy nhất còn lại, blocker thuần docs: 115 guide ref, `verify:bundled-skill-guides` nằm trong `pnpm lint` nên phải regenerate guide và workflow agent đang dùng sẽ chết.
 
 Các gate khác đã đóng — xem [decisions.md](decisions.md). Các quyết định phát sinh trong lúc thực thi:
 
