@@ -54,7 +54,7 @@ Chuyển fork Orca thành **AIO-ADE** (machine token `aio-ade`; org/author token
 |---|---|---:|---|
 | [01 Preflight và gate baseline](phase-01-preflight-and-gate-baseline.md) | **completed** 2026-08-22 | 0.5 ngày | - |
 | [02 Xoá mobile và web companion](phase-02-delete-mobile-and-web-companion.md) | **completed** 2026-08-22 (Option A: chỉ RN tree) | 1 đến 1.5 ngày | 01 |
-| [03 Thu gọn CLI thành agent bridge tối thiểu](phase-03-carve-the-cli-agent-bridge.md) | **in-progress** — `serve` flag OFF, neutrality guard, **browser carve xong (216→139 command)**; còn Linear/emulator/computer chờ user quyết (A/B/C) | 1.5 đến 2.5 ngày | 01, 02 |
+| [03 Thu gọn CLI thành agent bridge tối thiểu](phase-03-carve-the-cli-agent-bridge.md) | **completed** 2026-08-22 — `serve` flag OFF, neutrality guard, browser carve (216→**139 command**); emulator/computer giữ, Linear defer phase 09 | 1.5 đến 2.5 ngày | 01, 02 |
 | [04 Chỉ giữ Claude và Codex native](phase-04-reduce-agent-roster-to-claude-and-codex.md) | pending | 2 đến 3 ngày | 02, 03 |
 | [05 Rebrand Orca thành aio-ade](phase-05-rebrand-orca-to-aio-ide.md) | pending | 3 đến 5 ngày | 04 |
 | [06 Account và API profile switcher](phase-06-account-and-api-profile-switcher.md) | pending | 5 đến 6 tuần, chia 06A/06B | 04, 05, **12** |
@@ -101,11 +101,11 @@ Plan này chỉ tạo roadmap và artifact review. Sau khi duyệt gate, chạy 
 
 ## Câu hỏi cần user quyết định
 
-**Đang chặn (2026-08-22): scope carve CLI ở phase 03 — chỉ còn Linear.** Xem row `CLI carve scope` trong [decisions.md](decisions.md).
+**Scope carve CLI đã chốt (2026-08-22).** Xem row `CLI carve scope` trong [decisions.md](decisions.md).
 
 - **browser (77 command) đã xoá** — 0 consumer, 0 guide ref. CLI: 216 → **139 command**.
 - **emulator + computer: audit đã đảo khuyến nghị, nên GIỮ.** `computer` có consumer runtime thật (RPC error path phát hướng dẫn `orca computer …` cho agent); `emulator` được UI desktop quảng cáo + locale 5 thứ tiếng.
-- **Linear (27 command)** là candidate duy nhất còn lại, blocker thuần docs: 115 guide ref, `verify:bundled-skill-guides` nằm trong `pnpm lint` nên phải regenerate guide và workflow agent đang dùng sẽ chết.
+- **Linear (27 command): defer sang phase 09.** Blocker thuần docs (115 guide ref) nhưng giá trị xoá thấp, và phase 10 (ACP) có thể đổi việc agent reach gì. Minimal bridge chốt ở **139 command**.
 
 Các gate khác đã đóng — xem [decisions.md](decisions.md). Các quyết định phát sinh trong lúc thực thi:
 

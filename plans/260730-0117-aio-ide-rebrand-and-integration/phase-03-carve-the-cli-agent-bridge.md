@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "CLI thu gọn thành agent bridge tối thiểu (Option A đã duyệt)"
-status: in-progress (browser carve xong; Linear/emulator/computer chờ user quyết)
+status: completed (browser carve xong; emulator/computer giữ, Linear defer phase 09)
 priority: P1
 effort: "1.5-2.5d"
 dependencies: [1, 2]
@@ -37,12 +37,12 @@ dependencies: [1, 2]
 ## Success Criteria
 
 - [x] **Carve tranche 1 (browser) xong.** 216 → **139 command** (-77). Browser đi trước và đi một mình vì là nhóm lớn duy nhất **không có consumer nào**, verify 6 cách: 0 importer ngoài `src/cli`, 0 reference `orca browser` trong repo, **0 shipped skill-guide ref**, 0 e2e spec, 0 reliability gate, 0 formatter re-export. `generate-bundled-skill-guides.mjs --check` báo **unchanged** sau khi xoá — đó là bằng chứng không guide nào phụ thuộc.
-- [ ] Carve tranche 2: **chờ user quyết**, nhưng audit 2026-08-22 đã **đảo khuyến nghị**. Chạy đúng 6 bước kiểm như browser thì cả `emulator` và `computer` đều **fail**:
+- [x] Carve tranche 2: **đã chốt** — audit 2026-08-22 đảo khuyến nghị ban đầu. Chạy đúng 6 bước kiểm như browser thì cả `emulator` và `computer` đều **fail**:
   - **`computer` có consumer runtime**: `computer-use-error-recovery.ts` trả hướng dẫn agent "Run `orca computer list-apps --json`", dùng bởi `runtime/rpc/errors.ts:109` và `dispatcher.ts:281`. Xoá CLI = app phát hướng dẫn cho command không còn ship. Thêm native sidecar `native/computer-use-macos/` và 1 e2e spec.
   - **`emulator` được UI desktop quảng cáo**: `MobileEmulatorAgentSetupGuideSteps.tsx:150` ("Teaches agents the orca emulator commands"), locale 5 thứ tiếng, pane desktop giữ lại từ phase 02.
   - Chỉ **Linear** là candidate có blocker thuần docs (115 guide ref, regenerate được).
 
-  Khuyến nghị mới: **giữ cả 3 ở phase này.** Minimal bridge dừng ở **139 command**, không phải ~82 như hình dung ban đầu — trừ khi user chấp nhận sửa luôn computer-use error surface và UI copy của emulator, đó là scope change riêng (hoặc để phase 09 sau khi ACP phase 10 chốt agent reach gì).
+  **Quyết định:** `emulator` + `computer` **giữ** (có consumer runtime/UI thật, xoá là scope change riêng). `Linear` **defer sang phase 09** — blocker thuần docs nhưng giá trị xoá thấp (27/139 command) và phase 10 (ACP) có thể đổi hẳn việc agent reach gì. **Minimal bridge chốt ở 139 command**, không phải ~82 như hình dung ban đầu.
 - [x] Worker_done/ask/check round-trip và parity tests xanh (Agent Teams là consumer đã xác nhận). → 84 test xanh across `orchestration*.test.ts`, `preamble.test.ts`, `cli-command.test.ts`; 4 registry suite (`registry-parity`, `handler-group-manifest`, `vocabulary-policy`, `core`) 24 test xanh.
 - [ ] `pnpm build:desktop` và packaged smoke không tham chiếu binary cũ. *(deferred-verification → phase 12)* → **hoãn sang phase 05**: rename binary không thuộc phase này.
 - [ ] Chỉ có một binary `aio-ade` trong PATH sau install. → **hoãn sang phase 05** (D2/D3 trong `deferred-verification.md`): `bin`, `verify-cli-bin.mjs`, `install-dev-cli.mjs`, union `OrchestrationCliCommand`, Agent Teams shim và artifact name phải đổi **cùng lúc**, không tách được.
