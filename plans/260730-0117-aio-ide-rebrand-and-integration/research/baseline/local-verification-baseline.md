@@ -35,7 +35,13 @@ partial `localStorage` global, so `happy-dom` no longer installs its own, and an
 Installing Node 24.19.0 and re-running dropped the count from 47 to 6 with no source changes.
 
 **Consequence for the plan:** every phase 01-05 local gate must run on Node 24. Verifying on the
-host default silently invents dozens of failures that do not exist on the pinned runtime. Logs
+host default silently invents dozens of failures that do not exist on the pinned runtime.
+
+A `.nvmrc` pinning `24` now exists so `nvm use` / `fnm use` lands on the right major without anyone
+remembering this. It is deliberately bare (no comments) because nvm parses the whole file. CI does not
+read it — `.github/actions/install-node-dependencies` uses setup-node with
+`node-version-file: package.json`, so `engines.node` remains the single source of truth and `.nvmrc`
+only serves local shells. Logs
 `test.summary.md` (Node 25, 47 failures) and `test-node24.summary.md` (Node 24, 6 failures) are both kept as the
 evidence for this.
 
