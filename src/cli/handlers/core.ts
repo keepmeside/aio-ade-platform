@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process'
 import type { CommandHandler } from '../dispatch'
 import { formatCliStatus, formatStatus, printResult } from '../format'
 import { RuntimeClientError, serveOrcaApp } from '../runtime-client'
+import { SERVE_DISABLED_MESSAGE, isServeEnabled } from '../serve-feature-flag'
 import { stripElectronRunAsNode } from '../runtime/launch'
 
 function envRecord(): Record<string, string> {
@@ -92,6 +93,10 @@ export const CORE_HANDLERS: Record<string, CommandHandler> = {
     printResult(result, json, formatCliStatus)
   },
   serve: async ({ flags, json }) => {
+    // Why: decision 2026-08-21 ships serve OFF; phase 09 decides whether to delete it outright.
+    if (!isServeEnabled()) {
+      throw new RuntimeClientError('invalid_argument', SERVE_DISABLED_MESSAGE)
+    }
     if (flags.get('no-pairing') === true && flags.get('mobile-pairing') === true) {
       throw new RuntimeClientError(
         'invalid_argument',
