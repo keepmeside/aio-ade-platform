@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  collectMobileBumps,
   defaultLimitForPath,
   diffBaseline,
   hasMaxLinesDisable,
@@ -64,36 +63,10 @@ describe('defaultLimitForPath', () => {
   })
 })
 
-describe('collectMobileBumps', () => {
-  it('captures only overrides whose max exceeds the default for the glob', () => {
-    const cfg = JSON.stringify({
-      overrides: [
-        { files: ['app/h/*/tasks.tsx'], rules: { 'max-lines': ['error', { max: 14682 }] } }, // bump (>400)
-        {
-          files: ['src/terminal/TerminalWebView.tsx'],
-          rules: { 'max-lines': ['error', { max: 379 }] }
-        }, // stricter (<400), skip
-        { files: ['scripts/mock-server.ts'], rules: { 'max-lines': ['error', { max: 407 }] } } // bump (>300)
-      ]
-    })
-    expect(collectMobileBumps(cfg)).toEqual([
-      'mobile-config app/h/*/tasks.tsx',
-      'mobile-config scripts/mock-server.ts'
-    ])
-  })
-
-  it('ignores overrides without a max-lines rule', () => {
-    const cfg = JSON.stringify({
-      overrides: [{ files: ['a.tsx'], rules: { 'no-console': 'off' } }]
-    })
-    expect(collectMobileBumps(cfg)).toEqual([])
-  })
-})
-
 describe('parseBaseline', () => {
   it('drops comments and blank lines', () => {
-    const b = parseBaseline('# header\n\ninline a.ts\nmobile-config x/*.tsx\n')
-    expect(b).toEqual(new Set(['inline a.ts', 'mobile-config x/*.tsx']))
+    const b = parseBaseline('# header\n\ninline a.ts\ninline x/y.tsx\n')
+    expect(b).toEqual(new Set(['inline a.ts', 'inline x/y.tsx']))
   })
 })
 

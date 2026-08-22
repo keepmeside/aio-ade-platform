@@ -43,8 +43,8 @@ describe('changed-code quality line matching', () => {
     ).toBe(true)
   })
 
-  // Why: pinning --config disables nested-config discovery, so root rules that
-  // mobile/.oxlintrc.json turns off would fail the gate on mobile files.
+  // Why: pinning --config disables nested-config discovery, so a subtree that
+  // intentionally relaxes a root rule would fail the gate on its own files.
   it('lets the untyped scan discover nested configs instead of pinning the root config', () => {
     const scan = OXLINT_SCANS.find((candidate) => candidate.label === 'code quality')
 

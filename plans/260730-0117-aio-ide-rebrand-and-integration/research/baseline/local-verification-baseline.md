@@ -19,11 +19,11 @@ This is the gate that replaces CI for phases 01-05 (repo private, Actions billin
 
 | Gate | Command | Result | Log |
 |---|---|---|---|
-| Lint | `pnpm lint` | **exit 0** | `lint.log` |
-| Typecheck | `pnpm typecheck` (node + cli + web) | **exit 0** | `typecheck.log` |
-| Tests | full vitest suite | **2 failed / 39869 passed / 155 skipped**, exit 1 | `test-node24-after-fixes.summary.log` |
+| Lint | `pnpm lint` | **exit 0** | `lint.md` |
+| Typecheck | `pnpm typecheck` (node + cli + web) | **exit 0** | `typecheck.md` |
+| Tests | full vitest suite | **2 failed / 39869 passed / 155 skipped**, exit 1 | `test-node24-after-fixes.summary.md` |
 | Secret scan | `gitleaks git . --log-opts=--all` | 75 findings, 0 needing rotation; 0 residual under the proposed allowlist | `secret-scan-triage.md` |
-| Build desktop | `pnpm build:desktop` | **exit 0** (typecheck + relay + cli + electron-vite + web client, 768 files / 40.5 MiB) | `build-desktop.summary.log` |
+| Build desktop | `pnpm build:desktop` | **exit 0** (typecheck + relay + cli + electron-vite + web client, 768 files / 40.5 MiB) | `build-desktop.summary.md` |
 
 ## Node pin: the box was on the wrong major
 
@@ -36,7 +36,7 @@ Installing Node 24.19.0 and re-running dropped the count from 47 to 6 with no so
 
 **Consequence for the plan:** every phase 01-05 local gate must run on Node 24. Verifying on the
 host default silently invents dozens of failures that do not exist on the pinned runtime. Logs
-`test.summary.log` (Node 25, 47 failures) and `test-node24.summary.log` (Node 24, 6 failures) are both kept as the
+`test.summary.md` (Node 25, 47 failures) and `test-node24.summary.md` (Node 24, 6 failures) are both kept as the
 evidence for this.
 
 ## The 6 Node-24 failures, root-caused

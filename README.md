@@ -23,26 +23,12 @@
 <h3 align="center"><a href="https://onorca.dev/download"><ins>Download Orca</ins></a></h3>
 
 <p align="center">
-  <img src="docs/assets/readme-hero.jpg" alt="Orca desktop app running agents in parallel worktrees, with the Orca mobile companion app in the corner" width="960" />
+  <img src="docs/assets/readme-hero.jpg" alt="Orca desktop app running agents in parallel worktrees" width="960" />
 </p>
 
 ## Features
 
 <table>
-<tr>
-<td width="50%" valign="middle">
-
-### Mobile Companion
-
-Monitor and steer your agents from your phone — get notified when an agent finishes and send follow-ups from anywhere.
-
-[iOS App Store](https://apps.apple.com/us/app/orca-ide/id6766130217) · [TestFlight](https://testflight.apple.com/join/YjeGMQBA) · [Android APK 0.0.32](https://github.com/stablyai/orca/releases/download/mobile-android-v0.0.32/app-release.apk) · [Docs →](https://www.onorca.dev/docs/mobile)
-
-</td>
-<td width="50%">
-  <a href="https://www.onorca.dev/docs/mobile"><picture><source srcset="docs/assets/feature-wall/mobile-companion-app-showcase.gif" type="image/gif"><img src="docs/assets/feature-wall/mobile-companion-app-showcase.jpg" alt="Orca desktop with the mobile companion app" width="100%" /></picture></a>
-</td>
-</tr>
 <tr>
 <td width="50%" valign="middle">
 
@@ -224,13 +210,6 @@ brew install --cask stablyai/orca/orca
 # Arch Linux (AUR) — or stably-orca-git to build from source
 yay -S stably-orca-bin
 ```
-
-### Mobile Companion — iOS, Android
-
-Pair with your desktop app to monitor and steer your agents from your phone.
-
-- **iOS:** [Download on the App Store](https://apps.apple.com/us/app/orca-ide/id6766130217) or [join TestFlight](https://testflight.apple.com/join/YjeGMQBA)
-- **Android:** [Download APK 0.0.32](https://github.com/stablyai/orca/releases/download/mobile-android-v0.0.32/app-release.apk)
 
 ---
 

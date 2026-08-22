@@ -1,11 +1,15 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { ALL_RPC_METHODS } from './rpc/methods'
 
+// Why this list is now hand-maintained: phase 02 deleted the React Native app, so there is no
+// mobile source tree left to scan for `sendRequest('...')` literals. The allowlist it guards is
+// still live — `runtime-rpc.ts` rejects any method outside it for devices paired with
+// scope 'mobile', which the paired web client still uses. Keeping these methods enumerated
+// preserves the two real invariants: every method a mobile-scoped client needs is allowlisted,
+// and every allowlisted method is actually registered.
 const MOBILE_DYNAMIC_RPC_METHODS = [
-  // Why: computed sendRequest method names do not appear as literals in the
-  // mobile source scan below, but still must stay mobile-authorized.
   'accounts.selectClaude',
   'accounts.selectCodex',
   'accounts.selectCodexForTarget',
@@ -51,49 +55,6 @@ const MOBILE_STREAMING_CLEANUP_RPC_METHODS = [
   'terminal.unsubscribe'
 ]
 
-function listSourceFiles(root: string): string[] {
-  const entries = readdirSync(root)
-  const files: string[] = []
-  for (const entry of entries) {
-    const path = join(root, entry)
-    const stat = statSync(path)
-    if (stat.isDirectory()) {
-      files.push(...listSourceFiles(path))
-      continue
-    }
-    if (!/\.[cm]?[jt]sx?$/.test(entry) || /\.test\.[cm]?[jt]sx?$/.test(entry)) {
-      continue
-    }
-    files.push(path)
-  }
-  return files
-}
-
-function mobileLiteralRpcMethods(): string[] {
-  const roots = [join(process.cwd(), 'mobile/app'), join(process.cwd(), 'mobile/src')]
-  const methods = new Set<string>()
-  for (const file of roots.flatMap(listSourceFiles)) {
-    const source = readFileSync(file, 'utf8')
-    for (const match of source.matchAll(/sendRequest\(\s*['"]([^'"]+)/g)) {
-      methods.add(match[1]!)
-    }
-    for (const match of source.matchAll(/subscribe\(\s*['"]([^'"]+)/g)) {
-      methods.add(match[1]!)
-    }
-    for (const match of source.matchAll(/method:\s*['"]([^'"]+)/g)) {
-      const method = match[1]!
-      if (method.includes('.')) {
-        methods.add(method)
-      }
-    }
-  }
-  return [...methods].sort()
-}
-
-function mobileRpcMethods(): string[] {
-  return [...new Set([...mobileLiteralRpcMethods(), ...MOBILE_DYNAMIC_RPC_METHODS])].sort()
-}
-
 function mobileRpcAllowlist(): Set<string> {
   const source = readFileSync(join(process.cwd(), 'src/main/runtime/runtime-rpc.ts'), 'utf8')
   const allowlist = source.match(/const MOBILE_RPC_METHOD_ALLOWLIST = new Set\(\[([\s\S]*?)\]\)/)
@@ -101,6 +62,13 @@ function mobileRpcAllowlist(): Set<string> {
     throw new Error('MOBILE_RPC_METHOD_ALLOWLIST not found')
   }
   return new Set([...allowlist[1]!.matchAll(/'([^']+)'/g)].map((match) => match[1]!))
+}
+
+/** Every method a mobile-scoped client is known to call. */
+function mobileRpcMethods(): string[] {
+  return [
+    ...new Set([...MOBILE_DYNAMIC_RPC_METHODS, ...MOBILE_STREAMING_CLEANUP_RPC_METHODS])
+  ].sort()
 }
 
 function registeredRuntimeMethods(): Set<string> {

@@ -75,7 +75,6 @@ module.exports = {
     '!src{,/**/*}',
     '!config{,/**/*}',
     '!docs{,/**/*}',
-    '!mobile{,/**/*}',
     '!native{,/**/*}',
     '!skills{,/**/*}',
     // Why: guide/stub authoring sources are compiled into runtime artifacts; shipping

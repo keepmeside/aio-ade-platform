@@ -53,7 +53,7 @@ Chuyển fork Orca thành **AIO-ADE** (machine token `aio-ade`; org/author token
 | Phase | Trạng thái | Effort | Phụ thuộc |
 |---|---|---:|---|
 | [01 Preflight và gate baseline](phase-01-preflight-and-gate-baseline.md) | **completed** 2026-08-22 | 0.5 ngày | - |
-| [02 Xoá mobile và web companion](phase-02-delete-mobile-and-web-companion.md) | pending | 1 đến 1.5 ngày | 01 |
+| [02 Xoá mobile và web companion](phase-02-delete-mobile-and-web-companion.md) | **completed** 2026-08-22 (Option A: chỉ RN tree) | 1 đến 1.5 ngày | 01 |
 | [03 Thu gọn CLI thành agent bridge tối thiểu](phase-03-carve-the-cli-agent-bridge.md) | pending (Option A đã duyệt) | 1.5 đến 2.5 ngày | 01, 02 |
 | [04 Chỉ giữ Claude và Codex native](phase-04-reduce-agent-roster-to-claude-and-codex.md) | pending | 2 đến 3 ngày | 02, 03 |
 | [05 Rebrand Orca thành aio-ade](phase-05-rebrand-orca-to-aio-ide.md) | pending | 3 đến 5 ngày | 04 |

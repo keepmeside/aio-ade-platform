@@ -8,8 +8,8 @@ import { resolvePullRequestDiffBase } from './git-pull-request-diff-base.mjs'
 const SOURCE_FILE_PATTERN = /\.(?:[cm]?[jt]sx?)$/
 export const OXLINT_SCANS = [
   {
-    // Why: no --config, so Oxlint keeps discovering nested configs. Pinning the root
-    // config would apply root rules to mobile/, whose .oxlintrc.json turns them off.
+    // Why: no --config, so Oxlint keeps discovering nested configs rather than
+    // forcing root rules onto subtrees that intentionally relax them.
     label: 'code quality',
     args: ['--report-unused-disable-directives-severity', 'warn']
   },

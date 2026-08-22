@@ -1,5 +1,6 @@
-# The desktop app is a single-project install. `mobile/` is a separate workspace
-# with its own pnpm-workspace.yaml and lockfile, so keep it out of the root
-# package graph. Without this file `pnpm -r` auto-discovers mobile/ and its
-# nested package, and the root's patchedDependencies fail as ERR_PNPM_UNUSED_PATCH.
+# The desktop app is a single-project install: no workspace packages, so `pnpm -r`
+# has nothing to auto-discover and the root's patchedDependencies stay attached.
+# Keep this file even though the list is empty — deleting it re-enables
+# auto-discovery, and any future nested package would break patches with
+# ERR_PNPM_UNUSED_PATCH.
 packages: []

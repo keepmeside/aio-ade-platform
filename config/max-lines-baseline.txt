@@ -2,7 +2,6 @@
 # This is a RATCHET: the list may only SHRINK. Do NOT add entries to get CI green —
 # split the oversized file instead (AGENTS.md → "Do Not Disable Max Lines").
 # Regenerate/prune: pnpm check:max-lines-ratchet --prune   (removes stale entries only)
-inline mobile/src/constants/marine-creatures.ts
 inline src/cli/handlers/automations.ts
 inline src/cli/handlers/orchestration.ts
 inline src/cli/help.ts
@@ -337,22 +336,3 @@ inline src/shared/text-search.ts
 inline src/shared/types.ts
 inline tests/e2e/helpers/terminal.ts
 inline tests/e2e/terminal-panes.spec.ts
-mobile-config app/h/*/files/*.tsx
-mobile-config app/h/*/index.tsx
-mobile-config app/h/*/session/*.tsx
-mobile-config app/h/*/source-control/*.tsx
-mobile-config app/h/*/tasks.tsx
-mobile-config app/index.tsx
-mobile-config app/pair-scan.tsx
-mobile-config app/terminal-settings.tsx
-mobile-config app/troubleshoot.tsx
-mobile-config scripts/mock-server.ts
-mobile-config scripts/repro-terminal-colors.ts
-mobile-config scripts/repro-worktree-startup-stream.ts
-mobile-config src/browser/MobileBrowserPane.tsx
-mobile-config src/components/CustomKeyModal.tsx
-mobile-config src/components/NewWorktreeModal.tsx
-mobile-config src/components/mobile-rich-markdown-editor-html.ts
-mobile-config src/terminal/terminal-accessory-keys.ts
-mobile-config src/terminal/terminal-webview-html.ts
-mobile-config src/transport/rpc-client.ts

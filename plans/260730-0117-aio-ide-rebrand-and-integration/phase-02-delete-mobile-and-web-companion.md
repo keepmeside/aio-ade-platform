@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Xoá mobile và web companion"
-status: pending
+status: completed
 priority: P1
 effort: "1-1.5d"
 dependencies: [1]
@@ -36,10 +36,16 @@ Loại React Native mobile tree và mọi release/CI/docs coupling, nhưng giữ
 
 ## Success Criteria
 
-- [ ] `Test-Path mobile` false và không còn package script/workflow build mobile.
-- [ ] `pnpm lint` không fail vì path mobile hoặc stale reliability gate.
-- [ ] Desktop notification/unread state vẫn hoạt động; không còn mobile bridge trong renderer bundle.
-- [ ] Không còn link tải APK/iOS trong README user-facing aio-ade.
+- [x] `Test-Path mobile` false và không còn package script/workflow build mobile. → 0 tracked file dưới `mobile/`, 3 workflow xoá. Tiêu chí gốc viết bằng PowerShell (1 OS); form portable nằm ở `src/shared/mobile-companion-removal-guard.test.ts` (15 test, viết **trước** khi xoá: 7 đỏ → xanh).
+- [x] `pnpm lint` không fail vì path mobile hoặc stale reliability gate. → **exit 0**. Đã sửa: literal path `mobile` trong `audit:code-quality:native`; gate `mobile-ui.drawer-close-continuity` xoá (53→52 gate); 8 `testFiles` + 4 command + 6 `assertionRefs` + 3 `evidenceRuns` prune khỏi 3 gate còn sống; ratchet baseline 353→334.
+- [x] Desktop notification/unread state vẫn hoạt động; không còn mobile bridge trong renderer bundle. → không có import nào từ `src/**` vào `mobile/**` (đã verify trước khi xoá), `pnpm build:desktop` **exit 0** (768 file / 40.5 MiB web client), suite **39.911 pass**.
+- [x] Không còn link tải APK/iOS trong README user-facing aio-ade. → xoá feature cell "Mobile Companion" + section download iOS/Android, sửa alt text hero. Cấu trúc table verify cân (8 `<tr>`, 16 `<td>`).
+
+### Quyết định scope (Option A)
+
+Chỉ xoá **RN tree** + coupling config/CI/docs. **Giữ 162 module desktop-side** tên "mobile" (pairing UI, E2EE v1/v2, QR, notification replay, presence lock, emulator pane) — chúng chạy trong Electron và phục vụ **paired web client**, không phải app điện thoại. `MOBILE_RPC_METHOD_ALLOWLIST` trong `runtime-rpc.ts` vẫn live: nó chặn method ngoài allowlist cho device pair scope `mobile`, mà web client vẫn dùng. Xoá tiếp các surface đó là quyết định scope riêng, có acceptance criteria riêng; trộn vào commit này sẽ làm mất khả năng revert.
+
+Chi tiết đầy đủ (bảng từng file + lý do, danh sách giữ lại có evidence): [`research/baseline/phase-02-delete-manifest.md`](research/baseline/phase-02-delete-manifest.md).
 
 ## Risk Assessment
 

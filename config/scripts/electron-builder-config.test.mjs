@@ -32,7 +32,6 @@ describe('electron-builder config', () => {
         '!src{,/**/*}',
         '!config{,/**/*}',
         '!docs{,/**/*}',
-        '!mobile{,/**/*}',
         '!native{,/**/*}',
         '!skills{,/**/*}',
         '!skill-guides{,/**/*}',
