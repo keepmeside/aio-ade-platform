@@ -3,7 +3,12 @@ import { mkdtemp, realpath, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import * as path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
+import { localGitSupportsWorktreeListZ } from '../../shared/git-worktree-list-z-probe'
 import { listWorktrees, removeWorktree } from './worktree'
+
+// Newline paths survive only through `worktree list -z` (Git 2.36+); the documented
+// line-parser fallback cannot represent them, so skip below the boundary.
+const skipWithoutWorktreeListZ = process.platform === 'win32' || !localGitSupportsWorktreeListZ()
 
 const tempRoots: string[] = []
 
@@ -105,18 +110,15 @@ afterEach(async () => {
 })
 
 describe('git worktree paths', () => {
-  it.skipIf(process.platform === 'win32')(
-    'lists worktrees whose paths contain newlines',
-    async () => {
-      const { repoPath, worktreePath } = await createRepoWithNewlineWorktree()
+  it.skipIf(skipWithoutWorktreeListZ)('lists worktrees whose paths contain newlines', async () => {
+    const { repoPath, worktreePath } = await createRepoWithNewlineWorktree()
 
-      const worktrees = await listWorktrees(repoPath)
+    const worktrees = await listWorktrees(repoPath)
 
-      expect(worktrees.map((worktree) => worktree.path)).toContain(worktreePath)
-    }
-  )
+    expect(worktrees.map((worktree) => worktree.path)).toContain(worktreePath)
+  })
 
-  it.skipIf(process.platform === 'win32')(
+  it.skipIf(skipWithoutWorktreeListZ)(
     'deletes the matching local branch after removing a newline-path worktree',
     async () => {
       const { repoPath, worktreePath } = await createRepoWithNewlineWorktree()

@@ -137,12 +137,22 @@ function createRelayTree(root: string, remoteHome: string): void {
   }
 
   const remoteDir = join(remoteHome, '.orca-remote', `relay-${RELAY_VERSION}`)
-  mkdirSync(join(remoteDir, 'node_modules', 'node-pty'), { recursive: true })
+  mkdirSync(join(remoteDir, 'node_modules', 'node-pty', 'lib'), { recursive: true })
   mkdirSync(join(remoteDir, 'node_modules', '@parcel', 'watcher'), { recursive: true })
   writeFileSync(join(remoteDir, 'node_modules', 'node-pty', 'index.js'), '')
+  // Why: the native-deps probe does more than require("node-pty") — it also calls
+  // node-pty/lib/utils.loadNativeModule to prove the binding is healthy. A bare index.js
+  // fails that call, so the probe reports MISSING and deploy runs a real `npm install`.
+  writeFileSync(
+    join(remoteDir, 'node_modules', 'node-pty', 'lib', 'utils.js'),
+    'exports.loadNativeModule = () => ({});\n'
+  )
   writeFileSync(join(remoteDir, 'node_modules', '@parcel', 'watcher', 'index.js'), '')
   writeFileSync(join(remoteDir, '.install-complete'), '')
   writeFileSync(join(remoteDir, 'managed-hook-runtime.js'), '')
+  // Why: probeRelayInstalledCommand also requires relay-watcher.js (#8463). Without it the
+  // probe reports MISSING and deploy falls through to a real `npm install`, which times out.
+  writeFileSync(join(remoteDir, 'relay-watcher.js'), '')
   writeFakeRelay(remoteDir)
 }
 

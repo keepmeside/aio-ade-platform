@@ -3,7 +3,7 @@
    setup that makes cross-command filesystem behavior comparable. */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { EventEmitter } from 'node:events'
-import { link, mkdtemp, readFile, realpath, rm, symlink, writeFile } from 'node:fs/promises'
+import { link, mkdtemp, readFile, realpath, rm, symlink, utimes, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type * as Fs from 'node:fs'
@@ -1756,6 +1756,10 @@ describe('RuntimeFileCommands', () => {
 
       await rm(artifactPath)
       await writeFile(artifactPath, 'changed!')
+      // Why: the replacement is byte-identical in length and reuses the freed inode, so
+      // dev:ino:size:mtime only differs if mtime moved — and both writes can land inside one
+      // filesystem mtime tick. Stamp a distinct mtime so staleness is detected deterministically.
+      await utimes(artifactPath, new Date(0), new Date(0))
 
       await expect(
         commands.readTerminalArtifactPreview(

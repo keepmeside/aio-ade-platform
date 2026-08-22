@@ -9,6 +9,7 @@ import { tmpdir } from 'node:os'
 import { execFileSync } from 'node:child_process'
 import { MAX_RENDERED_DIFF_COMBINED_CHARACTERS } from '../shared/large-diff-render-limit'
 import { reviewHeadRemoteRefComponent } from '../shared/review-head-tracking-ref'
+import { localGitSupportsWorktreeListZ } from '../shared/git-worktree-list-z-probe'
 import {
   createMockDispatcher,
   gitInit,
@@ -2095,7 +2096,7 @@ describe('GitHandler', () => {
       }
     )
 
-    it.skipIf(process.platform === 'win32')(
+    it.skipIf(process.platform === 'win32' || !localGitSupportsWorktreeListZ())(
       'lists worktrees whose paths contain newlines',
       async () => {
         gitInit(tmpDir)
