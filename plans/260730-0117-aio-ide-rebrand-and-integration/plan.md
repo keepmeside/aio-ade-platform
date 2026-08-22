@@ -54,7 +54,7 @@ Chuyển fork Orca thành **AIO-ADE** (machine token `aio-ade`; org/author token
 |---|---|---:|---|
 | [01 Preflight và gate baseline](phase-01-preflight-and-gate-baseline.md) | **completed** 2026-08-22 | 0.5 ngày | - |
 | [02 Xoá mobile và web companion](phase-02-delete-mobile-and-web-companion.md) | **completed** 2026-08-22 (Option A: chỉ RN tree) | 1 đến 1.5 ngày | 01 |
-| [03 Thu gọn CLI thành agent bridge tối thiểu](phase-03-carve-the-cli-agent-bridge.md) | pending (Option A đã duyệt) | 1.5 đến 2.5 ngày | 01, 02 |
+| [03 Thu gọn CLI thành agent bridge tối thiểu](phase-03-carve-the-cli-agent-bridge.md) | **in-progress** — `serve` flag OFF + neutrality guard xong; **blocked: user chọn scope carve (A/B/C)** | 1.5 đến 2.5 ngày | 01, 02 |
 | [04 Chỉ giữ Claude và Codex native](phase-04-reduce-agent-roster-to-claude-and-codex.md) | pending | 2 đến 3 ngày | 02, 03 |
 | [05 Rebrand Orca thành aio-ade](phase-05-rebrand-orca-to-aio-ide.md) | pending | 3 đến 5 ngày | 04 |
 | [06 Account và API profile switcher](phase-06-account-and-api-profile-switcher.md) | pending | 5 đến 6 tuần, chia 06A/06B | 04, 05, **12** |
@@ -88,7 +88,7 @@ Chuyển fork Orca thành **AIO-ADE** (machine token `aio-ade`; org/author token
 ## Tài liệu liên quan
 
 - [Decision log](decisions.md)
-- [Phase 01 baseline evidence](research/baseline/) — `local-verification-baseline.md` (gate thay CI, **yêu cầu Node 24**), `secret-scan-triage.md` (0 secret cần rotate trên 17.537 commit), `deferred-verification.md` (19 tiêu chí defer sang phase 12/owner), `decisions-audit.md`, và 4 coupling map cho phase 02/03/05/06
+- [Phase 01 baseline evidence](research/baseline/) — `local-verification-baseline.md` (gate thay CI, **yêu cầu Node 24**), `secret-scan-triage.md` (0 secret cần rotate trên 17.537 commit), `deferred-verification.md` (19 tiêu chí defer sang phase 12/owner), `decisions-audit.md`, 4 coupling map cho phase 02/03/05/06, `phase-02-delete-manifest.md`, `serve-dependency-inventory.md` (dữ liệu cho quyết định xoá `serve` ở phase 09)
 - [Research digest](digest-audits.md)
 - [Parallel validation synthesis](reports/parallel-validation-synthesis.md)
 - [Full feature catalog: 176 rows](feature-catalog.md)
@@ -101,7 +101,9 @@ Plan này chỉ tạo roadmap và artifact review. Sau khi duyệt gate, chạy 
 
 ## Câu hỏi cần user quyết định
 
-**Không còn câu nào chặn việc cook.** Toàn bộ gate đã đóng — xem [decisions.md](decisions.md). Các quyết định phát sinh trong lúc thực thi:
+**Đang chặn (2026-08-22): scope carve CLI ở phase 03.** Xem row `CLI carve scope` trong [decisions.md](decisions.md). 216 command, keep-set đã xác minh; câu hỏi là xoá bao nhiêu. Rủi ro chính: 115 reference `orca linear` trong shipped skill guides, và `verify:bundled-skill-guides` nằm trong `pnpm lint`. Ba option (A/B/C) đã trình, khuyến nghị B.
+
+Các gate khác đã đóng — xem [decisions.md](decisions.md). Các quyết định phát sinh trong lúc thực thi:
 
 - **Phase 01:** kết quả history secret scan (17.537 commit). Nếu có secret upstream không rotate được → chạy nhánh contingency đã duyệt.
 - **Phase 09:** xoá thật `serve` hay giữ.

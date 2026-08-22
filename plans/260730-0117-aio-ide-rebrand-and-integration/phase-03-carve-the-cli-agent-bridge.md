@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "CLI thu gọn thành agent bridge tối thiểu (Option A đã duyệt)"
-status: pending
+status: in-progress (blocked: cần user chọn scope carve)
 priority: P1
 effort: "1.5-2.5d"
 dependencies: [1, 2]
@@ -36,12 +36,37 @@ dependencies: [1, 2]
 
 ## Success Criteria
 
-- [ ] Không có command prompt nào gọi `orca orchestration` sau khi phase hoàn tất.
-- [ ] Worker_done/ask/check round-trip và parity tests xanh (Agent Teams là consumer đã xác nhận).
-- [ ] `pnpm build:desktop` và packaged smoke không tham chiếu binary cũ. *(packaged smoke đa OS là deferred-verification — verify thật ở phase 12)*
-- [ ] Chỉ có một binary `aio-ade` trong PATH sau install; không có `orca` hay `orca-ide`. Uninstall xoá được shim cũ nếu có.
-- [ ] `serve` sau feature flag OFF, có inventory dependency, không có consumer nào trong keep-set gọi tới nó.
-- [ ] PATH/uninstall migration tests cover Windows shims, macOS/Linux links, WSL và SSH host. *(deferred-verification: chỉ chạy được đủ trên CI matrix — phase 12)*
+- [ ] Không có command prompt nào gọi `orca orchestration` sau khi phase hoàn tất. → **chưa**: cần quyết định scope carve trước.
+- [x] Worker_done/ask/check round-trip và parity tests xanh (Agent Teams là consumer đã xác nhận). → 84 test xanh across `orchestration*.test.ts`, `preamble.test.ts`, `cli-command.test.ts`; 4 registry suite (`registry-parity`, `handler-group-manifest`, `vocabulary-policy`, `core`) 24 test xanh.
+- [ ] `pnpm build:desktop` và packaged smoke không tham chiếu binary cũ. *(deferred-verification → phase 12)* → **hoãn sang phase 05**: rename binary không thuộc phase này.
+- [ ] Chỉ có một binary `aio-ade` trong PATH sau install. → **hoãn sang phase 05** (D2/D3 trong `deferred-verification.md`): `bin`, `verify-cli-bin.mjs`, `install-dev-cli.mjs`, union `OrchestrationCliCommand`, Agent Teams shim và artifact name phải đổi **cùng lúc**, không tách được.
+- [x] `serve` sau feature flag OFF, có inventory dependency, không có consumer nào trong keep-set gọi tới nó. → `src/cli/serve-feature-flag.ts` (fail-closed, chỉ `1`/`true`), 12 test viết trước implementation; inventory ở [`research/baseline/serve-dependency-inventory.md`](research/baseline/serve-dependency-inventory.md).
+- [ ] PATH/uninstall migration tests cover Windows shims, macOS/Linux links, WSL và SSH host. *(deferred-verification → phase 12)*
+- [x] **(bổ sung)** Bridge transport không phụ thuộc Electron API trực tiếp. → `src/cli/bridge-runtime-neutrality.test.ts`: 0 file trong `src/cli` import `electron`; transport là `node:net` + WebSocket. Mutation-check: thêm `import { app } from 'electron'` làm suite đỏ và in ra file vi phạm.
+
+## Trạng thái: BLOCKED — cần user chọn scope carve
+
+Surface thật: **216 command / 20 spec group** (số liệu ở [`research/baseline/coupling-cli.md`](research/baseline/coupling-cli.md)).
+
+Keep-set đã xác minh bằng evidence, không phải suy đoán:
+- `orchestration send/check/ask/reply` — preamble nói thẳng với agent "You talk to the coordinator only through the CLI commands below" (`src/main/runtime/orchestration/preamble.ts:64`).
+- `orchestration run-*/task-*/dispatch*/worker-*/coordinator-*/gate-*/reset` — lifecycle desktop điều khiển.
+- `core`: `open`, `status`, `claude-teams` (Agent Teams được giữ), `terminal *` (26 ref trong guide).
+- `agent-context`, `agent hooks status/off/on`.
+
+Candidate-drop và **rủi ro guide** (đây là phần chặn):
+
+| Group | Commands | Ref trong shipped skill guides | Ghi chú |
+|---|---:|---:|---|
+| browser-basic + browser-advanced | 77 | **0** | an toàn nhất để xoá |
+| linear + linear-mcp | 27 | **115** | `skills/orca-linear`, `skills/linear-tickets`, `skill-guides/orca-linear.md`, `skill-guides/linear-tickets.md` |
+| emulator | 16 | 2 | |
+| computer | 14 | 6 | |
+| vm | 1 | 9 | `serve --recipe-json` là result channel của VM recipe — xem inventory |
+
+`verify:bundled-skill-guides` + `verify:skill-bundle-manifest` **nằm trong `pnpm lint`**, nên xoá command mà guide còn dạy sẽ fail lint, và tệ hơn: agent workflow đang dùng sẽ chết im lặng.
+
+Ba lựa chọn đã trình user: (A) xoá cả 4 nhóm ~134 command; (B) xoá browser+emulator+computer ~107, **giữ Linear**; (C) chưa carve, để phase 09. Khuyến nghị **B**.
 
 ## Risk Assessment
 
