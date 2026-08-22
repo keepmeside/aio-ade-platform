@@ -13,6 +13,8 @@ blocks: []
 
 > **Trạng thái artifact:** [plan.html](plan.html) được generate 2026-07-30 và **đã stale** — chưa có phase 09/10/11/12, brand mới (`aio-ade`) và các quyết định 2026-08-21. File `plan.md` + phase files là source of truth hiện tại; regenerate `plan.html` ở phase 08 step 2 trước khi publish.
 
+> **Lưu ý naming:** token `aio-ide` còn xuất hiện trong **tên file và tên thư mục** (`260730-0117-aio-ide-...`, `phase-05-rebrand-orca-to-aio-ide.md`, `.github/workflows/aio-ide-plan-pages.yml`) là **di sản lịch sử**, không phải brand thứ hai. Token được duyệt là `aio-ade` (machine) và `AIO-ADE` (display). Không rename các path này: chúng bị reference chéo khắp plan và bởi Pages workflow.
+
 ## Mục tiêu
 
 Chuyển fork Orca thành **AIO-ADE** (machine token `aio-ade`; org/author token `stablyai` → `keepmeside`), tác giả hiển thị là **Keepmeside** và **SalyyS1**. Sản phẩm cuối là desktop orchestrator với **Claude Code** và **Codex** native, **các agent khác hỗ trợ qua ACP** (Agent Client Protocol, chỉ local native host), bỏ mobile companion, CLI thu gọn thành agent bridge tối thiểu, thêm chuyển đổi account và API profile (schema chung Claude/Codex, runtime resolver riêng), canvas Excalidraw, dọn dẹp codebase sau rebrand, repo public sau rebrand, và đánh giá thay runtime Electron sang **Rust + Tauri v2 + Node sidecar** qua feasibility spike có go/no-go gate.
@@ -50,7 +52,7 @@ Chuyển fork Orca thành **AIO-ADE** (machine token `aio-ade`; org/author token
 
 | Phase | Trạng thái | Effort | Phụ thuộc |
 |---|---|---:|---|
-| [01 Preflight và gate baseline](phase-01-preflight-and-gate-baseline.md) | pending | 0.5 ngày | - |
+| [01 Preflight và gate baseline](phase-01-preflight-and-gate-baseline.md) | **completed** 2026-08-22 | 0.5 ngày | - |
 | [02 Xoá mobile và web companion](phase-02-delete-mobile-and-web-companion.md) | pending | 1 đến 1.5 ngày | 01 |
 | [03 Thu gọn CLI thành agent bridge tối thiểu](phase-03-carve-the-cli-agent-bridge.md) | pending (Option A đã duyệt) | 1.5 đến 2.5 ngày | 01, 02 |
 | [04 Chỉ giữ Claude và Codex native](phase-04-reduce-agent-roster-to-claude-and-codex.md) | pending | 2 đến 3 ngày | 02, 03 |
@@ -86,6 +88,7 @@ Chuyển fork Orca thành **AIO-ADE** (machine token `aio-ade`; org/author token
 ## Tài liệu liên quan
 
 - [Decision log](decisions.md)
+- [Phase 01 baseline evidence](research/baseline/) — `local-verification-baseline.md` (gate thay CI, **yêu cầu Node 24**), `secret-scan-triage.md` (0 secret cần rotate trên 17.537 commit), `deferred-verification.md` (19 tiêu chí defer sang phase 12/owner), `decisions-audit.md`, và 4 coupling map cho phase 02/03/05/06
 - [Research digest](digest-audits.md)
 - [Parallel validation synthesis](reports/parallel-validation-synthesis.md)
 - [Full feature catalog: 176 rows](feature-catalog.md)
