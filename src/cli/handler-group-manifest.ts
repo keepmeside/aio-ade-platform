@@ -1,5 +1,4 @@
 import type { CommandHandler } from './dispatch'
-import { BROWSER_HANDLER_GROUPS } from './browser-handler-groups'
 
 export type HandlerGroup = {
   name: string
@@ -83,7 +82,6 @@ export const HANDLER_GROUPS: readonly HandlerGroup[] = [
     ],
     load: async () => (await import('./handlers/terminal.js')).TERMINAL_HANDLERS
   },
-  ...BROWSER_HANDLER_GROUPS,
   {
     name: 'orchestration',
     keys: [

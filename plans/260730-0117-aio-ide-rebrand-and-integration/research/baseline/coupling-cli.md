@@ -97,3 +97,68 @@ every desktop-invoked path intact. That is the concrete shape of "minimal bridge
 5. Leave the binary **name** alone in this phase. Renaming `orca` → `aio-ade` is phase 05 and touches
    `bin`, `verify-cli-bin.mjs`, `install-dev-cli.mjs`, the `OrchestrationCliCommand` union, the Agent Teams
    shim, and packaging artifact names all at once.
+
+---
+
+## Carve executed 2026-08-22: browser group removed
+
+Scope: **browser only**. 216 → **139 commands** (-77). The Linear, emulator and computer groups are
+untouched — their removal is still the open `CLI carve scope` gate in `decisions.md`.
+
+Browser was chosen to go first and alone because it is the only large group with **no consumer at all**,
+verified six ways before deleting anything:
+
+| Check | Result |
+|---|---|
+| Importers outside `src/cli` | 0 |
+| `orca browser` anywhere in the repo outside `src/cli` | 0 |
+| Shipped skill-guide references | **0** (vs 115 for Linear) |
+| e2e specs | 0 |
+| Reliability gates citing its test files | 0 |
+| Formatters re-exported for non-browser callers | 0 |
+
+That third row is the one that mattered: `verify:bundled-skill-guides` runs inside `pnpm lint`, so
+carving a group whose guides still teach it fails lint — and worse, silently breaks agent workflows.
+`generate-bundled-skill-guides.mjs --check` reported **unchanged** after the delete, which is the proof
+no shipped guide depended on it.
+
+### Deleted (13 files)
+
+`specs/browser-basic.ts`, `specs/browser-advanced.ts`, `browser-handler-groups.ts` (8 handler groups,
+67 keys), `browser-format.ts`, `browser.test.ts`, and 8 handlers under `handlers/browser-*.ts`.
+
+### Fallout the compiler could not catch
+
+Deleting the group left four kinds of dangling surface. None would have failed `tsc`, and two would
+have actively misled agents:
+
+1. **`--page` advertised on 10 unrelated commands.** `supportsBrowserPageFlag` granted the flag by
+   *exclusion* ("everything except these groups"), so removing browser silently extended it to `serve`,
+   `claude-teams`, `environment *`, `agent hooks *` and `vm recipe doctor`. Retired the function
+   entirely, along with its `help.ts` and `args.ts` call sites and its now-vacuous tests.
+2. **9 stale command-group headers** in `isCommandGroup`: `tab`, `cookie`, `intercept`, `capture`,
+   `mouse`, `set`, `clipboard`, `dialog`, `storage`. Each would have made `orca tab` a valid group with
+   zero members. Also dropped the dead two-part `storage local|session` branch.
+3. **Root help advertised 77 deleted commands** across three sections (`Browser Automation`,
+   `Browser Workflow`, `Browser Options`) plus 10 worked examples. Help is how an agent discovers what
+   it may call, so this was the highest-impact leftover: an agent reading it would burn turns on
+   commands that answer "Unknown command".
+4. **One e2e-style assertion** in `index.test.ts` about implicit remote browser targets.
+
+### New guard
+
+`src/cli/help-command-coverage.test.ts` asserts every `$ orca …` example and every command line in a
+help section resolves to a registered spec, an alias, or a group header. Nothing type-checks help text,
+so this class of drift was previously invisible. Mutation-checked: adding a `ghost command` line to a
+help section fails the suite and names it.
+
+### Verification
+
+| Gate | Result |
+|---|---|
+| `pnpm lint` | exit 0 |
+| `pnpm typecheck` | exit 0 |
+| `pnpm build:desktop` | exit 0 |
+| `src/cli` suite | 624 passed / 4 skipped, 51 files |
+| `generate-bundled-skill-guides.mjs --check` | unchanged |
+| `src/cli/browser-group-removal.test.ts` | 19 assertions, written first (3 red → green) |

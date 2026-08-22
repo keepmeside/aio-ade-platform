@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "CLI thu gọn thành agent bridge tối thiểu (Option A đã duyệt)"
-status: in-progress (blocked: cần user chọn scope carve)
+status: in-progress (browser carve xong; Linear/emulator/computer chờ user quyết)
 priority: P1
 effort: "1.5-2.5d"
 dependencies: [1, 2]
@@ -36,7 +36,8 @@ dependencies: [1, 2]
 
 ## Success Criteria
 
-- [ ] Không có command prompt nào gọi `orca orchestration` sau khi phase hoàn tất. → **chưa**: cần quyết định scope carve trước.
+- [x] **Carve tranche 1 (browser) xong.** 216 → **139 command** (-77). Browser đi trước và đi một mình vì là nhóm lớn duy nhất **không có consumer nào**, verify 6 cách: 0 importer ngoài `src/cli`, 0 reference `orca browser` trong repo, **0 shipped skill-guide ref**, 0 e2e spec, 0 reliability gate, 0 formatter re-export. `generate-bundled-skill-guides.mjs --check` báo **unchanged** sau khi xoá — đó là bằng chứng không guide nào phụ thuộc.
+- [ ] Carve tranche 2 (Linear 27 / emulator 16 / computer 14): **chờ user quyết** — row `CLI carve scope` trong `decisions.md`. Riêng Linear có **115 shipped guide ref**, xoá là phải regenerate guide và làm chết workflow agent đang dùng.
 - [x] Worker_done/ask/check round-trip và parity tests xanh (Agent Teams là consumer đã xác nhận). → 84 test xanh across `orchestration*.test.ts`, `preamble.test.ts`, `cli-command.test.ts`; 4 registry suite (`registry-parity`, `handler-group-manifest`, `vocabulary-policy`, `core`) 24 test xanh.
 - [ ] `pnpm build:desktop` và packaged smoke không tham chiếu binary cũ. *(deferred-verification → phase 12)* → **hoãn sang phase 05**: rename binary không thuộc phase này.
 - [ ] Chỉ có một binary `aio-ade` trong PATH sau install. → **hoãn sang phase 05** (D2/D3 trong `deferred-verification.md`): `bin`, `verify-cli-bin.mjs`, `install-dev-cli.mjs`, union `OrchestrationCliCommand`, Agent Teams shim và artifact name phải đổi **cùng lúc**, không tách được.
@@ -67,6 +68,21 @@ Candidate-drop và **rủi ro guide** (đây là phần chặn):
 `verify:bundled-skill-guides` + `verify:skill-bundle-manifest` **nằm trong `pnpm lint`**, nên xoá command mà guide còn dạy sẽ fail lint, và tệ hơn: agent workflow đang dùng sẽ chết im lặng.
 
 Ba lựa chọn đã trình user: (A) xoá cả 4 nhóm ~134 command; (B) xoá browser+emulator+computer ~107, **giữ Linear**; (C) chưa carve, để phase 09. Khuyến nghị **B**.
+
+**Đã thực thi phần không cần quyết định:** browser (77 command) — nhóm duy nhất có 0 consumer và 0 guide ref, nên nằm trong giao của cả A và B. Ba nhóm còn lại vẫn chờ.
+
+### Fallout mà compiler KHÔNG bắt được (bài học cho tranche 2)
+
+Xoá 13 file browser không làm `tsc` đỏ, nhưng để lại 4 loại surface treo — 2 trong số đó **lừa agent**:
+
+1. **`--page` bị advertise trên 10 command không liên quan.** `supportsBrowserPageFlag` cấp flag theo kiểu *loại trừ* ("mọi thứ trừ các nhóm này"), nên xoá browser làm flag lan sang `serve`, `claude-teams`, `environment *`, `agent hooks *`, `vm recipe doctor`. Đã retire hẳn function + call site ở `help.ts`/`args.ts` + test đã thành vô nghĩa.
+2. **9 group header chết** trong `isCommandGroup`: `tab`, `cookie`, `intercept`, `capture`, `mouse`, `set`, `clipboard`, `dialog`, `storage` → `orca tab` vẫn được coi là group hợp lệ với 0 thành viên.
+3. **Root help vẫn quảng cáo 77 command đã xoá** (3 section + 10 example). Help là cách agent biết mình được gọi gì, nên đây là leftover nguy hiểm nhất: agent đọc help rồi tốn lượt vào command trả về "Unknown command".
+4. 1 assertion e2e-style trong `index.test.ts`.
+
+**Guard mới:** `src/cli/help-command-coverage.test.ts` — mọi `$ orca …` example và mọi dòng command trong help section phải resolve về spec/alias/group header thật. Không có gì typecheck help text nên class drift này trước đây vô hình. Mutation-check: thêm dòng `ghost command` làm suite đỏ và in ra tên.
+
+**Tranche 2 phải lặp lại đúng 4 bước kiểm này**, không chỉ xoá file.
 
 ## Risk Assessment
 

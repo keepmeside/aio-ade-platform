@@ -17,7 +17,14 @@ import { describe, expect, it } from 'vitest'
 // `import.meta` is a type error (TS1470).
 const ROOT = process.cwd()
 
-/** Tracked files only, so a local scratch file cannot fail the suite. */
+/**
+ * Tracked files only, so a local scratch file cannot fail the suite.
+ *
+ * Excludes this file: it necessarily contains the very specifier strings it searches for, and the
+ * ratchet must not police itself (same reason check-max-lines-ratchet keeps a SELF_FILES set).
+ */
+const SELF = 'src/cli/bridge-runtime-neutrality.test.ts'
+
 function trackedCliFilesImporting(pattern: string): string[] {
   try {
     return execFileSync('git', ['grep', '-lE', pattern, '--', 'src/cli'], {
@@ -26,7 +33,7 @@ function trackedCliFilesImporting(pattern: string): string[] {
       stdio: ['pipe', 'pipe', 'pipe']
     })
       .split('\n')
-      .filter(Boolean)
+      .filter((file) => Boolean(file) && file !== SELF)
   } catch {
     // git grep exits 1 when nothing matches, which is the passing case here.
     return []

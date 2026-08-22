@@ -528,6 +528,10 @@ describe('orca cli worktree awareness', () => {
     // senderPaneKey into later orchestration.send assertions.
     delete process.env.ORCA_PANE_KEY
     serveOrcaAppMock.mockReset()
+    // Why: `serve` ships feature-flagged OFF (decision 2026-08-21). These tests assert the
+    // launch/validation behavior behind the flag, so they opt in explicitly; the flag's own
+    // default-off behavior is covered by handlers/serve-feature-flag.test.ts.
+    process.env.ORCA_ENABLE_SERVE = '1'
     getDefaultUserDataPathMock.mockClear()
     addEnvironmentFromPairingCodeMock.mockReset()
     listEnvironmentsMock.mockReset()
@@ -556,6 +560,7 @@ describe('orca cli worktree awareness', () => {
 
   afterEach(() => {
     vi.restoreAllMocks()
+    delete process.env.ORCA_ENABLE_SERVE
     if (originalTerminalHandle === undefined) {
       delete process.env.ORCA_TERMINAL_HANDLE
     } else {
@@ -3872,30 +3877,6 @@ describe('orca cli worktree awareness', () => {
       command: 'codex',
       title: 'Codex',
       focus: false
-    })
-  })
-
-  it('does not resolve implicit remote browser targets from client cwd', async () => {
-    queueFixtures(
-      callMock,
-      okFixture('req_tab_current', {
-        tab: {
-          browserPageId: 'page-1',
-          index: 0,
-          url: 'https://example.com',
-          title: 'Example',
-          active: true,
-          worktreeId: 'repo-1::/srv/orca/feature'
-        }
-      })
-    )
-    vi.spyOn(console, 'log').mockImplementation(() => {})
-
-    await main(['tab', 'current', '--pairing-code', 'remote-runtime', '--json'], '/tmp/client/src')
-
-    expect(callMock).toHaveBeenCalledTimes(1)
-    expect(callMock).toHaveBeenCalledWith('browser.tabCurrent', {
-      worktree: undefined
     })
   })
 

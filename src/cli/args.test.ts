@@ -6,7 +6,6 @@ import {
   findCommandSpec,
   normalizeCommandPositionals,
   parseArgs,
-  supportsBrowserPageFlag,
   validateCommandAndFlags
 } from './args'
 
@@ -221,16 +220,6 @@ describe('command aliases', () => {
 
     expect(normalized.commandPath).toEqual(['repo', 'show'])
     expect(normalized.flags.get('repo')).toBe('id:abc')
-  })
-})
-
-describe('supportsBrowserPageFlag', () => {
-  it('does not expose browser page targeting on orchestration commands', () => {
-    expect(supportsBrowserPageFlag(['orchestration', 'send'])).toBe(false)
-  })
-
-  it('does not expose browser page targeting on local agent discovery', () => {
-    expect(supportsBrowserPageFlag(['agent-context'])).toBe(false)
   })
 })
 
