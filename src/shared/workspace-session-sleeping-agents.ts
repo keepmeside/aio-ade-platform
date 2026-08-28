@@ -16,8 +16,6 @@ const agentProviderSessionSchema = z.preprocess(
   z.object({
     key: z.enum(['session_id', 'conversation_id']),
     id: z.string().min(1).max(512),
-    // Why: Pi resumes by its authoritative session file, so dropping this
-    // field during hydration makes an otherwise valid record unusable.
     transcriptPath: z.string().min(1).optional()
   })
 )
@@ -64,16 +62,7 @@ const sleepingAgentLaunchEnvSchema = z.preprocess(
 const sleepingAgentLaunchConfigBaseSchema = z.object({
   agentCommand: z.string().optional(),
   agentArgs: z.string(),
-  agentEnv: sleepingAgentLaunchEnvSchema,
-  // Why: AI Vault can scan arbitrary OMP roots, so cold restore must retain
-  // the exact provider resume locator instead of reconstructing its store.
-  ompResumeFilePath: z
-    .string()
-    .trim()
-    .min(1)
-    .max(32 * 1024)
-    .refine((value) => !hasUnsafeLaunchEnvChars(value))
-    .optional()
+  agentEnv: sleepingAgentLaunchEnvSchema
 })
 
 export const sleepingAgentLaunchConfigSchema = z.preprocess((raw) => {
@@ -101,8 +90,7 @@ const sleepingAgentSessionRecordSchema = z
   })
   .refine(
     (record) => getAgentResumeArgv(record.agent, record.providerSession) !== null,
-    // Why: a hydrated record must be directly resumable; Pi additionally needs
-    // its persisted transcript path and agents must use their supported key.
+    // Why: a hydrated record must be directly resumable with its supported key.
     { message: 'provider session is not resumable for this agent', path: ['providerSession'] }
   )
 

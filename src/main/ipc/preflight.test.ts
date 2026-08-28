@@ -578,16 +578,13 @@ describe('preflight', () => {
       if (target === 'claude') {
         return { stdout: '/Users/test/.local/bin/claude\n' }
       }
-      if (target === 'continue') {
-        return { stdout: 'continue: shell built-in command\n' }
-      }
-      if (target === 'cursor-agent') {
-        return { stdout: '/Users/test/.local/bin/cursor-agent\n' }
+      if (target === 'codex') {
+        return { stdout: 'codex: shell built-in command\n' }
       }
       throw new Error('not found')
     })
 
-    await expect(detectInstalledAgents()).resolves.toEqual(['claude', 'cursor'])
+    await expect(detectInstalledAgents()).resolves.toEqual(['claude'])
   })
 
   it('does not report Claude Agent Teams when only the Orca shim is present', async () => {
@@ -661,15 +658,12 @@ describe('preflight', () => {
             if (cmd === 'codex') {
               return [cmd, '/Users/test/.asdf/shims/codex']
             }
-            if (cmd === 'opencode') {
-              return [cmd, '/Users/test/Library/pnpm/opencode']
-            }
             return [cmd, cmd]
           })
         )
     )
 
-    await expect(detectInstalledAgents()).resolves.toEqual(['claude', 'codex', 'opencode'])
+    await expect(detectInstalledAgents()).resolves.toEqual(['claude', 'codex'])
     expect(resolveCliCommandsMock).toHaveBeenCalledTimes(1)
   })
 
@@ -713,18 +707,18 @@ describe('preflight', () => {
       if (command !== 'which') {
         throw new Error(`unexpected command ${String(command)}`)
       }
-      if (String(args[0]) === 'openclaude') {
-        return { stdout: '/Users/test/.local/bin/openclaude\n' }
+      if (String(args[0]) === 'claude') {
+        return { stdout: '/Users/test/.local/bin/claude\n' }
       }
-      if (String(args[0]) === 'cursor-agent') {
-        return { stdout: '/Users/test/.local/bin/cursor-agent\n' }
+      if (String(args[0]) === 'codex') {
+        return { stdout: '/Users/test/.local/bin/codex\n' }
       }
       throw new Error('not found')
     })
 
     registerPreflightHandlers()
 
-    await expect(handlers['preflight:detectAgents']()).resolves.toEqual(['openclaude', 'cursor'])
+    await expect(handlers['preflight:detectAgents']()).resolves.toEqual(['claude', 'codex'])
   })
 
   it('hydrates shell PATH before user-facing agent detection', async () => {
@@ -806,36 +800,23 @@ describe('preflight', () => {
     await expect(detectInstalledAgents({ wslDistro: 'Ubuntu' })).resolves.toEqual(['claude'])
   })
 
-  it('detects Mistral Vibe from the installed vibe executable', async () => {
+  it('reports an agent once when several of its alias executables exist', async () => {
     execFileAsyncMock.mockImplementation(async (command, args) => {
       if (command !== 'which') {
         throw new Error(`unexpected command ${String(command)}`)
       }
-      if (String(args[0]) === 'vibe') {
-        return { stdout: '/home/test/.local/bin/vibe\n' }
+      const target = String(args[0])
+      if (target === 'claude' || target === 'orca' || target === 'orca-dev') {
+        return { stdout: `/home/test/.local/bin/${target}\n` }
       }
       throw new Error('not found')
     })
 
-    await expect(detectInstalledAgents()).resolves.toEqual(['mistral-vibe'])
-  })
-
-  it('deduplicates Mistral Vibe when both current and legacy executables exist', async () => {
-    execFileAsyncMock.mockImplementation(async (command, args) => {
-      if (command !== 'which') {
-        throw new Error(`unexpected command ${String(command)}`)
-      }
-      if (String(args[0]) === 'vibe' || String(args[0]) === 'mistral-vibe') {
-        return { stdout: `/home/test/.local/bin/${String(args[0])}\n` }
-      }
-      throw new Error('not found')
-    })
-
-    await expect(detectInstalledAgents()).resolves.toEqual(['mistral-vibe'])
+    await expect(detectInstalledAgents()).resolves.toEqual(['claude', 'claude-agent-teams'])
   })
 
   it('sends aliased detection commands through the SSH remote preflight path', async () => {
-    const request = vi.fn().mockResolvedValue({ agents: ['openclaude'] })
+    const request = vi.fn().mockResolvedValue({ agents: ['claude'] })
     getActiveMultiplexerMock.mockReturnValue({
       isDisposed: () => false,
       request
@@ -845,12 +826,14 @@ describe('preflight', () => {
 
     await expect(
       handlers['preflight:detectRemoteAgents'](undefined, { connectionId: 'ssh-1' })
-    ).resolves.toEqual(['openclaude'])
+    ).resolves.toEqual(['claude'])
     expect(request).toHaveBeenCalledWith('preflight.detectAgents', {
       commands: expect.arrayContaining([
-        { id: 'openclaude', cmd: 'openclaude' },
-        { id: 'mistral-vibe', cmd: 'vibe' },
-        { id: 'mistral-vibe', cmd: 'mistral-vibe' }
+        { id: 'claude', cmd: 'claude' },
+        expect.objectContaining({ id: 'claude-agent-teams', cmd: 'orca' }),
+        expect.objectContaining({ id: 'claude-agent-teams', cmd: 'orca-dev' }),
+        expect.objectContaining({ id: 'claude-agent-teams', cmd: 'orca-ide' }),
+        { id: 'codex', cmd: 'codex' }
       ])
     })
   })
@@ -1055,17 +1038,17 @@ describe('preflight', () => {
     // the shell hydrator for a fresh PATH, (2) merge any new segments, then
     // (3) re-run `which` so newly-installed CLIs appear without a restart.
     hydrateShellPathMock.mockResolvedValueOnce({
-      segments: ['/Users/test/.opencode/bin'],
+      segments: ['/Users/test/.codex/bin'],
       ok: true,
       failureReason: 'none'
     })
-    mergePathSegmentsMock.mockReturnValueOnce(['/Users/test/.opencode/bin'])
+    mergePathSegmentsMock.mockReturnValueOnce(['/Users/test/.codex/bin'])
     execFileAsyncMock.mockImplementation(async (command, args) => {
       if (command !== 'which') {
         throw new Error(`unexpected command ${String(command)}`)
       }
-      if (String(args[0]) === 'opencode') {
-        return { stdout: '/Users/test/.opencode/bin/opencode\n' }
+      if (String(args[0]) === 'codex') {
+        return { stdout: '/Users/test/.codex/bin/codex\n' }
       }
       throw new Error('not found')
     })
@@ -1081,8 +1064,8 @@ describe('preflight', () => {
     }
 
     expect(result).toEqual({
-      agents: ['opencode'],
-      addedPathSegments: ['/Users/test/.opencode/bin'],
+      agents: ['codex'],
+      addedPathSegments: ['/Users/test/.codex/bin'],
       shellHydrationOk: true,
       pathSource: 'shell_hydrate',
       pathFailureReason: 'none'

@@ -6,10 +6,6 @@ import {
 } from './agent-name-token-match'
 import { isCursorAgentTitle } from './agent-title-core'
 import { isOpenCodeNativeTitle } from './opencode-terminal-title'
-import {
-  getPiCompatibleSyntheticAgentLabel,
-  isLegacyPiCompatibleTitle
-} from './pi-compatible-synthetic-title'
 import type { TuiAgent } from './types'
 
 export const CLAUDE_IDLE = '\u2733' // ✳ (eight-spoked asterisk — Claude Code idle prefix)
@@ -41,16 +37,7 @@ export function isGeminiTerminalTitle(title: string): boolean {
   ) {
     return true
   }
-  // Why: Pi/OMP titles include cwd/session text; substring matching made
-  // paths like "gemini-project" masquerade as Gemini CLI.
-  if (isPiAgentTitle(title)) {
-    return false
-  }
   return titleHasAgentName(title, 'gemini')
-}
-
-export function isPiTerminalTitle(title: string): boolean {
-  return isLegacyPiCompatibleTitle(title) && !containsBrailleSpinner(title)
 }
 
 // Why: Grok Build's working OSC titles use a fixed frame shape —
@@ -69,10 +56,6 @@ export function isGrokRotatingWorkingTitle(title: string): boolean {
     return false
   }
   return GROK_ROTATING_FRAME_RE.test(title) || GROK_COLLAPSED_WORKING_TITLE_RE.test(title)
-}
-
-export function isPiAgentTitle(title: string): boolean {
-  return isLegacyPiCompatibleTitle(title)
 }
 
 /**
@@ -143,17 +126,6 @@ export function getAgentLabel(title: string): string | null {
   if (isGeminiTerminalTitle(title)) {
     return 'Gemini CLI'
   }
-  // Why: Pi-compatible synthetic titles can carry braille spinners, which the
-  // generic agent-title heuristics would otherwise claim first.
-  const piCompatibleSyntheticAgentLabel = getPiCompatibleSyntheticAgentLabel(title)
-  if (piCompatibleSyntheticAgentLabel) {
-    return piCompatibleSyntheticAgentLabel
-  }
-  // Why: Pi working titles include a braille spinner prefix, which would be
-  // mistaken for Claude Code if we checked `isClaudeAgent` first.
-  if (isPiAgentTitle(title)) {
-    return 'Pi'
-  }
   // Why: Codex/OpenCode/Aider can also use braille spinner prefixes while
   // working. Prefer explicit name matches before Claude's generic spinner
   // heuristic so mixed-agent hovercards stay truthful. Token-match (not
@@ -212,23 +184,13 @@ export function getAgentLabel(title: string): string | null {
 // agents whose foreground PROCESS name isn't self-identifying (Claude Code runs
 // as `node`, but its "✳ Claude Code" title resolves here). Agents whose process
 // name already matches (codex, etc.) never reach this path.
+//
+// getAgentLabel still recognizes CLIs Orca does not launch: a user can run one by hand, and its
+// label is what stops a braille-spinner title from being attributed to Claude. Those labels
+// deliberately have no entry here, so they resolve to no agent identity.
 const TITLE_LABEL_TO_AGENT: Partial<Record<string, TuiAgent>> = {
   'Claude Code': 'claude',
-  OpenClaude: 'openclaude',
-  Codex: 'codex',
-  'Gemini CLI': 'gemini',
-  'GitHub Copilot': 'copilot',
-  Grok: 'grok',
-  Devin: 'devin',
-  Antigravity: 'antigravity',
-  OpenCode: 'opencode',
-  'MiMo Code': 'mimo-code',
-  Aider: 'aider',
-  Cursor: 'cursor',
-  Droid: 'droid',
-  Hermes: 'hermes',
-  Pi: 'pi',
-  OMP: 'omp'
+  Codex: 'codex'
 }
 
 function hasGenericClaudeStatusPrefix(title: string): boolean {

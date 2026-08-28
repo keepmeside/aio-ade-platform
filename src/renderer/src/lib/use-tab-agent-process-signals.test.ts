@@ -47,12 +47,12 @@ describe('resolveTabAgentFromSignals process identity', () => {
       resolveTabAgentFromSignals({
         hasObservedAgentSignal: true,
         isRemote: false,
-        title: '✦ Gemini CLI',
+        title: '✳ Claude Code',
         hookAgent: null,
-        processAgent: 'aider',
+        processAgent: 'codex',
         launchAgent: 'codex'
       })
-    ).toBe('aider')
+    ).toBe('codex')
   })
 
   it('keeps live hook identity above process identity', () => {
@@ -62,7 +62,7 @@ describe('resolveTabAgentFromSignals process identity', () => {
         isRemote: false,
         title: 'Terminal 1',
         hookAgent: 'claude',
-        processAgent: 'aider',
+        processAgent: 'codex',
         launchAgent: undefined
       })
     ).toBe('claude')
@@ -190,18 +190,18 @@ describe('useTabAgent process signals', () => {
     await renderHookProbe(baseTab)
     expect(latestHookAgent).toBeNull()
 
-    await setPaneForeground({ agent: 'aider', shellForeground: false })
+    await setPaneForeground({ agent: 'codex', shellForeground: false })
 
-    expect(latestHookAgent).toBe('aider')
+    expect(latestHookAgent).toBe('codex')
     expect(clearTabLaunchAgent).not.toHaveBeenCalled()
   })
 
   it('clears hookless launch identity on shell-foreground evidence despite a stale title', async () => {
-    const launchedTab = { ...baseTab, launchAgent: 'aider' as const, title: '⠸ aider working' }
+    const launchedTab = { ...baseTab, launchAgent: 'codex' as const, title: '⠸ codex working' }
     const root = await renderHookProbe(launchedTab)
 
-    await setPaneForeground({ agent: 'aider', shellForeground: false })
-    expect(latestHookAgent).toBe('aider')
+    await setPaneForeground({ agent: 'codex', shellForeground: false })
+    expect(latestHookAgent).toBe('codex')
     expect(clearTabLaunchAgent).not.toHaveBeenCalled()
 
     // Why: OSC 133;D marks the launched command exiting; the stale spinner
@@ -215,14 +215,14 @@ describe('useTabAgent process signals', () => {
   })
 
   it('does not clear launch identity from shell foreground before any agent activity', async () => {
-    const launchedTab = { ...baseTab, launchAgent: 'aider' as const }
+    const launchedTab = { ...baseTab, launchAgent: 'codex' as const }
     await renderHookProbe(launchedTab)
 
     // Pre-start window: the shell prompt (or a quick setup command) finishing
     // is not evidence the launched agent ever ran.
     await setPaneForeground({ agent: null, shellForeground: true })
 
-    expect(latestHookAgent).toBe('aider')
+    expect(latestHookAgent).toBe('codex')
     expect(clearTabLaunchAgent).not.toHaveBeenCalled()
   })
 })

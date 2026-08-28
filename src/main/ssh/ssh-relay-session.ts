@@ -17,13 +17,10 @@ import { agentHookServer } from '../agent-hooks/server'
 import { isAgentStatusHooksEnabled } from '../agent-hooks/managed-agent-hook-controls'
 import {
   AGENT_HOOK_INSTALL_MANAGED_HOOKS_METHOD,
-  AGENT_HOOK_INSTALL_PLUGINS_METHOD,
   AGENT_HOOK_NOTIFICATION_METHOD,
   AGENT_HOOK_REQUEST_REPLAY_METHOD,
   isRemoteAgentHooksEnabled
 } from '../../shared/agent-hook-relay'
-import { _internals as openCodeInternals } from '../opencode/hook-service'
-import { getPiAgentStatusExtensionSource } from '../pi/agent-status-extension-source'
 import {
   registerSshPtyProvider,
   unregisterSshPtyProvider,
@@ -511,11 +508,6 @@ export class SshRelaySession {
       return false
     }
 
-    await this.installPluginsOnRelay(mux)
-    if (shouldContinue && !shouldContinue()) {
-      return false
-    }
-
     try {
       await this.installRemoteOrcaCliLauncher()
     } catch (error) {
@@ -694,34 +686,6 @@ export class SshRelaySession {
         ...(stdin !== undefined ? { stdin } : {})
       })
     })
-  }
-
-  // Why: ship plugin/extension source from Orca so agent-event changes don't force a relay redeploy (agent-status-over-ssh.md §4/§8). Best-effort.
-  private async installPluginsOnRelay(mux: SshChannelMultiplexer): Promise<void> {
-    if (!isRemoteAgentHooksEnabled() || !this.areAgentStatusHooksEnabled()) {
-      return
-    }
-    try {
-      await mux.request(AGENT_HOOK_INSTALL_PLUGINS_METHOD, {
-        opencodePluginSource: openCodeInternals.getOpenCodePluginSource(),
-        piExtensionSource: getPiAgentStatusExtensionSource('pi'),
-        ompExtensionSource: getPiAgentStatusExtensionSource('omp')
-      })
-    } catch (err) {
-      // Why: -32601 = older relay without the handler; CONNECTION_LOST/DISPOSED = routine mid-flight teardown — swallow both.
-      const code = (err as { code?: unknown })?.code
-      if (code === -32601 || code === 'CONNECTION_LOST' || code === 'DISPOSED') {
-        return
-      }
-      if (mux.isDisposed()) {
-        return
-      }
-      console.warn(
-        `[ssh-relay-session] agent_hook.installPlugins failed for ${this.targetId}: ${
-          err instanceof Error ? err.message : String(err)
-        }`
-      )
-    }
   }
 
   private areAgentStatusHooksEnabled(): boolean {

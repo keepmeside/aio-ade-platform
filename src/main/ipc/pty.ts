@@ -49,17 +49,9 @@ import {
   resolveLocalWindowsTerminalRuntimeOptions
 } from '../../shared/local-windows-terminal-runtime'
 import { applyTerminalGitCredentialPromptGuard } from './terminal-git-credential-guard'
-import { openCodeHookService } from '../opencode/hook-service'
-import { mimoCodeHookService } from '../mimo/hook-service'
-import {
-  getCommandTokenPathBasename,
-  getFirstCommandToken
-} from '../../shared/command-token-scanner'
 import { agentHookServer } from '../agent-hooks/server'
 import { wslHookRelayManager } from '../agent-hooks/wsl-hook-relay-manager'
 import { isAgentStatusHooksEnabled } from '../agent-hooks/managed-agent-hook-controls'
-import { piTitlebarExtensionService } from '../pi/titlebar-extension-service'
-import { detectPiAgentKindFromCommand, type PiAgentKind } from '../../shared/pi-agent-kind'
 import { isPwshAvailable } from '../pwsh'
 import { LocalPtyProvider } from '../providers/local-pty-provider'
 import type { IPtyProvider, PtySpawnOptions, PtySpawnResult } from '../providers/types'
@@ -115,7 +107,6 @@ import {
 import { isRemoteAgentHooksEnabled } from '../../shared/agent-hook-relay'
 import { createTerminalSessionStateSaveFailureMessage } from '../../shared/terminal-session-state-save-failure'
 import { RendererTerminalSerializerReadiness } from './renderer-terminal-serializer-readiness'
-import { readShellStartupEnvVar } from '../pty/shell-startup-env'
 import {
   isTerminalLeafId,
   makePaneKey,
@@ -879,87 +870,6 @@ function recordCodexPaneAccountForSpawn(args: {
   recordCodexPaneAccount(args.ptyId, record)
 }
 
-function readEnvWithProcessFallback(
-  baseEnv: Record<string, string>,
-  key: string
-): string | undefined {
-  return baseEnv[key] ?? process.env[key]
-}
-
-function resolvePiAgentSourceDir(
-  baseEnv: Record<string, string>,
-  kind: PiAgentKind
-): string | undefined {
-  const sourceKey = kind === 'omp' ? 'ORCA_OMP_SOURCE_AGENT_DIR' : 'ORCA_PI_SOURCE_AGENT_DIR'
-  const overlayKey = kind === 'omp' ? 'ORCA_OMP_CODING_AGENT_DIR' : 'ORCA_PI_CODING_AGENT_DIR'
-  const otherOverlayKey = kind === 'omp' ? 'ORCA_PI_CODING_AGENT_DIR' : 'ORCA_OMP_CODING_AGENT_DIR'
-
-  const sourceDir = readEnvWithProcessFallback(baseEnv, sourceKey)
-  if (sourceDir) {
-    return sourceDir
-  }
-
-  const publicDir = readEnvWithProcessFallback(baseEnv, 'PI_CODING_AGENT_DIR')
-  const ownOverlayDir = readEnvWithProcessFallback(baseEnv, overlayKey)
-  const otherOverlayDir = readEnvWithProcessFallback(baseEnv, otherOverlayKey)
-  // Why: if PI_CODING_AGENT_DIR is a restored Orca overlay with no source shadow, remirroring leaks another agent's overlay tree; fall through to defaults.
-  if (publicDir && publicDir !== ownOverlayDir && publicDir !== otherOverlayDir) {
-    return publicDir
-  }
-
-  return readShellStartupEnvVar(
-    'PI_CODING_AGENT_DIR',
-    baseEnv.HOME ?? process.env.HOME,
-    baseEnv.SHELL ?? process.env.SHELL
-  )
-}
-
-function resolveScopedPiAgentSourceDir(
-  baseEnv: Record<string, string>,
-  kind: PiAgentKind
-): string | undefined {
-  const sourceKey = kind === 'omp' ? 'ORCA_OMP_SOURCE_AGENT_DIR' : 'ORCA_PI_SOURCE_AGENT_DIR'
-  return readEnvWithProcessFallback(baseEnv, sourceKey)
-}
-
-function clearPiAgentShadowEnv(baseEnv: Record<string, string>, kind: PiAgentKind): void {
-  if (kind === 'omp') {
-    delete baseEnv.ORCA_OMP_CODING_AGENT_DIR
-    delete baseEnv.ORCA_OMP_SOURCE_AGENT_DIR
-    delete baseEnv.ORCA_OMP_STATUS_EXTENSION
-    return
-  }
-  delete baseEnv.ORCA_PI_CODING_AGENT_DIR
-  delete baseEnv.ORCA_PI_SOURCE_AGENT_DIR
-}
-
-function exposePiManagedExtensionEnv(
-  baseEnv: Record<string, string>,
-  kind: PiAgentKind,
-  managedEnv: Record<string, string>
-): void {
-  if (kind === 'omp') {
-    delete baseEnv.ORCA_OMP_CODING_AGENT_DIR
-    if (managedEnv.ORCA_OMP_SOURCE_AGENT_DIR) {
-      baseEnv.ORCA_OMP_SOURCE_AGENT_DIR = managedEnv.ORCA_OMP_SOURCE_AGENT_DIR
-    } else {
-      delete baseEnv.ORCA_OMP_SOURCE_AGENT_DIR
-    }
-    if (managedEnv.ORCA_OMP_STATUS_EXTENSION) {
-      baseEnv.ORCA_OMP_STATUS_EXTENSION = managedEnv.ORCA_OMP_STATUS_EXTENSION
-    } else {
-      delete baseEnv.ORCA_OMP_STATUS_EXTENSION
-    }
-    return
-  }
-  delete baseEnv.ORCA_PI_CODING_AGENT_DIR
-  if (managedEnv.ORCA_PI_SOURCE_AGENT_DIR) {
-    baseEnv.ORCA_PI_SOURCE_AGENT_DIR = managedEnv.ORCA_PI_SOURCE_AGENT_DIR
-  } else {
-    delete baseEnv.ORCA_PI_SOURCE_AGENT_DIR
-  }
-}
-
 // Why: variadic because a nested call per source made intermediate `string[] | undefined` collide with the parameter type.
 function mergePtyEnvDeletions(
   existingKeys: string[] | undefined,
@@ -994,70 +904,6 @@ function getInheritedClaudeSessionStampEnvKeysToDelete(
   return CLAUDE_CHILD_SESSION_STAMP_ENV_KEYS.filter((key) => env[key] === undefined)
 }
 
-// Why: a nested terminal can inherit prior OpenCode/Pi/OMP overlay env; restore the user's recorded source dir, else strip only Orca-owned values.
-function restoreOrStripOverlayEnv(
-  baseEnv: Record<string, string>,
-  keys: {
-    primary: string
-    overlay: string
-    source: string
-  }
-): void {
-  const sourceValue = baseEnv[keys.source] ?? process.env[keys.source]
-  const overlayValue = baseEnv[keys.overlay] ?? process.env[keys.overlay]
-  if (sourceValue) {
-    baseEnv[keys.primary] = sourceValue
-  } else if (overlayValue && baseEnv[keys.primary] === overlayValue) {
-    delete baseEnv[keys.primary]
-  }
-  delete baseEnv[keys.overlay]
-  delete baseEnv[keys.source]
-}
-
-function isMimoLaunchCommand(launchCommand: string | undefined): boolean {
-  const binary = getCommandTokenPathBasename(getFirstCommandToken(launchCommand ?? ''))
-    .toLowerCase()
-    .replace(/\.(?:cmd|exe|sh)$/, '')
-  return binary === 'mimo'
-}
-
-function resolveMimocodeSourceHome(baseEnv: Record<string, string>): string | undefined {
-  const sourceHome = baseEnv.ORCA_MIMOCODE_SOURCE_HOME ?? process.env.ORCA_MIMOCODE_SOURCE_HOME
-  if (sourceHome) {
-    return sourceHome
-  }
-  const configHome = baseEnv.MIMOCODE_HOME ?? process.env.MIMOCODE_HOME
-  const orcaHome = baseEnv.ORCA_MIMOCODE_HOME ?? process.env.ORCA_MIMOCODE_HOME
-  if (configHome && orcaHome && configHome === orcaHome) {
-    return undefined
-  }
-  return configHome
-}
-
-function resolveOpenCodeSourceConfigDir(baseEnv: Record<string, string>): string | undefined {
-  const sourceDir =
-    baseEnv.ORCA_OPENCODE_SOURCE_CONFIG_DIR ?? process.env.ORCA_OPENCODE_SOURCE_CONFIG_DIR
-  if (sourceDir) {
-    return sourceDir
-  }
-
-  const configDir = baseEnv.OPENCODE_CONFIG_DIR ?? process.env.OPENCODE_CONFIG_DIR
-  const orcaConfigDir = baseEnv.ORCA_OPENCODE_CONFIG_DIR ?? process.env.ORCA_OPENCODE_CONFIG_DIR
-  // Why: with no recorded source dir, an inherited OPENCODE_CONFIG_DIR is Orca-owned, not user config; treating it as user config makes child Orcas mirror the hook dir.
-  if (configDir && orcaConfigDir && configDir === orcaConfigDir) {
-    return undefined
-  }
-
-  return (
-    configDir ??
-    readShellStartupEnvVar(
-      'OPENCODE_CONFIG_DIR',
-      baseEnv.HOME ?? process.env.HOME,
-      baseEnv.SHELL ?? process.env.SHELL
-    )
-  )
-}
-
 /**
  * Mutates `baseEnv` in place with all host-local PTY env vars and returns it.
  *
@@ -1065,19 +911,13 @@ function resolveOpenCodeSourceConfigDir(baseEnv: Record<string, string>): string
  * or references local filesystem paths meaningless to a remote shell.
  */
 export function buildPtyHostEnv(
-  id: string,
   baseEnv: Record<string, string>,
   opts: BuildPtyHostEnvOptions
 ): Record<string, string> {
   mergePersistedWindowsPath(baseEnv)
   Object.assign(baseEnv, buildConfiguredProxyEnv(opts.networkProxySettings))
 
-  // Why: local path's baseEnv includes process.env but the daemon path doesn't (fork inheritance, not IPC); check both sources so guards stay in lock-step across spawn paths.
-  const preexistingOpenCodeConfigDir = resolveOpenCodeSourceConfigDir(baseEnv)
   const launchCommandHint = resolveSetupAgentSequenceLaunchCommand(baseEnv, opts.launchCommand)
-  const piAgentKind = detectPiAgentKindFromCommand(launchCommandHint)
-  const hasLaunchCommand =
-    typeof launchCommandHint === 'string' && launchCommandHint.trim().length > 0
 
   // Why: unattended agents must fail instead of looping on OS credential prompts; user terminals keep normal Git behavior.
   applyTerminalGitCredentialPromptGuard(baseEnv, {
@@ -1085,52 +925,6 @@ export function buildPtyHostEnv(
     isUnattended: opts.launchAgent !== undefined,
     deferGitConfigGuardToHost: opts.deferGitConfigGuardToDaemon
   })
-
-  const shouldPrepareOmpShadow = piAgentKind === 'omp' || !hasLaunchCommand
-  // Why: source shadows are agent-scoped; trusting the other kind's source reintroduces Pi/OMP extension-state shadowing.
-  const preexistingPiAgentDir = resolvePiAgentSourceDir(baseEnv, 'pi')
-  const preexistingOmpAgentDir =
-    piAgentKind === 'omp'
-      ? resolvePiAgentSourceDir(baseEnv, 'omp')
-      : resolveScopedPiAgentSourceDir(baseEnv, 'omp')
-
-  if (opts.agentStatusHooksEnabled) {
-    // Why: OPENCODE_CONFIG_DIR is a single path, not a colon-list; mirror the user's value into an overlay so their plugins and Orca's status plugin coexist. See docs/opencode-config-dir-collision.md.
-    Object.assign(baseEnv, openCodeHookService.buildPtyEnv(id, preexistingOpenCodeConfigDir))
-    if (baseEnv.OPENCODE_CONFIG_DIR) {
-      // Why: ~/.zshrc can re-export the user's default after spawn; shell-ready wrappers restore this PTY-scoped value.
-      baseEnv.ORCA_OPENCODE_CONFIG_DIR = baseEnv.OPENCODE_CONFIG_DIR
-      if (preexistingOpenCodeConfigDir) {
-        // Why: nested Orca terminals inherit the overlay as OPENCODE_CONFIG_DIR; keep the real source so overlays don't mirror overlays.
-        baseEnv.ORCA_OPENCODE_SOURCE_CONFIG_DIR = preexistingOpenCodeConfigDir
-      } else {
-        delete baseEnv.ORCA_OPENCODE_SOURCE_CONFIG_DIR
-      }
-    }
-    if (isMimoLaunchCommand(launchCommandHint)) {
-      const preexistingMimocodeHome = resolveMimocodeSourceHome(baseEnv)
-      Object.assign(baseEnv, mimoCodeHookService.buildPtyEnv(id, preexistingMimocodeHome))
-      if (baseEnv.MIMOCODE_HOME) {
-        baseEnv.ORCA_MIMOCODE_HOME = baseEnv.MIMOCODE_HOME
-        if (preexistingMimocodeHome) {
-          baseEnv.ORCA_MIMOCODE_SOURCE_HOME = preexistingMimocodeHome
-        } else {
-          delete baseEnv.ORCA_MIMOCODE_SOURCE_HOME
-        }
-      }
-    }
-  } else {
-    restoreOrStripOverlayEnv(baseEnv, {
-      primary: 'OPENCODE_CONFIG_DIR',
-      overlay: 'ORCA_OPENCODE_CONFIG_DIR',
-      source: 'ORCA_OPENCODE_SOURCE_CONFIG_DIR'
-    })
-    restoreOrStripOverlayEnv(baseEnv, {
-      primary: 'MIMOCODE_HOME',
-      overlay: 'ORCA_MIMOCODE_HOME',
-      source: 'ORCA_MIMOCODE_SOURCE_HOME'
-    })
-  }
 
   // Why: strip inherited hook coordinates before injecting this PTY's fresh loopback receiver, so nested-terminal callbacks route to the owning pane.
   for (const key of AGENT_HOOK_RUNTIME_ENV_KEYS) {
@@ -1146,49 +940,7 @@ export function buildPtyHostEnv(
       if (guestEndpoint) {
         baseEnv.ORCA_AGENT_HOOK_ENDPOINT = guestEndpoint
       }
-      // Why: OpenCode loads its status plugin from a guest config overlay, so point OPENCODE_CONFIG_DIR at the guest dir the relay materialized.
-      const opencodeOverlayDir = wslHookRelayManager.getOpenCodeOverlayDir(distro)
-      if (opencodeOverlayDir) {
-        baseEnv.OPENCODE_CONFIG_DIR = opencodeOverlayDir
-        baseEnv.ORCA_OPENCODE_CONFIG_DIR = opencodeOverlayDir
-        delete baseEnv.ORCA_OPENCODE_SOURCE_CONFIG_DIR
-      } else {
-        // Why: relay not connected yet (or older guest bundle) — never cross the Windows overlay path into WSL; drop it so in-guest OpenCode uses its own config (pre-fix behavior, no status but no regression).
-        delete baseEnv.OPENCODE_CONFIG_DIR
-        delete baseEnv.ORCA_OPENCODE_CONFIG_DIR
-        delete baseEnv.ORCA_OPENCODE_SOURCE_CONFIG_DIR
-      }
     }
-  }
-
-  // Why: PI_CODING_AGENT_DIR is the user's config/session root; install only Orca-owned extension files, don't override it.
-  if (opts.agentStatusHooksEnabled) {
-    clearPiAgentShadowEnv(baseEnv, 'pi')
-    clearPiAgentShadowEnv(baseEnv, 'omp')
-    if (piAgentKind === 'pi') {
-      const piEnv = piTitlebarExtensionService.buildPtyEnv(id, preexistingPiAgentDir, 'pi')
-      Object.assign(baseEnv, piEnv)
-      exposePiManagedExtensionEnv(baseEnv, 'pi', piEnv)
-    }
-
-    if (shouldPrepareOmpShadow) {
-      const ompEnv = piTitlebarExtensionService.buildPtyEnv(id, preexistingOmpAgentDir, 'omp')
-      Object.assign(baseEnv, ompEnv)
-      exposePiManagedExtensionEnv(baseEnv, 'omp', ompEnv)
-    }
-  } else {
-    // Why: strip BOTH kinds' shadow vars so a nested PTY can't inherit a stale overlay from either agent.
-    restoreOrStripOverlayEnv(baseEnv, {
-      primary: 'PI_CODING_AGENT_DIR',
-      overlay: 'ORCA_PI_CODING_AGENT_DIR',
-      source: 'ORCA_PI_SOURCE_AGENT_DIR'
-    })
-    restoreOrStripOverlayEnv(baseEnv, {
-      primary: 'PI_CODING_AGENT_DIR',
-      overlay: 'ORCA_OMP_CODING_AGENT_DIR',
-      source: 'ORCA_OMP_SOURCE_AGENT_DIR'
-    })
-    delete baseEnv.ORCA_OMP_STATUS_EXTENSION
   }
 
   // Why: keep the Codex home override PTY-scoped so dev/prod Orcas don't share hooks through ~/.codex.
@@ -1364,8 +1116,6 @@ export function clearProviderPtyState(
   // Why: OpenCode and Pi both allocate PTY-scoped runtime state outside the
   // node-pty process table. Centralizing provider cleanup avoids drift where a
   // new teardown path forgets to remove one provider's overlay/hook state.
-  openCodeHookService.clearPty(id)
-  piTitlebarExtensionService.clearPty(id)
   // Why: SSH exit/teardown paths bypass pty.ts's local onExit but still must release Claude account-switch guards.
   markClaudePtyExited(id)
   ptySizes.delete(id)
@@ -1755,7 +1505,7 @@ export function registerPtyHandlers(
               }) ?? null)
         )
         const skipCodexHomeEnv = ctx?.isWsl === true && !selectedCodexHomePath
-        const env = buildPtyHostEnv(id, baseEnv, {
+        const env = buildPtyHostEnv(baseEnv, {
           isPackaged: app.isPackaged,
           userDataPath: app.getPath('userData'),
           selectedCodexHomePath,
@@ -3481,7 +3231,7 @@ export function registerPtyHandlers(
         if (!isSafePtySessionId(sessionId, app.getPath('userData'))) {
           throw new Error('Invalid PTY session id')
         }
-        env = buildPtyHostEnv(sessionId, env ?? {}, {
+        env = buildPtyHostEnv(env ?? {}, {
           isPackaged: app.isPackaged,
           userDataPath: app.getPath('userData'),
           selectedCodexHomePath,
@@ -4658,7 +4408,7 @@ export function registerPtyHandlers(
         // Why: clone before mutating so injections don't leak back into args.env (renderer may reuse it).
         env = { ...baseEnv }
         try {
-          buildPtyHostEnv(sessionIdForEnv, env, {
+          buildPtyHostEnv(env, {
             isPackaged: app.isPackaged,
             userDataPath: app.getPath('userData'),
             selectedCodexHomePath,

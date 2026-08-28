@@ -3116,24 +3116,10 @@ export function useIpcEvents(): void {
         // Why: the store rejects out-of-order status rows; keep metadata-only session identity on the same event boundary.
         return 'dropped'
       }
+      // Why: no shipped agent reports resume identity without a status row; a providerSessionOnly
+      // event can only come from an older relay build.
       if (data.providerSessionOnly) {
-        if (!data.providerSession || data.agentType !== 'pi') {
-          return 'dropped'
-        }
-        store.recordAgentProviderSession(
-          paneKey,
-          'pi',
-          data.providerSession,
-          { updatedAt: data.receivedAt },
-          {
-            tabId: ownerTabId,
-            worktreeId: data.worktreeId ?? owningWorktreeId,
-            // Why: persist the WSL-normalized ownership id, not raw relay provenance; a `wsl:*` connectionId would misroute later resumes.
-            ...(ownershipConnectionId !== undefined ? { connectionId: ownershipConnectionId } : {})
-          },
-          data.launchToken ? { launchToken: data.launchToken } : undefined
-        )
-        return 'applied'
+        return 'dropped'
       }
       const resolvedPayload = resolveHookPayloadAgentType(payload, identityTitle ?? title)
       const statusPayload = data.orchestration

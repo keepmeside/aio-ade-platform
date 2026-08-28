@@ -4,7 +4,7 @@ import type { JSX, ReactNode } from 'react'
 import { Wrench } from 'lucide-react'
 import { AgentStateDot } from '@/components/AgentStateDot'
 import { getAgentCatalog, AgentIcon, type AgentCatalogEntry } from '@/lib/agent-catalog'
-import { ClaudeIcon, OpenAIIcon } from '../../status-bar/icons'
+import { ClaudeIcon, OpenAIIcon, OpenCodeGoIcon } from '../../status-bar/icons'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
 
@@ -114,7 +114,7 @@ export function StatusesPage(props: { active: boolean; reducedMotion: boolean })
               <Skel widthPct={78} />
             )}
           </AgentRow>
-          <AgentRow icon={<AgentIcon agent="opencode" size={18} />} name="OpenCode" state="done">
+          <AgentRow icon={<OpenCodeGoIcon size={18} />} name="OpenCode" state="done">
             {revealed.opencode ? (
               <span>
                 {translate(

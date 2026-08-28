@@ -15,29 +15,13 @@ describe('synthetic agent titles', () => {
     expect(shouldDriveSyntheticAgentTitleFromHook('codex', 'done')).toBe(true)
   })
 
-  it('does not synthesize OpenCode titles over native session titles', () => {
-    expect(getSyntheticAgentTerminalTitle('opencode', 'done')).toBeNull()
-    expect(getSyntheticAgentTerminalTitle('opencode', 'waiting')).toBeNull()
-    expect(shouldDriveSyntheticAgentTitleFromHook('opencode', 'working')).toBe(false)
-    expect(shouldDriveSyntheticAgentTitleFromHook('opencode', 'done')).toBe(false)
-    expect(shouldDriveSyntheticAgentTitleFromHook('opencode', 'waiting')).toBe(false)
-  })
-
-  it('provides Devin titles for hook-driven status updates', () => {
-    expect(getSyntheticAgentTerminalTitle('devin', 'done')).toBe('Devin ready')
-    expect(getSyntheticAgentTerminalTitle('devin', 'waiting')).toBe('Devin - action required')
-    expect(shouldDriveSyntheticAgentTitleFromHook('devin', 'working')).toBe(true)
-  })
-
-  it('provides Pi-compatible OMP titles for hook-driven status updates', () => {
-    expect(getSyntheticAgentTerminalTitle('omp', 'done')).toBe('OMP ready')
-    expect(getSyntheticAgentTerminalTitle('omp', 'waiting')).toBe('OMP - action required')
-    expect(shouldDriveSyntheticAgentTitleFromHook('omp', 'working')).toBe(true)
-  })
-
-  it('provides Pi titles for hook-driven status updates', () => {
-    expect(getSyntheticAgentTerminalTitle('pi', 'done')).toBe('Pi ready')
-    expect(getSyntheticAgentTerminalTitle('pi', 'waiting')).toBe('Pi - action required')
-    expect(shouldDriveSyntheticAgentTitleFromHook('pi', 'working')).toBe(true)
+  // Why: Claude sets its own OSC titles for every state, so it has no profile —
+  // synthesizing over them would fight the CLI.
+  it('does not synthesize titles for agents that own their terminal title', () => {
+    expect(getSyntheticAgentTerminalTitle('claude', 'done')).toBeNull()
+    expect(getSyntheticAgentTerminalTitle('claude', 'waiting')).toBeNull()
+    expect(shouldDriveSyntheticAgentTitleFromHook('claude', 'working')).toBe(false)
+    expect(shouldDriveSyntheticAgentTitleFromHook('claude', 'done')).toBe(false)
+    expect(shouldDriveSyntheticAgentTitleFromHook('claude', 'waiting')).toBe(false)
   })
 })

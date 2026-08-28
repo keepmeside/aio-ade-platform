@@ -92,13 +92,13 @@ describe('main title tracker parity with the renderer transport processor', () =
   })
 
   it('derives identical facts from a coalesced spinner+idle chunk (issue #1083)', () => {
-    // One realistic node-pty batch: Pi's 80ms spinner frames plus agent_end's
-    // trailing idle title. A last-title reader sees only the idle title and
-    // never observes the working state.
+    // One realistic node-pty batch: fast spinner frames plus the trailing idle
+    // title an agent writes when its turn ends. A last-title reader sees only
+    // the idle title and never observes the working state.
     const chunk =
-      `${ESC}]0;⠋ π - cwd${BEL}response text\r\n` +
-      `${ESC}]0;⠙ π - cwd${BEL}more text\r\n` +
-      `${ESC}]0;π - cwd${BEL}`
+      `${ESC}]0;⠋ Codex - cwd${BEL}response text\r\n` +
+      `${ESC}]0;⠙ Codex - cwd${BEL}more text\r\n` +
+      `${ESC}]0;Codex - cwd${BEL}`
     feedBoth(paths, chunk)
 
     expect(paths.main.events).toEqual(paths.renderer.events)

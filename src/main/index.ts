@@ -20,7 +20,6 @@ import { relaunchApp } from './app-relaunch'
 import { StatsCollector, initStatsPath } from './stats/collector'
 import { ClaudeUsageStore, initClaudeUsagePath } from './claude-usage/store'
 import { CodexUsageStore, initCodexUsagePath } from './codex-usage/store'
-import { OpenCodeUsageStore, initOpenCodeUsagePath } from './opencode-usage/store'
 import {
   killAllPty,
   clearProviderPtyState,
@@ -153,7 +152,7 @@ import { ensureWindowsUserDataAclGrant } from './startup/windows-user-data-acl'
 import { shouldQuitWhenAllWindowsClosed } from './startup/window-all-closed-quit-policy'
 import { createServeDesktopActivationGate } from './startup/serve-desktop-activation'
 import { RateLimitService } from './rate-limits/service'
-import { readMiniMaxSessionCookie } from './minimax/minimax-cookie-store'
+
 import { getInitialClaudeRateLimitTarget } from './rate-limits/claude-rate-limit-target'
 import { getInitialCodexRateLimitTarget } from './rate-limits/codex-rate-limit-target'
 import { createAccountRuntimeTargetSettingsSync } from './rate-limits/account-runtime-target-sync'
@@ -293,7 +292,6 @@ let store: Store | null = null
 let stats: StatsCollector | null = null
 let claudeUsage: ClaudeUsageStore | null = null
 let codexUsage: CodexUsageStore | null = null
-let openCodeUsage: OpenCodeUsageStore | null = null
 let codexAccounts: CodexAccountService | null = null
 let codexRuntimeHome: CodexRuntimeHomeService | null = null
 let claudeAccounts: ClaudeAccountService | null = null
@@ -706,7 +704,6 @@ if (hasSingleInstanceLock) {
   initStatsPath()
   initClaudeUsagePath()
   initCodexUsagePath()
-  initOpenCodeUsagePath()
   crashReports = CrashReportStore.fromUserData()
   recordCrashBreadcrumb('app_started', {
     packaged: app.isPackaged,
@@ -1053,9 +1050,6 @@ function openMainWindow(): BrowserWindow {
   if (!codexUsage) {
     throw new Error('Codex usage store must be initialized before opening the main window')
   }
-  if (!openCodeUsage) {
-    throw new Error('OpenCode usage store must be initialized before opening the main window')
-  }
   if (!rateLimits) {
     throw new Error('Rate limit service must be initialized before opening the main window')
   }
@@ -1190,7 +1184,6 @@ function openMainWindow(): BrowserWindow {
     stats,
     claudeUsage,
     codexUsage,
-    openCodeUsage,
     codexAccounts,
     claudeAccounts,
     rateLimits,
@@ -2043,7 +2036,6 @@ void app.whenReady().then(async () => {
   stats = new StatsCollector()
   claudeUsage = new ClaudeUsageStore(store)
   codexUsage = new CodexUsageStore(store)
-  openCodeUsage = new OpenCodeUsageStore(store)
   rateLimits = new RateLimitService()
   codexRuntimeHome = new CodexRuntimeHomeService(store)
   // Why: an incapable trust-grant host must fall back to the managed home for
@@ -2099,22 +2091,6 @@ void app.whenReady().then(async () => {
   agentHookServer.setClaudeStatusLineListener((event) => {
     rateLimits?.ingestLiveClaudeRateLimits(event)
   })
-  rateLimits.setOpenCodeGoConfigResolver(() => {
-    const settings = store!.getSettings()
-    return {
-      sessionCookie: settings.opencodeSessionCookie,
-      workspaceIdOverride: settings.opencodeWorkspaceId
-    }
-  })
-  rateLimits.setMiniMaxConfigResolver(() => {
-    const settings = store!.getSettings()
-    return {
-      sessionCookie: readMiniMaxSessionCookie() ?? '',
-      groupId: settings.minimaxGroupId,
-      models: settings.minimaxUsageModels
-    }
-  })
-  rateLimits.setGeminiCliOAuthEnabledResolver(() => store!.getSettings().geminiCliOAuthEnabled)
   rateLimits.setNetworkProxySettingsResolver(() => store!.getSettings())
   keybindings = new KeybindingService({
     homePath: app.getPath('home'),

@@ -8,7 +8,6 @@ class MemoryRemoteProvider implements IFilesystemProvider {
   private readonly files = new Map<string, { content: string; mtimeMs: number }>()
   private readonly readDirErrors = new Map<string, Error>()
   private readonly statErrors = new Map<string, Error>()
-  readonly readDirPaths: string[] = []
 
   addFile(path: string, content: string, mtimeMs: number): void {
     this.files.set(normalize(path), { content, mtimeMs })
@@ -24,7 +23,6 @@ class MemoryRemoteProvider implements IFilesystemProvider {
 
   async readDir(dirPath: string): Promise<DirEntry[]> {
     const dir = normalize(dirPath)
-    this.readDirPaths.push(dir)
     const readDirError = this.readDirErrors.get(dir)
     if (readDirError) {
       throw readDirError
@@ -255,109 +253,9 @@ describe('scanRemoteAiVaultSessions', () => {
     })
   })
 
-  it('parses only canonical Antigravity transcripts on SSH hosts', async () => {
+  it('reports remote transcript stat failures', async () => {
     const provider = new MemoryRemoteProvider()
-    const sessionId = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee'
-    const logsDir = `/home/ada/.gemini/antigravity-cli/brain/${sessionId}/.system_generated/logs`
-    provider.addFile(
-      `${logsDir}/transcript.jsonl`,
-      jsonLines([
-        {
-          source: 'USER_EXPLICIT',
-          type: 'USER_INPUT',
-          created_at: '2026-07-15T11:39:10Z',
-          content: '<USER_REQUEST>Fix remote Antigravity history</USER_REQUEST>'
-        },
-        {
-          source: 'MODEL',
-          type: 'PLANNER_RESPONSE',
-          created_at: '2026-07-15T11:39:12Z',
-          content: 'Done'
-        }
-      ]),
-      50
-    )
-    provider.addFile(`${logsDir}/transcript_full.jsonl`, 'duplicate', 51)
-    provider.addFile(
-      `/home/ada/.gemini/antigravity-cli/brain/${sessionId}/artifacts/task.jsonl`,
-      'not a transcript',
-      52
-    )
-    provider.addFile(
-      '/home/ada/.gemini/antigravity-cli/history.jsonl',
-      jsonLines([
-        {
-          display: 'Fix remote Antigravity history',
-          timestamp: Date.parse('2026-07-15T11:39:10.100Z'),
-          workspace: '/home/ada/project'
-        }
-      ]),
-      53
-    )
-
-    const result = await scanRemoteAiVaultSessions({
-      provider,
-      executionHostId: 'ssh:dev-box',
-      remoteHome: '/home/ada',
-      hostPlatform: getRemoteHostPlatform('linux-x64'),
-      scopePaths: ['/home/ada/project']
-    })
-
-    expect(result.issues).toEqual([])
-    expect(result.sessions).toHaveLength(1)
-    expect(result.sessions[0]).toMatchObject({
-      executionHostId: 'ssh:dev-box',
-      executionHostPlatform: 'linux',
-      agent: 'antigravity',
-      sessionId,
-      title: 'Fix remote Antigravity history',
-      cwd: '/home/ada/project',
-      messageCount: 2,
-      resumeCommand: `agy --conversation '${sessionId}'`,
-      filePath: `${logsDir}/transcript.jsonl`
-    })
-    expect(
-      provider.readDirPaths.filter((path) =>
-        path.startsWith('/home/ada/.gemini/antigravity-cli/brain')
-      )
-    ).toEqual(['/home/ada/.gemini/antigravity-cli/brain'])
-  })
-
-  it('keeps Antigravity SSH discovery to one listing as the session store grows', async () => {
-    const provider = new MemoryRemoteProvider()
-    const brainDir = '/home/ada/.gemini/antigravity-cli/brain'
-    for (let index = 0; index < 40; index++) {
-      provider.addFile(
-        `${brainDir}/session-${index}/.system_generated/logs/transcript.jsonl`,
-        jsonLines([
-          {
-            source: 'USER_EXPLICIT',
-            type: 'USER_INPUT',
-            created_at: `2026-07-15T11:39:${String(index).padStart(2, '0')}Z`,
-            content: `<USER_REQUEST>Remote session ${index}</USER_REQUEST>`
-          }
-        ]),
-        100 + index
-      )
-    }
-
-    const result = await scanRemoteAiVaultSessions({
-      provider,
-      executionHostId: 'ssh:dev-box',
-      remoteHome: '/home/ada',
-      hostPlatform: getRemoteHostPlatform('linux-x64')
-    })
-
-    expect(result.issues).toEqual([])
-    expect(result.sessions).toHaveLength(40)
-    expect(provider.readDirPaths.filter((path) => path.startsWith(brainDir))).toEqual([brainDir])
-  })
-
-  it('ignores missing canonical Antigravity transcripts but reports other stat failures', async () => {
-    const provider = new MemoryRemoteProvider()
-    const brainDir = '/home/ada/.gemini/antigravity-cli/brain'
-    provider.addFile(`${brainDir}/missing-session/artifacts/task.jsonl`, 'artifact', 1)
-    const deniedTranscript = `${brainDir}/denied-session/.system_generated/logs/transcript.jsonl`
+    const deniedTranscript = '/home/ada/.claude/projects/repo/denied-session.jsonl'
     provider.addFile(deniedTranscript, 'unreadable', 2)
     provider.failStat(
       deniedTranscript,
@@ -374,19 +272,22 @@ describe('scanRemoteAiVaultSessions', () => {
     expect(result.sessions).toEqual([])
     expect(result.issues).toEqual([
       expect.objectContaining({
-        agent: 'antigravity',
+        agent: 'claude',
         path: deniedTranscript,
         message: expect.stringContaining('EACCES')
       })
     ])
   })
 
-  it('reports non-missing fixed and recursive remote directory failures', async () => {
+  it('reports non-missing remote directory failures per source', async () => {
     const provider = new MemoryRemoteProvider()
-    const brainDir = '/home/ada/.gemini/antigravity-cli/brain'
+    const codexSessionsDir = '/home/ada/.codex/sessions'
     const claudeProjectDir = '/home/ada/.claude/projects/repo'
     provider.addFile(`${claudeProjectDir}/session.jsonl`, 'unreadable', 1)
-    provider.failReadDir(brainDir, new Error(`EACCES: permission denied, scandir '${brainDir}'`))
+    provider.failReadDir(
+      codexSessionsDir,
+      new Error(`EACCES: permission denied, scandir '${codexSessionsDir}'`)
+    )
     provider.failReadDir(
       claudeProjectDir,
       new Error(`ECONNRESET: connection lost while reading '${claudeProjectDir}'`)
@@ -403,8 +304,8 @@ describe('scanRemoteAiVaultSessions', () => {
     expect(result.issues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          agent: 'antigravity',
-          path: brainDir,
+          agent: 'codex',
+          path: codexSessionsDir,
           message: expect.stringContaining('EACCES')
         }),
         expect.objectContaining({
@@ -419,8 +320,11 @@ describe('scanRemoteAiVaultSessions', () => {
 
   it('keeps missing optional remote directories silent', async () => {
     const provider = new MemoryRemoteProvider()
-    const brainDir = '/home/ada/.gemini/antigravity-cli/brain'
-    provider.failReadDir(brainDir, new Error(`ENOENT: no such directory, scandir '${brainDir}'`))
+    const codexSessionsDir = '/home/ada/.codex/sessions'
+    provider.failReadDir(
+      codexSessionsDir,
+      new Error(`ENOENT: no such directory, scandir '${codexSessionsDir}'`)
+    )
 
     const result = await scanRemoteAiVaultSessions({
       provider,
@@ -587,49 +491,6 @@ describe('scanRemoteAiVaultSessions', () => {
     expect(result.sessions[0]?.resumeCommand).toBe(
       'cmd /d /s /c "cd /d ""C:/repo/app"" && set ""CODEX_HOME=C:/Users/Ada/.codex"" && codex resume ""win-session"""'
     )
-  })
-
-  it('loads Antigravity workspace history with Windows remote paths', async () => {
-    const provider = new MemoryRemoteProvider()
-    const sessionId = 'dddddddd-eeee-4fff-8aaa-bbbbbbbbbbbb'
-    provider.addFile(
-      `C:/Users/Ada/.gemini/antigravity-cli/brain/${sessionId}/.system_generated/logs/transcript.jsonl`,
-      jsonLines([
-        {
-          source: 'USER_EXPLICIT',
-          type: 'USER_INPUT',
-          created_at: '2026-07-15T11:39:10.000Z',
-          content: '<USER_REQUEST>Windows Antigravity title</USER_REQUEST>'
-        }
-      ]),
-      30
-    )
-    provider.addFile(
-      'C:/Users/Ada/.gemini/antigravity-cli/history.jsonl',
-      jsonLines([
-        {
-          display: 'Windows Antigravity title',
-          timestamp: Date.parse('2026-07-15T11:39:10.100Z'),
-          workspace: 'C:/repo/app'
-        }
-      ]),
-      31
-    )
-
-    const result = await scanRemoteAiVaultSessions({
-      provider,
-      executionHostId: 'ssh:win-box',
-      remoteHome: 'C:/Users/Ada',
-      hostPlatform: getRemoteHostPlatform('win32-x64')
-    })
-
-    expect(result.issues).toEqual([])
-    expect(result.sessions[0]).toMatchObject({
-      agent: 'antigravity',
-      sessionId,
-      cwd: 'C:/repo/app',
-      executionHostPlatform: 'win32'
-    })
   })
 
   it('continues past skipped candidates to fill the remote scan limit', async () => {

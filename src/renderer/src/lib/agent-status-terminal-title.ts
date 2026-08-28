@@ -37,8 +37,8 @@ function shouldReplaceCurrentTitle(
   if (!profile) {
     return false
   }
-  // Why: cursor-agent can report the bare native title at completion; the
-  // detector treats that as a no-op, so explicit status needs the idle label.
+  // Why: an agent can report the bare native title at completion; the detector
+  // treats that as a no-op, so explicit status needs the idle label.
   if (currentTitle.trim().toLowerCase() === profile.workingLabel.toLowerCase()) {
     return true
   }

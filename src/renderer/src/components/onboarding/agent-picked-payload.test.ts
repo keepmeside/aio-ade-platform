@@ -85,7 +85,7 @@ describe('buildAgentPickedPayload', () => {
 
   it('forwards from_collapsed_section verbatim', () => {
     const payload = buildAgentPickedPayload({
-      agent: 'aider',
+      agent: 'codex',
       detectedAgentIds: [],
       isDetecting: false,
       fromCollapsedSection: true,

@@ -143,9 +143,9 @@ describe('terminal quick commands', () => {
         },
         {
           id: 'post-start-agent',
-          label: 'Aider',
+          label: 'Agent Teams',
           action: 'agent-prompt',
-          agent: 'aider',
+          agent: 'claude-agent-teams',
           prompt: 'Do work'
         }
       ])
@@ -329,8 +329,9 @@ describe('terminal quick commands', () => {
 
   it('only allows agent prompt quick commands for launch-time prompt agents', () => {
     expect(supportsTerminalAgentQuickCommand('claude')).toBe(true)
-    expect(supportsTerminalAgentQuickCommand('gemini')).toBe(true)
-    expect(supportsTerminalAgentQuickCommand('aider')).toBe(false)
+    expect(supportsTerminalAgentQuickCommand('codex')).toBe(true)
+    // Agent Teams takes its prompt on stdin after start, so it has no launch-time prompt.
+    expect(supportsTerminalAgentQuickCommand('claude-agent-teams')).toBe(false)
     expect(supportsTerminalAgentQuickCommand('not-real')).toBe(false)
   })
 })

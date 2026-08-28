@@ -5,7 +5,6 @@ import {
   titleHasAgentName,
   titleHasAnyLegacyAgentName
 } from './agent-name-token-match'
-import { isLegacyPiCompatibleTitle } from './pi-compatible-synthetic-title'
 
 export { AGY_AGENT_NAME_RE, DROID_AGENT_NAME_RE, HERMES_AGENT_NAME_RE, titleHasAgentName }
 
@@ -57,20 +56,7 @@ export function isGeminiTerminalTitle(title: string): boolean {
   ) {
     return true
   }
-  // Why: Pi/OMP titles include cwd/session text; substring matching made
-  // paths like "gemini-project" masquerade as Gemini CLI.
-  if (isPiAgentTitle(title)) {
-    return false
-  }
   return titleHasAgentName(title, 'gemini')
-}
-
-export function isPiTerminalTitle(title: string): boolean {
-  return isLegacyPiCompatibleTitle(title) && !containsBrailleSpinner(title)
-}
-
-export function isPiAgentTitle(title: string): boolean {
-  return isLegacyPiCompatibleTitle(title)
 }
 
 export function containsBrailleSpinner(title: string): boolean {

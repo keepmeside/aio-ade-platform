@@ -5,15 +5,6 @@ import {
 } from './terminal-windows-shift-enter'
 
 describe('resolveWindowsShiftEnterEncoding', () => {
-  it('uses CSI-u only for trusted Droid process evidence', () => {
-    expect(
-      resolveWindowsShiftEnterEncoding({
-        foreground: { agent: 'droid', routingTrusted: true, shellForeground: false }
-      })
-    ).toBe('csi-u')
-    expect(resolveWindowsShiftEnterEncoding({ launchAgentType: 'droid' })).toBe('alt-enter')
-  })
-
   it('does not let hook or OSC-derived status forge Droid input routing', () => {
     const state = {
       paneForegroundAgentByPaneKey: {},
@@ -26,8 +17,8 @@ describe('resolveWindowsShiftEnterEncoding', () => {
     expect(resolveWindowsShiftEnterEncodingForPane(state, 'tab:pane')).toBe('alt-enter')
   })
 
-  it('keeps the legacy byte for Codex, Antigravity, unknown, and plain panes', () => {
-    for (const agent of ['codex', 'antigravity', 'claude', null] as const) {
+  it('keeps the legacy byte for Codex, Claude, unknown, and plain panes', () => {
+    for (const agent of ['codex', 'claude', null] as const) {
       expect(
         resolveWindowsShiftEnterEncoding({
           foreground: { agent, shellForeground: false }
@@ -40,7 +31,7 @@ describe('resolveWindowsShiftEnterEncoding', () => {
   it('lets current process identity override stale launch ownership', () => {
     expect(
       resolveWindowsShiftEnterEncoding({
-        foreground: { agent: 'antigravity', routingTrusted: true, shellForeground: false },
+        foreground: { agent: 'codex', routingTrusted: true, shellForeground: false },
         launchAgentType: 'droid'
       })
     ).toBe('alt-enter')
@@ -49,7 +40,7 @@ describe('resolveWindowsShiftEnterEncoding', () => {
   it('fails closed while a newer command generation awaits trusted evidence', () => {
     expect(
       resolveWindowsShiftEnterEncoding({
-        foreground: { agent: 'droid', shellForeground: false },
+        foreground: { agent: 'codex', shellForeground: false },
         launchAgentType: 'droid'
       })
     ).toBe('alt-enter')

@@ -1,5 +1,4 @@
 import { recognizeAgentProcessFromCommandLine } from '../../shared/agent-process-recognition'
-import { resolveOuterWrapperForegroundProcess } from '../../shared/foreground-wrapper-agent'
 import {
   getFreshProcessTableSnapshot,
   getProcessTableSnapshot,
@@ -127,9 +126,7 @@ function resolveAgentForegroundProcessFromPs(
     }
     const recognized = recognizeAgentProcessFromCommandLine(candidate.command)
     if (recognized) {
-      // Why: return the outer wrapper (omp) rather than the deeper wrapped child
-      // (pi) of a shell→omp→pi tree — see resolveOuterWrapperForegroundProcess.
-      return resolveOuterWrapperForegroundProcess(recognized, candidate, candidates)
+      return recognized.processName
     }
   }
   return null

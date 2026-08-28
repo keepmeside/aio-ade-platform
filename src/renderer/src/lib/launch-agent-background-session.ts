@@ -244,22 +244,6 @@ export async function launchAgentBackgroundSession(
     tab = adopted.tab
     paneKey = adopted.paneKey
     terminalOwnership = adopted.terminalOwnership
-    if (agent === 'command-code' && hasPrompt && !isFollowupPath) {
-      // Why: Command Code does not expose a prompt-start hook; seed working for
-      // hidden prompt launches so sidebar/activity surfaces do not stay idle.
-      const routing = agentStatusConsumer.resolveRouting()
-      if (routing) {
-        store.setAgentStatus(
-          paneKey,
-          { state: 'working', prompt: trimmedPrompt, agentType: agent },
-          undefined,
-          undefined,
-          routing,
-          { launchConfig: startupPlan.launchConfig, launchToken }
-        )
-      }
-    }
-
     if (runtimeTarget.kind === 'environment') {
       if (!runtimeTerminalHandle) {
         throw new Error('Runtime terminal id is invalid.')

@@ -1,15 +1,12 @@
-import { isAnteHeadlessOneShotCommand } from './ante-headless-command'
 import { isPrintModeHeadlessOneShotCommand } from './print-mode-headless-command'
 import type { TuiAgent } from './types'
 
-// Why: a table (not an if-chain) so adding an agent is one entry; Claude and Trae share
-// the same `--print` one-shot contract, Ante's `--prompt` form needs its own matcher.
+// Why: a table (not an if-chain) so an agent with a different one-shot contract is one entry.
+// Only Claude has a `--print` form; Codex has no headless one-shot invocation to filter.
 const HEADLESS_ONE_SHOT_MATCHERS: Partial<
   Record<TuiAgent, (tokens: readonly string[]) => boolean>
 > = {
-  claude: isPrintModeHeadlessOneShotCommand,
-  trae: isPrintModeHeadlessOneShotCommand,
-  ante: isAnteHeadlessOneShotCommand
+  claude: isPrintModeHeadlessOneShotCommand
 }
 
 export function isHeadlessOneShotAgentCommand(agent: TuiAgent, tokens: readonly string[]): boolean {

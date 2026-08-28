@@ -5,16 +5,7 @@ import type { TuiAgent } from '../../../../shared/types'
 
 const QUICK_COMMAND_AGENT_PRESENTATION_ORDER = [
   'claude',
-  'codex',
-  'gemini',
-  'copilot',
-  'opencode',
-  'pi',
-  'omp',
-  'cursor',
-  'droid',
-  'command-code',
-  'openclaude'
+  'codex'
 ] as const satisfies readonly TuiAgent[]
 
 const QUICK_COMMAND_AGENT_ORDER_RANK = new Map<TuiAgent, number>(

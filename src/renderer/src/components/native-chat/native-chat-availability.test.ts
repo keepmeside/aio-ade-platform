@@ -35,16 +35,6 @@ describe('canToggleNativeChat', () => {
     ).toBe(true)
   })
 
-  it('allows the OpenClaude variant', () => {
-    expect(
-      canToggleNativeChat({
-        experimentalNativeChatEnabled: true,
-        contentType: 'terminal',
-        launchAgent: 'openclaude'
-      })
-    ).toBe(true)
-  })
-
   it('allows an existing chat view to toggle back after live signals are gone', () => {
     expect(
       canToggleNativeChat({
@@ -56,12 +46,26 @@ describe('canToggleNativeChat', () => {
     ).toBe(true)
   })
 
+  // Why: Orca no longer launches these CLIs, but native chat still parses their
+  // transcripts, so a hand-started session detected via hooks must still toggle.
+  it('allows a hand-started OpenClaude session detected live', () => {
+    expect(
+      canToggleNativeChat({
+        experimentalNativeChatEnabled: true,
+        contentType: 'terminal',
+        launchAgent: null,
+        detectedAgent: 'openclaude'
+      })
+    ).toBe(true)
+  })
+
   it('accepts local Grok once native chat can parse its transcript', () => {
     expect(
       canToggleNativeChat({
         experimentalNativeChatEnabled: true,
         contentType: 'terminal',
-        launchAgent: 'grok',
+        launchAgent: null,
+        detectedAgent: 'grok',
         nativeChatTranscriptIsLocalReadable: isNativeChatTranscriptLocalReadable(null)
       })
     ).toBe(true)
@@ -72,7 +76,8 @@ describe('canToggleNativeChat', () => {
       canToggleNativeChat({
         experimentalNativeChatEnabled: true,
         contentType: 'terminal',
-        launchAgent: 'grok',
+        launchAgent: null,
+        detectedAgent: 'grok',
         nativeChatTranscriptIsLocalReadable:
           isNativeChatTranscriptLocalReadable('runtime-ssh-env-1')
       })
@@ -84,7 +89,8 @@ describe('canToggleNativeChat', () => {
       canToggleNativeChat({
         experimentalNativeChatEnabled: true,
         contentType: 'terminal',
-        launchAgent: 'grok',
+        launchAgent: null,
+        detectedAgent: 'grok',
         nativeChatTranscriptIsLocalReadable: isNativeChatTranscriptLocalReadable('ssh-target-1')
       })
     ).toBe(false)
@@ -95,7 +101,8 @@ describe('canToggleNativeChat', () => {
       canToggleNativeChat({
         experimentalNativeChatEnabled: true,
         contentType: 'terminal',
-        launchAgent: 'grok',
+        launchAgent: null,
+        detectedAgent: 'grok',
         nativeChatTranscriptIsLocalReadable: false,
         isChatViewMode: true
       })
@@ -111,18 +118,6 @@ describe('canToggleNativeChat', () => {
         detectedAgent: 'gemini'
       })
     ).toBe(false)
-  })
-
-  it('accepts Grok when resolved from the title', () => {
-    expect(
-      canToggleNativeChat({
-        experimentalNativeChatEnabled: true,
-        contentType: 'terminal',
-        launchAgent: null,
-        resolvedAgent: 'grok',
-        nativeChatTranscriptIsLocalReadable: true
-      })
-    ).toBe(true)
   })
 
   it('rejects a stale supported title when live detection found an unsupported agent', () => {
@@ -153,7 +148,7 @@ describe('canToggleNativeChat', () => {
       canToggleNativeChat({
         experimentalNativeChatEnabled: true,
         contentType: 'terminal',
-        launchAgent: 'gemini',
+        launchAgent: 'claude-agent-teams',
         resolvedAgent: 'claude'
       })
     ).toBe(false)

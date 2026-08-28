@@ -1,14 +1,6 @@
 import { createHash, createHmac, randomBytes } from 'node:crypto'
-import {
-  closeSync,
-  mkdirSync,
-  openSync,
-  readFileSync,
-  realpathSync,
-  statSync,
-  writeFileSync
-} from 'node:fs'
-import { dirname, isAbsolute, join, normalize } from 'node:path'
+import { closeSync, mkdirSync, openSync, readFileSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import {
   AGENT_SESSION_CLAIM_DIGEST_VERSION,
   type AgentSessionExecutionClaim
@@ -23,7 +15,6 @@ import {
 
 const COORDINATION_KEY_BYTES = 32
 const COORDINATION_KEY_FILE = 'agent-session-authority.key'
-const TRANSCRIPT_PATH_MAX_BYTES = 16 * 1024
 
 export type ProviderExecutionNamespace = {
   machine: string
@@ -48,11 +39,6 @@ function encodeFields(fields: readonly string[]): Buffer {
   return Buffer.concat(chunks)
 }
 
-function canonicalPathForPlatform(value: string): string {
-  const canonical = normalize(realpathSync(value))
-  return process.platform === 'win32' ? canonical.toLocaleLowerCase('en-US') : canonical
-}
-
 export function canonicalizeAgentSessionIdentity(
   agent: unknown,
   rawProviderSession: unknown
@@ -64,25 +50,7 @@ export function canonicalizeAgentSessionIdentity(
   if (!providerSession || !getAgentResumeArgv(agent, providerSession)) {
     throw new Error('agent_session_identity_required')
   }
-  if (agent !== 'pi') {
-    return { agent, providerSession }
-  }
-  const transcriptPath = providerSession.transcriptPath
-  if (
-    !transcriptPath ||
-    !isAbsolute(transcriptPath) ||
-    Buffer.byteLength(transcriptPath, 'utf8') > TRANSCRIPT_PATH_MAX_BYTES
-  ) {
-    throw new Error('agent_session_identity_required')
-  }
-  const canonicalTranscriptPath = canonicalPathForPlatform(transcriptPath)
-  if (!statSync(canonicalTranscriptPath).isFile()) {
-    throw new Error('agent_session_identity_required')
-  }
-  return {
-    agent,
-    providerSession: { ...providerSession, transcriptPath: canonicalTranscriptPath }
-  }
+  return { agent, providerSession }
 }
 
 export class AgentSessionClaimSigner {
@@ -115,8 +83,7 @@ export class AgentSessionClaimSigner {
       ...namespaceFields,
       args.identity.agent,
       args.identity.providerSession.key,
-      args.identity.providerSession.id,
-      args.identity.agent === 'pi' ? (args.identity.providerSession.transcriptPath ?? '') : ''
+      args.identity.providerSession.id
     ]
     const worktreeFields = [
       'orca-agent-session-worktree-v1',

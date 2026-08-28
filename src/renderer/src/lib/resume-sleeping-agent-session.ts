@@ -97,7 +97,7 @@ function activeOrQueuedResumeClaimsProviderSession(
       entry.worktreeId === record.worktreeId &&
       entry.agentType === record.agent &&
       entry.state !== 'done' &&
-      agentProviderSessionsEqual(record.agent, entry.providerSession, record.providerSession)
+      agentProviderSessionsEqual(entry.providerSession, record.providerSession)
     ) {
       return true
     }
@@ -107,11 +107,7 @@ function activeOrQueuedResumeClaimsProviderSession(
     if (
       worktreeTabIds.has(tabId) &&
       startup.launchAgent === record.agent &&
-      agentProviderSessionsEqual(
-        record.agent,
-        startup.resumeProviderSession,
-        record.providerSession
-      )
+      agentProviderSessionsEqual(startup.resumeProviderSession, record.providerSession)
     ) {
       return true
     }
@@ -122,7 +118,7 @@ function activeOrQueuedResumeClaimsProviderSession(
       worktreeTabIds.has(tabId) &&
       claim.worktreeId === record.worktreeId &&
       claim.launchAgent === record.agent &&
-      agentProviderSessionsEqual(record.agent, claim.providerSession, record.providerSession)
+      agentProviderSessionsEqual(claim.providerSession, record.providerSession)
     ) {
       return true
     }

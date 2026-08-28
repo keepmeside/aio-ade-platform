@@ -4,8 +4,6 @@ import { useAppStore } from '../../store'
 import { StatCard } from './StatCard'
 import { ClaudeUsagePane } from './ClaudeUsagePane'
 import { CodexUsagePane } from './CodexUsagePane'
-import { GrokUsagePane } from './GrokUsagePane'
-import { OpenCodeUsagePane } from './OpenCodeUsagePane'
 import { UsageOverviewPane } from './UsageOverviewPane'
 import { Button } from '../ui/button'
 import {
@@ -14,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '../ui/dropdown-menu'
-import { AgentIcon } from '@/lib/agent-catalog'
+import { ClaudeIcon, OpenAIIcon, ProviderLogoIcon } from '@/components/status-bar/icons'
 import { translate } from '@/i18n/i18n'
 export { getStatsPaneSearchEntries } from './stats-search'
 
@@ -46,7 +44,7 @@ function formatTrackingSince(timestamp: number | null): string {
   return `Tracking since ${date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`
 }
 
-type UsageTab = 'overview' | 'claude' | 'codex' | 'opencode' | 'grok'
+type UsageTab = 'overview' | 'claude' | 'codex'
 
 const USAGE_ANALYTICS_OPTIONS = [
   {
@@ -66,18 +64,6 @@ const USAGE_ANALYTICS_OPTIONS = [
     get label() {
       return translate('auto.components.stats.StatsPane.7d26110cea', 'Codex')
     }
-  },
-  {
-    id: 'opencode',
-    get label() {
-      return translate('auto.components.stats.StatsPane.1e696db2f6', 'OpenCode')
-    }
-  },
-  {
-    id: 'grok',
-    get label() {
-      return translate('auto.components.stats.StatsPane.grokUsageTab', 'Grok')
-    }
   }
 ] as const satisfies readonly { id: UsageTab; label: string }[]
 
@@ -85,7 +71,13 @@ function UsageAnalyticsOptionIcon({ tab }: { tab: UsageTab }): React.JSX.Element
   if (tab === 'overview') {
     return <BarChart3 className="size-3.5 text-muted-foreground" />
   }
-  return <AgentIcon agent={tab} size={14} />
+  if (tab === 'claude') {
+    return <ClaudeIcon size={14} />
+  }
+  if (tab === 'codex') {
+    return <OpenAIIcon size={14} />
+  }
+  return <ProviderLogoIcon provider={tab} size={14} />
 }
 
 export function StatsPane(): React.JSX.Element {
@@ -198,12 +190,8 @@ export function StatsPane(): React.JSX.Element {
             <UsageOverviewPane />
           ) : activeUsageTab === 'claude' ? (
             <ClaudeUsagePane />
-          ) : activeUsageTab === 'codex' ? (
-            <CodexUsagePane />
-          ) : activeUsageTab === 'opencode' ? (
-            <OpenCodeUsagePane />
           ) : (
-            <GrokUsagePane />
+            <CodexUsagePane />
           )}
         </div>
       </div>

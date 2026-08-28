@@ -226,7 +226,7 @@ describe('forkAgentSessionFromPane', () => {
 
   it('uses Linux startup quoting for WSL workspaces', async () => {
     store.agentStatusByPaneKey = {
-      [`tab-1:${LEAF_ID}`]: { agentType: 'pi' }
+      [`tab-1:${LEAF_ID}`]: { agentType: 'claude' }
     }
     mockCreateWorktree.mockResolvedValueOnce({
       worktree: {
@@ -245,7 +245,7 @@ describe('forkAgentSessionFromPane', () => {
 
     expect(mockLaunchAgentInNewTab).toHaveBeenCalledWith(
       expect.objectContaining({
-        agent: 'pi',
+        agent: 'claude',
         worktreeId: 'wt-fork',
         launchPlatform: 'linux'
       })
@@ -261,7 +261,7 @@ describe('forkAgentSessionFromPane', () => {
       }
     ]
     store.agentStatusByPaneKey = {
-      [`tab-1:${LEAF_ID}`]: { agentType: 'pi' }
+      [`tab-1:${LEAF_ID}`]: { agentType: 'claude' }
     }
     mockCreateWorktree.mockResolvedValueOnce({
       worktree: {
@@ -280,7 +280,7 @@ describe('forkAgentSessionFromPane', () => {
 
     expect(mockLaunchAgentInNewTab).toHaveBeenCalledWith(
       expect.objectContaining({
-        agent: 'pi',
+        agent: 'claude',
         worktreeId: 'wt-fork',
         launchPlatform: 'linux'
       })

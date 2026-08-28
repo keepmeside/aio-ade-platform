@@ -2329,45 +2329,6 @@ describe('connectPanePty', () => {
     expect(transport.sendInput).toHaveBeenCalledWith('echo hi\r')
   })
 
-  it('normalizes Pi-compatible remote runtime status to OMP after typed omp command', async () => {
-    const { connectPanePty } = await import('./pty-connection')
-    enableActiveRuntimeEnvironment()
-    const paneKey = makePaneKey('tab-1', LEAF_1)
-    const pane = createPane(1)
-    const transport = createMockTransport('remote:web-env-1@@pty-omp')
-    transportFactoryQueue.push(transport)
-    const manager = createManager(1, 1)
-    const deps = createDeps()
-
-    connectPanePty(pane as never, manager as never, deps as never)
-    sendTerminalInputThroughPane(pane, 'omp\r')
-    await flushAsyncTicks()
-    const onTitleChange = createdTransportOptions[0]?.onTitleChange as
-      | ((title: string, rawTitle: string) => void)
-      | undefined
-    const onAgentStatus = createdTransportOptions[0]?.onAgentStatus as
-      | ((payload: { state: 'done'; prompt: string; agentType: 'pi' }) => void)
-      | undefined
-    if (!onTitleChange || !onAgentStatus) {
-      throw new Error('missing remote PTY callbacks')
-    }
-    onTitleChange('Pi ready', 'Pi ready')
-    onAgentStatus({
-      state: 'done',
-      prompt: '',
-      agentType: 'pi'
-    })
-
-    expect(transport.sendInput).toHaveBeenCalledWith('omp\r')
-    expect(deps.setRuntimePaneTitle).toHaveBeenCalledWith('tab-1', 1, 'OMP ready')
-    expect(deps.updateTabTitle).toHaveBeenCalledWith('tab-1', 'OMP ready')
-    expect(mockStoreState.agentStatusByPaneKey[paneKey]).toMatchObject({
-      state: 'done',
-      agentType: 'omp',
-      terminalTitle: 'OMP ready'
-    })
-  })
-
   it('drives runtime title, tab title, and renderer policy from one title decision', async () => {
     const { connectPanePty } = await import('./pty-connection')
     const pane = createPane(1)
@@ -2583,81 +2544,29 @@ describe('connectPanePty', () => {
     expect(manager.setPaneGpuRendering).toHaveBeenCalledWith(1, false)
   })
 
-  it('normalizes after shell word deletion edits a typed command to omp', async () => {
+  it('applies shell word deletion before inferring a typed command owner', async () => {
     const { connectPanePty } = await import('./pty-connection')
     enableActiveRuntimeEnvironment()
-    const paneKey = makePaneKey('tab-1', LEAF_1)
     const pane = createPane(1)
-    const transport = createMockTransport('remote:web-env-1@@pty-omp-edited')
+    const transport = createMockTransport('remote:web-env-1@@pty-word-deleted-command')
     transportFactoryQueue.push(transport)
     const manager = createManager(1, 1)
     const deps = createDeps()
 
     connectPanePty(pane as never, manager as never, deps as never)
-    sendTerminalInputThroughPane(pane, 'pi \x17omp\r')
+    // Ctrl+W removes the typed `codex`, so the submitted line owns nothing.
+    sendTerminalInputThroughPane(pane, 'codex \x17ls\r')
     await flushAsyncTicks()
     const onTitleChange = createdTransportOptions[0]?.onTitleChange as
       | ((title: string, rawTitle: string) => void)
       | undefined
-    const onAgentStatus = createdTransportOptions[0]?.onAgentStatus as
-      | ((payload: { state: 'done'; prompt: string; agentType: 'pi' }) => void)
-      | undefined
-    if (!onTitleChange || !onAgentStatus) {
+    if (!onTitleChange) {
       throw new Error('missing remote PTY callbacks')
     }
-    onTitleChange('Pi ready', 'Pi ready')
-    onAgentStatus({
-      state: 'done',
-      prompt: '',
-      agentType: 'pi'
-    })
+    onTitleChange('✦ Gemini CLI', '✦ Gemini CLI')
 
-    expect(transport.sendInput).toHaveBeenCalledWith('pi \x17omp\r')
-    expect(deps.setRuntimePaneTitle).toHaveBeenCalledWith('tab-1', 1, 'OMP ready')
-    expect(mockStoreState.agentStatusByPaneKey[paneKey]).toMatchObject({
-      state: 'done',
-      agentType: 'omp',
-      terminalTitle: 'OMP ready'
-    })
-  })
-
-  it('keeps Pi-compatible remote runtime status as Pi after typed pi command', async () => {
-    const { connectPanePty } = await import('./pty-connection')
-    enableActiveRuntimeEnvironment()
-    const paneKey = makePaneKey('tab-1', LEAF_1)
-    const pane = createPane(1)
-    const transport = createMockTransport('remote:web-env-1@@pty-pi')
-    transportFactoryQueue.push(transport)
-    const manager = createManager(1, 1)
-    const deps = createDeps()
-
-    connectPanePty(pane as never, manager as never, deps as never)
-    sendTerminalInputThroughPane(pane, 'pi\r')
-    await flushAsyncTicks()
-    const onTitleChange = createdTransportOptions[0]?.onTitleChange as
-      | ((title: string, rawTitle: string) => void)
-      | undefined
-    const onAgentStatus = createdTransportOptions[0]?.onAgentStatus as
-      | ((payload: { state: 'done'; prompt: string; agentType: 'pi' }) => void)
-      | undefined
-    if (!onTitleChange || !onAgentStatus) {
-      throw new Error('missing remote PTY callbacks')
-    }
-    onTitleChange('Pi ready', 'Pi ready')
-    onAgentStatus({
-      state: 'done',
-      prompt: '',
-      agentType: 'pi'
-    })
-
-    expect(transport.sendInput).toHaveBeenCalledWith('pi\r')
-    expect(deps.setRuntimePaneTitle).toHaveBeenCalledWith('tab-1', 1, 'Pi ready')
-    expect(deps.updateTabTitle).toHaveBeenCalledWith('tab-1', 'Pi ready')
-    expect(mockStoreState.agentStatusByPaneKey[paneKey]).toMatchObject({
-      state: 'done',
-      agentType: 'pi',
-      terminalTitle: 'Pi ready'
-    })
+    expect(transport.sendInput).toHaveBeenCalledWith('codex \x17ls\r')
+    expect(manager.setPaneGpuRendering).toHaveBeenCalledWith(1, false)
   })
 
   it('does not infer shell ownership from prompts typed inside an existing Pi session', async () => {
@@ -2749,7 +2658,7 @@ describe('connectPanePty', () => {
     })
   })
 
-  it('lets a new typed omp command override a stale retained done status', async () => {
+  it('lets a new typed command override a stale retained done status', async () => {
     const { connectPanePty } = await import('./pty-connection')
     enableActiveRuntimeEnvironment()
     const paneKey = makePaneKey('tab-1', LEAF_1)
@@ -2757,9 +2666,9 @@ describe('connectPanePty', () => {
     mockStoreState.agentStatusByPaneKey[paneKey] = {
       state: 'done',
       prompt: '',
-      agentType: 'pi',
+      agentType: 'claude',
       paneKey,
-      terminalTitle: 'Pi ready',
+      terminalTitle: 'Claude Code',
       updatedAt: now,
       stateStartedAt: now,
       stateHistory: []
@@ -2771,36 +2680,25 @@ describe('connectPanePty', () => {
     const deps = createDeps()
 
     connectPanePty(pane as never, manager as never, deps as never)
-    sendTerminalInputThroughPane(pane, 'omp\r')
+    sendTerminalInputThroughPane(pane, 'codex\r')
     await flushAsyncTicks()
     const onTitleChange = createdTransportOptions[0]?.onTitleChange as
       | ((title: string, rawTitle: string) => void)
       | undefined
-    const onAgentStatus = createdTransportOptions[0]?.onAgentStatus as
-      | ((payload: { state: 'done'; prompt: string; agentType: 'pi' }) => void)
-      | undefined
-    if (!onTitleChange || !onAgentStatus) {
+    if (!onTitleChange) {
       throw new Error('missing remote PTY callbacks')
     }
-    onTitleChange('Pi ready', 'Pi ready')
-    onAgentStatus({
-      state: 'done',
-      prompt: '',
-      agentType: 'pi'
-    })
+    onTitleChange('✦ Gemini CLI', '✦ Gemini CLI')
 
-    expect(deps.setRuntimePaneTitle).toHaveBeenCalledWith('tab-1', 1, 'OMP ready')
-    expect(mockStoreState.agentStatusByPaneKey[paneKey]).toMatchObject({
-      state: 'done',
-      agentType: 'omp',
-      terminalTitle: 'OMP ready'
-    })
+    // A retained `done` row is not a live TUI, so it cannot suppress inference
+    // from the newly typed command — the fresh owner keeps the pane on GPU.
+    expect(manager.setPaneGpuRendering).toHaveBeenCalledWith(1, true)
+    expect(manager.setPaneGpuRendering).not.toHaveBeenCalledWith(1, false)
   })
 
-  it('tracks cursor edits when inferring a typed omp command', async () => {
+  it('tracks cursor edits when inferring a typed command', async () => {
     const { connectPanePty } = await import('./pty-connection')
     enableActiveRuntimeEnvironment()
-    const paneKey = makePaneKey('tab-1', LEAF_1)
     const pane = createPane(1)
     const transport = createMockTransport('remote:web-env-1@@pty-cursor-edit')
     transportFactoryQueue.push(transport)
@@ -2808,36 +2706,25 @@ describe('connectPanePty', () => {
     const deps = createDeps()
 
     connectPanePty(pane as never, manager as never, deps as never)
-    sendTerminalInputThroughPane(pane, 'op\x1b[Dm\r')
+    // `coex` with `d` inserted two columns back submits `codex`.
+    sendTerminalInputThroughPane(pane, 'coex\x1b[D\x1b[Dd\r')
     await flushAsyncTicks()
     const onTitleChange = createdTransportOptions[0]?.onTitleChange as
       | ((title: string, rawTitle: string) => void)
       | undefined
-    const onAgentStatus = createdTransportOptions[0]?.onAgentStatus as
-      | ((payload: { state: 'done'; prompt: string; agentType: 'pi' }) => void)
-      | undefined
-    if (!onTitleChange || !onAgentStatus) {
+    if (!onTitleChange) {
       throw new Error('missing remote PTY callbacks')
     }
-    onTitleChange('Pi ready', 'Pi ready')
-    onAgentStatus({
-      state: 'done',
-      prompt: '',
-      agentType: 'pi'
-    })
+    onTitleChange('✦ Gemini CLI', '✦ Gemini CLI')
 
-    expect(transport.sendInput).toHaveBeenCalledWith('op\x1b[Dm\r')
-    expect(mockStoreState.agentStatusByPaneKey[paneKey]).toMatchObject({
-      state: 'done',
-      agentType: 'omp',
-      terminalTitle: 'OMP ready'
-    })
+    expect(transport.sendInput).toHaveBeenCalledWith('coex\x1b[D\x1b[Dd\r')
+    expect(manager.setPaneGpuRendering).toHaveBeenCalledWith(1, true)
+    expect(manager.setPaneGpuRendering).not.toHaveBeenCalledWith(1, false)
   })
 
-  it('tracks delete-key cursor edits when inferring a typed omp command', async () => {
+  it('tracks delete-key cursor edits when inferring a typed command', async () => {
     const { connectPanePty } = await import('./pty-connection')
     enableActiveRuntimeEnvironment()
-    const paneKey = makePaneKey('tab-1', LEAF_1)
     const pane = createPane(1)
     const transport = createMockTransport('remote:web-env-1@@pty-delete-edit')
     transportFactoryQueue.push(transport)
@@ -2845,35 +2732,24 @@ describe('connectPanePty', () => {
     const deps = createDeps()
 
     connectPanePty(pane as never, manager as never, deps as never)
-    sendTerminalInputThroughPane(pane, 'ommp\x1b[D\x1b[D\x1b[3~\r')
+    // `coddex` minus the duplicated `d` under the cursor submits `codex`.
+    sendTerminalInputThroughPane(pane, 'coddex\x1b[D\x1b[D\x1b[D\x1b[3~\r')
     await flushAsyncTicks()
     const onTitleChange = createdTransportOptions[0]?.onTitleChange as
       | ((title: string, rawTitle: string) => void)
       | undefined
-    const onAgentStatus = createdTransportOptions[0]?.onAgentStatus as
-      | ((payload: { state: 'done'; prompt: string; agentType: 'pi' }) => void)
-      | undefined
-    if (!onTitleChange || !onAgentStatus) {
+    if (!onTitleChange) {
       throw new Error('missing remote PTY callbacks')
     }
-    onTitleChange('Pi ready', 'Pi ready')
-    onAgentStatus({
-      state: 'done',
-      prompt: '',
-      agentType: 'pi'
-    })
+    onTitleChange('✦ Gemini CLI', '✦ Gemini CLI')
 
-    expect(mockStoreState.agentStatusByPaneKey[paneKey]).toMatchObject({
-      state: 'done',
-      agentType: 'omp',
-      terminalTitle: 'OMP ready'
-    })
+    expect(manager.setPaneGpuRendering).toHaveBeenCalledWith(1, true)
+    expect(manager.setPaneGpuRendering).not.toHaveBeenCalledWith(1, false)
   })
 
   it('skips manual agent inference for large paste chunks', async () => {
     const { connectPanePty } = await import('./pty-connection')
     enableActiveRuntimeEnvironment()
-    const paneKey = makePaneKey('tab-1', LEAF_1)
     const pane = createPane(1)
     const transport = createMockTransport('remote:web-env-1@@pty-large-paste')
     transportFactoryQueue.push(transport)
@@ -2881,35 +2757,24 @@ describe('connectPanePty', () => {
     const deps = createDeps()
 
     connectPanePty(pane as never, manager as never, deps as never)
-    sendTerminalInputThroughPane(pane, `${'x'.repeat(4097)}omp\r`)
+    sendTerminalInputThroughPane(pane, `${'x'.repeat(4097)}codex\r`)
     await flushAsyncTicks()
     const onTitleChange = createdTransportOptions[0]?.onTitleChange as
       | ((title: string, rawTitle: string) => void)
       | undefined
-    const onAgentStatus = createdTransportOptions[0]?.onAgentStatus as
-      | ((payload: { state: 'done'; prompt: string; agentType: 'pi' }) => void)
-      | undefined
-    if (!onTitleChange || !onAgentStatus) {
+    if (!onTitleChange) {
       throw new Error('missing remote PTY callbacks')
     }
-    onTitleChange('Pi ready', 'Pi ready')
-    onAgentStatus({
-      state: 'done',
-      prompt: '',
-      agentType: 'pi'
-    })
+    onTitleChange('✦ Gemini CLI', '✦ Gemini CLI')
 
-    expect(mockStoreState.agentStatusByPaneKey[paneKey]).toMatchObject({
-      state: 'done',
-      agentType: 'pi',
-      terminalTitle: 'Pi ready'
-    })
+    // A pasted agent name never becomes ownership, so nothing vetoes the
+    // Gemini-looking title's DOM fallback.
+    expect(manager.setPaneGpuRendering).toHaveBeenCalledWith(1, false)
   })
 
   it('resumes manual agent inference when large paste input is cancelled', async () => {
     const { connectPanePty } = await import('./pty-connection')
     enableActiveRuntimeEnvironment()
-    const paneKey = makePaneKey('tab-1', LEAF_1)
     const pane = createPane(1)
     const transport = createMockTransport('remote:web-env-1@@pty-cancelled-large-paste')
     transportFactoryQueue.push(transport)
@@ -2919,35 +2784,25 @@ describe('connectPanePty', () => {
     connectPanePty(pane as never, manager as never, deps as never)
     sendTerminalInputThroughPane(pane, 'x'.repeat(4097))
     sendTerminalInputThroughPane(pane, '\x03')
-    sendTerminalInputThroughPane(pane, 'omp\r')
+    sendTerminalInputThroughPane(pane, 'codex\r')
     await flushAsyncTicks()
     const onTitleChange = createdTransportOptions[0]?.onTitleChange as
       | ((title: string, rawTitle: string) => void)
       | undefined
-    const onAgentStatus = createdTransportOptions[0]?.onAgentStatus as
-      | ((payload: { state: 'done'; prompt: string; agentType: 'pi' }) => void)
-      | undefined
-    if (!onTitleChange || !onAgentStatus) {
+    if (!onTitleChange) {
       throw new Error('missing remote PTY callbacks')
     }
-    onTitleChange('Pi ready', 'Pi ready')
-    onAgentStatus({
-      state: 'done',
-      prompt: '',
-      agentType: 'pi'
-    })
+    onTitleChange('✦ Gemini CLI', '✦ Gemini CLI')
 
-    expect(mockStoreState.agentStatusByPaneKey[paneKey]).toMatchObject({
-      state: 'done',
-      agentType: 'omp',
-      terminalTitle: 'OMP ready'
-    })
+    // Interrupting the paste re-arms inference, so the typed owner vetoes the
+    // Gemini-looking title's DOM fallback.
+    expect(manager.setPaneGpuRendering).toHaveBeenCalledWith(1, true)
+    expect(manager.setPaneGpuRendering).not.toHaveBeenCalledWith(1, false)
   })
 
   it('preserves typed shell ownership through same-chunk command-finished side effects', async () => {
     const { connectPanePty } = await import('./pty-connection')
     enableActiveRuntimeEnvironment()
-    const paneKey = makePaneKey('tab-1', LEAF_1)
     const dataCallbackRef: { current: ((data: string) => void) | null } = { current: null }
     const pane = createPane(1)
     const transport = createMockTransport('remote:env-1@@pty-command-finished')
@@ -2962,31 +2817,22 @@ describe('connectPanePty', () => {
     const deps = createDeps()
 
     connectPanePty(pane as never, manager as never, deps as never)
-    sendTerminalInputThroughPane(pane, 'omp\r')
+    sendTerminalInputThroughPane(pane, 'codex\r')
     await flushAsyncTicks()
     const onTitleChange = createdTransportOptions[0]?.onTitleChange as
       | ((title: string, rawTitle: string) => void)
       | undefined
-    const onAgentStatus = createdTransportOptions[0]?.onAgentStatus as
-      | ((payload: { state: 'done'; prompt: string; agentType: 'pi' }) => void)
-      | undefined
     const dataCallback = dataCallbackRef.current
-    if (!dataCallback || !onTitleChange || !onAgentStatus) {
+    if (!dataCallback || !onTitleChange) {
       throw new Error('missing remote PTY callbacks')
     }
+    // A command-finished boundary in the same chunk defers ownership cleanup, so
+    // the typed owner still vetoes the Gemini-looking title's DOM fallback.
     dataCallback('\x1b]133;D;0\x07')
-    onTitleChange('Pi ready', 'Pi ready')
-    onAgentStatus({
-      state: 'done',
-      prompt: '',
-      agentType: 'pi'
-    })
+    onTitleChange('✦ Gemini CLI', '✦ Gemini CLI')
 
-    expect(mockStoreState.agentStatusByPaneKey[paneKey]).toMatchObject({
-      state: 'done',
-      agentType: 'omp',
-      terminalTitle: 'OMP ready'
-    })
+    expect(manager.setPaneGpuRendering).toHaveBeenCalledWith(1, true)
+    expect(manager.setPaneGpuRendering).not.toHaveBeenCalledWith(1, false)
   })
 
   it('queues visible bulk output off the synchronous xterm write path', async () => {
@@ -6819,16 +6665,16 @@ describe('connectPanePty', () => {
     expect(mockStoreState.dropAgentStatus).not.toHaveBeenCalled()
   })
 
-  it('routes a manually typed Droid only after foreground enrichment confirms it', async () => {
+  it('routes a manually typed agent only after foreground enrichment confirms it', async () => {
     vi.useFakeTimers()
     const { connectPanePty } = await import('./pty-connection')
     const dataCallbackRef: { current: ((data: string) => void) | null } = { current: null }
     const pane = createPane(1)
-    const ptyId = 'pty-manually-typed-droid'
-    const tabId = 'tab-manually-typed-droid'
-    const foregroundResults = ['powershell.exe', 'droid']
+    const ptyId = 'pty-manually-typed-agent'
+    const tabId = 'tab-manually-typed-agent'
+    const foregroundResults = ['powershell.exe', 'claude']
     vi.mocked(window.api.pty.confirmForegroundProcess).mockImplementation(async (id: string) =>
-      id === ptyId ? (foregroundResults.shift() ?? 'droid') : null
+      id === ptyId ? (foregroundResults.shift() ?? 'claude') : null
     )
     const transport = createMockTransport(ptyId)
     transport.connect.mockImplementation(async ({ callbacks }: { callbacks: ConnectCallbacks }) => {
@@ -6846,28 +6692,28 @@ describe('connectPanePty', () => {
     await vi.advanceTimersByTimeAsync(20)
     await flushAsyncTicks()
 
-    sendTerminalInputThroughPane(pane, 'droid\r')
-    expect(resolveMockPaneWindowsShiftEnterEncoding(mockStoreState, paneKey)).toBe('alt-enter')
+    sendTerminalInputThroughPane(pane, 'claude\r')
+    expect(mockStoreState.paneForegroundAgentByPaneKey[paneKey]?.agent).toBeFalsy()
 
     dataCallbackRef.current?.('\x1b]133;C\x07')
-    expect(resolveMockPaneWindowsShiftEnterEncoding(mockStoreState, paneKey)).toBe('alt-enter')
     await vi.advanceTimersByTimeAsync(350)
-    expect(resolveMockPaneWindowsShiftEnterEncoding(mockStoreState, paneKey)).toBe('alt-enter')
+    // The first read still sees the shell, so typed text alone never routes.
+    expect(mockStoreState.paneForegroundAgentByPaneKey[paneKey]?.agent).toBeFalsy()
     await vi.advanceTimersByTimeAsync(1200)
     expect(mockStoreState.paneForegroundAgentByPaneKey[paneKey]).toEqual({
-      agent: 'droid',
+      agent: 'claude',
       routingTrusted: true,
       shellForeground: false
     })
   })
 
-  it('confirms a manually typed Droid without OSC command boundaries', async () => {
+  it('confirms a manually typed agent without OSC command boundaries', async () => {
     vi.useFakeTimers()
     const { connectPanePty } = await import('./pty-connection')
-    vi.mocked(window.api.pty.confirmForegroundProcess).mockResolvedValue('droid')
+    vi.mocked(window.api.pty.confirmForegroundProcess).mockResolvedValue('claude')
     const pane = createPane(1)
-    const ptyId = 'pty-manual-droid-no-osc'
-    const tabId = 'tab-manual-droid-no-osc'
+    const ptyId = 'pty-manual-agent-no-osc'
+    const tabId = 'tab-manual-agent-no-osc'
     const paneKey = makePaneKey(tabId, LEAF_1)
     transportFactoryQueue.push(createMockTransport(ptyId))
 
@@ -6879,29 +6725,28 @@ describe('connectPanePty', () => {
     await vi.advanceTimersByTimeAsync(20)
     await flushAsyncTicks()
 
-    sendTerminalInputThroughPane(pane, 'droid\r')
-    expect(resolveMockPaneWindowsShiftEnterEncoding(mockStoreState, paneKey)).toBe('alt-enter')
+    sendTerminalInputThroughPane(pane, 'claude\r')
+    expect(mockStoreState.paneForegroundAgentByPaneKey[paneKey]?.agent).toBeFalsy()
 
     await vi.advanceTimersByTimeAsync(350)
 
     expect(window.api.pty.confirmForegroundProcess).toHaveBeenCalledWith(ptyId)
     expect(mockStoreState.paneForegroundAgentByPaneKey[paneKey]).toEqual({
-      agent: 'droid',
+      agent: 'claude',
       routingTrusted: true,
       shellForeground: false
     })
-    expect(resolveMockPaneWindowsShiftEnterEncoding(mockStoreState, paneKey)).toBe('csi-u')
   })
 
-  it('confirms an Orca-launched Droid fresh spawn in a no-OSC shell (Git Bash)', async () => {
-    // Why: no-OSC shells (Git Bash/cmd) emit no command boundary, so without a fresh-spawn sample the pane never earns routing trust and Shift+Enter regresses to Esc+CR (#7620).
+  it('confirms an Orca-launched agent fresh spawn in a no-OSC shell (Git Bash)', async () => {
+    // Why: no-OSC shells (Git Bash/cmd) emit no command boundary, so without a fresh-spawn sample the pane never earns routing trust (#7620).
     vi.useFakeTimers()
     const { connectPanePty } = await import('./pty-connection')
-    vi.mocked(window.api.pty.getForegroundProcess).mockResolvedValue('droid')
-    vi.mocked(window.api.pty.confirmForegroundProcess).mockResolvedValue('droid')
+    vi.mocked(window.api.pty.getForegroundProcess).mockResolvedValue('claude')
+    vi.mocked(window.api.pty.confirmForegroundProcess).mockResolvedValue('claude')
     const pane = createPane(1)
-    const ptyId = 'pty-launched-droid-no-osc'
-    const tabId = 'tab-launched-droid-no-osc'
+    const ptyId = 'pty-launched-agent-no-osc'
+    const tabId = 'tab-launched-agent-no-osc'
     const paneKey = makePaneKey(tabId, LEAF_1)
     transportFactoryQueue.push(createMockTransport(ptyId))
 
@@ -6910,7 +6755,7 @@ describe('connectPanePty', () => {
       createManager(1) as never,
       createDeps({
         tabId,
-        startup: { command: 'droid', launchAgent: 'droid' }
+        startup: { command: 'claude', launchAgent: 'claude' }
       }) as never
     )
     await vi.advanceTimersByTimeAsync(20)
@@ -6919,37 +6764,36 @@ describe('connectPanePty', () => {
     const onPtySpawn = createdTransportOptions[0]?.onPtySpawn as ((id: string) => void) | undefined
     expect(onPtySpawn).toBeTypeOf('function')
     onPtySpawn?.(ptyId)
-    // Span the bounded confirmation retry ladder while Droid boots.
+    // Span the bounded confirmation retry ladder while the agent boots.
     await vi.advanceTimersByTimeAsync(350 + 1200 + 6000)
     await flushAsyncTicks()
 
     expect(window.api.pty.confirmForegroundProcess).toHaveBeenCalledWith(ptyId)
     expect(mockStoreState.paneForegroundAgentByPaneKey[paneKey]).toEqual({
-      agent: 'droid',
+      agent: 'claude',
       routingTrusted: true,
       shellForeground: false
     })
-    expect(resolveMockPaneWindowsShiftEnterEncoding(mockStoreState, paneKey)).toBe('csi-u')
   })
 
-  it('trusts a launched Droid whose no-OSC boot only becomes foreground after retries', async () => {
-    // Why: the confirmation ladder must span Droid's boot — the shell is still foreground on the first read(s) before Droid takes over.
+  it('trusts a launched agent whose no-OSC boot only becomes foreground after retries', async () => {
+    // Why: the confirmation ladder must span the agent's boot — the shell is still foreground on the first read(s) before the agent takes over.
     vi.useFakeTimers()
     const { connectPanePty } = await import('./pty-connection')
-    const foregroundResults = ['bash.exe', 'bash.exe', 'droid']
+    const foregroundResults = ['bash.exe', 'bash.exe', 'claude']
     vi.mocked(window.api.pty.confirmForegroundProcess).mockImplementation(
-      async () => foregroundResults.shift() ?? 'droid'
+      async () => foregroundResults.shift() ?? 'claude'
     )
     const pane = createPane(1)
-    const ptyId = 'pty-launched-droid-slow-boot'
-    const tabId = 'tab-launched-droid-slow-boot'
+    const ptyId = 'pty-launched-agent-slow-boot'
+    const tabId = 'tab-launched-agent-slow-boot'
     const paneKey = makePaneKey(tabId, LEAF_1)
     transportFactoryQueue.push(createMockTransport(ptyId))
 
     connectPanePty(
       pane as never,
       createManager(1) as never,
-      createDeps({ tabId, startup: { command: 'droid', launchAgent: 'droid' } }) as never
+      createDeps({ tabId, startup: { command: 'claude', launchAgent: 'claude' } }) as never
     )
     await vi.advanceTimersByTimeAsync(20)
     await flushAsyncTicks()
@@ -6959,94 +6803,54 @@ describe('connectPanePty', () => {
     await flushAsyncTicks()
 
     expect(mockStoreState.paneForegroundAgentByPaneKey[paneKey]).toEqual({
-      agent: 'droid',
+      agent: 'claude',
       routingTrusted: true,
       shellForeground: false
     })
-    expect(resolveMockPaneWindowsShiftEnterEncoding(mockStoreState, paneKey)).toBe('csi-u')
   })
 
-  it('stays recoverable when a launched Droid outlasts the fresh-spawn confirmation window', async () => {
-    // Why: a missed ladder (slow boot) must stay recoverable — latching a shell-confirm would clear launch identity and poison Shift+Enter for the session.
+  it('stays recoverable when a launched agent outlasts the fresh-spawn confirmation window', async () => {
+    // Why: a missed ladder (slow boot) must stay recoverable — latching a shell-confirm would clear launch identity and poison routing for the session.
     vi.useFakeTimers()
     const { connectPanePty } = await import('./pty-connection')
     let foreground = 'bash.exe'
     vi.mocked(window.api.pty.confirmForegroundProcess).mockImplementation(async () => foreground)
     const pane = createPane(1)
-    const ptyId = 'pty-launched-droid-slow'
-    const tabId = 'tab-launched-droid-slow'
+    const ptyId = 'pty-launched-agent-slow'
+    const tabId = 'tab-launched-agent-slow'
     const paneKey = makePaneKey(tabId, LEAF_1)
     transportFactoryQueue.push(createMockTransport(ptyId))
 
     const binding = connectPanePty(
       pane as never,
       createManager(1) as never,
-      createDeps({ tabId, startup: { command: 'droid', launchAgent: 'droid' } }) as never
+      createDeps({ tabId, startup: { command: 'claude', launchAgent: 'claude' } }) as never
     ) as unknown as { sampleForegroundAgentOnFocus: () => void }
     await vi.advanceTimersByTimeAsync(20)
     await flushAsyncTicks()
     const onPtySpawn = createdTransportOptions[0]?.onPtySpawn as ((id: string) => void) | undefined
     onPtySpawn?.(ptyId)
-    // Whole ladder elapses while the shell is still foreground (Droid not up yet).
+    // Whole ladder elapses while the shell is still foreground (agent not up yet).
     await vi.advanceTimersByTimeAsync(350 + 1200 + 6000)
     await flushAsyncTicks()
 
-    // Benign miss: shell never latched as foreground; encoding still safe fallback.
+    // Benign miss: shell never latched as foreground, so trust stays reachable.
     expect(mockStoreState.paneForegroundAgentByPaneKey[paneKey]).toEqual({
       agent: null,
       shellForeground: false
     })
-    expect(resolveMockPaneWindowsShiftEnterEncoding(mockStoreState, paneKey)).toBe('alt-enter')
 
-    // Droid finally boots and a focus event re-samples: trust is recoverable.
-    foreground = 'droid'
+    // The agent finally boots and a focus event re-samples: trust is recoverable.
+    foreground = 'claude'
     binding.sampleForegroundAgentOnFocus()
     await vi.advanceTimersByTimeAsync(350 + 1200 + 6000)
     await flushAsyncTicks()
 
     expect(mockStoreState.paneForegroundAgentByPaneKey[paneKey]).toEqual({
-      agent: 'droid',
+      agent: 'claude',
       routingTrusted: true,
       shellForeground: false
     })
-    expect(resolveMockPaneWindowsShiftEnterEncoding(mockStoreState, paneKey)).toBe('csi-u')
-  })
-
-  it('revokes trusted Droid after accepted no-OSC exit input until shell confirmation', async () => {
-    vi.useFakeTimers()
-    const { connectPanePty } = await import('./pty-connection')
-    vi.mocked(window.api.pty.confirmForegroundProcess).mockResolvedValue('cmd.exe')
-    const pane = createPane(1)
-    const ptyId = 'pty-droid-exit-no-osc'
-    const tabId = 'tab-droid-exit-no-osc'
-    const paneKey = makePaneKey(tabId, LEAF_1)
-    transportFactoryQueue.push(createMockTransport(ptyId))
-
-    connectPanePty(pane as never, createManager(1) as never, createDeps({ tabId }) as never)
-    await vi.advanceTimersByTimeAsync(20)
-    await flushAsyncTicks()
-    mockStoreState.paneForegroundAgentByPaneKey[paneKey] = {
-      agent: 'droid',
-      routingTrusted: true,
-      shellForeground: false
-    }
-
-    sendTerminalInputThroughPane(pane, '\x03')
-    await flushAsyncTicks()
-
-    expect(mockStoreState.paneForegroundAgentByPaneKey[paneKey]).toEqual({
-      agent: 'droid',
-      shellForeground: false
-    })
-    expect(resolveMockPaneWindowsShiftEnterEncoding(mockStoreState, paneKey)).toBe('alt-enter')
-
-    await vi.advanceTimersByTimeAsync(350 + 1200 + 6000)
-
-    expect(mockStoreState.paneForegroundAgentByPaneKey[paneKey]).toEqual({
-      agent: null,
-      shellForeground: true
-    })
-    expect(resolveMockPaneWindowsShiftEnterEncoding(mockStoreState, paneKey)).toBe('alt-enter')
   })
 
   it('never promotes typed Droid text when foreground enrichment is unavailable', async () => {
@@ -7089,143 +6893,6 @@ describe('connectPanePty', () => {
     await vi.advanceTimersByTimeAsync(1)
 
     expect(resolveMockPaneWindowsShiftEnterEncoding(mockStoreState, paneKey)).toBe('alt-enter')
-  })
-
-  it.each(['process', 'launch'] as const)(
-    'does not let typed Droid input replace another live TUI %s identity',
-    async (identitySource) => {
-      vi.useFakeTimers()
-      const { connectPanePty } = await import('./pty-connection')
-      const dataCallbackRef: { current: ((data: string) => void) | null } = { current: null }
-      const pane = createPane(1)
-      const ptyId = `pty-antigravity-${identitySource}-typed-droid`
-      const tabId = `tab-antigravity-${identitySource}-typed-droid`
-      const paneKey = makePaneKey(tabId, LEAF_1)
-      const transport = createMockTransport(ptyId)
-      transport.connect.mockImplementation(
-        async ({ callbacks }: { callbacks: ConnectCallbacks }) => {
-          dataCallbackRef.current = callbacks.onData ?? null
-          return { id: ptyId }
-        }
-      )
-      transportFactoryQueue.push(transport)
-
-      connectPanePty(
-        pane as never,
-        createManager(1) as never,
-        createDeps({ tabId, isVisibleRef: { current: false } }) as never
-      )
-      await vi.advanceTimersByTimeAsync(20)
-      await flushAsyncTicks()
-      if (identitySource === 'process') {
-        mockStoreState.paneForegroundAgentByPaneKey[paneKey] = {
-          agent: 'antigravity',
-          shellForeground: false
-        }
-      } else {
-        mockStoreState.agentLaunchConfigByPaneKey[paneKey] = {
-          launchConfig: { agentArgs: '', agentEnv: {} },
-          identity: { agentType: 'antigravity' }
-        }
-      }
-
-      sendTerminalInputThroughPane(pane, 'droid\r')
-      dataCallbackRef.current?.('\x1b]133;C\x07')
-
-      expect(mockStoreState.paneForegroundAgentByPaneKey[paneKey]).toEqual({
-        agent: null,
-        shellForeground: false
-      })
-      expect(resolveMockPaneWindowsShiftEnterEncoding(mockStoreState, paneKey)).toBe('alt-enter')
-    }
-  )
-
-  it.each([
-    ['SSH', 'ssh:conn@@pty-typed-droid', 'tab-ssh-typed-droid'],
-    ['remote runtime', 'remote:web-env-1@@pty-typed-droid', 'tab-remote-typed-droid']
-  ])(
-    'does not persist typed command process evidence for %s panes',
-    async (_label, ptyId, tabId) => {
-      vi.useFakeTimers()
-      const { connectPanePty } = await import('./pty-connection')
-      const dataCallbackRef: { current: ((data: string) => void) | null } = { current: null }
-      const pane = createPane(1)
-      const paneKey = makePaneKey(tabId, LEAF_1)
-      const transport = createMockTransport(ptyId)
-      transport.connect.mockImplementation(
-        async ({ callbacks }: { callbacks: ConnectCallbacks }) => {
-          dataCallbackRef.current = callbacks.onData ?? null
-          return { id: ptyId }
-        }
-      )
-      transportFactoryQueue.push(transport)
-
-      connectPanePty(
-        pane as never,
-        createManager(1) as never,
-        createDeps({ tabId, isVisibleRef: { current: false } }) as never
-      )
-      await vi.advanceTimersByTimeAsync(20)
-      await flushAsyncTicks()
-
-      sendTerminalInputThroughPane(pane, 'droid\r')
-      dataCallbackRef.current?.('\x1b]133;C\x07\x1b]133;D;0\x07')
-
-      expect(mockStoreState.paneForegroundAgentByPaneKey[paneKey]).toBeUndefined()
-      expect(mockStoreState.setPaneForegroundAgent).not.toHaveBeenCalledWith(
-        paneKey,
-        expect.anything()
-      )
-    }
-  )
-
-  it('keeps Droid routing visible through command-finished foreground confirmation', async () => {
-    vi.useFakeTimers()
-    const { connectPanePty } = await import('./pty-connection')
-    const getForegroundProcess = vi.mocked(window.api.pty.confirmForegroundProcess)
-    getForegroundProcess.mockResolvedValue('droid')
-    const dataCallbackRef: { current: ((data: string) => void) | null } = { current: null }
-    const ptyId = 'pty-droid-confirmation-window'
-    const transport = createMockTransport(ptyId)
-    transport.connect.mockImplementation(async ({ callbacks }: { callbacks: ConnectCallbacks }) => {
-      dataCallbackRef.current = callbacks.onData ?? null
-      return { id: ptyId }
-    })
-    transportFactoryQueue.push(transport)
-    const paneKey = makePaneKey('tab-1', LEAF_1)
-
-    connectPanePty(
-      createPane(1) as never,
-      createManager(1) as never,
-      createDeps({ isVisibleRef: { current: false } }) as never
-    )
-    await vi.advanceTimersByTimeAsync(20)
-    await flushAsyncTicks()
-    mockStoreState.agentLaunchConfigByPaneKey[paneKey] = {
-      launchConfig: { agentArgs: '', agentEnv: {} },
-      identity: { agentType: 'droid' }
-    }
-    mockStoreState.clearAgentLaunchConfig.mockImplementation((key: string) => {
-      delete mockStoreState.agentLaunchConfigByPaneKey[key]
-    })
-
-    const readsBeforeFinish = getForegroundProcess.mock.calls.length
-    dataCallbackRef.current?.('\x1b]133;D;0\x07')
-    expect(mockStoreState.clearAgentLaunchConfig).not.toHaveBeenCalled()
-    expect(resolveMockPaneWindowsShiftEnterEncoding(mockStoreState, paneKey)).toBe('alt-enter')
-
-    await vi.advanceTimersByTimeAsync(350)
-    expect(mockStoreState.clearAgentLaunchConfig).not.toHaveBeenCalled()
-    expect(resolveMockPaneWindowsShiftEnterEncoding(mockStoreState, paneKey)).toBe('csi-u')
-
-    expect(getForegroundProcess).toHaveBeenCalledTimes(readsBeforeFinish + 1)
-    expect(mockStoreState.clearAgentLaunchConfig).not.toHaveBeenCalled()
-    expect(mockStoreState.paneForegroundAgentByPaneKey[paneKey]).toEqual({
-      agent: 'droid',
-      routingTrusted: true,
-      shellForeground: false
-    })
-    expect(resolveMockPaneWindowsShiftEnterEncoding(mockStoreState, paneKey)).toBe('csi-u')
   })
 
   it('retires pane launch routing after one fresh scan confirms shell', async () => {
@@ -7292,7 +6959,7 @@ describe('connectPanePty', () => {
     await flushAsyncTicks()
     mockStoreState.agentLaunchConfigByPaneKey[paneKey] = {
       launchConfig: { agentArgs: '', agentEnv: {} },
-      identity: { agentType: 'droid' }
+      identity: { agentType: 'claude' }
     }
 
     // A SIGKILLed agent emits no mode teardown; only the shell's next prompt
@@ -7314,7 +6981,7 @@ describe('connectPanePty', () => {
   it('keeps armed modes while the agent still owns the foreground after a leaked 133;D', async () => {
     vi.useFakeTimers()
     const { connectPanePty } = await import('./pty-connection')
-    vi.mocked(window.api.pty.confirmForegroundProcess).mockResolvedValue('droid')
+    vi.mocked(window.api.pty.confirmForegroundProcess).mockResolvedValue('claude')
     const dataCallbackRef: { current: ((data: string) => void) | null } = { current: null }
     const ptyId = 'pty-stale-mode-live-agent'
     const transport = createMockTransport(ptyId)
@@ -7336,7 +7003,7 @@ describe('connectPanePty', () => {
     await flushAsyncTicks()
     mockStoreState.agentLaunchConfigByPaneKey[paneKey] = {
       launchConfig: { agentArgs: '', agentEnv: {} },
-      identity: { agentType: 'droid' }
+      identity: { agentType: 'claude' }
     }
 
     // A full-screen agent's nested command shell leaks a 133;D onto the main
@@ -7354,8 +7021,8 @@ describe('connectPanePty', () => {
     const { connectPanePty } = await import('./pty-connection')
     vi.mocked(window.api.pty.confirmForegroundProcess).mockResolvedValue(null)
     const dataCallbackRef: { current: ((data: string) => void) | null } = { current: null }
-    const ptyId = 'pty-droid-unavailable-finish'
-    const tabId = 'tab-droid-unavailable-finish'
+    const ptyId = 'pty-agent-unavailable-finish'
+    const tabId = 'tab-agent-unavailable-finish'
     const transport = createMockTransport(ptyId)
     transport.connect.mockImplementation(async ({ callbacks }: { callbacks: ConnectCallbacks }) => {
       dataCallbackRef.current = callbacks.onData ?? null
@@ -7373,7 +7040,7 @@ describe('connectPanePty', () => {
     await flushAsyncTicks()
     mockStoreState.agentLaunchConfigByPaneKey[paneKey] = {
       launchConfig: { agentArgs: '', agentEnv: {} },
-      identity: { agentType: 'droid' }
+      identity: { agentType: 'claude' }
     }
     mockStoreState.clearAgentLaunchConfig.mockImplementation((key: string) => {
       delete mockStoreState.agentLaunchConfigByPaneKey[key]
@@ -7395,7 +7062,7 @@ describe('connectPanePty', () => {
     const { connectPanePty } = await import('./pty-connection')
     vi.mocked(window.api.pty.confirmForegroundProcess).mockResolvedValue('powershell.exe')
     const dataCallbackRef: { current: ((data: string) => void) | null } = { current: null }
-    const ptyId = 'pty-droid-superseded-confirmation'
+    const ptyId = 'pty-agent-superseded-confirmation'
     const transport = createMockTransport(ptyId)
     transport.connect.mockImplementation(async ({ callbacks }: { callbacks: ConnectCallbacks }) => {
       dataCallbackRef.current = callbacks.onData ?? null
@@ -7412,7 +7079,7 @@ describe('connectPanePty', () => {
     await flushAsyncTicks()
     mockStoreState.agentLaunchConfigByPaneKey[paneKey] = {
       launchConfig: { agentArgs: '', agentEnv: {} },
-      identity: { agentType: 'droid' }
+      identity: { agentType: 'claude' }
     }
     mockStoreState.clearAgentLaunchConfig.mockImplementation((key: string) => {
       delete mockStoreState.agentLaunchConfigByPaneKey[key]
@@ -12273,7 +11940,7 @@ describe('connectPanePty', () => {
     binding.dispose()
   })
 
-  it('keeps hidden Grok telemetry startup output parsing briefly', async () => {
+  it('keeps hidden agent telemetry startup output parsing briefly', async () => {
     const { connectPanePty } = await import('./pty-connection')
     const transport = createMockTransport('pty-id')
     const capturedDataCallback: { current: ((data: string) => void) | null } = { current: null }
@@ -12293,7 +11960,7 @@ describe('connectPanePty', () => {
         startup: {
           command: 'wrapped-agent',
           telemetry: {
-            agent_kind: 'grok',
+            agent_kind: 'claude-code',
             launch_source: 'tab_bar_quick_launch',
             request_kind: 'new'
           }
@@ -12352,7 +12019,7 @@ describe('connectPanePty', () => {
     binding.dispose()
   })
 
-  it('keeps hidden bare Grok startup commands parsing briefly', async () => {
+  it('keeps hidden pathed agent startup commands parsing briefly', async () => {
     const { connectPanePty } = await import('./pty-connection')
     const transport = createMockTransport('pty-id')
     const capturedDataCallback: { current: ((data: string) => void) | null } = { current: null }
@@ -12369,7 +12036,7 @@ describe('connectPanePty', () => {
       manager as never,
       createDeps({
         isVisibleRef: { current: false },
-        startup: { command: '/Users/me/.grok/bin/grok --permission-mode bypassPermissions' }
+        startup: { command: '/Users/me/.claude/bin/claude --permission-mode bypassPermissions' }
       }) as never
     )
     await flushAsyncTicks(6)
@@ -19243,116 +18910,6 @@ describe('connectPanePty', () => {
     expect(deps.updateTabTitle).toHaveBeenCalledWith('tab-1', 'Codex - action required')
   })
 
-  it('normalizes Pi-compatible remote titles to authoritative OMP launch identity', async () => {
-    const { connectPanePty } = await import('./pty-connection')
-    const transport = createMockTransport('pty-omp')
-    transportFactoryQueue.push(transport)
-    enableActiveRuntimeEnvironment()
-    mockStoreState.tabsByWorktree = {
-      'wt-1': [{ id: 'tab-1', ptyId: 'tab-pty', launchAgent: 'omp' }]
-    }
-    mockStoreState.runtimePaneTitlesByTabId = { 'tab-1': { 1: '\u280b Pi' } }
-
-    const pane = createPane(1)
-    const manager = createManager(1)
-    manager.getActivePane.mockReturnValue({ id: 1 })
-    const deps = createDeps()
-
-    connectPanePty(pane as never, manager as never, deps as never)
-
-    const titleHandler = createdTransportOptions[0]?.onTitleChange as
-      | ((title: string, rawTitle: string) => void)
-      | undefined
-    if (!titleHandler) {
-      throw new Error('Expected onTitleChange to be registered')
-    }
-    titleHandler('\u280b Pi', '\u280b Pi')
-    expect(deps.setRuntimePaneTitle).toHaveBeenCalledWith('tab-1', 1, '\u280b OMP')
-    expect(deps.updateTabTitle).toHaveBeenCalledWith('tab-1', '\u280b OMP')
-    titleHandler('π: tmp', 'π: tmp')
-    expect(deps.setRuntimePaneTitle).toHaveBeenLastCalledWith('tab-1', 1, 'OMP ready')
-    expect(deps.updateTabTitle).toHaveBeenLastCalledWith('tab-1', 'OMP ready')
-
-    const statusHandler = createdTransportOptions[0]?.onAgentStatus as
-      | ((payload: { state: 'working'; prompt: string; agentType: 'pi' }) => void)
-      | undefined
-    if (!statusHandler) {
-      throw new Error('Expected onAgentStatus to be registered')
-    }
-
-    statusHandler({
-      state: 'working',
-      prompt: 'fix the remote title',
-      agentType: 'pi'
-    })
-
-    expect(mockStoreState.setAgentStatus).toHaveBeenCalledWith(
-      makePaneKey('tab-1', LEAF_1),
-      {
-        state: 'working',
-        prompt: 'fix the remote title',
-        agentType: 'omp'
-      },
-      '\u280b OMP',
-      undefined,
-      { connectionId: null }
-    )
-
-    mockStoreState.tabsByWorktree = {
-      'wt-1': [{ id: 'tab-1', ptyId: 'tab-pty' }]
-    }
-    statusHandler({
-      state: 'working',
-      prompt: 'keep the remote title',
-      agentType: 'pi'
-    })
-
-    expect(mockStoreState.setAgentStatus).toHaveBeenLastCalledWith(
-      makePaneKey('tab-1', LEAF_1),
-      {
-        state: 'working',
-        prompt: 'keep the remote title',
-        agentType: 'omp'
-      },
-      '\u280b OMP',
-      undefined,
-      { connectionId: null }
-    )
-  })
-
-  it('keeps GPU rendering enabled for OMP titles whose cwd is Gemini', async () => {
-    const { connectPanePty } = await import('./pty-connection')
-    const transport = createMockTransport('pty-omp-gemini-cwd')
-    transportFactoryQueue.push(transport)
-    enableActiveRuntimeEnvironment()
-    mockStoreState.tabsByWorktree = {
-      'wt-1': [{ id: 'tab-1', ptyId: 'tab-pty', launchAgent: 'omp' }]
-    }
-
-    const pane = createPane(1)
-    const manager = createManager(1)
-    manager.getActivePane.mockReturnValue({ id: 1 })
-    const deps = createDeps()
-
-    connectPanePty(pane as never, manager as never, deps as never)
-
-    const titleHandler = createdTransportOptions[0]?.onTitleChange as
-      | ((title: string, rawTitle: string) => void)
-      | undefined
-    if (!titleHandler) {
-      throw new Error('Expected onTitleChange to be registered')
-    }
-
-    manager.setPaneGpuRendering.mockClear()
-
-    titleHandler('\u280b Pi', '\u280b π: gemini')
-
-    expect(manager.setPaneGpuRendering).toHaveBeenCalledTimes(1)
-    expect(manager.setPaneGpuRendering).toHaveBeenCalledWith(1, true)
-    expect(deps.setRuntimePaneTitle).toHaveBeenCalledWith('tab-1', 1, '\u280b OMP')
-    expect(deps.updateTabTitle).toHaveBeenCalledWith('tab-1', '\u280b OMP')
-  })
-
   it('leaves local IPC OSC 9999 status ownership in the main runtime', async () => {
     const { connectPanePty } = await import('./pty-connection')
     const transport = createMockTransport('pty-local')
@@ -22303,7 +21860,7 @@ describe('connectPanePty', () => {
           tabId
         })
         mockStoreState.paneForegroundAgentByPaneKey[cacheKey] = {
-          agent: 'droid',
+          agent: 'codex',
           routingTrusted: true,
           shellForeground: false
         }
@@ -22316,61 +21873,6 @@ describe('connectPanePty', () => {
       } finally {
         restoreUserAgent()
       }
-    })
-
-    it('keeps trusted Droid routing through a rapid Shift+Enter burst', async () => {
-      vi.useFakeTimers()
-      const ptyId = 'pty-droid-shift-enter-burst'
-      const tabId = `tab-${ptyId}`
-      const { binding, cacheKey } = await connectRestoredPaneForForegroundSampling({
-        ptyId,
-        tabId
-      })
-      mockStoreState.paneForegroundAgentByPaneKey[cacheKey] = {
-        agent: 'droid',
-        routingTrusted: true,
-        shellForeground: false
-      }
-      mockStoreState.agentStatusByPaneKey[cacheKey] = {
-        state: 'working',
-        agentType: 'droid'
-      }
-      vi.mocked(window.api.pty.confirmForegroundProcess).mockResolvedValue('droid')
-
-      binding.requestDroidReconfirmation()
-      await vi.advanceTimersByTimeAsync(200)
-      binding.requestDroidReconfirmation()
-      await vi.advanceTimersByTimeAsync(349)
-
-      expect(mockStoreState.paneForegroundAgentByPaneKey[cacheKey]).toEqual({
-        agent: 'droid',
-        routingTrusted: true,
-        shellForeground: false
-      })
-
-      await vi.advanceTimersByTimeAsync(1)
-      expect(mockStoreState.paneForegroundAgentByPaneKey[cacheKey]).toEqual({
-        agent: 'droid',
-        shellForeground: false
-      })
-
-      await vi.advanceTimersByTimeAsync(350)
-      await flushAsyncTicks()
-      expect(window.api.pty.confirmForegroundProcess).toHaveBeenCalledWith(ptyId)
-      expect(mockStoreState.paneForegroundAgentByPaneKey[cacheKey]).toEqual({
-        agent: 'droid',
-        routingTrusted: true,
-        shellForeground: false
-      })
-
-      binding.requestDroidReconfirmation()
-      await vi.advanceTimersByTimeAsync(700)
-      await flushAsyncTicks()
-      expect(mockStoreState.paneForegroundAgentByPaneKey[cacheKey]).toEqual({
-        agent: 'droid',
-        routingTrusted: true,
-        shellForeground: false
-      })
     })
 
     it('samples once when an identityless hidden pane resumes visible', async () => {
@@ -22392,7 +21894,7 @@ describe('connectPanePty', () => {
 
     it('confirms daemon launch identity before restoring warm-reattach routing', async () => {
       vi.useFakeTimers()
-      vi.mocked(window.api.pty.confirmForegroundProcess).mockResolvedValue('droid')
+      vi.mocked(window.api.pty.confirmForegroundProcess).mockResolvedValue('codex')
       const ptyId = 'pty-launch-identity-no-sample'
       const tabId = `tab-${ptyId}`
       mockStoreState.tabsByWorktree = { 'wt-1': [{ id: tabId, ptyId }] }
@@ -22400,11 +21902,11 @@ describe('connectPanePty', () => {
       const { cacheKey } = await connectRestoredPaneForForegroundSampling({
         ptyId,
         tabId,
-        launchAgent: 'droid'
+        launchAgent: 'codex'
       })
       expect(mockStoreState.registerAgentLaunchConfig).not.toHaveBeenCalled()
       expect(mockStoreState.paneForegroundAgentByPaneKey[cacheKey]).toEqual({
-        agent: 'droid',
+        agent: 'codex',
         shellForeground: false
       })
       expect(resolveMockPaneWindowsShiftEnterEncoding(mockStoreState, cacheKey)).toBe('alt-enter')
@@ -22412,11 +21914,11 @@ describe('connectPanePty', () => {
       await advanceVisibleForegroundRead()
 
       expect(mockStoreState.paneForegroundAgentByPaneKey[cacheKey]).toEqual({
-        agent: 'droid',
+        agent: 'codex',
         routingTrusted: true,
         shellForeground: false
       })
-      expect(resolveMockPaneWindowsShiftEnterEncoding(mockStoreState, cacheKey)).toBe('csi-u')
+      expect(resolveMockPaneWindowsShiftEnterEncoding(mockStoreState, cacheKey)).toBe('alt-enter')
     })
 
     it('retires stale daemon launch identity when warm reattach finds the shell', async () => {
@@ -22429,7 +21931,7 @@ describe('connectPanePty', () => {
       const { cacheKey } = await connectRestoredPaneForForegroundSampling({
         ptyId,
         tabId,
-        launchAgent: 'droid'
+        launchAgent: 'codex'
       })
       expect(resolveMockPaneWindowsShiftEnterEncoding(mockStoreState, cacheKey)).toBe('alt-enter')
 
@@ -22663,55 +22165,6 @@ describe('connectPanePty', () => {
         shellForeground: true
       })
       expect(foregroundReadCallsFor(ptyId)).toHaveLength(0)
-    })
-
-    it('re-confirms leaked 133;D after detach moved pane-scoped Droid identity', async () => {
-      vi.useFakeTimers()
-      const { connectPanePty } = await import('./pty-connection')
-      const getForegroundProcess = vi.mocked(window.api.pty.getForegroundProcess)
-      getForegroundProcess.mockResolvedValue('droid')
-      const ptyId = 'pty-detached-droid-leaked-d'
-      const tabId = 'tab-detached-droid'
-      const cacheKey = makePaneKey(tabId, LEAF_1)
-      const dataCallbackRef: { current: ((data: string) => void) | null } = { current: null }
-      const transport = createMockTransport(ptyId)
-      transport.connect.mockImplementation(
-        async ({ sessionId, callbacks }: { sessionId?: string; callbacks?: ConnectCallbacks }) => {
-          dataCallbackRef.current = callbacks?.onData ?? null
-          return sessionId ? { id: sessionId } : null
-        }
-      )
-      transportFactoryQueue.push(transport)
-      mockStoreState.paneForegroundAgentByPaneKey[cacheKey] = {
-        agent: 'droid',
-        shellForeground: false
-      }
-      mockStoreState.agentLaunchConfigByPaneKey[cacheKey] = {
-        launchConfig: { agentArgs: '', agentEnv: {} },
-        identity: { agentType: 'droid' }
-      }
-      const deps = createDeps({
-        tabId,
-        restoredLeafId: LEAF_1,
-        restoredPtyIdByLeafId: { [LEAF_1]: ptyId }
-      })
-
-      connectPanePty(createPane(1) as never, createManager(1) as never, deps as never)
-      await vi.advanceTimersByTimeAsync(20)
-      await flushAsyncTicks(20)
-      dataCallbackRef.current?.('\x1b]133;D;0\x07')
-      await advanceVisibleForegroundRead()
-
-      expect(foregroundReadCallsFor(ptyId)).toEqual([[ptyId]])
-      expect(mockStoreState.setPaneForegroundAgent).not.toHaveBeenCalledWith(cacheKey, {
-        agent: null,
-        shellForeground: true
-      })
-      expect(mockStoreState.setPaneForegroundAgent).toHaveBeenCalledWith(cacheKey, {
-        agent: 'droid',
-        routingTrusted: true,
-        shellForeground: false
-      })
     })
 
     it('never probes the foreground for a visible remote/SSH restored pane', async () => {

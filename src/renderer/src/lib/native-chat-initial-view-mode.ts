@@ -24,9 +24,6 @@ export function decideInitialAgentTabViewMode(args: {
   if (!isNativeChatSupportedAgent(args.agent)) {
     return undefined
   }
-  if (args.agent === 'grok' && args.nativeChatTranscriptIsLocalReadable !== true) {
-    return undefined
-  }
   if (args.promptDelivery === 'draft') {
     return undefined
   }

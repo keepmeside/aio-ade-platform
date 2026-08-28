@@ -40,11 +40,10 @@ export type HooksConfig = {
   [key: string]: unknown
 }
 
-// Why: host-level backstop timeout for status hooks, independent of the curl --max-time and Copilot's timeoutSec (#4633).
+// Why: host-level backstop timeout for status hooks, independent of the curl --max-time.
 export const MANAGED_HOOK_TIMEOUT_SECONDS = 10
-export const MANAGED_HOOK_TIMEOUT_MILLISECONDS = MANAGED_HOOK_TIMEOUT_SECONDS * 1000
 
-// Nested command hook for the Claude-shaped `hooks: [...]` schema (Claude, Codex, Gemini, Droid, Grok, Command Code, Devin).
+// Nested command hook for the Claude-shaped `hooks: [...]` schema (Claude, Codex).
 export function buildManagedCommandHook(
   command: string,
   timeout = MANAGED_HOOK_TIMEOUT_SECONDS

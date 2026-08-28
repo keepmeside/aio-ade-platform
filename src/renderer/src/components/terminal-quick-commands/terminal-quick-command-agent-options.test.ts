@@ -4,13 +4,6 @@ import { supportsTerminalAgentQuickCommand } from '../../../../shared/terminal-q
 import { getTerminalQuickCommandAgentOptions } from './terminal-quick-command-agent-options'
 
 describe('terminal quick command agent options', () => {
-  it('does not inherit OpenClaude as the second quick-command agent option', () => {
-    const ids = getTerminalQuickCommandAgentOptions().map((entry) => entry.id)
-
-    expect(ids.slice(0, 3)).toEqual(['claude', 'codex', 'gemini'])
-    expect(ids.indexOf('openclaude')).toBeGreaterThan(ids.indexOf('command-code'))
-  })
-
   it('keeps unsupported prompt-command agents below supported agents', () => {
     const ids = getTerminalQuickCommandAgentOptions().map((entry) => entry.id)
     const firstUnsupportedIndex = ids.findIndex((id) => !supportsTerminalAgentQuickCommand(id))

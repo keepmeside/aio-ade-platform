@@ -122,11 +122,6 @@ export function resolveDashboardCardTerminalInput(
     localWindowsConpty: isLocalNativeWindowsConpty(windowsPtyContext),
     ...(args.osRelease === undefined ? {} : { osRelease: args.osRelease }),
     windowsShiftEnterEncoding: resolveWindowsShiftEnterEncodingForPane(state, args.paneKey),
-    kittyKeyboardAdvertised: !shouldDisableKittyKeyboardForTerminal({
-      ...windowsPtyContext,
-      // Why: launch identity is the only agent signal the board holds; it opts
-      // Grok out of the ConPTY kitty withhold exactly as its pane does.
-      tuiAgent: args.launchAgent ?? null
-    })
+    kittyKeyboardAdvertised: !shouldDisableKittyKeyboardForTerminal(windowsPtyContext)
   }
 }

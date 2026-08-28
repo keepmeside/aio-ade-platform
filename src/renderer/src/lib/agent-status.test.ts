@@ -183,11 +183,6 @@ describe('detectAgentStatusFromTitle', () => {
     expect(detectAgentStatusFromTitle('claude agents working')).toBe('working')
   })
 
-  it('detects Pi idle titles', () => {
-    expect(detectAgentStatusFromTitle('π - my-project')).toBe('idle')
-    expect(detectAgentStatusFromTitle('π - session-name - my-project')).toBe('idle')
-  })
-
   // --- Cursor (cursor-agent) synthesized titles ---
   // Why: cursor-agent's native title stays "Cursor Agent" all turn, so Orca synthesizes decorated titles for the spinner/unread pipeline.
   it('treats the bare "Cursor Agent" native title as a no-op (not idle)', () => {
@@ -394,27 +389,6 @@ describe('normalizeTerminalTitle', () => {
       '⠋ fix the flaky suite - grok'
     )
   })
-
-  it('collapses Pi spinner and idle titles to stable labels', () => {
-    expect(normalizeTerminalTitle('⠋ π - my-project')).toBe('⠋ Pi')
-    expect(normalizeTerminalTitle('π - my-project')).toBe('Pi')
-    expect(normalizeTerminalTitle('⠋ π: my-project')).toBe('⠋ Pi')
-    expect(normalizeTerminalTitle('π: my-project')).toBe('Pi')
-    expect(normalizeTerminalTitle('π -')).toBe('Pi')
-    expect(normalizeTerminalTitle('π:')).toBe('Pi')
-    expect(normalizeTerminalTitle('π ')).toBe('Pi')
-  })
-
-  it('does not collapse Pi-compatible titles whose cwd mentions Gemini', () => {
-    expect(normalizeTerminalTitle('⠋ π - gemini')).toBe('⠋ Pi')
-    expect(normalizeTerminalTitle('π - gemini')).toBe('Pi')
-    expect(normalizeTerminalTitle('⠋ π: gemini')).toBe('⠋ Pi')
-    expect(normalizeTerminalTitle('π: gemini')).toBe('Pi')
-    expect(normalizeTerminalTitle('⠋ π gemini')).toBe('⠋ Pi')
-    expect(normalizeTerminalTitle('π gemini')).toBe('Pi')
-    expect(normalizeTerminalTitle('⠋ π - gemini-project')).toBe('⠋ Pi')
-    expect(normalizeTerminalTitle('π - gemini-project')).toBe('Pi')
-  })
 })
 
 describe('isGeminiTerminalTitle', () => {
@@ -426,26 +400,12 @@ describe('isGeminiTerminalTitle', () => {
 
   it('does not match other terminal titles', () => {
     expect(isGeminiTerminalTitle('⠂ Claude Code')).toBe(false)
-    expect(isGeminiTerminalTitle('⠋ π - gemini')).toBe(false)
-    expect(isGeminiTerminalTitle('π - gemini')).toBe(false)
-    expect(isGeminiTerminalTitle('⠋ π: gemini')).toBe(false)
-    expect(isGeminiTerminalTitle('π: gemini')).toBe(false)
-    expect(isGeminiTerminalTitle('⠋ π gemini')).toBe(false)
-    expect(isGeminiTerminalTitle('π gemini')).toBe(false)
-    expect(isGeminiTerminalTitle('π -')).toBe(false)
-    expect(isGeminiTerminalTitle('π:')).toBe(false)
-    expect(isGeminiTerminalTitle('π ')).toBe(false)
-    expect(isGeminiTerminalTitle('⠋ π - gemini-project')).toBe(false)
     expect(isGeminiTerminalTitle('/tmp/gemini/working')).toBe(false)
     expect(isGeminiTerminalTitle('bash')).toBe(false)
   })
 })
 
 describe('getAgentLabel', () => {
-  it('labels Pi working titles as Pi instead of Claude Code', () => {
-    expect(getAgentLabel('⠋ π - my-project')).toBe('Pi')
-  })
-
   it('treats Claude Code prefixed task titles as Claude even when they mention another CLI', () => {
     expect(getAgentLabel('✳ Gemini CLI')).toBe('Claude Code')
     expect(getAgentLabel('. Compare Opencode Vs Orca')).toBe('Claude Code')
@@ -635,15 +595,6 @@ describe('createAgentStatusTracker', () => {
     expect(onBecameIdle).not.toHaveBeenCalled()
 
     tracker.handleTitle('Cursor ready') // synthesized done → idle
-    expect(onBecameIdle).toHaveBeenCalledTimes(1)
-  })
-
-  it('fires on Pi working → idle', () => {
-    const onBecameIdle = vi.fn()
-    const tracker = createAgentStatusTracker(onBecameIdle)
-
-    tracker.handleTitle('⠋ π - my-project')
-    tracker.handleTitle('π - my-project')
     expect(onBecameIdle).toHaveBeenCalledTimes(1)
   })
 
@@ -884,11 +835,8 @@ describe('agentTypeToIconAgent', () => {
 
   it("round-trips iconable agent types like 'claude'", () => {
     expect(agentTypeToIconAgent('claude')).toBe('claude')
-    expect(agentTypeToIconAgent('openclaude')).toBe('openclaude')
-    expect(agentTypeToIconAgent('antigravity')).toBe('antigravity')
-    expect(agentTypeToIconAgent('command-code')).toBe('command-code')
-    expect(agentTypeToIconAgent('ante')).toBe('ante')
-    expect(agentTypeToIconAgent('trae')).toBe('trae')
+    expect(agentTypeToIconAgent('claude-agent-teams')).toBe('claude-agent-teams')
+    expect(agentTypeToIconAgent('codex')).toBe('codex')
   })
 
   it('returns null for arbitrary non-iconable strings', () => {

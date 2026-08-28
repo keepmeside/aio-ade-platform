@@ -252,8 +252,7 @@ creates one canonical owner; an old host or execution owner receives the exact
 legacy launch. A cold or expired cache therefore cannot bypass authority or
 remove the pre-change workflow.
 
-AI Vault resumes use provider metadata for agents with a structured identity,
-including Antigravity conversation IDs and Pi transcript/session paths. If
+AI Vault resumes use provider metadata for agents with a structured identity. If
 metadata or host capability is absent, Orca preserves the prior opaque legacy
 resume request instead of blocking the user.
 

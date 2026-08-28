@@ -4,7 +4,6 @@ import {
   HERMES_AGENT_NAME_RE,
   titleHasAnyLegacyAgentName
 } from './agent-name-token-match'
-import { getPiCompatibleSyntheticAgentStatus } from './pi-compatible-synthetic-title'
 import {
   CLAUDE_IDLE,
   containsBrailleSpinner,
@@ -12,8 +11,7 @@ import {
   GEMINI_PERMISSION,
   GEMINI_SILENT_WORKING,
   GEMINI_WORKING,
-  isClaudeManagementTitle,
-  isPiTerminalTitle
+  isClaudeManagementTitle
 } from './terminal-title-agent-type'
 
 export type AgentStatus = 'working' | 'permission' | 'idle'
@@ -109,18 +107,8 @@ export function detectAgentStatusFromTitle(title: string): AgentStatus | null {
     return 'idle'
   }
 
-  // Why: resolve synthetic Pi/OMP labels before the broader Pi/braille checks below.
-  const piCompatibleSyntheticAgentStatus = getPiCompatibleSyntheticAgentStatus(title)
-  if (piCompatibleSyntheticAgentStatus) {
-    return piCompatibleSyntheticAgentStatus
-  }
-
   // Claude Code uses ✳ idle prefix; check before braille/agent-name since the title is the task description, not "Claude Code".
   if (title.startsWith(`${CLAUDE_IDLE} `) || title === CLAUDE_IDLE) {
-    return 'idle'
-  }
-
-  if (isPiTerminalTitle(title)) {
     return 'idle'
   }
 

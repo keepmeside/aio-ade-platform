@@ -1,7 +1,7 @@
 /* eslint-disable max-lines -- Why: stateful registration helper + shared mocked IPC/node-pty harness keep spawn-env assertions in one focused file. */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { userInfo } from 'node:os'
-import { delimiter, join, posix } from 'node:path'
+import { delimiter, join } from 'node:path'
 import { prepareCodexSessionResume } from '../codex/codex-session-resume-preparation'
 import {
   TERMINAL_INPUT_CHUNK_MAX_BYTES,
@@ -17,11 +17,6 @@ import { PtyWriteUnavailableError } from '../providers/pty-write-unavailable-err
 
 const isWindowsHost = process.platform === 'win32'
 const posixOnlyIt = isWindowsHost ? it.skip : it
-const expectedOmpStatusExtension = posix.join(
-  '/tmp/default-omp-agent',
-  'extensions',
-  'orca-agent-status.ts'
-)
 function expectedAttributionShimDir(): string {
   return join(
     '/tmp/orca-user-data',
@@ -45,14 +40,9 @@ const {
   getPathMock,
   loginPreflightExecFileMock,
   spawnMock,
-  openCodeBuildPtyEnvMock,
-  openCodeClearPtyMock,
-  mimoCodeBuildPtyEnvMock,
   buildAgentHookEnvMock,
   clearAgentHookPaneStateMock,
   registerPaneKeyAliasMock,
-  piBuildPtyEnvMock,
-  piClearPtyMock,
   isPwshAvailableMock,
   trackMock,
   classifyErrorMock,
@@ -79,15 +69,10 @@ const {
   getPathMock: vi.fn(),
   loginPreflightExecFileMock: vi.fn(),
   spawnMock: vi.fn(),
-  openCodeBuildPtyEnvMock: vi.fn(),
-  mimoCodeBuildPtyEnvMock: vi.fn(),
   isPwshAvailableMock: vi.fn(),
-  openCodeClearPtyMock: vi.fn(),
   buildAgentHookEnvMock: vi.fn(),
   clearAgentHookPaneStateMock: vi.fn(),
   registerPaneKeyAliasMock: vi.fn(),
-  piBuildPtyEnvMock: vi.fn(),
-  piClearPtyMock: vi.fn(),
   trackMock: vi.fn(),
   classifyErrorMock: vi.fn(),
   registerPtyMock: vi.fn(),
@@ -143,32 +128,12 @@ vi.mock('node:child_process', async (importOriginal) => ({
   execFile: loginPreflightExecFileMock
 }))
 
-vi.mock('../opencode/hook-service', () => ({
-  openCodeHookService: {
-    buildPtyEnv: openCodeBuildPtyEnvMock,
-    clearPty: openCodeClearPtyMock
-  }
-}))
-
-vi.mock('../mimo/hook-service', () => ({
-  mimoCodeHookService: {
-    buildPtyEnv: mimoCodeBuildPtyEnvMock
-  }
-}))
-
 vi.mock('../agent-hooks/server', () => ({
   agentHookServer: {
     buildPtyEnv: buildAgentHookEnvMock,
     clearPaneState: clearAgentHookPaneStateMock,
     registerPaneKeyAlias: registerPaneKeyAliasMock,
     clearPaneKeyAliasesForPty: clearPaneKeyAliasesForPtyMock
-  }
-}))
-
-vi.mock('../pi/titlebar-extension-service', () => ({
-  piTitlebarExtensionService: {
-    buildPtyEnv: piBuildPtyEnvMock,
-    clearPty: piClearPtyMock
   }
 }))
 
@@ -210,7 +175,6 @@ import {
   _resetLocalPtyProviderStateForTest
 } from '../providers/local-pty-provider'
 import { makePaneKey } from '../../shared/stable-pane-id'
-import { SETUP_AGENT_SEQUENCE_STARTUP_COMMAND_ENV } from '../../shared/setup-agent-sequencing'
 import {
   registerPtyHandlers,
   registerSshPtyProvider,
@@ -245,7 +209,6 @@ import {
 } from '../providers/ssh-pty-errors'
 import { resolveWindowsShellLaunchArgs } from '../providers/windows-shell-args'
 import { _resetWslCachesForTests, _setWslCachesForTests } from '../wsl'
-import { wslHookRelayManager } from '../agent-hooks/wsl-hook-relay-manager'
 import { acquireWatcherRemovalGate } from './watcher-removal-gate'
 
 // Why: Windows resolves a bare PowerShell name to an absolute exe before ConPTY, else CreateProcessW fails with error 5 (PR #6537 / #5161).
@@ -346,14 +309,9 @@ describe('registerPtyHandlers', () => {
     getPathMock.mockReset()
     loginPreflightExecFileMock.mockReset()
     spawnMock.mockReset()
-    openCodeBuildPtyEnvMock.mockReset()
-    mimoCodeBuildPtyEnvMock.mockReset()
-    openCodeClearPtyMock.mockReset()
     buildAgentHookEnvMock.mockReset()
     clearAgentHookPaneStateMock.mockReset()
     registerPaneKeyAliasMock.mockReset()
-    piBuildPtyEnvMock.mockReset()
-    piClearPtyMock.mockReset()
     isPwshAvailableMock.mockReset()
     trackMock.mockReset()
     classifyErrorMock.mockReset()
@@ -397,32 +355,10 @@ describe('registerPtyHandlers', () => {
     existsSyncMock.mockReturnValue(true)
     statSyncMock.mockReturnValue({ isDirectory: () => true, mode: 0o755 })
     readFileSyncMock.mockReturnValue('')
-    openCodeBuildPtyEnvMock.mockImplementation((_ptyId: string, existingConfigDir?: string) => ({
-      ORCA_OPENCODE_HOOK_PORT: '4567',
-      ORCA_OPENCODE_HOOK_TOKEN: 'opencode-token',
-      ORCA_OPENCODE_PTY_ID: 'test-pty',
-      OPENCODE_CONFIG_DIR: existingConfigDir
-        ? '/tmp/orca-opencode-overlay'
-        : '/tmp/orca-opencode-config'
-    }))
-    mimoCodeBuildPtyEnvMock.mockImplementation((_ptyId: string, existingHome?: string) => ({
-      MIMOCODE_HOME: existingHome ? '/tmp/orca-mimocode-overlay' : '/tmp/orca-mimocode-shared'
-    }))
     buildAgentHookEnvMock.mockReturnValue({
       ORCA_AGENT_HOOK_PORT: '5678',
       ORCA_AGENT_HOOK_TOKEN: 'agent-token'
     })
-    piBuildPtyEnvMock.mockImplementation(
-      (_ptyId: string, existingAgentDir?: string, kind?: string) =>
-        kind === 'omp'
-          ? {
-              ORCA_OMP_SOURCE_AGENT_DIR: existingAgentDir ?? '/tmp/default-omp-agent',
-              ORCA_OMP_STATUS_EXTENSION: `${existingAgentDir ?? '/tmp/default-omp-agent'}/extensions/orca-agent-status.ts`
-            }
-          : {
-              ORCA_PI_SOURCE_AGENT_DIR: existingAgentDir ?? '/tmp/default-pi-agent'
-            }
-    )
     isPwshAvailableMock.mockReturnValue(false)
     spawnMock.mockReturnValue({
       onData: vi.fn(() => makeDisposable()),
@@ -2257,326 +2193,6 @@ describe('registerPtyHandlers', () => {
       )
     })
 
-    it('injects the OpenCode hook env into Orca terminal PTYs', async () => {
-      // Why: clear any ambient OPENCODE_CONFIG_DIR so the mock's value is used
-      const env = await spawnAndGetEnv(undefined, { OPENCODE_CONFIG_DIR: undefined })
-      expect(openCodeBuildPtyEnvMock).toHaveBeenCalledTimes(1)
-      expect(openCodeBuildPtyEnvMock.mock.calls[0]?.[0]).toEqual(expect.any(String))
-      expect(env.ORCA_OPENCODE_HOOK_PORT).toBe('4567')
-      expect(env.ORCA_OPENCODE_HOOK_TOKEN).toBe('opencode-token')
-      expect(env.ORCA_OPENCODE_PTY_ID).toBe('test-pty')
-      expect(env.OPENCODE_CONFIG_DIR).toEqual(expect.any(String))
-      expect(env.ORCA_OPENCODE_CONFIG_DIR).toBe(env.OPENCODE_CONFIG_DIR)
-    })
-
-    it('mirrors the original OpenCode source dir when launched from an Orca overlay shell', async () => {
-      const env = await spawnAndGetEnv({
-        OPENCODE_CONFIG_DIR: '/tmp/parent-orca-opencode-overlay',
-        ORCA_OPENCODE_SOURCE_CONFIG_DIR: '/tmp/user-opencode-config'
-      })
-      expect(openCodeBuildPtyEnvMock).toHaveBeenCalledWith(
-        expect.any(String),
-        '/tmp/user-opencode-config'
-      )
-      expect(env.OPENCODE_CONFIG_DIR).toBe('/tmp/orca-opencode-overlay')
-      expect(env.ORCA_OPENCODE_CONFIG_DIR).toBe('/tmp/orca-opencode-overlay')
-      expect(env.ORCA_OPENCODE_SOURCE_CONFIG_DIR).toBe('/tmp/user-opencode-config')
-    })
-
-    it('does not treat inherited Orca OpenCode config as user config without a source dir', async () => {
-      const env = await spawnAndGetEnv({
-        OPENCODE_CONFIG_DIR: '/tmp/parent-orca-opencode-overlay',
-        ORCA_OPENCODE_CONFIG_DIR: '/tmp/parent-orca-opencode-overlay'
-      })
-
-      expect(openCodeBuildPtyEnvMock).toHaveBeenCalledWith(expect.any(String), undefined)
-      expect(env.OPENCODE_CONFIG_DIR).toBe('/tmp/orca-opencode-config')
-      expect(env.ORCA_OPENCODE_CONFIG_DIR).toBe('/tmp/orca-opencode-config')
-      expect(env.ORCA_OPENCODE_SOURCE_CONFIG_DIR).toBeUndefined()
-    })
-
-    it('restores user OpenCode config when agent status hooks are disabled in a nested Orca shell', async () => {
-      const env = await spawnAndGetEnv(
-        {
-          OPENCODE_CONFIG_DIR: '/tmp/parent-orca-opencode-overlay',
-          ORCA_OPENCODE_CONFIG_DIR: '/tmp/parent-orca-opencode-overlay',
-          ORCA_OPENCODE_SOURCE_CONFIG_DIR: '/tmp/user-opencode-config'
-        },
-        undefined,
-        undefined,
-        () => ({ agentStatusHooksEnabled: false })
-      )
-
-      expect(openCodeBuildPtyEnvMock).not.toHaveBeenCalled()
-      expect(env.OPENCODE_CONFIG_DIR).toBe('/tmp/user-opencode-config')
-      expect(env.ORCA_OPENCODE_CONFIG_DIR).toBeUndefined()
-      expect(env.ORCA_OPENCODE_SOURCE_CONFIG_DIR).toBeUndefined()
-    })
-
-    it('strips inherited OpenCode overlay env when agent status hooks are disabled without a source dir', async () => {
-      const env = await spawnAndGetEnv(
-        {
-          OPENCODE_CONFIG_DIR: '/tmp/parent-orca-opencode-overlay',
-          ORCA_OPENCODE_CONFIG_DIR: '/tmp/parent-orca-opencode-overlay'
-        },
-        undefined,
-        undefined,
-        () => ({ agentStatusHooksEnabled: false })
-      )
-
-      expect(openCodeBuildPtyEnvMock).not.toHaveBeenCalled()
-      expect(env.OPENCODE_CONFIG_DIR).toBeUndefined()
-      expect(env.ORCA_OPENCODE_CONFIG_DIR).toBeUndefined()
-      expect(env.ORCA_OPENCODE_SOURCE_CONFIG_DIR).toBeUndefined()
-    })
-
-    it('injects MiMo overlay env only when launch command is mimo', async () => {
-      const env = await spawnAndGetEnv(undefined, undefined, undefined, undefined, 'mimo')
-
-      expect(mimoCodeBuildPtyEnvMock).toHaveBeenCalledTimes(1)
-      expect(env.MIMOCODE_HOME).toBe('/tmp/orca-mimocode-shared')
-      expect(env.ORCA_MIMOCODE_HOME).toBe('/tmp/orca-mimocode-shared')
-      expect(env.ORCA_MIMOCODE_SOURCE_HOME).toBeUndefined()
-    })
-
-    it.each(['/usr/local/bin/mimo --prompt hi', '"C:\\Program Files\\MiMo\\mimo.cmd" --prompt hi'])(
-      'injects MiMo overlay env for path-qualified launch command %s',
-      async (launchCommand) => {
-        const env = await spawnAndGetEnv(undefined, undefined, undefined, undefined, launchCommand)
-
-        expect(mimoCodeBuildPtyEnvMock).toHaveBeenCalledTimes(1)
-        expect(env.MIMOCODE_HOME).toBe('/tmp/orca-mimocode-shared')
-        expect(env.ORCA_MIMOCODE_HOME).toBe('/tmp/orca-mimocode-shared')
-      }
-    )
-
-    it('uses sequenced startup env as the MiMo launch hint when command is a wrapper', async () => {
-      const env = await spawnAndGetEnv(
-        { [SETUP_AGENT_SEQUENCE_STARTUP_COMMAND_ENV]: 'mimo --prompt hi' },
-        undefined,
-        undefined,
-        undefined,
-        'bash -lc wait-wrapper'
-      )
-
-      expect(mimoCodeBuildPtyEnvMock).toHaveBeenCalledTimes(1)
-      expect(env.MIMOCODE_HOME).toBe('/tmp/orca-mimocode-shared')
-      expect(env.ORCA_MIMOCODE_HOME).toBe('/tmp/orca-mimocode-shared')
-    })
-
-    it('does not inject MiMo overlay for non-mimo launches', async () => {
-      await spawnAndGetEnv()
-
-      expect(mimoCodeBuildPtyEnvMock).not.toHaveBeenCalled()
-    })
-
-    it('restores user MiMo home when agent status hooks are disabled in a nested Orca shell', async () => {
-      const env = await spawnAndGetEnv(
-        {
-          MIMOCODE_HOME: '/tmp/parent-orca-mimocode-overlay',
-          ORCA_MIMOCODE_HOME: '/tmp/parent-orca-mimocode-overlay',
-          ORCA_MIMOCODE_SOURCE_HOME: '/tmp/user-mimocode-home'
-        },
-        undefined,
-        undefined,
-        () => ({ agentStatusHooksEnabled: false }),
-        'mimo'
-      )
-
-      expect(mimoCodeBuildPtyEnvMock).not.toHaveBeenCalled()
-      expect(env.MIMOCODE_HOME).toBe('/tmp/user-mimocode-home')
-      expect(env.ORCA_MIMOCODE_HOME).toBeUndefined()
-      expect(env.ORCA_MIMOCODE_SOURCE_HOME).toBeUndefined()
-    })
-
-    posixOnlyIt(
-      'reproduces issue #1534: GUI-launched Orca mirrors zshrc-only OpenCode config',
-      async () => {
-        // Why: the reporter's app didn't inherit OPENCODE_CONFIG_DIR; their interactive zsh later exported a company config repo.
-        readFileSyncMock.mockImplementation((path: string) => {
-          if (path.endsWith('.zshrc')) {
-            return [
-              '# Company-wide OpenCode config loaded by interactive shells',
-              'export OPENCODE_CONFIG_DIR="$HOME/company/opencode-config"',
-              ''
-            ].join('\n')
-          }
-          return ''
-        })
-
-        const env = await spawnAndGetEnv(undefined, {
-          HOME: '/home/pim',
-          SHELL: '/bin/zsh',
-          OPENCODE_CONFIG_DIR: undefined,
-          ORCA_OPENCODE_SOURCE_CONFIG_DIR: undefined
-        })
-
-        expect(openCodeBuildPtyEnvMock).toHaveBeenCalledWith(
-          expect.any(String),
-          '/home/pim/company/opencode-config'
-        )
-        expect(env.OPENCODE_CONFIG_DIR).toBe('/tmp/orca-opencode-overlay')
-        expect(env.ORCA_OPENCODE_CONFIG_DIR).toBe('/tmp/orca-opencode-overlay')
-        expect(env.ORCA_OPENCODE_SOURCE_CONFIG_DIR).toBe('/home/pim/company/opencode-config')
-        expect(env.OPENCODE_CONFIG_DIR).not.toBe(env.ORCA_OPENCODE_SOURCE_CONFIG_DIR)
-      }
-    )
-
-    it('installs Pi managed extensions without redirecting Orca terminal PTY homes', async () => {
-      const env = await spawnAndGetEnv(undefined, { PI_CODING_AGENT_DIR: '/tmp/user-pi-agent' })
-      expect(piBuildPtyEnvMock).toHaveBeenCalledWith(expect.any(String), '/tmp/user-pi-agent', 'pi')
-      expect(piBuildPtyEnvMock).toHaveBeenCalledWith(expect.any(String), undefined, 'omp')
-      expect(env.PI_CODING_AGENT_DIR).toBe('/tmp/user-pi-agent')
-      expect(env.ORCA_PI_CODING_AGENT_DIR).toBeUndefined()
-      expect(env.ORCA_PI_SOURCE_AGENT_DIR).toBe('/tmp/user-pi-agent')
-      expect(env.ORCA_OMP_CODING_AGENT_DIR).toBeUndefined()
-      expect(env.ORCA_OMP_STATUS_EXTENSION).toBe(
-        '/tmp/default-omp-agent/extensions/orca-agent-status.ts'
-      )
-    })
-
-    it('threads command: "omp" through to piBuildPtyEnv and emits OMP status metadata', async () => {
-      // Why: OMP launches emit ORCA_OMP_* shadow vars, not Pi-named ones; only PI_CODING_AGENT_DIR stays (OMP's own binary reads it).
-      const env = await spawnAndGetEnv(
-        undefined,
-        { PI_CODING_AGENT_DIR: '/tmp/user-omp-agent' },
-        undefined,
-        undefined,
-        'omp'
-      )
-      expect(piBuildPtyEnvMock).toHaveBeenCalledWith(
-        expect.any(String),
-        '/tmp/user-omp-agent',
-        'omp'
-      )
-      expect(env.PI_CODING_AGENT_DIR).toBe('/tmp/user-omp-agent')
-      expect(env.ORCA_OMP_CODING_AGENT_DIR).toBeUndefined()
-      expect(env.ORCA_OMP_STATUS_EXTENSION).toBe(
-        '/tmp/user-omp-agent/extensions/orca-agent-status.ts'
-      )
-      expect(env.ORCA_OMP_SOURCE_AGENT_DIR).toBe('/tmp/user-omp-agent')
-      // CRITICAL: a Pi-named shadow MUST NOT leak into an OMP PTY env.
-      expect(env.ORCA_PI_CODING_AGENT_DIR).toBeUndefined()
-      expect(env.ORCA_PI_SOURCE_AGENT_DIR).toBeUndefined()
-    })
-
-    it('uses sequenced startup env as the OMP launch hint when command is a wrapper', async () => {
-      const env = await spawnAndGetEnv(
-        {
-          PI_CODING_AGENT_DIR: '/tmp/user-omp-agent',
-          [SETUP_AGENT_SEQUENCE_STARTUP_COMMAND_ENV]: 'omp --resume'
-        },
-        undefined,
-        undefined,
-        undefined,
-        'powershell wait-wrapper'
-      )
-
-      expect(piBuildPtyEnvMock).toHaveBeenCalledWith(
-        expect.any(String),
-        '/tmp/user-omp-agent',
-        'omp'
-      )
-      expect(env.ORCA_OMP_STATUS_EXTENSION).toBe(
-        '/tmp/user-omp-agent/extensions/orca-agent-status.ts'
-      )
-      expect(env.ORCA_PI_SOURCE_AGENT_DIR).toBeUndefined()
-    })
-
-    it('mirrors the original Pi source dir when launched from an Orca overlay shell', async () => {
-      const env = await spawnAndGetEnv({
-        PI_CODING_AGENT_DIR: '/tmp/parent-orca-pi-overlay',
-        ORCA_PI_SOURCE_AGENT_DIR: '/tmp/user-pi-agent'
-      })
-      expect(piBuildPtyEnvMock).toHaveBeenCalledWith(expect.any(String), '/tmp/user-pi-agent', 'pi')
-      expect(env.PI_CODING_AGENT_DIR).toBe('/tmp/parent-orca-pi-overlay')
-      expect(env.ORCA_PI_CODING_AGENT_DIR).toBeUndefined()
-      expect(env.ORCA_PI_SOURCE_AGENT_DIR).toBe('/tmp/user-pi-agent')
-    })
-
-    it('does not use an inherited Pi overlay source for an OMP launch', async () => {
-      const env = await spawnAndGetEnv(
-        {
-          PI_CODING_AGENT_DIR: '/tmp/parent-orca-pi-overlay',
-          ORCA_PI_CODING_AGENT_DIR: '/tmp/parent-orca-pi-overlay',
-          ORCA_PI_SOURCE_AGENT_DIR: '/tmp/user-pi-agent'
-        },
-        undefined,
-        undefined,
-        undefined,
-        'omp'
-      )
-
-      expect(piBuildPtyEnvMock).toHaveBeenCalledWith(expect.any(String), undefined, 'omp')
-      expect(env.ORCA_OMP_CODING_AGENT_DIR).toBeUndefined()
-      expect(env.ORCA_OMP_SOURCE_AGENT_DIR).toBe('/tmp/default-omp-agent')
-      expect(env.ORCA_PI_CODING_AGENT_DIR).toBeUndefined()
-      expect(env.ORCA_PI_SOURCE_AGENT_DIR).toBeUndefined()
-    })
-
-    it('does not use an inherited OMP overlay source for an explicit Pi launch', async () => {
-      const env = await spawnAndGetEnv(
-        {
-          PI_CODING_AGENT_DIR: '/tmp/parent-orca-omp-overlay',
-          ORCA_OMP_CODING_AGENT_DIR: '/tmp/parent-orca-omp-overlay',
-          ORCA_OMP_SOURCE_AGENT_DIR: '/tmp/user-omp-agent'
-        },
-        undefined,
-        undefined,
-        undefined,
-        'pi'
-      )
-
-      expect(piBuildPtyEnvMock).toHaveBeenCalledWith(expect.any(String), undefined, 'pi')
-      expect(env.ORCA_PI_CODING_AGENT_DIR).toBeUndefined()
-      expect(env.ORCA_PI_SOURCE_AGENT_DIR).toBe('/tmp/default-pi-agent')
-      expect(env.ORCA_OMP_CODING_AGENT_DIR).toBeUndefined()
-      expect(env.ORCA_OMP_SOURCE_AGENT_DIR).toBeUndefined()
-      expect(env.ORCA_OMP_STATUS_EXTENSION).toBeUndefined()
-    })
-
-    it('restores user Pi config when agent status hooks are disabled in a nested Orca shell', async () => {
-      const env = await spawnAndGetEnv(
-        {
-          PI_CODING_AGENT_DIR: '/tmp/parent-orca-pi-overlay',
-          ORCA_PI_CODING_AGENT_DIR: '/tmp/parent-orca-pi-overlay',
-          ORCA_PI_SOURCE_AGENT_DIR: '/tmp/user-pi-agent'
-        },
-        undefined,
-        undefined,
-        () => ({ agentStatusHooksEnabled: false })
-      )
-
-      expect(piBuildPtyEnvMock).not.toHaveBeenCalled()
-      expect(env.PI_CODING_AGENT_DIR).toBe('/tmp/user-pi-agent')
-      expect(env.ORCA_PI_CODING_AGENT_DIR).toBeUndefined()
-      expect(env.ORCA_PI_SOURCE_AGENT_DIR).toBeUndefined()
-    })
-
-    posixOnlyIt(
-      'uses Pi config exported only by shell startup files as the managed extension target',
-      async () => {
-        readFileSyncMock.mockImplementation((path: string) =>
-          path.endsWith('.zshrc') ? 'export PI_CODING_AGENT_DIR="$HOME/.config/pi-agent"\n' : ''
-        )
-
-        const env = await spawnAndGetEnv(undefined, {
-          HOME: '/home/tester',
-          SHELL: '/bin/zsh',
-          PI_CODING_AGENT_DIR: undefined
-        })
-
-        expect(piBuildPtyEnvMock).toHaveBeenCalledWith(
-          expect.any(String),
-          '/home/tester/.config/pi-agent',
-          'pi'
-        )
-        expect(env.PI_CODING_AGENT_DIR).toBeUndefined()
-        expect(env.ORCA_PI_CODING_AGENT_DIR).toBeUndefined()
-        expect(env.ORCA_PI_SOURCE_AGENT_DIR).toBe('/home/tester/.config/pi-agent')
-      }
-    )
-
     it('injects the agent hook receiver env into Orca terminal PTYs', async () => {
       const env = await spawnAndGetEnv()
       // Why: buildAgentHookEnv must run exactly once per local spawn (inside shared buildPtyHostEnv); the old ad-hoc double-call is gone.
@@ -2934,99 +2550,6 @@ describe('registerPtyHandlers', () => {
         ).env
       }
 
-      it('injects OpenCode plugin env (OPENCODE_CONFIG_DIR) on the daemon path', async () => {
-        const env = await daemonSpawnAndGetEnv({}, undefined, undefined, {
-          OPENCODE_CONFIG_DIR: undefined
-        })
-        expect(openCodeBuildPtyEnvMock).toHaveBeenCalled()
-        expect(env.OPENCODE_CONFIG_DIR).toBe('/tmp/orca-opencode-config')
-        expect(env.ORCA_OPENCODE_HOOK_PORT).toBe('4567')
-      })
-
-      it('mirrors a user-provided OPENCODE_CONFIG_DIR into a source-scoped overlay on the daemon path', async () => {
-        const env = await daemonSpawnAndGetEnv({ OPENCODE_CONFIG_DIR: '/user/custom/opencode' })
-        // Why: OpenCode loads config from a single dir, so the user's path is mirrored into a source-scoped overlay, not passed through.
-        expect(openCodeBuildPtyEnvMock).toHaveBeenCalledWith(
-          expect.any(String),
-          '/user/custom/opencode'
-        )
-        expect(env.OPENCODE_CONFIG_DIR).toBe('/tmp/orca-opencode-overlay')
-        expect(env.ORCA_OPENCODE_CONFIG_DIR).toBe('/tmp/orca-opencode-overlay')
-        expect(env.ORCA_OPENCODE_SOURCE_CONFIG_DIR).toBe('/user/custom/opencode')
-      })
-
-      it('uses source OpenCode config env instead of remirroring a parent overlay', async () => {
-        const env = await daemonSpawnAndGetEnv({
-          OPENCODE_CONFIG_DIR: '/tmp/parent-orca-opencode-overlay',
-          ORCA_OPENCODE_SOURCE_CONFIG_DIR: '/user/custom/opencode'
-        })
-        expect(openCodeBuildPtyEnvMock).toHaveBeenCalledWith(
-          expect.any(String),
-          '/user/custom/opencode'
-        )
-        expect(env.OPENCODE_CONFIG_DIR).toBe('/tmp/orca-opencode-overlay')
-        expect(env.ORCA_OPENCODE_CONFIG_DIR).toBe('/tmp/orca-opencode-overlay')
-        expect(env.ORCA_OPENCODE_SOURCE_CONFIG_DIR).toBe('/user/custom/opencode')
-      })
-
-      it('installs Pi managed extensions without redirecting homes on the daemon path', async () => {
-        const env = await daemonSpawnAndGetEnv({ PI_CODING_AGENT_DIR: '/user/.pi/agent' })
-        expect(piBuildPtyEnvMock).toHaveBeenCalledWith(expect.any(String), '/user/.pi/agent', 'pi')
-        expect(piBuildPtyEnvMock).toHaveBeenCalledWith(expect.any(String), undefined, 'omp')
-        expect(env.PI_CODING_AGENT_DIR).toBe('/user/.pi/agent')
-        expect(env.ORCA_PI_CODING_AGENT_DIR).toBeUndefined()
-        expect(env.ORCA_PI_SOURCE_AGENT_DIR).toBe('/user/.pi/agent')
-        expect(env.ORCA_OMP_CODING_AGENT_DIR).toBeUndefined()
-        expect(env.ORCA_OMP_STATUS_EXTENSION).toBe(expectedOmpStatusExtension)
-      })
-
-      it('threads command: "omp" through to piBuildPtyEnv on the daemon path with OMP status metadata', async () => {
-        // Why: mirror of the local-spawn OMP threading assertion; the daemon path's `command` forwarding could silently regress otherwise.
-        const env = await daemonSpawnAndGetEnv(
-          { PI_CODING_AGENT_DIR: '/user/.omp/agent' },
-          undefined,
-          undefined,
-          undefined,
-          { command: 'omp' }
-        )
-        expect(piBuildPtyEnvMock).toHaveBeenCalledWith(
-          expect.any(String),
-          '/user/.omp/agent',
-          'omp'
-        )
-        expect(env.PI_CODING_AGENT_DIR).toBe('/user/.omp/agent')
-        expect(env.ORCA_OMP_CODING_AGENT_DIR).toBeUndefined()
-        expect(env.ORCA_OMP_STATUS_EXTENSION).toBe(
-          '/user/.omp/agent/extensions/orca-agent-status.ts'
-        )
-        expect(env.ORCA_OMP_SOURCE_AGENT_DIR).toBe('/user/.omp/agent')
-        expect(env.ORCA_PI_CODING_AGENT_DIR).toBeUndefined()
-        expect(env.ORCA_PI_SOURCE_AGENT_DIR).toBeUndefined()
-      })
-
-      it('uses sequenced startup env as the daemon OMP launch hint when command is a wrapper', async () => {
-        const env = await daemonSpawnAndGetEnv(
-          {
-            PI_CODING_AGENT_DIR: '/user/.omp/agent',
-            [SETUP_AGENT_SEQUENCE_STARTUP_COMMAND_ENV]: 'omp --resume'
-          },
-          undefined,
-          undefined,
-          undefined,
-          { command: 'powershell wait-wrapper' }
-        )
-
-        expect(piBuildPtyEnvMock).toHaveBeenCalledWith(
-          expect.any(String),
-          '/user/.omp/agent',
-          'omp'
-        )
-        expect(env.ORCA_OMP_STATUS_EXTENSION).toBe(
-          '/user/.omp/agent/extensions/orca-agent-status.ts'
-        )
-        expect(env.ORCA_PI_SOURCE_AGENT_DIR).toBeUndefined()
-      })
-
       it('injects the selected Codex home on the daemon path', async () => {
         const env = await daemonSpawnAndGetEnv({}, () => TEST_CODEX_HOME)
         expect(env.CODEX_HOME).toBe(TEST_CODEX_HOME)
@@ -3233,40 +2756,6 @@ describe('registerPtyHandlers', () => {
             configurable: true,
             value: originalPlatform
           })
-        }
-      })
-
-      it('drops OPENCODE_CONFIG_DIR for a WSL daemon spawn until the guest overlay is known', async () => {
-        await withWin32Platform(async () => {
-          const env = await daemonSpawnAndGetEnv({}, undefined, undefined, undefined, {
-            shellOverride: 'wsl.exe'
-          })
-          // Why: relay not connected yet → never cross the Windows overlay path into WSL.
-          expect(env.OPENCODE_CONFIG_DIR).toBeUndefined()
-          expect(env.ORCA_OPENCODE_CONFIG_DIR).toBeUndefined()
-          expect(env.ORCA_OPENCODE_SOURCE_CONFIG_DIR).toBeUndefined()
-        })
-      })
-
-      it('points OPENCODE_CONFIG_DIR at the guest overlay when the WSL relay reports it', async () => {
-        const guestDir = '/home/jin/.orca-relay/opencode-overlays/abc'
-        const spy = vi.spyOn(wslHookRelayManager, 'getOpenCodeOverlayDir').mockReturnValue(guestDir)
-        try {
-          await withWin32Platform(async () => {
-            const env = await daemonSpawnAndGetEnv(
-              { ORCA_OPENCODE_SOURCE_CONFIG_DIR: '/home/jin/.config/opencode' },
-              undefined,
-              undefined,
-              undefined,
-              { shellOverride: 'wsl.exe' }
-            )
-            expect(env.OPENCODE_CONFIG_DIR).toBe(guestDir)
-            expect(env.ORCA_OPENCODE_CONFIG_DIR).toBe(guestDir)
-            // The Windows-side source pointer must not cross into the guest.
-            expect(env.ORCA_OPENCODE_SOURCE_CONFIG_DIR).toBeUndefined()
-          })
-        } finally {
-          spy.mockRestore()
         }
       })
 
@@ -3902,7 +3391,6 @@ describe('registerPtyHandlers', () => {
         expect(sessionId).toEqual(expect.any(String))
         expect((sessionId ?? '').length).toBeGreaterThan(0)
         expect(spawnOpts.isNewSession).toBe(true)
-        expect(piBuildPtyEnvMock).toHaveBeenCalledWith(sessionId, undefined, 'pi')
       })
 
       it('respects a caller-provided sessionId instead of minting a new one', async () => {
@@ -3917,7 +3405,6 @@ describe('registerPtyHandlers', () => {
         })
         expect(daemonSpawn.mock.calls.at(-1)![0].sessionId).toBe('user-session-42')
         expect(daemonSpawn.mock.calls.at(-1)![0].isNewSession).toBeUndefined()
-        expect(piBuildPtyEnvMock).toHaveBeenCalledWith('user-session-42', undefined, 'pi')
       })
 
       it('prefixes a minted sessionId with the worktreeId when provided', async () => {
@@ -3933,7 +3420,6 @@ describe('registerPtyHandlers', () => {
         })
         const sessionId = daemonSpawn.mock.calls.at(-1)![0].sessionId ?? ''
         expect(sessionId).toMatch(/^wt-alpha@@[0-9a-f]{8}$/)
-        expect(piBuildPtyEnvMock).toHaveBeenCalledWith(sessionId, undefined, 'pi')
       })
 
       it('reuses one attach-style daemon session for fresh-agent operation retries', async () => {
@@ -4004,21 +3490,6 @@ describe('registerPtyHandlers', () => {
         expect(daemonSpawn).not.toHaveBeenCalled()
       })
 
-      it('falls back to process.env.PI_CODING_AGENT_DIR when baseEnv lacks it on the daemon path', async () => {
-        // Why: buildPtyHostEnv reads `baseEnv.X ?? process.env.X` so the agent-dir guard works whether Pi's env came over IPC or via daemon fork.
-        const env = await daemonSpawnAndGetEnv({}, undefined, undefined, {
-          PI_CODING_AGENT_DIR: '/ambient/pi/agent'
-        })
-        expect(piBuildPtyEnvMock).toHaveBeenCalledWith(
-          expect.any(String),
-          '/ambient/pi/agent',
-          'pi'
-        )
-        expect(env.PI_CODING_AGENT_DIR).toBeUndefined()
-        expect(env.ORCA_PI_CODING_AGENT_DIR).toBeUndefined()
-        expect(env.ORCA_PI_SOURCE_AGENT_DIR).toBe('/ambient/pi/agent')
-      })
-
       it('skips attribution shims on the daemon path when the setting is disabled', async () => {
         const env = await daemonSpawnAndGetEnv({ PATH: '/usr/bin' }, undefined, () => ({
           enableGitHubAttribution: false
@@ -4059,7 +3530,6 @@ describe('registerPtyHandlers', () => {
           })
         ).rejects.toThrow(/Invalid PTY session id/)
         expect(daemonSpawn).not.toHaveBeenCalled()
-        expect(piBuildPtyEnvMock).not.toHaveBeenCalled()
       })
 
       it('sweeps per-PTY state when provider.spawn fails for a MINTED sessionId', async () => {
@@ -4089,8 +3559,6 @@ describe('registerPtyHandlers', () => {
         await expect(
           handlers.get('pty:spawn')!(null, { cols: 80, rows: 24, env: {} })
         ).rejects.toThrow(/spawn boom/)
-        expect(openCodeClearPtyMock).toHaveBeenCalled()
-        expect(piClearPtyMock).toHaveBeenCalled()
         expect(runtime.preparePtyExecutionContext).toHaveBeenLastCalledWith(
           expect.any(String),
           null,
@@ -4130,8 +3598,6 @@ describe('registerPtyHandlers', () => {
             sessionId: 'caller-owned-session'
           })
         ).rejects.toThrow(/spawn boom/)
-        expect(openCodeClearPtyMock).not.toHaveBeenCalled()
-        expect(piClearPtyMock).not.toHaveBeenCalled()
         expect(runtime.preparePtyExecutionContext).toHaveBeenLastCalledWith(
           'caller-owned-session',
           null,
@@ -4225,8 +3691,6 @@ describe('registerPtyHandlers', () => {
         expect(spawnOptions.envToDelete ?? []).not.toContain('ORCA_CODEX_HOME')
         expect(spawnOptions.paneKey).toBe(makePaneKey('tab-1', leafId))
         expect(spawnOptions.tabId).toBe('tab-1')
-        expect(openCodeBuildPtyEnvMock).not.toHaveBeenCalled()
-        expect(piBuildPtyEnvMock).not.toHaveBeenCalled()
         expect(store.upsertSshRemotePtyLease).toHaveBeenCalledWith(
           expect.objectContaining({
             targetId: 'ssh-1',
@@ -4375,8 +3839,6 @@ describe('registerPtyHandlers', () => {
         }
 
         expect(store.markSshRemotePtyLease).toHaveBeenCalledWith('ssh-1', 'remote-pty', 'expired')
-        expect(openCodeClearPtyMock).toHaveBeenCalledWith(scopedPtyId)
-        expect(piClearPtyMock).toHaveBeenCalledWith(scopedPtyId)
       })
 
       it('does not clear a scoped SSH session when remote reattach rejects an identity mismatch', async () => {
@@ -4439,8 +3901,6 @@ describe('registerPtyHandlers', () => {
             'remote-pty',
             'expired'
           )
-          expect(openCodeClearPtyMock).not.toHaveBeenCalledWith(scopedPtyId)
-          expect(piClearPtyMock).not.toHaveBeenCalledWith(scopedPtyId)
           getPtyWriteListener()(mainWindowIpcEvent, {
             id: scopedPtyId,
             data: 'echo still-owned'
@@ -8330,8 +7790,6 @@ describe('registerPtyHandlers', () => {
       )
       expect(store.upsertSshRemotePtyLease).not.toHaveBeenCalled()
       expect(store.persistPtyBinding).not.toHaveBeenCalled()
-      expect(openCodeClearPtyMock).toHaveBeenCalledWith(appPtyId)
-      expect(piClearPtyMock).toHaveBeenCalledWith(appPtyId)
       getPtyWriteListener()(mainWindowIpcEvent, { id: appPtyId, data: 'echo nope' })
       expect(remoteWrite).not.toHaveBeenCalled()
     } finally {
@@ -8434,8 +7892,6 @@ describe('registerPtyHandlers', () => {
       )
       expect(store.upsertSshRemotePtyLease).not.toHaveBeenCalled()
       expect(store.persistPtyBinding).not.toHaveBeenCalled()
-      expect(openCodeClearPtyMock).not.toHaveBeenCalledWith(appPtyId)
-      expect(piClearPtyMock).not.toHaveBeenCalledWith(appPtyId)
       getPtyWriteListener()(mainWindowIpcEvent, { id: appPtyId, data: 'echo still-owned' })
       expect(remoteWrite).toHaveBeenCalledWith(appPtyId, 'echo still-owned')
     } finally {
@@ -8523,8 +7979,6 @@ describe('registerPtyHandlers', () => {
       expect(remoteShutdown).toHaveBeenCalledWith(appPtyId, { immediate: true })
       expect(store.upsertSshRemotePtyLease).not.toHaveBeenCalled()
       expect(store.removeSshRemotePtyLease).not.toHaveBeenCalled()
-      expect(openCodeClearPtyMock).toHaveBeenCalledWith(appPtyId)
-      expect(piClearPtyMock).toHaveBeenCalledWith(appPtyId)
       const internals = runtime as unknown as {
         earlyExitedPtyIncarnations: Map<string, string | null>
         pendingPtyRegistrationIncarnations: Map<string, string | null>
@@ -8767,8 +8221,6 @@ describe('registerPtyHandlers', () => {
         'ORCA_CLI_COMMAND/u',
         'ORCA_AGENT_HOOK_PORT/u',
         'ORCA_AGENT_HOOK_TOKEN/u',
-        'ORCA_OMP_SOURCE_AGENT_DIR/p',
-        'ORCA_OMP_STATUS_EXTENSION/p',
         'POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD'
       ])
     )
@@ -9546,79 +8998,6 @@ describe('registerPtyHandlers', () => {
     } finally {
       resetMacosLoginShellPreflightForTests()
       process.env.ORCA_DISABLE_MACOS_LOGIN_SHELL = '1'
-      if (originalShell === undefined) {
-        delete process.env.SHELL
-      } else {
-        process.env.SHELL = originalShell
-      }
-    }
-  })
-
-  it('uses the POSIX shell wrapper so OpenCode config survives shell startup files', async () => {
-    const originalPlatform = process.platform
-    const originalShell = process.env.SHELL
-
-    Object.defineProperty(process, 'platform', {
-      configurable: true,
-      value: 'darwin'
-    })
-    process.env.SHELL = '/bin/zsh'
-
-    try {
-      const [shell, args, options] = await spawnAndGetCall({ cwd: '/tmp' })
-      expect(shell).toBe('/bin/zsh')
-      expect(args).toEqual(['-l'])
-      expect(options.env.OPENCODE_CONFIG_DIR).toBe('/tmp/orca-opencode-config')
-      expect(options.env.ORCA_OPENCODE_CONFIG_DIR).toBe('/tmp/orca-opencode-config')
-      expect(options.env.ZDOTDIR).toBe('/tmp/orca-user-data/shell-ready/zsh')
-      expect(options.env.ORCA_SHELL_READY_MARKER).toBe('0')
-    } finally {
-      Object.defineProperty(process, 'platform', {
-        configurable: true,
-        value: originalPlatform
-      })
-      if (originalShell === undefined) {
-        delete process.env.SHELL
-      } else {
-        process.env.SHELL = originalShell
-      }
-    }
-  })
-
-  it('uses the POSIX shell wrapper so Pi config survives shell startup files', async () => {
-    const originalPlatform = process.platform
-    const originalShell = process.env.SHELL
-
-    Object.defineProperty(process, 'platform', {
-      configurable: true,
-      value: 'darwin'
-    })
-    process.env.SHELL = '/bin/zsh'
-    openCodeBuildPtyEnvMock.mockImplementationOnce(() => ({
-      ORCA_OPENCODE_HOOK_PORT: '4567',
-      ORCA_OPENCODE_HOOK_TOKEN: 'opencode-token',
-      ORCA_OPENCODE_PTY_ID: 'test-pty'
-    }))
-
-    try {
-      const [shell, args, options] = await spawnAndGetCall({
-        cwd: '/tmp',
-        env: { PI_CODING_AGENT_DIR: '/tmp/user-pi-agent' }
-      })
-      expect(shell).toBe('/bin/zsh')
-      expect(args).toEqual(['-l'])
-      expect(options.env.OPENCODE_CONFIG_DIR).toBeUndefined()
-      expect(options.env.ORCA_OPENCODE_CONFIG_DIR).toBeUndefined()
-      expect(options.env.PI_CODING_AGENT_DIR).toBe('/tmp/user-pi-agent')
-      expect(options.env.ORCA_PI_CODING_AGENT_DIR).toBeUndefined()
-      expect(options.env.ORCA_PI_SOURCE_AGENT_DIR).toBe('/tmp/user-pi-agent')
-      expect(options.env.ZDOTDIR).toBe('/tmp/orca-user-data/shell-ready/zsh')
-      expect(options.env.ORCA_SHELL_READY_MARKER).toBe('0')
-    } finally {
-      Object.defineProperty(process, 'platform', {
-        configurable: true,
-        value: originalPlatform
-      })
       if (originalShell === undefined) {
         delete process.env.SHELL
       } else {
@@ -13907,7 +13286,9 @@ describe('registerPtyHandlers', () => {
     try {
       process.env.SHELL = '/opt/homebrew/bin/bash'
 
-      registerPtyHandlers(mainWindow as never)
+      // Why: ORCA_CODEX_HOME is what arms the markerless shell-ready wrapper, so
+      // the fallback shell's ZDOTDIR/marker env is observable here.
+      registerPtyHandlers(mainWindow as never, undefined, () => TEST_CODEX_HOME)
       await handlers.get('pty:spawn')!(null, {
         cols: 80,
         rows: 24,
@@ -13922,7 +13303,7 @@ describe('registerPtyHandlers', () => {
         expect.objectContaining({
           cwd: '/tmp',
           env: expect.objectContaining({
-            ORCA_OPENCODE_CONFIG_DIR: '/tmp/orca-opencode-config',
+            ORCA_CODEX_HOME: TEST_CODEX_HOME,
             ORCA_SHELL_READY_MARKER: '0',
             ZDOTDIR: '/tmp/orca-user-data/shell-ready/zsh'
           })
@@ -14630,7 +14011,9 @@ describe('registerPtyHandlers', () => {
     try {
       process.env.SHELL = '/bin/bash'
 
-      registerPtyHandlers(mainWindow as never)
+      // Why: ORCA_CODEX_HOME is what arms the markerless shell-ready wrapper, so
+      // the fallback shell's ZDOTDIR/marker env is observable here.
+      registerPtyHandlers(mainWindow as never, undefined, () => TEST_CODEX_HOME)
       await handlers.get('pty:spawn')!(null, {
         cols: 80,
         rows: 24,
@@ -14647,7 +14030,7 @@ describe('registerPtyHandlers', () => {
           cwd: '/tmp',
           env: expect.objectContaining({
             SHELL: '/bin/zsh',
-            ORCA_OPENCODE_CONFIG_DIR: '/tmp/orca-opencode-config',
+            ORCA_CODEX_HOME: TEST_CODEX_HOME,
             ORCA_SHELL_READY_MARKER: '0',
             ZDOTDIR: '/tmp/orca-user-data/shell-ready/zsh'
           })
@@ -14692,9 +14075,6 @@ describe('registerPtyHandlers', () => {
     })) as { id: string }
 
     await handlers.get('pty:kill')!(null, { id: spawnResult.id })
-
-    expect(openCodeClearPtyMock).toHaveBeenCalledWith(spawnResult.id)
-    expect(piClearPtyMock).toHaveBeenCalledWith(spawnResult.id)
   })
 
   it('retains PTY listeners until physical exit after manual kill IPC', async () => {
@@ -15103,16 +14483,12 @@ describe('registerPtyHandlers', () => {
     expect((await getLocalPtyProvider().listProcesses()).map(({ id }) => id)).toContain(
       spawnResult.id
     )
-    expect(openCodeClearPtyMock).not.toHaveBeenCalled()
-    expect(piClearPtyMock).not.toHaveBeenCalled()
 
     exitCb?.({ exitCode: -1 })
 
     expect((await getLocalPtyProvider().listProcesses()).map(({ id }) => id)).not.toContain(
       spawnResult.id
     )
-    expect(openCodeClearPtyMock).toHaveBeenCalledWith(spawnResult.id)
-    expect(piClearPtyMock).toHaveBeenCalledWith(spawnResult.id)
   })
 
   describe('agent_started telemetry', () => {

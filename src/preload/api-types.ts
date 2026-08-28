@@ -429,7 +429,6 @@ import type {
 } from '../shared/claude-usage-types'
 import type {
   CodexRateLimitResetResult,
-  GrokAccountStatus,
   RateLimitRuntimeTarget,
   RateLimitState
 } from '../shared/rate-limit-types'
@@ -463,17 +462,6 @@ import type {
   CodexUsageSnapshot,
   CodexUsageSummary
 } from '../shared/codex-usage-types'
-import type {
-  OpenCodeUsageBreakdownKind,
-  OpenCodeUsageBreakdownRow,
-  OpenCodeUsageDailyPoint,
-  OpenCodeUsageRange,
-  OpenCodeUsageScanState,
-  OpenCodeUsageScope,
-  OpenCodeUsageSessionRow,
-  OpenCodeUsageSnapshot,
-  OpenCodeUsageSummary
-} from '../shared/opencode-usage-types'
 import type {
   AiVaultListArgs,
   AiVaultListResult,
@@ -840,35 +828,6 @@ export type CodexUsageApi = {
     range: CodexUsageRange
     limit?: number
   }) => Promise<CodexUsageSessionRow[]>
-}
-
-export type OpenCodeUsageApi = {
-  getScanState: () => Promise<OpenCodeUsageScanState>
-  setEnabled: (args: { enabled: boolean }) => Promise<OpenCodeUsageScanState>
-  refresh: (args?: { force?: boolean }) => Promise<OpenCodeUsageScanState>
-  getSnapshot: (args: {
-    scope: OpenCodeUsageScope
-    range: OpenCodeUsageRange
-    limit?: number
-  }) => Promise<OpenCodeUsageSnapshot>
-  getSummary: (args: {
-    scope: OpenCodeUsageScope
-    range: OpenCodeUsageRange
-  }) => Promise<OpenCodeUsageSummary>
-  getDaily: (args: {
-    scope: OpenCodeUsageScope
-    range: OpenCodeUsageRange
-  }) => Promise<OpenCodeUsageDailyPoint[]>
-  getBreakdown: (args: {
-    scope: OpenCodeUsageScope
-    range: OpenCodeUsageRange
-    kind: OpenCodeUsageBreakdownKind
-  }) => Promise<OpenCodeUsageBreakdownRow[]>
-  getRecentSessions: (args: {
-    scope: OpenCodeUsageScope
-    range: OpenCodeUsageRange
-    limit?: number
-  }) => Promise<OpenCodeUsageSessionRow[]>
 }
 
 export type AiVaultApi = {
@@ -2396,18 +2355,7 @@ export type PreloadApi = {
   }
   agentHooks: {
     claudeStatus: () => Promise<AgentHookInstallStatus>
-    openClaudeStatus: () => Promise<AgentHookInstallStatus>
     codexStatus: () => Promise<AgentHookInstallStatus>
-    geminiStatus: () => Promise<AgentHookInstallStatus>
-    antigravityStatus: () => Promise<AgentHookInstallStatus>
-    ampStatus: () => Promise<AgentHookInstallStatus>
-    cursorStatus: () => Promise<AgentHookInstallStatus>
-    droidStatus: () => Promise<AgentHookInstallStatus>
-    commandCodeStatus: () => Promise<AgentHookInstallStatus>
-    grokStatus: () => Promise<AgentHookInstallStatus>
-    copilotStatus: () => Promise<AgentHookInstallStatus>
-    hermesStatus: () => Promise<AgentHookInstallStatus>
-    devinStatus: () => Promise<AgentHookInstallStatus>
   }
   agentTrust: {
     markTrusted: (args: {
@@ -2665,7 +2613,6 @@ export type PreloadApi = {
   memory: MemoryApi
   claudeUsage: ClaudeUsageApi
   codexUsage: CodexUsageApi
-  openCodeUsage: OpenCodeUsageApi
   aiVault: AiVaultApi
   nativeChat: NativeChatApi
   fs: {
@@ -3342,17 +3289,7 @@ export type PreloadApi = {
     setPollingInterval: (ms: number) => Promise<void>
     fetchInactiveClaudeAccounts: () => Promise<void>
     fetchInactiveCodexAccounts: () => Promise<void>
-    refreshMiniMax: () => Promise<RateLimitState>
-    refreshGrok: () => Promise<RateLimitState>
     onUpdate: (callback: (state: RateLimitState) => void) => () => void
-  }
-  minimaxCredentials: {
-    getStatus: () => Promise<{ configured: boolean }>
-    saveCookie: (cookie: string) => Promise<{ configured: boolean }>
-    clearCookie: () => Promise<{ configured: boolean }>
-  }
-  grokAccounts: {
-    getStatus: () => Promise<GrokAccountStatus>
   }
   ssh: {
     listTargets: () => Promise<SshTarget[]>

@@ -1,4 +1,3 @@
-import { getPowerShellOmpShellWrapper } from './pty/omp-shell-wrapper'
 export { encodePowerShellCommand } from '../shared/powershell-command-encoding'
 
 const POWERSHELL_OSC133_BOOTSTRAP = `# Orca OSC 133 shell integration for PowerShell.
@@ -23,9 +22,6 @@ try {
 } catch { Write-Error $_ -ErrorAction Continue }
 
 # Profiles can re-export user defaults after Orca's spawn env is set.
-if ($env:ORCA_OPENCODE_CONFIG_DIR) { $env:OPENCODE_CONFIG_DIR = $env:ORCA_OPENCODE_CONFIG_DIR }
-if ($env:ORCA_MIMOCODE_HOME) { $env:MIMOCODE_HOME = $env:ORCA_MIMOCODE_HOME }
-${getPowerShellOmpShellWrapper()}
 if ($env:ORCA_CODEX_HOME) { $env:CODEX_HOME = $env:ORCA_CODEX_HOME }
 
 $Global:__OrcaOsc133State = @{

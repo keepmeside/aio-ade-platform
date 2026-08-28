@@ -1,7 +1,7 @@
 /* Regression pin for #9297: local agent detection must resolve executables
  * against PATH with fs and spawn ZERO where/which subprocesses. On unfixed
  * code this fails because detectInstalledAgents spawns one `where`/`which`
- * process per probe command (>=20). See the read-only repro in comment-scan:
+ * process per probe command. See the read-only repro in comment-scan:
  * repro-9297-where-per-agent-probe.test.ts (which pins the OLD, buggy count).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -67,6 +67,7 @@ vi.mock('../pty/windows-environment-path', () => ({
 }))
 
 import { _resetPreflightCache, detectInstalledAgents } from './preflight'
+import { TUI_AGENT_CONFIG } from '../../shared/tui-agent-config'
 import {
   getTuiAgentDetectionProbeCommands,
   KNOWN_TUI_AGENT_DETECTION_COMMANDS
@@ -104,14 +105,18 @@ describe('#9297: local agent detection spawns zero where/which subprocesses', ()
         KNOWN_TUI_AGENT_DETECTION_COMMANDS,
         platform
       )
-      // Guardrail: the candidate list is large, so the old one-spawn-per-probe
-      // path multiplied a gated where.exe across dozens of startups.
-      expect(probeCommands.length).toBeGreaterThanOrEqual(20)
+      // Guardrail: keeps the zero-spawn assertion below non-vacuous — every
+      // agent shipped for this runtime must still contribute a probe command.
+      const shippedDetectCmds = Object.values(TUI_AGENT_CONFIG)
+        .filter((config) => !config.detectUnsupportedRuntimes?.includes(platform))
+        .map((config) => config.detectCmd)
+      expect(shippedDetectCmds.length).toBeGreaterThan(0)
+      expect(probeCommands).toEqual(expect.arrayContaining(shippedDetectCmds))
 
       const agents = await detectInstalledAgents()
 
-      // Perf-win lock: before the fix this was probeCommands.length (>=20);
-      // after the fix it is exactly 0.
+      // Perf-win lock: before the fix this was probeCommands.length, one gated
+      // where.exe per probe; after the fix it is exactly 0.
       expect(execFileAsyncMock).toHaveBeenCalledTimes(0)
       // Behavior preserved: empty PATH resolves nothing.
       expect(agents).toEqual([])

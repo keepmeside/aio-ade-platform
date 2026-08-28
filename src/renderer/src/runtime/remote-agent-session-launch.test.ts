@@ -32,13 +32,13 @@ describe('remote agent-session launch routing', () => {
       runRemoteAgentSessionLaunch({
         environmentId: 'env-1',
         hostAuthority,
-        hostAuthorityCapability: 'agent-session.omp-resume-path.v1',
+        hostAuthorityCapability: 'agent-session.host-authority.v1',
         legacy
       })
     ).resolves.toBe('structured')
     expect(mocks.supportsCapability).toHaveBeenCalledWith(
       'env-1',
-      'agent-session.omp-resume-path.v1'
+      'agent-session.host-authority.v1'
     )
     expect(hostAuthority).toHaveBeenCalledOnce()
     expect(legacy).not.toHaveBeenCalled()

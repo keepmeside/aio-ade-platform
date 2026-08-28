@@ -73,7 +73,7 @@ describe('daemon foreground confirmation composes with pane tracking', () => {
     return { handle, tracker }
   }
 
-  it('keeps a restored Droid through a scan resolving after the old cache window', async () => {
+  it('keeps a restored agent through a scan resolving after the old cache window', async () => {
     spawnMock.mockReturnValue(mockWindowsPty())
     let resolveFresh!: (value: string) => void
     resolveForegroundMock.mockReturnValue(
@@ -88,11 +88,11 @@ describe('daemon foreground confirmation composes with pane tracking', () => {
     await vi.advanceTimersByTimeAsync(350)
     await vi.advanceTimersByTimeAsync(2_000)
     expect(publish).not.toHaveBeenCalled()
-    resolveFresh('droid')
+    resolveFresh('codex')
     await vi.advanceTimersByTimeAsync(0)
 
     expect(publish).toHaveBeenCalledExactlyOnceWith({
-      agent: 'droid',
+      agent: 'codex',
       routingTrusted: true,
       shellForeground: false
     })

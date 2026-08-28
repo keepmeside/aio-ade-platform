@@ -14,7 +14,6 @@ export {
   isCursorAgentTitle,
   isCursorNativeAgentTitle,
   isGeminiTerminalTitle,
-  isPiTerminalTitle,
   STRONG_IDLE_KEYWORDS_RE,
   STRONG_WORKING_KEYWORDS_RE
 } from './agent-title-core'

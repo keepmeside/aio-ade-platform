@@ -25,7 +25,6 @@ describe('phase-01 safety net: legacy Orca data paths are compatibility contract
 
   it.each([
     ['jira credential store', 'src/main/jira/client.ts'],
-    ['minimax cookie store', 'src/main/minimax/minimax-cookie-store.ts'],
     ['claude agent-teams shim root', 'src/main/runtime/claude-agent-teams-shim-env.ts']
   ])('%s still resolves its home directory as .orca', (_label, path) => {
     expect(source(path)).toContain("'.orca'")

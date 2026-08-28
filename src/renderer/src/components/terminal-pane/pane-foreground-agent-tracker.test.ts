@@ -79,53 +79,35 @@ describe('createPaneForegroundAgentTracker', () => {
     await flushSettleRead(COMMAND_SETTLE_MS)
     expect(readForegroundProcess).toHaveBeenCalledExactlyOnceWith('pty-1')
     ptyId = 'pty-2'
-    resolveRead('droid')
+    resolveRead('claude')
     await Promise.resolve()
     await Promise.resolve()
 
-    expect(publish).not.toHaveBeenCalledWith({ agent: 'droid', shellForeground: false })
+    expect(publish).not.toHaveBeenCalledWith({ agent: 'claude', shellForeground: false })
   })
 
   it('uses typed-agent text only to await process confirmation', async () => {
-    readForegroundProcess.mockResolvedValueOnce('powershell.exe').mockResolvedValueOnce('droid')
+    readForegroundProcess.mockResolvedValueOnce('powershell.exe').mockResolvedValueOnce('claude')
     const tracker = makeTracker()
 
-    tracker.onCommandStarted('droid')
+    tracker.onCommandStarted('codex')
     expect(publish).toHaveBeenCalledExactlyOnceWith({ agent: null, shellForeground: false })
 
     await flushSettleRead(COMMAND_SETTLE_MS)
     expect(publish).toHaveBeenCalledTimes(1)
     await flushSettleRead(WRAPPER_RESOLVE_RETRY_MS)
+    // The confirmed process — not the typed command — decides the identity.
     expect(publish).toHaveBeenLastCalledWith({
-      agent: 'droid',
+      agent: 'claude',
       routingTrusted: true,
       shellForeground: false
     })
   })
 
-  it('never publishes typed Droid when command-start reads stay unavailable', async () => {
-    readForegroundProcess.mockResolvedValue(null)
-    const tracker = makeTracker()
-
-    tracker.onCommandStarted('droid')
-    await flushSettleRead(COMMAND_SETTLE_MS)
-    expect(publish).toHaveBeenLastCalledWith({ agent: null, shellForeground: false })
-
-    await flushSettleRead(WRAPPER_RESOLVE_RETRY_MS)
-    expect(publish).toHaveBeenLastCalledWith({ agent: null, shellForeground: false })
-
-    await flushSettleRead(SECOND_WRAPPER_RETRY_MS - 1)
-    expect(publish).toHaveBeenLastCalledWith({ agent: null, shellForeground: false })
-    await flushSettleRead(1)
-
-    expect(readForegroundProcess).toHaveBeenCalledTimes(3)
-    expect(publish).toHaveBeenLastCalledWith({ agent: null, shellForeground: false })
-  })
-
   it('does not replace known foreground identity with typed command inference', () => {
     const tracker = makeTracker(() => true)
 
-    tracker.onCommandStarted('droid')
+    tracker.onCommandStarted('codex')
 
     expect(publish).toHaveBeenCalledExactlyOnceWith({ agent: null, shellForeground: false })
   })
@@ -259,14 +241,14 @@ describe('createPaneForegroundAgentTracker', () => {
   })
 
   it('recognizes an agent started from a nested shell on a ladder re-read', async () => {
-    readForegroundProcess.mockResolvedValueOnce('bash').mockResolvedValueOnce('gemini')
+    readForegroundProcess.mockResolvedValueOnce('bash').mockResolvedValueOnce('claude')
     const tracker = makeTracker()
 
     tracker.onCommandStarted()
     await flushSettleRead(COMMAND_SETTLE_MS)
     await flushSettleRead(WRAPPER_RESOLVE_RETRY_MS)
 
-    expect(publish).toHaveBeenLastCalledWith({ agent: 'gemini', shellForeground: false })
+    expect(publish).toHaveBeenLastCalledWith({ agent: 'claude', shellForeground: false })
   })
 
   it('marks shell foreground on command finished without any foreground read', () => {
@@ -291,7 +273,7 @@ describe('createPaneForegroundAgentTracker', () => {
   })
 
   it('keeps duplicate ordinary 133;D pairs on the no-scan shell path', async () => {
-    readForegroundProcess.mockResolvedValue('grok')
+    readForegroundProcess.mockResolvedValue('codex')
     const tracker = makeTracker()
 
     tracker.onCommandStarted()
@@ -440,8 +422,8 @@ describe('createPaneForegroundAgentTracker', () => {
     })
   })
 
-  it('accepts a fresh shell result for a launch-known Droid pane', async () => {
-    readForegroundProcess.mockResolvedValueOnce('powershell.exe').mockResolvedValueOnce('droid')
+  it('accepts a fresh shell result for a launch-known agent pane', async () => {
+    readForegroundProcess.mockResolvedValueOnce('powershell.exe').mockResolvedValueOnce('claude')
     const tracker = makeTracker(() => true)
 
     tracker.onCommandFinished()
@@ -452,7 +434,7 @@ describe('createPaneForegroundAgentTracker', () => {
 
   it('does not let removed launch identity override fresh shell evidence', async () => {
     let knownIdentity = true
-    readForegroundProcess.mockResolvedValueOnce('powershell.exe').mockResolvedValueOnce('droid')
+    readForegroundProcess.mockResolvedValueOnce('powershell.exe').mockResolvedValueOnce('claude')
     const tracker = makeTracker(() => knownIdentity)
 
     tracker.onCommandFinished()
@@ -475,8 +457,8 @@ describe('createPaneForegroundAgentTracker', () => {
     expect(onCommandFinishedUnavailable).not.toHaveBeenCalled()
   })
 
-  it('retries a null foreground result once for a known Droid pane', async () => {
-    readForegroundProcess.mockResolvedValueOnce(null).mockResolvedValueOnce('droid')
+  it('retries a null foreground result once for a known agent pane', async () => {
+    readForegroundProcess.mockResolvedValueOnce(null).mockResolvedValueOnce('claude')
     const tracker = makeTracker(() => true)
 
     tracker.onCommandFinished()
@@ -486,15 +468,15 @@ describe('createPaneForegroundAgentTracker', () => {
     await flushSettleRead(WRAPPER_RESOLVE_RETRY_MS)
     expect(readForegroundProcess).toHaveBeenCalledTimes(2)
     expect(publish).toHaveBeenCalledExactlyOnceWith({
-      agent: 'droid',
+      agent: 'claude',
       routingTrusted: true,
       shellForeground: false
     })
   })
 
-  it('retries a rejected foreground read once for a known Droid pane', async () => {
+  it('retries a rejected foreground read once for a known agent pane', async () => {
     readForegroundProcess.mockRejectedValueOnce(new Error('inspection unavailable'))
-    readForegroundProcess.mockResolvedValueOnce('droid')
+    readForegroundProcess.mockResolvedValueOnce('claude')
     const tracker = makeTracker(() => true)
 
     tracker.onCommandFinished()
@@ -504,7 +486,7 @@ describe('createPaneForegroundAgentTracker', () => {
     await flushSettleRead(WRAPPER_RESOLVE_RETRY_MS)
     expect(readForegroundProcess).toHaveBeenCalledTimes(2)
     expect(publish).toHaveBeenCalledExactlyOnceWith({
-      agent: 'droid',
+      agent: 'claude',
       routingTrusted: true,
       shellForeground: false
     })
@@ -532,7 +514,7 @@ describe('createPaneForegroundAgentTracker', () => {
     readForegroundProcess
       .mockResolvedValueOnce('powershell.exe')
       .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce('droid')
+      .mockResolvedValueOnce('claude')
     const tracker = makeTracker(() => false)
 
     tracker.onVisiblePtyBound(true)
@@ -543,7 +525,7 @@ describe('createPaneForegroundAgentTracker', () => {
     await flushSettleRead(SECOND_WRAPPER_RETRY_MS)
     expect(readForegroundProcess).toHaveBeenCalledTimes(3)
     expect(publish).toHaveBeenCalledExactlyOnceWith({
-      agent: 'droid',
+      agent: 'claude',
       routingTrusted: true,
       shellForeground: false
     })

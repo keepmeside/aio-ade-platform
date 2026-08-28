@@ -490,6 +490,42 @@ describe('web settings preload API', () => {
     vi.unstubAllGlobals()
   })
 
+  /* This read boundary is the web equivalent of the desktop disk load. A stored blob written by
+   * a build with a wider agent roster must be coerced here, or the composer takes the dropped id
+   * as its default agent and the launch path indexes a TUI_AGENT_CONFIG entry that is gone. */
+  it('coerces a stored agent this build cannot launch off the roster-keyed settings', async () => {
+    const globals = installBrowserGlobals('Linux')
+    globals.storage.setItem(
+      'orca.web.settings.v1',
+      JSON.stringify({
+        defaultTuiAgent: 'gemini',
+        agentCmdOverrides: { gemini: 'gemini --yolo', codex: 'codex --profile web' },
+        terminalFontSize: 15
+      })
+    )
+    const { installWebPreloadApi } = await import('./web-preload-api')
+    installWebPreloadApi()
+
+    const settings = await globals.window.api.settings.get()
+
+    expect(settings.defaultTuiAgent).toBeNull()
+    expect(settings.agentCmdOverrides).toEqual({ codex: 'codex --profile web' })
+    // Unrelated settings in the same blob must survive the coercion untouched.
+    expect(settings.terminalFontSize).toBe(15)
+  })
+
+  it('keeps a stored agent this build can launch as the default', async () => {
+    const globals = installBrowserGlobals('Linux')
+    globals.storage.setItem(
+      'orca.web.settings.v1',
+      JSON.stringify({ defaultTuiAgent: 'claude-agent-teams' })
+    )
+    const { installWebPreloadApi } = await import('./web-preload-api')
+    installWebPreloadApi()
+
+    expect((await globals.window.api.settings.get()).defaultTuiAgent).toBe('claude-agent-teams')
+  })
+
   it('migrates first-work branch auto-rename on for stored legacy web settings once', async () => {
     const globals = installBrowserGlobals('Linux')
     globals.storage.setItem(
@@ -1126,24 +1162,6 @@ describe('web native chat preload API', () => {
         lifecycle
       }
     ])
-  })
-})
-
-describe('web MiniMax preload API', () => {
-  beforeEach(() => {
-    vi.resetModules()
-  })
-
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
-  it('exposes desktop-only MiniMax credential reads as unconfigured and rejects saves', async () => {
-    const { api } = await installApi('Linux')
-
-    await expect(api.minimaxCredentials.getStatus()).resolves.toEqual({ configured: false })
-    await expect(api.minimaxCredentials.saveCookie('_token=abc')).rejects.toThrow(/desktop app/i)
-    await expect(api.minimaxCredentials.clearCookie()).resolves.toEqual({ configured: false })
   })
 })
 

@@ -11,6 +11,11 @@ import {
   resolveCommitMessageAgentChoice
 } from './commit-message-agent-spec'
 import { LOCAL_COMMIT_MESSAGE_HOST_KEY } from './commit-message-host-key'
+import { isTuiAgent } from './tui-agent-config'
+import {
+  normalizeHostScopedTuiAgentKeyedRecord,
+  normalizeTuiAgentKeyedRecord
+} from './tui-agent-settings-normalization'
 import {
   DEFAULT_SOURCE_CONTROL_ACTION_COMMAND_TEMPLATES,
   normalizeSourceControlActionRecipe,
@@ -140,8 +145,18 @@ function normalizeStringRecord(value: unknown): Record<string, string> | undefin
   return Object.keys(normalized).length > 0 ? normalized : undefined
 }
 
+function asModelId(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined
+}
+
+function asModelCapabilities(value: unknown): CommitMessageAiModelCapability[] | undefined {
+  return Array.isArray(value) ? (value as CommitMessageAiModelCapability[]) : undefined
+}
+
+/** Model maps are keyed by agent, so a profile from a build with a wider roster carries keys this
+ *  build cannot launch. Drop those keys; a lookup by a shipped agent is unaffected. */
 function normalizeAgentModelRecord(value: unknown): Partial<Record<TuiAgent, string>> | undefined {
-  return normalizeStringRecord(value) as Partial<Record<TuiAgent, string>> | undefined
+  return isRecord(value) ? normalizeTuiAgentKeyedRecord(value, asModelId) : undefined
 }
 
 function normalizeHostAgentModelRecord(
@@ -150,17 +165,29 @@ function normalizeHostAgentModelRecord(
   if (!isRecord(value)) {
     return undefined
   }
-  const normalized: Partial<Record<string, Partial<Record<TuiAgent, string>>>> = {}
-  for (const [hostKey, hostModels] of Object.entries(value)) {
-    if (!isSafeRecordKey(hostKey)) {
-      continue
-    }
-    const normalizedHostModels = normalizeAgentModelRecord(hostModels)
-    if (normalizedHostModels) {
-      normalized[hostKey] = normalizedHostModels
-    }
-  }
+  const normalized = normalizeHostScopedTuiAgentKeyedRecord(value, asModelId)
   return Object.keys(normalized).length > 0 ? normalized : undefined
+}
+
+function normalizeAgentModelCapabilityRecord(
+  value: unknown
+): Partial<Record<TuiAgent, CommitMessageAiModelCapability[]>> {
+  return normalizeTuiAgentKeyedRecord(value, asModelCapabilities)
+}
+
+function normalizeHostAgentModelCapabilityRecord(
+  value: unknown
+): Partial<Record<string, Partial<Record<TuiAgent, CommitMessageAiModelCapability[]>>>> {
+  return normalizeHostScopedTuiAgentKeyedRecord(value, asModelCapabilities)
+}
+
+/** `custom` is a real choice rather than an agent id, so it survives; an agent this build cannot
+ *  launch clears back to null so agent resolution falls through to its own default. */
+function normalizeSourceControlAiAgentId(value: unknown): TuiAgent | 'custom' | null {
+  if (typeof value === 'string' && isCustomAgentId(value)) {
+    return CUSTOM_AGENT_ID
+  }
+  return isTuiAgent(value) ? value : null
 }
 
 function normalizeSourceControlAiModelChoice(
@@ -490,11 +517,14 @@ export function sourceControlAiSettingsFromLegacy(
   return {
     ...defaults,
     enabled: legacy.enabled,
-    agentId: legacy.agentId,
-    selectedModelByAgent: { ...legacy.selectedModelByAgent },
-    selectedModelByAgentByHost: copyRecord(legacy.selectedModelByAgentByHost) ?? {},
-    discoveredModelsByAgent: copyRecord(legacy.discoveredModelsByAgent) ?? {},
-    discoveredModelsByAgentByHost: copyRecord(legacy.discoveredModelsByAgentByHost) ?? {},
+    agentId: normalizeSourceControlAiAgentId(legacy.agentId),
+    selectedModelByAgent: normalizeTuiAgentKeyedRecord(legacy.selectedModelByAgent, asModelId),
+    selectedModelByAgentByHost:
+      normalizeHostAgentModelRecord(legacy.selectedModelByAgentByHost) ?? {},
+    discoveredModelsByAgent: normalizeAgentModelCapabilityRecord(legacy.discoveredModelsByAgent),
+    discoveredModelsByAgentByHost: normalizeHostAgentModelCapabilityRecord(
+      legacy.discoveredModelsByAgentByHost
+    ),
     selectedThinkingByModel: { ...legacy.selectedThinkingByModel },
     customAgentCommand: legacy.customAgentCommand,
     instructionsByOperation: {
@@ -726,6 +756,10 @@ export function normalizeSourceControlAiSettings(
 ): SourceControlAiSettings {
   const base = value ?? sourceControlAiSettingsFromLegacy(legacy)
   const defaults = getDefaultSourceControlAiSettings()
+  // Why: per-action recipes inherit the top-level agent, so they must inherit the
+  // *sanitized* id. Seeding them from the raw value let a profile naming an agent
+  // this build cannot launch survive in every action and hard-fail resolution.
+  const normalizedAgentId = normalizeSourceControlAiAgentId(base.agentId)
   const normalizedLaunchActionDefaults = normalizeSourceControlAiActionDefaults(
     base.launchActionDefaults
   )
@@ -757,7 +791,9 @@ export function normalizeSourceControlAiSettings(
         actionId,
         {
           ...defaults.actions?.[actionId],
-          ...(base.agentId && !isCustomAgentId(base.agentId) ? { agentId: base.agentId } : {}),
+          ...(normalizedAgentId && !isCustomAgentId(normalizedAgentId)
+            ? { agentId: normalizedAgentId }
+            : {}),
           ...existing,
           ...(shouldApplyInstructionTemplate ? { commandInputTemplate: instructionTemplate } : {})
         }
@@ -772,13 +808,18 @@ export function normalizeSourceControlAiSettings(
   return {
     ...defaults,
     ...base,
-    selectedModelByAgent: { ...defaults.selectedModelByAgent, ...base.selectedModelByAgent },
+    agentId: normalizedAgentId,
+    selectedModelByAgent: {
+      ...defaults.selectedModelByAgent,
+      ...normalizeTuiAgentKeyedRecord(base.selectedModelByAgent, asModelId)
+    },
     selectedModelByAgentByHost:
-      copyRecord(base.selectedModelByAgentByHost) ?? defaults.selectedModelByAgentByHost,
-    discoveredModelsByAgent:
-      copyRecord(base.discoveredModelsByAgent) ?? defaults.discoveredModelsByAgent,
-    discoveredModelsByAgentByHost:
-      copyRecord(base.discoveredModelsByAgentByHost) ?? defaults.discoveredModelsByAgentByHost,
+      normalizeHostAgentModelRecord(base.selectedModelByAgentByHost) ??
+      defaults.selectedModelByAgentByHost,
+    discoveredModelsByAgent: normalizeAgentModelCapabilityRecord(base.discoveredModelsByAgent),
+    discoveredModelsByAgentByHost: normalizeHostAgentModelCapabilityRecord(
+      base.discoveredModelsByAgentByHost
+    ),
     selectedThinkingByModel: {
       ...defaults.selectedThinkingByModel,
       ...base.selectedThinkingByModel
@@ -787,7 +828,10 @@ export function normalizeSourceControlAiSettings(
       ...defaults.instructionsByOperation,
       ...base.instructionsByOperation
     },
-    modelOverridesByOperation: copyRecord(base.modelOverridesByOperation),
+    modelOverridesByOperation: normalizeOperationRecord(
+      base.modelOverridesByOperation,
+      normalizeSourceControlAiModelChoice
+    ),
     prCreationDefaults: {
       ...defaults.prCreationDefaults,
       ...base.prCreationDefaults

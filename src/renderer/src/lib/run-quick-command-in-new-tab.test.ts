@@ -164,10 +164,10 @@ describe('runQuickCommandInNewTab', () => {
   it('does not launch post-start-only agent quick commands', () => {
     const result = runQuickCommandInNewTab({
       command: {
-        id: 'agent-aider',
-        label: 'Aider',
+        id: 'agent-teams-review',
+        label: 'Agent Teams',
         action: 'agent-prompt',
-        agent: 'aider',
+        agent: 'claude-agent-teams',
         prompt: 'Review this diff'
       },
       worktreeId: 'repo::worktree',

@@ -1271,7 +1271,6 @@ export default function AutomationsPage(): React.JSX.Element {
     if (target === 'hermes') {
       setDraft((current) => ({
         ...current,
-        agentId: 'hermes',
         workspaceMode: 'existing',
         setupDecision: undefined,
         reuseSession: false
@@ -1394,7 +1393,7 @@ export default function AutomationsPage(): React.JSX.Element {
     const nextDraft: AutomationDraft = {
       name: job.name,
       prompt: job.prompt ?? job.promptPreview,
-      agentId: 'hermes',
+      agentId: defaultAgent,
       projectId,
       workspaceMode: 'existing',
       workspaceId,

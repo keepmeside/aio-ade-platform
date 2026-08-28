@@ -41,13 +41,13 @@ describe('terminal startup command classifier', () => {
   })
 
   it('recognizes non-Codex Orca agent startup commands', () => {
-    expect(isKnownTuiAgentTerminalStartupCommand('grok --permission-mode bypassPermissions')).toBe(
+    expect(
+      isKnownTuiAgentTerminalStartupCommand('claude --permission-mode bypassPermissions')
+    ).toBe(true)
+    expect(isKnownTuiAgentTerminalStartupCommand('/Users/me/.claude/bin/claude --resume abc')).toBe(
       true
     )
-    expect(isKnownTuiAgentTerminalStartupCommand('/Users/me/.grok/bin/grok --resume abc')).toBe(
-      true
-    )
-    expect(isKnownTuiAgentTerminalStartupCommand('/usr/local/bin/not-grok --resume abc')).toBe(
+    expect(isKnownTuiAgentTerminalStartupCommand('/usr/local/bin/not-claude --resume abc')).toBe(
       false
     )
   })

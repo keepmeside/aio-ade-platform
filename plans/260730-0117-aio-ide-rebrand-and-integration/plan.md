@@ -2,7 +2,7 @@
 title: "AIO-ADE rebrand, strip and integration roadmap"
 status: approved-gates-updated
 created: 2026-07-30
-updated: 2026-08-21
+updated: 2026-08-27
 authors: [Keepmeside, SalyyS1]
 repository: keepmeside/aio-ade-platform
 blockedBy: []
@@ -43,7 +43,7 @@ Chuyển fork Orca thành **AIO-ADE** (machine token `aio-ade`; org/author token
 | Token `orca` | 3,475 file, 42,835 lần xuất hiện |
 | `mobile/` | 1,048 file, khoảng 9.7 MB |
 | `src/cli/` | 146 file |
-| Agent roster | 35 xuống 2 native (`claude`, `codex`) + generic ACP slot (phase 10) |
+| Agent roster | 35 xuống 3 native (`claude`, `claude-agent-teams`, `codex`) + generic ACP slot (phase 10) |
 | Workflow CI | 23 |
 | Upstream LICENSE | MIT, Copyright (c) 2026 Lovecast Inc. (fork redistribution hợp lệ khi giữ notice) |
 | Trạng thái Pages | Repo còn private tại thời điểm viết; Actions/Pages bị chặn bởi billing + thiếu ADMIN. Quyết định: flip public sau pre-publication gate (phase 08) |
@@ -55,7 +55,7 @@ Chuyển fork Orca thành **AIO-ADE** (machine token `aio-ade`; org/author token
 | [01 Preflight và gate baseline](phase-01-preflight-and-gate-baseline.md) | **completed** 2026-08-22 | 0.5 ngày | - |
 | [02 Xoá mobile và web companion](phase-02-delete-mobile-and-web-companion.md) | **completed** 2026-08-22 (Option A: chỉ RN tree) | 1 đến 1.5 ngày | 01 |
 | [03 Thu gọn CLI thành agent bridge tối thiểu](phase-03-carve-the-cli-agent-bridge.md) | **completed** 2026-08-22 — `serve` flag OFF, neutrality guard, browser carve (216→**139 command**); emulator/computer giữ, Linear defer phase 09 | 1.5 đến 2.5 ngày | 01, 02 |
-| [04 Chỉ giữ Claude và Codex native](phase-04-reduce-agent-roster-to-claude-and-codex.md) | pending | 2 đến 3 ngày | 02, 03 |
+| [04 Chỉ giữ Claude và Codex native](phase-04-reduce-agent-roster-to-claude-and-codex.md) | **completed** 2026-08-27 — roster `claude \| claude-agent-teams \| codex`; usage/accounts của agent đã bỏ xoá luôn (kéo theo rate-limit provider thu về claude/codex); passive title detection giữ, sweep ở 09 | 2 đến 3 ngày | 02, 03 |
 | [05 Rebrand Orca thành aio-ade](phase-05-rebrand-orca-to-aio-ide.md) | pending | 3 đến 5 ngày | 04 |
 | [06 Account và API profile switcher](phase-06-account-and-api-profile-switcher.md) | pending | 5 đến 6 tuần, chia 06A/06B | 04, 05, **12** |
 | [07 Tích hợp tính năng chọn lọc từ upstream (canvas: Excalidraw)](phase-07-upstream-feature-integrations.md) | staged | theo tranche | 05, 06 |

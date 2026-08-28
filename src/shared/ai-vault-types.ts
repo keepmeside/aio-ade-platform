@@ -7,24 +7,7 @@ import {
 import type { TuiAgent } from './types'
 import type { ExecutionHostId, ExecutionHostScope } from './execution-host'
 
-export const AI_VAULT_AGENTS = [
-  'claude',
-  'codex',
-  'hermes',
-  'pi',
-  'omp',
-  'cursor',
-  'gemini',
-  'antigravity',
-  'rovo',
-  'copilot',
-  'opencode',
-  'grok',
-  'openclaw',
-  'devin',
-  'droid',
-  'kimi'
-] as const satisfies readonly TuiAgent[]
+export const AI_VAULT_AGENTS = ['claude', 'codex'] as const satisfies readonly TuiAgent[]
 
 // Why: the aiVault.listSessions RPC schema CLAMPS scopePaths to this bound
 // (safe: scope paths only widen discovery). Producer-side caps against the same
@@ -38,21 +21,7 @@ export type AiVaultGroup = 'project' | 'folder' | 'agent'
 
 export const AI_VAULT_AGENT_LABELS = {
   claude: 'Claude',
-  codex: 'Codex',
-  hermes: 'Hermes',
-  pi: 'Pi',
-  omp: 'OMP',
-  cursor: 'Cursor',
-  gemini: 'Gemini',
-  antigravity: 'Antigravity',
-  rovo: 'Rovo Dev',
-  copilot: 'GitHub Copilot',
-  opencode: 'OpenCode',
-  grok: 'Grok',
-  openclaw: 'OpenClaw',
-  devin: 'Devin',
-  droid: 'Droid',
-  kimi: 'Kimi'
+  codex: 'Codex'
 } as const satisfies Record<AiVaultAgent, string>
 
 export type AiVaultSessionPreviewMessage = {
@@ -181,23 +150,16 @@ export function buildAiVaultResumeCommand(args: {
   platform: NodeJS.Platform
   commandOverride?: string | null
   codexHome?: string | null
-  resumeFilePath?: string | null
   shell?: AgentStartupShell
 }): string {
-  const { agent, sessionId, cwd, platform, commandOverride, codexHome, resumeFilePath, shell } =
-    args
+  const { agent, sessionId, cwd, platform, commandOverride, codexHome, shell } = args
   const baseCommand = commandOverride?.trim() || defaultAiVaultResumeCommandBase(agent)
-  // Why: OMP's `--resume` accepts an absolute transcript path, which resolves
-  // regardless of which session-dir root (custom OMP_CODING_AGENT_DIR / WSL
-  // home) the file was discovered under, where an id-prefix lookup scoped to
-  // the default store would miss it. Falls back to the id if no path is known.
-  const resumeTarget = agent === 'omp' && resumeFilePath?.trim() ? resumeFilePath.trim() : sessionId
   const sessionArg =
     shell === 'cmd'
-      ? quoteWindowsCmdArg(resumeTarget)
+      ? quoteWindowsCmdArg(sessionId)
       : shell
-        ? quoteStartupArg(resumeTarget, shell)
-        : quoteShellArg(resumeTarget, platform)
+        ? quoteStartupArg(sessionId, shell)
+        : quoteShellArg(sessionId, platform)
   const resumeCommand = buildAgentResumeInvocation(agent, baseCommand, sessionArg)
 
   return buildAiVaultResumeShellCommand({
@@ -296,15 +258,6 @@ export function aiVaultAgentLabel(agent: AiVaultAgent): string {
 }
 
 function defaultAiVaultResumeCommandBase(agent: AiVaultAgent): string {
-  if (agent === 'cursor') {
-    return 'cursor-agent'
-  }
-  if (agent === 'hermes') {
-    return 'hermes'
-  }
-  if (agent === 'rovo') {
-    return 'acli'
-  }
   return TUI_AGENT_CONFIG[agent].detectCmd
 }
 
@@ -316,33 +269,8 @@ function buildAgentResumeInvocation(
   switch (agent) {
     case 'codex':
       return `${baseCommand} resume ${sessionArg}`
-    case 'rovo':
-      return `${baseCommand} rovodev run --restore ${sessionArg}`
-    case 'opencode':
-    case 'pi':
-    // Why: Kimi Code resumes with `kimi --session <id>` (alias `-S`). Sessions
-    // are work-dir-scoped, so the cwd prefix from buildAiVaultResumeCommand is
-    // required — resuming from another directory is rejected by the CLI.
-    // falls through
-    case 'kimi':
-      return `${baseCommand} --session ${sessionArg}`
-    case 'copilot':
-      return `${baseCommand} --resume=${sessionArg}`
     case 'claude':
-    case 'cursor':
-    case 'gemini':
-    case 'grok':
-    case 'hermes':
-    case 'devin':
-    case 'openclaw':
-    case 'droid':
-    // Why: OMP resumes by absolute transcript path (see buildAiVaultResumeCommand),
-    // but the `--resume <arg>` invocation form is identical to the others here.
-    // falls through
-    case 'omp':
       return `${baseCommand} --resume ${sessionArg}`
-    case 'antigravity':
-      return `${baseCommand} --conversation ${sessionArg}`
   }
 }
 

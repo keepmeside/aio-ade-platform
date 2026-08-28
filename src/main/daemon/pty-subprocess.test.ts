@@ -79,14 +79,7 @@ import { createPtySubprocess, checkPtySpawnHealth } from './pty-subprocess'
 import { PREVIOUS_DAEMON_PROTOCOL_VERSIONS, PROTOCOL_VERSION } from './types'
 import { TERMINAL_GIT_CREDENTIAL_GUARD_POLICY_ENV } from '../../shared/terminal-git-credential-guard'
 
-const ORCA_SHELL_WRAPPER_ENV = [
-  'ORCA_ATTRIBUTION_SHIM_DIR',
-  'ORCA_OPENCODE_CONFIG_DIR',
-  'ORCA_MIMOCODE_HOME',
-  'ORCA_PI_CODING_AGENT_DIR',
-  'ORCA_OMP_CODING_AGENT_DIR',
-  'ORCA_CODEX_HOME'
-] as const
+const ORCA_SHELL_WRAPPER_ENV = ['ORCA_ATTRIBUTION_SHIM_DIR', 'ORCA_CODEX_HOME'] as const
 const POWERSHELL_OSC133_COMMAND_ARGS = ['-NoLogo', '-NoExit', '-EncodedCommand', expect.any(String)]
 const ZSH_SHELL_READY_DIR = /shell-ready[\\/]zsh/
 const POWERLEVEL10K_WIZARD_DISABLE_ENV = 'POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD'
@@ -646,7 +639,7 @@ describe('createPtySubprocess', () => {
     spawnMock.mockReturnValue(proc)
     const platform = Object.getOwnPropertyDescriptor(process, 'platform')
     Object.defineProperty(process, 'platform', { value: 'darwin' })
-    resolveAgentForegroundProcessMock.mockResolvedValue('grok')
+    resolveAgentForegroundProcessMock.mockResolvedValue('claude')
 
     try {
       const handle = createPtySubprocess({
@@ -658,12 +651,12 @@ describe('createPtySubprocess', () => {
       expect(handle.getForegroundProcess()).toBe('node')
       await Promise.resolve()
       await Promise.resolve()
-      expect(handle.getForegroundProcess()).toBe('grok')
+      expect(handle.getForegroundProcess()).toBe('claude')
 
       // Why: renderer reads poll slower than the 1s cache TTL — an expired
       // cache must keep answering with the resolved identity, not the wrapper.
       vi.advanceTimersByTime(1_500)
-      expect(handle.getForegroundProcess()).toBe('grok')
+      expect(handle.getForegroundProcess()).toBe('claude')
     } finally {
       vi.useRealTimers()
       if (platform) {
@@ -680,7 +673,7 @@ describe('createPtySubprocess', () => {
     spawnMock.mockReturnValue(proc)
     const platform = Object.getOwnPropertyDescriptor(process, 'platform')
     Object.defineProperty(process, 'platform', { value: 'darwin' })
-    resolveAgentForegroundProcessMock.mockResolvedValueOnce('grok').mockResolvedValue('node')
+    resolveAgentForegroundProcessMock.mockResolvedValueOnce('claude').mockResolvedValue('node')
 
     try {
       const handle = createPtySubprocess({
@@ -692,7 +685,7 @@ describe('createPtySubprocess', () => {
       expect(handle.getForegroundProcess()).toBe('node')
       await Promise.resolve()
       await Promise.resolve()
-      expect(handle.getForegroundProcess()).toBe('grok')
+      expect(handle.getForegroundProcess()).toBe('claude')
       // Flush the first refresh's finally so the next read can revalidate.
       await Promise.resolve()
       await Promise.resolve()
@@ -700,7 +693,7 @@ describe('createPtySubprocess', () => {
       // An unrelated wrapper (e.g. npm) now owns the pane: the stale-served
       // identity is revalidated and dropped once the refresh finds no agent.
       vi.advanceTimersByTime(1_500)
-      expect(handle.getForegroundProcess()).toBe('grok')
+      expect(handle.getForegroundProcess()).toBe('claude')
       await Promise.resolve()
       await Promise.resolve()
       await Promise.resolve()
@@ -834,8 +827,8 @@ describe('createPtySubprocess', () => {
       await Promise.resolve()
       expect(settled).toBe(false)
 
-      resolveFresh('droid')
-      await expect(confirmation).resolves.toBe('droid')
+      resolveFresh('claude')
+      await expect(confirmation).resolves.toBe('claude')
       expect(resolveAgentForegroundProcessMock).toHaveBeenCalledExactlyOnceWith(
         proc.pid,
         'powershell.exe',
@@ -871,7 +864,7 @@ describe('createPtySubprocess', () => {
 
   it('returns null when a recognized Windows fallback disappears during confirmation', async () => {
     const proc = mockPtyProcess()
-    proc.process = 'droid'
+    proc.process = 'claude'
     spawnMock.mockReturnValue(proc)
     const platform = Object.getOwnPropertyDescriptor(process, 'platform')
     Object.defineProperty(process, 'platform', { value: 'win32' })
@@ -1618,7 +1611,7 @@ describe('createPtySubprocess', () => {
           sessionId: 'test',
           cols: 80,
           rows: 24,
-          command: 'opencode'
+          command: 'claude'
         })
       ).not.toThrow()
 
@@ -1716,92 +1709,6 @@ describe('createPtySubprocess', () => {
         env: {
           SHELL: '/bin/zsh',
           ORCA_ATTRIBUTION_SHIM_DIR: '/tmp/orca-terminal-attribution/posix'
-        }
-      })
-    } finally {
-      if (platform) {
-        Object.defineProperty(process, 'platform', platform)
-      }
-    }
-
-    const lastCall = spawnMock.mock.calls.at(-1)!
-    expect(lastCall[1]).toEqual(['-l'])
-    expect(lastCall[2].env.ZDOTDIR).toMatch(ZSH_SHELL_READY_DIR)
-    expect(lastCall[2].env.ORCA_SHELL_READY_MARKER).toBe('0')
-  })
-
-  it('uses shell wrapper when OpenCode config must survive shell startup', () => {
-    const proc = mockPtyProcess()
-    spawnMock.mockReturnValue(proc)
-    const platform = Object.getOwnPropertyDescriptor(process, 'platform')
-    Object.defineProperty(process, 'platform', { value: 'linux' })
-
-    try {
-      createPtySubprocess({
-        sessionId: 'test',
-        cols: 80,
-        rows: 24,
-        env: {
-          SHELL: '/bin/zsh',
-          OPENCODE_CONFIG_DIR: '/tmp/orca-opencode-overlay',
-          ORCA_OPENCODE_CONFIG_DIR: '/tmp/orca-opencode-overlay'
-        }
-      })
-    } finally {
-      if (platform) {
-        Object.defineProperty(process, 'platform', platform)
-      }
-    }
-
-    const lastCall = spawnMock.mock.calls.at(-1)!
-    expect(lastCall[1]).toEqual(['-l'])
-    expect(lastCall[2].env.ZDOTDIR).toMatch(ZSH_SHELL_READY_DIR)
-    expect(lastCall[2].env.ORCA_SHELL_READY_MARKER).toBe('0')
-  })
-
-  it('uses shell wrapper when MiMo home must survive shell startup', () => {
-    const proc = mockPtyProcess()
-    spawnMock.mockReturnValue(proc)
-    const platform = Object.getOwnPropertyDescriptor(process, 'platform')
-    Object.defineProperty(process, 'platform', { value: 'linux' })
-
-    try {
-      createPtySubprocess({
-        sessionId: 'test',
-        cols: 80,
-        rows: 24,
-        env: {
-          SHELL: '/bin/zsh',
-          MIMOCODE_HOME: '/tmp/orca-mimocode-overlay',
-          ORCA_MIMOCODE_HOME: '/tmp/orca-mimocode-overlay'
-        }
-      })
-    } finally {
-      if (platform) {
-        Object.defineProperty(process, 'platform', platform)
-      }
-    }
-
-    const lastCall = spawnMock.mock.calls.at(-1)!
-    expect(lastCall[1]).toEqual(['-l'])
-    expect(lastCall[2].env.ZDOTDIR).toMatch(ZSH_SHELL_READY_DIR)
-    expect(lastCall[2].env.ORCA_SHELL_READY_MARKER).toBe('0')
-  })
-
-  it('uses shell wrapper when typed OMP commands need the status extension', () => {
-    const proc = mockPtyProcess()
-    spawnMock.mockReturnValue(proc)
-    const platform = Object.getOwnPropertyDescriptor(process, 'platform')
-    Object.defineProperty(process, 'platform', { value: 'linux' })
-
-    try {
-      createPtySubprocess({
-        sessionId: 'test',
-        cols: 80,
-        rows: 24,
-        env: {
-          SHELL: '/bin/zsh',
-          ORCA_OMP_STATUS_EXTENSION: '/tmp/.omp/agent/extensions/orca-agent-status.ts'
         }
       })
     } finally {

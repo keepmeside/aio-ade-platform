@@ -332,11 +332,11 @@ describe('submitFolderWorkspaceCreate', () => {
 
     await submitFolderWorkspaceCreate({
       projectGroup: makeProjectGroup(),
-      name: 'Aider followup',
+      name: 'Stdin followup',
       lastAutoName: '',
       linkedWorkItem: null,
       note: 'Fix the failing folder prompt flow',
-      quickAgent: 'aider',
+      quickAgent: 'claude-agent-teams',
       autoRenameBranchFromWork: false,
       agentCmdOverrides: {},
       createFolderWorkspace,
@@ -344,13 +344,13 @@ describe('submitFolderWorkspaceCreate', () => {
     })
 
     const startup = mocks.activateAndRevealFolderWorkspace.mock.calls[0]?.[1]?.startup
-    expect(startup?.command).toBe('aider')
+    expect(startup?.command).toBe('orca-ide claude-teams')
     expect(mocks.ensureAgentStartupInTerminal).toHaveBeenCalledWith({
       worktreeId: folderWorkspaceKey('folder-workspace-1'),
       primaryTabId: 'tab-1',
       startup: expect.objectContaining({
-        agent: 'aider',
-        launchCommand: 'aider',
+        agent: 'claude-agent-teams',
+        launchCommand: 'orca-ide claude-teams',
         followupPrompt: 'Fix the failing folder prompt flow'
       })
     })
@@ -638,7 +638,7 @@ describe('submitFolderWorkspaceCreate', () => {
 describe('buildFolderWorkspaceLinkedStartupPlan', () => {
   it('uses cmd quoting for configured arguments on local Windows', () => {
     const plan = buildFolderWorkspaceLinkedStartupPlan({
-      agent: 'hermes',
+      agent: 'codex',
       linkedWorkItem: {
         provider: 'github',
         type: 'issue',
@@ -655,6 +655,6 @@ describe('buildFolderWorkspaceLinkedStartupPlan', () => {
       isRemote: false
     })
 
-    expect(plan?.launchCommand).toBe('hermes --tui "--provider" "value with space"')
+    expect(plan?.launchCommand).toBe('codex "--provider" "value with space"')
   })
 })

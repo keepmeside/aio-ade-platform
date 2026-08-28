@@ -84,9 +84,6 @@ describe('getAgentRowConversationName', () => {
     expect(
       getAgentRowConversationName(makeTab({ title: 'Codex - action required' }), 'codex', false)
     ).toBeNull()
-    expect(
-      getAgentRowConversationName(makeTab({ title: 'Cursor Agent' }), 'cursor', false)
-    ).toBeNull()
   })
 
   it('rejects identity-echo, management, and placeholder titles', () => {

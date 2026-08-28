@@ -5,7 +5,6 @@ import {
   SYNTHETIC_AGENT_TITLE_PROFILES,
   type SyntheticAgentTitleProfile
 } from './synthetic-agent-title'
-import { isLegacyPiCompatibleTitle } from './pi-compatible-synthetic-title'
 
 type TitleProfileMatch = {
   profile: SyntheticAgentTitleProfile
@@ -50,11 +49,7 @@ function getProfileForTitle(title: string): TitleProfileMatch | null {
 
   let fallback: TitleProfileMatch | null = null
   for (const candidate of candidates) {
-    const labelProfile = getProfileForTitleLabel(getAgentLabel(candidate))
-    const legacyProfile = isLegacyPiCompatibleTitle(candidate)
-      ? getProfileForTitleLabel('Pi')
-      : null
-    const candidateProfile = labelProfile ?? legacyProfile
+    const candidateProfile = getProfileForTitleLabel(getAgentLabel(candidate))
     if (!candidateProfile) {
       continue
     }
@@ -76,16 +71,12 @@ export function hasCompatibleAgentTitleIdentity(title: string): boolean {
 }
 
 /**
- * Detects the agent status (working, permission, idle) from a terminal title,
- * accounting for legacy Pi titles.
+ * Detects the agent status (working, permission, idle) from a terminal title.
  */
 function getSourceTitleStatus(title: string): 'working' | 'permission' | 'idle' | null {
   const detectedStatus = detectAgentStatusFromTitle(title)
   if (detectedStatus) {
     return detectedStatus
-  }
-  if (isLegacyPiCompatibleTitle(title)) {
-    return 'idle'
   }
   return null
 }

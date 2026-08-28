@@ -1,4 +1,3 @@
-import { readFile } from 'node:fs/promises'
 import type {
   AiVaultListResult,
   AiVaultScanIssue,
@@ -12,11 +11,6 @@ import {
   dedupeCodexRolloutFileAliases,
   dedupeCodexSessionsBySessionId
 } from './codex-session-root-dedup'
-import {
-  createAntigravityWorkspaceResolver,
-  type AntigravityWorkspaceResolver
-} from './session-scanner-antigravity-history'
-import { antigravityHistoryPathForBrainDir } from './session-scanner-antigravity-paths'
 import { codexHomeForSessionsDir } from './session-scanner-codex-paths'
 import {
   ensureSessionParseCacheLoaded,
@@ -69,7 +63,6 @@ export async function scanAiVaultSessions(
     const executionHostId = options.executionHostId ?? LOCAL_EXECUTION_HOST_ID
     const issues: AiVaultScanIssue[] = []
     const parseStats = createSessionParseStats()
-    const antigravityWorkspaceResolver = createAntigravityWorkspaceResolver(readOptionalTextFile)
     // Why: persisted entries must be seeded before any candidate is parsed, or
     // the cold scan gains nothing from the cache file (#9210).
     await ensureSessionParseCacheLoaded()
@@ -88,11 +81,7 @@ export async function scanAiVaultSessions(
                       discovery.rootDir,
                       options.defaultCodexHomeDir ?? DEFAULT_CODEX_HOME_DIR
                     )
-                  : null,
-              antigravityHistoryPath:
-                discovery.agent === 'antigravity'
-                  ? antigravityHistoryPathForBrainDir(discovery.rootDir)
-                  : undefined
+                  : null
             })
           )
         )
@@ -111,8 +100,7 @@ export async function scanAiVaultSessions(
       platform,
       executionHostId,
       issues,
-      parseStats,
-      antigravityWorkspaceResolver
+      parseStats
     })
 
     const cappedSessions = dedupeCodexSessionsBySessionId(parsedSessions)
@@ -212,7 +200,6 @@ async function parseSessionCandidates(args: {
   executionHostId: ExecutionHostId
   issues: AiVaultScanIssue[]
   parseStats: SessionParseStats
-  antigravityWorkspaceResolver?: AntigravityWorkspaceResolver
 }): Promise<AiVaultSession[]> {
   const sessions: AiVaultSession[] = []
   let index = 0
@@ -228,13 +215,7 @@ async function parseSessionCandidates(args: {
     const batch = args.candidates.slice(index, index + batchSize)
     const results = await Promise.all(
       batch.map((candidate) =>
-        parseSessionCandidate(
-          candidate,
-          args.platform,
-          args.executionHostId,
-          args.parseStats,
-          args.antigravityWorkspaceResolver
-        )
+        parseSessionCandidate(candidate, args.platform, args.executionHostId, args.parseStats)
       )
     )
 
@@ -262,14 +243,10 @@ async function parseSessionCandidate(
   candidate: SessionFileCandidate,
   platform: NodeJS.Platform,
   executionHostId: ExecutionHostId,
-  parseStats: SessionParseStats,
-  antigravityWorkspaceResolver?: AntigravityWorkspaceResolver
+  parseStats: SessionParseStats
 ): Promise<SessionParseResult> {
   try {
-    let session = await parseAgentSessionFileCached(candidate, platform, parseStats)
-    if (session && candidate.antigravityHistoryPath && antigravityWorkspaceResolver) {
-      session = await antigravityWorkspaceResolver.enrich(session, candidate.antigravityHistoryPath)
-    }
+    const session = await parseAgentSessionFileCached(candidate, platform, parseStats)
     return {
       session: session ? withSessionExecutionHost(session, executionHostId) : null,
       issue: null
@@ -284,14 +261,6 @@ async function parseSessionCandidate(
         message: errorMessage(err)
       }
     }
-  }
-}
-
-async function readOptionalTextFile(path: string): Promise<string | null> {
-  try {
-    return await readFile(path, 'utf-8')
-  } catch {
-    return null
   }
 }
 

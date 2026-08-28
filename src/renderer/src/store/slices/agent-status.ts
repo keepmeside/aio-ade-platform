@@ -39,7 +39,6 @@ import {
   isOrcaDispatchPrompt,
   orchestrationLabelsMatchLiveDispatch
 } from '@/lib/agent-row-primary-text'
-import { isCompletedPiCompatibleAgentWithLiveRecoveryRecord } from '@/lib/pi-compatible-live-recovery-record'
 import {
   resolveAgentPaneAuthorityKey,
   retireAgentPaneAuthorityAliases,
@@ -644,8 +643,7 @@ export function collectSleepingAgentSessionRecordsForWorktree(
       if (
         existing.worktreeId !== worktreeId ||
         existing.origin !== 'live' ||
-        (liveEntry !== undefined &&
-          !isCompletedPiCompatibleAgentWithLiveRecoveryRecord(liveEntry, existing)) ||
+        liveEntry !== undefined ||
         (allowedPaneKeys && !allowedPaneKeys.has(existing.paneKey)) ||
         !getAgentResumeArgv(existing.agent, existing.providerSession)
       ) {
@@ -763,7 +761,7 @@ function sleepingRecordsEquivalentIgnoringCaptureTime(
     existing.tabId === next.tabId &&
     existing.worktreeId === next.worktreeId &&
     existing.agent === next.agent &&
-    agentProviderSessionsEqual(existing.agent, existing.providerSession, next.providerSession) &&
+    agentProviderSessionsEqual(existing.providerSession, next.providerSession) &&
     existing.prompt === next.prompt &&
     existing.state === next.state &&
     existing.updatedAt === next.updatedAt &&
@@ -787,7 +785,7 @@ function recoveryRecordMatches(
     existing.agent === next.agent &&
     existing.worktreeId === next.worktreeId &&
     existing.tabId === next.tabId &&
-    agentProviderSessionsEqual(existing.agent, existing.providerSession, next.providerSession) &&
+    agentProviderSessionsEqual(existing.providerSession, next.providerSession) &&
     launchConfigsEqual(existing.launchConfig, next.launchConfig)
   )
 }
@@ -803,7 +801,7 @@ function recoveryRecordTargetsSameSession(
     existing.agent === next.agent &&
     existing.worktreeId === next.worktreeId &&
     existing.tabId === next.tabId &&
-    agentProviderSessionsEqual(existing.agent, existing.providerSession, next.providerSession)
+    agentProviderSessionsEqual(existing.providerSession, next.providerSession)
   )
 }
 
@@ -811,8 +809,7 @@ function copyLaunchConfig(config: SleepingAgentLaunchConfig): SleepingAgentLaunc
   return {
     ...(config.agentCommand ? { agentCommand: config.agentCommand } : {}),
     agentArgs: config.agentArgs,
-    agentEnv: { ...config.agentEnv },
-    ...(config.ompResumeFilePath ? { ompResumeFilePath: config.ompResumeFilePath } : {})
+    agentEnv: { ...config.agentEnv }
   }
 }
 
@@ -823,11 +820,7 @@ function launchConfigsEqual(
   if (a === undefined || b === undefined) {
     return a === b
   }
-  if (
-    a.agentCommand !== b.agentCommand ||
-    a.agentArgs !== b.agentArgs ||
-    a.ompResumeFilePath !== b.ompResumeFilePath
-  ) {
+  if (a.agentCommand !== b.agentCommand || a.agentArgs !== b.agentArgs) {
     return false
   }
   const aKeys = Object.keys(a.agentEnv)
@@ -861,11 +854,7 @@ function launchConfigRegistryEntriesEqual(
     a.identity.tabId === b.identity.tabId &&
     a.identity.leafId === b.identity.leafId &&
     a.identity.terminalHandle === b.identity.terminalHandle &&
-    agentProviderSessionsEqual(
-      a.identity.agentType ?? b.identity.agentType,
-      a.identity.providerSession,
-      b.identity.providerSession
-    )
+    agentProviderSessionsEqual(a.identity.providerSession, b.identity.providerSession)
   )
 }
 
@@ -908,11 +897,7 @@ function registryEntryMatchesStatus(args: {
     return false
   }
   if (identity.providerSession !== undefined) {
-    return agentProviderSessionsEqual(
-      args.agentType,
-      identity.providerSession,
-      args.providerSession
-    )
+    return agentProviderSessionsEqual(identity.providerSession, args.providerSession)
   }
   if (identity.launchToken !== undefined) {
     return true
@@ -921,11 +906,7 @@ function registryEntryMatchesStatus(args: {
     return true
   }
   if (args.existingProviderSession && args.providerSession) {
-    return agentProviderSessionsEqual(
-      args.agentType,
-      args.existingProviderSession,
-      args.providerSession
-    )
+    return agentProviderSessionsEqual(args.existingProviderSession, args.providerSession)
   }
   return false
 }
@@ -955,11 +936,7 @@ function getLaunchConfigForEntry(
   return sleepingRecord?.launchConfig &&
     sleepingRecord.agent === entry.agentType &&
     entry.providerSession &&
-    agentProviderSessionsEqual(
-      entry.agentType,
-      sleepingRecord.providerSession,
-      entry.providerSession
-    )
+    agentProviderSessionsEqual(sleepingRecord.providerSession, entry.providerSession)
     ? sleepingRecord.launchConfig
     : undefined
 }
@@ -1573,7 +1550,7 @@ export const createAgentStatusSlice: StateCreator<AppState, [], [], AgentStatusS
         const launchConfig =
           (registryMatches ? registryEntry?.launchConfig : undefined) ??
           (existingRecord?.agent === agent &&
-          agentProviderSessionsEqual(agent, existingRecord.providerSession, providerSession)
+          agentProviderSessionsEqual(existingRecord.providerSession, providerSession)
             ? existingRecord.launchConfig
             : undefined)
         const record: SleepingAgentSessionRecord = {
@@ -1774,11 +1751,7 @@ export const createAgentStatusSlice: StateCreator<AppState, [], [], AgentStatusS
           : undefined
         const providerSessionChanged =
           Boolean(metadata?.providerSession && existingProviderSession) &&
-          !agentProviderSessionsEqual(
-            identity.agentType,
-            metadata?.providerSession,
-            existingProviderSession
-          )
+          !agentProviderSessionsEqual(metadata?.providerSession, existingProviderSession)
         const statusTabId =
           routing?.tabId ?? existing?.tabId ?? getTabIdFromPaneKey(paneKey) ?? undefined
         const statusTerminalHandle = routing?.terminalHandle ?? existing?.terminalHandle
@@ -1811,11 +1784,7 @@ export const createAgentStatusSlice: StateCreator<AppState, [], [], AgentStatusS
           existingSleepingRecord?.launchConfig &&
           existingSleepingRecord.agent === identity.agentType &&
           providerSession &&
-          agentProviderSessionsEqual(
-            identity.agentType,
-            existingSleepingRecord.providerSession,
-            providerSession
-          )
+          agentProviderSessionsEqual(existingSleepingRecord.providerSession, providerSession)
             ? existingSleepingRecord.launchConfig
             : undefined
         // Why: on a reused pane key, once the provider session changes the old launch registry must not bleed options into the new session.
@@ -1957,11 +1926,7 @@ export const createAgentStatusSlice: StateCreator<AppState, [], [], AgentStatusS
           matchedRegistryLaunchConfig &&
           registryEntry &&
           providerSession &&
-          !agentProviderSessionsEqual(
-            identity.agentType,
-            registryEntry.identity.providerSession,
-            providerSession
-          )
+          !agentProviderSessionsEqual(registryEntry.identity.providerSession, providerSession)
         ) {
           nextLaunchConfigs = {
             ...nextLaunchConfigs,
@@ -2753,18 +2718,6 @@ export const createAgentStatusSlice: StateCreator<AppState, [], [], AgentStatusS
         let changed = false
         for (const entry of Object.values(s.agentStatusByPaneKey)) {
           if (entry.state === 'done') {
-            const existing = next[entry.paneKey]
-            if (!isCompletedPiCompatibleAgentWithLiveRecoveryRecord(entry, existing)) {
-              continue
-            }
-            if (mode === 'periodic') {
-              continue
-            }
-            const record = { ...existing, capturedAt, origin }
-            if (!sleepingRecordsEquivalentIgnoringCaptureTime(existing, record)) {
-              next[entry.paneKey] = record
-              changed = true
-            }
             continue
           }
           const worktreeId = entry.worktreeId ?? findAgentPaneWorktreeId(s, entry.paneKey)

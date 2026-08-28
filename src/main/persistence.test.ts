@@ -2379,20 +2379,20 @@ describe('Store', () => {
       settings: {
         commitMessageAi: {
           enabled: true,
-          agentId: 'cursor',
-          selectedModelByAgent: { cursor: 'gpt-5.2' },
-          selectedModelByAgentByHost: { 'ssh:conn-1': { cursor: 'remote-model' } },
+          agentId: 'codex',
+          selectedModelByAgent: { codex: 'gpt-5.2' },
+          selectedModelByAgentByHost: { 'ssh:conn-1': { codex: 'remote-model' } },
           discoveredModelsByAgent: {
-            cursor: [{ id: 'gpt-5.2', label: 'GPT 5.2' }]
+            codex: [{ id: 'gpt-5.2', label: 'GPT 5.2' }]
           },
           discoveredModelsByAgentByHost: {
             'ssh:conn-1': {
-              cursor: [{ id: 'remote-model', label: 'Remote Model' }]
+              codex: [{ id: 'remote-model', label: 'Remote Model' }]
             }
           },
           selectedThinkingByModel: { 'gpt-5.2': 'high' },
           customPrompt: 'Use Conventional Commits.',
-          customAgentCommand: 'cursor-agent'
+          customAgentCommand: 'codex-agent'
         }
       },
       ui: {},
@@ -2405,19 +2405,19 @@ describe('Store', () => {
 
     expect(sourceControlAi).toMatchObject({
       enabled: true,
-      agentId: 'cursor',
-      selectedModelByAgent: { cursor: 'gpt-5.2' },
+      agentId: 'codex',
+      selectedModelByAgent: { codex: 'gpt-5.2' },
       selectedThinkingByModel: { 'gpt-5.2': 'high' },
-      customAgentCommand: 'cursor-agent',
+      customAgentCommand: 'codex-agent',
       instructionsByOperation: {
         commitMessage: 'Use Conventional Commits.',
         pullRequest: '',
         branchName: 'Use Conventional Commits.'
       }
     })
-    expect(sourceControlAi?.selectedModelByAgentByHost?.['ssh:conn-1']?.cursor).toBe('remote-model')
-    expect(sourceControlAi?.discoveredModelsByAgent?.cursor?.[0]?.id).toBe('gpt-5.2')
-    expect(sourceControlAi?.discoveredModelsByAgentByHost?.['ssh:conn-1']?.cursor?.[0]?.id).toBe(
+    expect(sourceControlAi?.selectedModelByAgentByHost?.['ssh:conn-1']?.codex).toBe('remote-model')
+    expect(sourceControlAi?.discoveredModelsByAgent?.codex?.[0]?.id).toBe('gpt-5.2')
+    expect(sourceControlAi?.discoveredModelsByAgentByHost?.['ssh:conn-1']?.codex?.[0]?.id).toBe(
       'remote-model'
     )
     expect(store.getSettings().commitMessageAi?.customPrompt).toBe('Use Conventional Commits.')
@@ -5305,7 +5305,105 @@ describe('Store', () => {
     const updated = store.updateSettings({
       disabledTuiAgents: ['gemini', 'not-real', 'gemini', 'opencode'] as never
     })
-    expect(updated.disabledTuiAgents).toEqual(['gemini', 'opencode'])
+    expect(updated.disabledTuiAgents).toEqual([])
+  })
+
+  it('clears a default agent this build cannot launch, keeping unrelated settings', async () => {
+    writeDataFile({
+      settings: {
+        defaultTuiAgent: 'gemini',
+        terminalFontSize: 15
+      }
+    })
+    const store = await createStore()
+
+    expect(store.getSettings().defaultTuiAgent).toBeNull()
+    expect(store.getSettings().terminalFontSize).toBe(15)
+  })
+
+  it('keeps a default agent this build can launch and the explicit blank choice', async () => {
+    writeDataFile({ settings: { defaultTuiAgent: 'codex' } })
+    const store = await createStore()
+
+    expect(store.getSettings().defaultTuiAgent).toBe('codex')
+    expect(store.updateSettings({ defaultTuiAgent: 'blank' }).defaultTuiAgent).toBe('blank')
+    expect(store.updateSettings({ defaultTuiAgent: 'cursor' as never }).defaultTuiAgent).toBeNull()
+  })
+
+  it('drops command overrides for agents this build cannot launch', async () => {
+    writeDataFile({
+      settings: {
+        agentCmdOverrides: {
+          claude: 'claude --settings ~/work.json',
+          gemini: 'gemini --yolo',
+          droid: 'droid'
+        }
+      }
+    })
+    const store = await createStore()
+
+    expect(store.getSettings().agentCmdOverrides).toEqual({
+      claude: 'claude --settings ~/work.json'
+    })
+
+    const updated = store.updateSettings({
+      agentCmdOverrides: { codex: 'codex --profile work', cursor: 'cursor-agent' } as never
+    })
+    expect(updated.agentCmdOverrides).toEqual({ codex: 'codex --profile work' })
+  })
+
+  it('drops model selections for agents this build cannot launch', async () => {
+    writeDataFile({
+      settings: {
+        sourceControlAi: {
+          enabled: true,
+          agentId: 'claude',
+          selectedModelByAgent: { claude: 'sonnet', gemini: 'gemini-2.5-pro' },
+          selectedModelByAgentByHost: { 'ssh:retired': { cursor: 'cursor-fast' } },
+          discoveredModelsByAgent: { droid: [{ id: 'droid-1', label: 'Droid' }] },
+          selectedThinkingByModel: { sonnet: 'high' },
+          customAgentCommand: '',
+          instructionsByOperation: { commitMessage: 'stay terse' }
+        }
+      }
+    })
+    const store = await createStore()
+    const sourceControlAi = store.getSettings().sourceControlAi
+
+    expect(sourceControlAi?.selectedModelByAgent).toEqual({ claude: 'sonnet' })
+    expect(sourceControlAi?.selectedModelByAgentByHost).toEqual({})
+    expect(sourceControlAi?.discoveredModelsByAgent).toEqual({})
+    expect(sourceControlAi?.selectedThinkingByModel).toEqual({ sonnet: 'high' })
+    expect(sourceControlAi?.instructionsByOperation.commitMessage).toBe('stay terse')
+  })
+
+  it('drops sleeping agent sessions for agents this build cannot resume', async () => {
+    const providerSession = { key: 'session_id', id: 'abc123' }
+    const record = {
+      worktreeId: 'w1',
+      providerSession,
+      prompt: 'ship it',
+      state: 'working',
+      capturedAt: 1,
+      updatedAt: 2
+    }
+    writeDataFile({
+      workspaceSession: {
+        activeRepoId: null,
+        activeWorktreeId: null,
+        activeTabId: null,
+        tabsByWorktree: {},
+        terminalLayoutsByTabId: {},
+        sleepingAgentSessionsByPaneKey: {
+          'pane-claude': { ...record, paneKey: 'pane-claude', agent: 'claude' },
+          'pane-omp': { ...record, paneKey: 'pane-omp', agent: 'omp' }
+        }
+      }
+    })
+    const store = await createStore()
+    const restored = store.getWorkspaceSession().sleepingAgentSessionsByPaneKey
+
+    expect(Object.keys(restored ?? {})).toEqual(['pane-claude'])
   })
 
   it('enables Claude Agent Teams by default for fresh installs', async () => {
@@ -5328,11 +5426,7 @@ describe('Store', () => {
 
     expect(store.getSettings().agentDefaultArgs).toMatchObject({
       claude: '--dangerously-skip-permissions',
-      codex: '--dangerously-bypass-approvals-and-sandbox',
-      cursor: '--yolo'
-    })
-    expect(store.getSettings().agentDefaultEnv).toMatchObject({
-      goose: { GOOSE_MODE: 'auto' }
+      codex: '--dangerously-bypass-approvals-and-sandbox'
     })
     expect(store.getSettings().agentYoloDefaultsMigrated).toBe(true)
   })
@@ -5343,8 +5437,7 @@ describe('Store', () => {
       JSON.stringify({
         settings: {
           agentCmdOverrides: {
-            codex: 'codex --profile work',
-            goose: 'goose'
+            codex: 'codex --profile work'
           }
         }
       })
@@ -5352,36 +5445,7 @@ describe('Store', () => {
     const store = await createStore()
 
     expect(store.getSettings().agentDefaultArgs?.codex).toBe('')
-    expect(store.getSettings().agentDefaultEnv?.goose).toEqual({})
     expect(store.getSettings().agentDefaultArgs?.claude).toBe('--dangerously-skip-permissions')
-  })
-
-  it('removes unsupported TUI skip-permissions args from migrated profiles', async () => {
-    writeFileSync(
-      join(testState.dir, 'orca-data.json'),
-      JSON.stringify({
-        settings: {
-          agentYoloDefaultsMigrated: true,
-          agentDefaultArgs: {
-            opencode: '--dangerously-skip-permissions --model opencode/gpt-5',
-            kilo: '--dangerously-skip-permissions',
-            codex: '--dangerously-bypass-approvals-and-sandbox'
-          }
-        }
-      })
-    )
-    const store = await createStore()
-    store.flush()
-
-    expect(store.getSettings().agentDefaultArgs?.opencode).toBe('--model opencode/gpt-5')
-    expect(store.getSettings().agentDefaultArgs?.kilo).toBe('')
-    expect(store.getSettings().agentDefaultArgs?.codex).toBe(
-      '--dangerously-bypass-approvals-and-sandbox'
-    )
-    expect((readDataFile() as PersistedState).settings.agentDefaultArgs?.opencode).toBe(
-      '--model opencode/gpt-5'
-    )
-    expect((readDataFile() as PersistedState).settings.agentDefaultArgs?.kilo).toBe('')
   })
 
   it('normalizes app icon on load and update', async () => {

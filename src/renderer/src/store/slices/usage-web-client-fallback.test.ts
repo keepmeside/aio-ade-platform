@@ -3,7 +3,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { AppState } from '../types'
 import { createClaudeUsageSlice } from './claude-usage'
 import { createCodexUsageSlice } from './codex-usage'
-import { createOpenCodeUsageSlice } from './opencode-usage'
 
 // Regression: in the web client (paired `orca serve` runtime) the desktop-only
 // usage IPC is not bridged, so the preload fallback proxy resolves every
@@ -59,14 +58,5 @@ describe('usage slices in the web client (preload fallback -> undefined)', () =>
     await expect(store.getState().enableCodexUsage()).resolves.toBeUndefined()
     expect(store.getState().codexUsageScanState).toBeNull()
     expect(store.getState().codexUsageSummary).toBeNull()
-  })
-
-  it('opencode: fetch and enable no-op without throwing', async () => {
-    stubWebClientFallback()
-    const store = create<AppState>()((...args) => createOpenCodeUsageSlice(...args) as AppState)
-    await expect(store.getState().fetchOpenCodeUsage()).resolves.toBeUndefined()
-    await expect(store.getState().enableOpenCodeUsage()).resolves.toBeUndefined()
-    expect(store.getState().openCodeUsageScanState).toBeNull()
-    expect(store.getState().openCodeUsageSummary).toBeNull()
   })
 })

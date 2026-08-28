@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { resolveWindowsShiftEnterEncodingForPane } from '@/components/terminal-pane/terminal-windows-shift-enter'
 import { createTestStore, makeTab, makeWorktree, seedStore } from './store-test-helpers'
 
 describe('syncPaneDetachPtyOwnership agent identity', () => {
@@ -20,34 +19,34 @@ describe('syncPaneDetachPtyOwnership agent identity', () => {
       },
       tabsByWorktree: {
         [worktreeId]: [
-          makeTab({ id: sourceTabId, worktreeId, ptyId: 'pty-droid' }),
+          makeTab({ id: sourceTabId, worktreeId, ptyId: 'pty-detached' }),
           makeTab({ id: targetTabId, worktreeId, ptyId: null })
         ]
       },
       ptyIdsByTabId: {
-        [sourceTabId]: ['pty-droid', 'pty-sibling'],
+        [sourceTabId]: ['pty-detached', 'pty-sibling'],
         [targetTabId]: []
       }
     })
     store.getState().setPaneForegroundAgent(sourcePaneKey, {
-      agent: 'droid',
+      agent: 'codex',
       routingTrusted: true,
       shellForeground: false
     })
     store
       .getState()
-      .setPaneForegroundAgent(siblingPaneKey, { agent: 'antigravity', shellForeground: false })
+      .setPaneForegroundAgent(siblingPaneKey, { agent: 'claude', shellForeground: false })
     store
       .getState()
       .registerAgentLaunchConfig(
         sourcePaneKey,
         { agentArgs: '', agentEnv: {} },
-        { agentType: 'droid', tabId: sourceTabId, leafId: detachedLeafId }
+        { agentType: 'codex', tabId: sourceTabId, leafId: detachedLeafId }
       )
     store.getState().setAgentStatus(sourcePaneKey, {
       state: 'working',
       prompt: '',
-      agentType: 'droid'
+      agentType: 'codex'
     })
     store.setState({
       sleepingAgentSessionsByPaneKey: {
@@ -69,7 +68,7 @@ describe('syncPaneDetachPtyOwnership agent identity', () => {
 
     store.getState().syncPaneDetachPtyOwnership({
       detachedLeafId,
-      detachedPtyId: 'pty-droid',
+      detachedPtyId: 'pty-detached',
       sourceLayout: {
         root: { type: 'leaf', leafId: siblingLeafId },
         activeLeafId: siblingLeafId,
@@ -83,13 +82,13 @@ describe('syncPaneDetachPtyOwnership agent identity', () => {
     const state = store.getState()
     expect(state.paneForegroundAgentByPaneKey[sourcePaneKey]).toBeUndefined()
     expect(state.paneForegroundAgentByPaneKey[targetPaneKey]).toEqual({
-      agent: 'droid',
+      agent: 'codex',
       routingTrusted: true,
       shellForeground: false
     })
     expect(state.agentLaunchConfigByPaneKey[sourcePaneKey]).toBeUndefined()
     expect(state.agentLaunchConfigByPaneKey[targetPaneKey]?.identity).toMatchObject({
-      agentType: 'droid',
+      agentType: 'codex',
       tabId: targetTabId,
       leafId: detachedLeafId
     })
@@ -110,10 +109,8 @@ describe('syncPaneDetachPtyOwnership agent identity', () => {
     // Why: the retention effect only reruns on an epoch bump; a moved live row must trigger it.
     expect(state.agentStatusEpoch).toBeGreaterThan(epochBeforeDetach)
     expect(state.paneForegroundAgentByPaneKey[siblingPaneKey]).toEqual({
-      agent: 'antigravity',
+      agent: 'claude',
       shellForeground: false
     })
-    expect(resolveWindowsShiftEnterEncodingForPane(state, targetPaneKey)).toBe('csi-u')
-    expect(resolveWindowsShiftEnterEncodingForPane(state, siblingPaneKey)).toBe('alt-enter')
   })
 })

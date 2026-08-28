@@ -20,12 +20,12 @@ describe('pane foreground agent slice', () => {
     const store = createTestStore()
     store
       .getState()
-      .setPaneForegroundAgent('tab-1:leaf-1', { agent: 'aider', shellForeground: false })
+      .setPaneForegroundAgent('tab-1:leaf-1', { agent: 'codex', shellForeground: false })
     const first = store.getState().paneForegroundAgentByPaneKey
 
     store
       .getState()
-      .setPaneForegroundAgent('tab-1:leaf-1', { agent: 'aider', shellForeground: false })
+      .setPaneForegroundAgent('tab-1:leaf-1', { agent: 'codex', shellForeground: false })
     expect(store.getState().paneForegroundAgentByPaneKey).toBe(first)
 
     store.getState().clearPaneForegroundAgent('tab-1:leaf-1')
@@ -36,7 +36,7 @@ describe('pane foreground agent slice', () => {
     const store = createTestStore()
     store
       .getState()
-      .setPaneForegroundAgent('tab-1:leaf-1', { agent: 'aider', shellForeground: false })
+      .setPaneForegroundAgent('tab-1:leaf-1', { agent: 'codex', shellForeground: false })
     store
       .getState()
       .setPaneForegroundAgent('tab-10:leaf-1', { agent: 'codex', shellForeground: false })
@@ -56,7 +56,7 @@ describe('pane foreground agent slice', () => {
     })
     store
       .getState()
-      .setPaneForegroundAgent('tab-1:leaf-1', { agent: 'aider', shellForeground: false })
+      .setPaneForegroundAgent('tab-1:leaf-1', { agent: 'codex', shellForeground: false })
     store.getState().setPaneForegroundAgent('tab-2:leaf-1', { agent: null, shellForeground: true })
     store
       .getState()

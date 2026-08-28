@@ -20,12 +20,11 @@ describe('addOrcaWslInteropEnv', () => {
     expect(env.WSLENV).toBe('FOO/u:ORCA_TERMINAL_HANDLE/u:BAR/p')
   })
 
-  it('marks OMP status and hook env for Windows to WSL import', () => {
+  it('marks pane identity and hook env for Windows to WSL import', () => {
     const env: Record<string, string> = {
       ORCA_TERMINAL_HANDLE: 'term_wsl',
       ORCA_USER_DATA_PATH: 'C:\\Users\\jin\\AppData\\Roaming\\Orca',
       ORCA_CLI_COMMAND: 'orca-ide',
-      ORCA_OMP_STATUS_EXTENSION: 'C:\\Users\\jin\\.omp\\agent\\extensions\\orca-agent-status.ts',
       ORCA_PANE_KEY: 'tab-1:leaf-1',
       ORCA_TAB_ID: 'tab-1',
       ORCA_WORKTREE_ID: 'repo::\\\\wsl.localhost\\Ubuntu\\home\\jin\\repo',
@@ -40,7 +39,6 @@ describe('addOrcaWslInteropEnv', () => {
     expect(env.WSLENV).toContain('ORCA_TERMINAL_HANDLE/u')
     expect(env.WSLENV).toContain('ORCA_USER_DATA_PATH/p')
     expect(env.WSLENV).toContain('ORCA_CLI_COMMAND/u')
-    expect(env.WSLENV).toContain('ORCA_OMP_STATUS_EXTENSION/p')
     expect(env.WSLENV).toContain('ORCA_PANE_KEY/u')
     expect(env.WSLENV).toContain('ORCA_TAB_ID/u')
     expect(env.WSLENV).toContain('ORCA_WORKTREE_ID/u')
@@ -131,35 +129,15 @@ describe('addOrcaWslInteropEnv', () => {
     expect(env.WSLENV).toBe('ORCA_WSL_HOOK_RELAY_VERSION/u')
   })
 
-  it('crosses a guest-side OpenCode config overlay untranslated (/u)', () => {
+  it('no longer crosses a config overlay for an agent this build cannot launch', () => {
     const env: Record<string, string> = {
+      ORCA_TERMINAL_HANDLE: 'term_wsl',
       OPENCODE_CONFIG_DIR: '/home/jin/.orca-relay/opencode-overlays/abc',
       ORCA_OPENCODE_CONFIG_DIR: '/home/jin/.orca-relay/opencode-overlays/abc'
     }
     addOrcaWslInteropEnv(env)
-    expect(env.WSLENV).toContain('OPENCODE_CONFIG_DIR/u')
-    expect(env.WSLENV).toContain('ORCA_OPENCODE_CONFIG_DIR/u')
-    expect(env.WSLENV).not.toContain('OPENCODE_CONFIG_DIR/p')
-  })
-
-  it('never crosses a Windows OpenCode config dir into the guest', () => {
-    // Why: the relay spawn env spreads process.env and the daemon inherits its
-    // own — a /p entry here would deliver C:\... as /mnt/c and in-guest OpenCode
-    // would adopt Orca's Windows overlay as its config root.
-    const env: Record<string, string> = {
-      OPENCODE_CONFIG_DIR: 'C:\\Users\\jin\\AppData\\Roaming\\Orca\\opencode-overlays\\abc',
-      ORCA_OPENCODE_CONFIG_DIR: 'C:\\Users\\jin\\AppData\\Roaming\\Orca\\opencode-overlays\\abc'
-    }
-    addOrcaWslInteropEnv(env)
+    expect(env.WSLENV).toContain('ORCA_TERMINAL_HANDLE/u')
     expect(env.WSLENV).not.toContain('OPENCODE_CONFIG_DIR')
-    expect(env.WSLENV).not.toContain('ORCA_OPENCODE_CONFIG_DIR')
-  })
-
-  it('does not register the OpenCode config vars when they are absent', () => {
-    const env: Record<string, string> = { ORCA_TERMINAL_HANDLE: 'term_wsl' }
-    addOrcaWslInteropEnv(env)
-    expect(env.WSLENV).not.toContain('OPENCODE_CONFIG_DIR')
-    expect(env.WSLENV).not.toContain('ORCA_OPENCODE_CONFIG_DIR')
   })
 })
 

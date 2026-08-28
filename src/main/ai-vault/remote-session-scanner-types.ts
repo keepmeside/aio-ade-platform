@@ -3,14 +3,12 @@ import type { ExecutionHostId } from '../../shared/execution-host'
 import type { IFilesystemProvider } from '../providers/types'
 import type { RemoteHostPlatform } from '../ssh/ssh-remote-platform'
 import type { FileWithMtime } from './session-scanner-types'
-import type { AntigravityWorkspaceResolver } from './session-scanner-antigravity-history'
 
 export type RemoteScannerContext = {
   provider: IFilesystemProvider
   executionHostId: ExecutionHostId
   hostPlatform: RemoteHostPlatform
   titleCaches: Map<string, Promise<Map<string, string>>>
-  antigravityWorkspaceResolver: AntigravityWorkspaceResolver
 }
 
 export type RemoteParserOptions = {

@@ -220,9 +220,12 @@ import {
 } from '../shared/source-control-ai-actions'
 import { normalizeDisabledTuiAgents } from '../shared/tui-agent-selection'
 import {
+  normalizeDefaultTuiAgent,
+  normalizeTuiAgentCommandOverrides
+} from '../shared/tui-agent-settings-normalization'
+import {
   DEFAULT_TUI_AGENT_ARGS,
   DEFAULT_TUI_AGENT_ENV,
-  hasUnsupportedTuiAgentArgs,
   normalizeTuiAgentArgsRecord,
   normalizeTuiAgentEnvRecord
 } from '../shared/tui-agent-launch-defaults'
@@ -3044,11 +3047,7 @@ export class Store {
           parsed.settings?.disabledTuiAgents
         )
         const migratedAgentYoloDefaults = migrateAgentYoloDefaults(parsed.settings)
-        if (
-          parsed.settings?.agentYoloDefaultsMigrated !== true ||
-          hasUnsupportedTuiAgentArgs('opencode', parsed.settings?.agentDefaultArgs?.opencode) ||
-          hasUnsupportedTuiAgentArgs('kilo', parsed.settings?.agentDefaultArgs?.kilo)
-        ) {
+        if (parsed.settings?.agentYoloDefaultsMigrated !== true) {
           this.loadNeedsSave = true
         }
         if (
@@ -3189,6 +3188,10 @@ export class Store {
               parsed.settings?.terminalShortcutPolicy
             ),
             disabledTuiAgents: migratedDisabledTuiAgents,
+            defaultTuiAgent: normalizeDefaultTuiAgent(parsed.settings?.defaultTuiAgent),
+            agentCmdOverrides: normalizeTuiAgentCommandOverrides(
+              parsed.settings?.agentCmdOverrides
+            ),
             ...migratedAgentYoloDefaults,
             claudeAgentTeamsDefaultDisabledMigrated: true,
             openInApplications: normalizeOpenInApplications(parsed.settings?.openInApplications, {
@@ -5342,6 +5345,14 @@ export class Store {
     }
     if ('disabledTuiAgents' in updates) {
       sanitizedUpdates.disabledTuiAgents = normalizeDisabledTuiAgents(updates.disabledTuiAgents)
+    }
+    if ('defaultTuiAgent' in updates) {
+      sanitizedUpdates.defaultTuiAgent = normalizeDefaultTuiAgent(updates.defaultTuiAgent)
+    }
+    if ('agentCmdOverrides' in updates) {
+      sanitizedUpdates.agentCmdOverrides = normalizeTuiAgentCommandOverrides(
+        updates.agentCmdOverrides
+      )
     }
     if ('agentDefaultArgs' in updates) {
       sanitizedUpdates.agentDefaultArgs = normalizeTuiAgentArgsRecord(updates.agentDefaultArgs)

@@ -10,8 +10,7 @@ import {
   GEMINI_SILENT_WORKING,
   GEMINI_WORKING,
   isGeminiTerminalTitle,
-  isGrokRotatingWorkingTitle,
-  isPiAgentTitle
+  isGrokRotatingWorkingTitle
 } from './terminal-title-agent-type'
 import {
   detectAgentStatusFromTitle,
@@ -80,19 +79,6 @@ export function normalizeTerminalTitle(title: string): string {
     }
     if (status === 'idle') {
       return `${GEMINI_IDLE} Gemini CLI`
-    }
-  }
-
-  // Why: Pi's titlebar extension animates every 80ms with different braille
-  // frames. Collapsing those frames into one stable label avoids renderer
-  // churn while preserving the working/idle transition Orca keys off.
-  if (isPiAgentTitle(title)) {
-    const status = detectAgentStatusFromTitle(title)
-    if (status === 'working') {
-      return '\u280b Pi'
-    }
-    if (status === 'idle') {
-      return 'Pi'
     }
   }
 

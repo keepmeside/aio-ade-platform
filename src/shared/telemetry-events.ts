@@ -58,45 +58,10 @@ import type {
 
 // ── Shared property enums ───────────────────────────────────────────────
 
-// Mirrors `TuiAgent` launch surface; `claude`↔`claude-code` (product, not CLI string). `other` is the escape hatch; see `tuiAgentToAgentKind`.
-export const AGENT_KIND_VALUES = [
-  'claude-code',
-  'claude-agent-teams',
-  'openclaude',
-  'codex',
-  'autohand',
-  'opencode',
-  'mimo-code',
-  'pi',
-  'omp',
-  'gemini',
-  'antigravity',
-  'aider',
-  'goose',
-  'amp',
-  'kilo',
-  'kiro',
-  'crush',
-  'aug',
-  'cline',
-  'codebuff',
-  'command-code',
-  'continue',
-  'cursor',
-  'droid',
-  'kimi',
-  'mistral-vibe',
-  'qwen-code',
-  'rovo',
-  'hermes',
-  'openclaw',
-  'copilot',
-  'grok',
-  'devin',
-  'ante',
-  'trae',
-  'other'
-] as const
+// Mirrors the narrowed `TuiAgent` launch surface (decision 2026-08-21: Claude + Codex native only).
+// `claude`↔`claude-code` is the product name, not the CLI string. `other` is the escape hatch and must
+// stay: events from an older build still need somewhere to land. See `tuiAgentToAgentKind`.
+export const AGENT_KIND_VALUES = ['claude-code', 'claude-agent-teams', 'codex', 'other'] as const
 export const agentKindSchema = z.enum(AGENT_KIND_VALUES)
 export type AgentKind = z.infer<typeof agentKindSchema>
 

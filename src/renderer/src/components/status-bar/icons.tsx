@@ -1,5 +1,21 @@
 import React from 'react'
 import minimaxIconUrl from '../../../../../resources/minimax-icon.svg?url'
+import { PROVIDER_LOGO_ASSETS } from '@/lib/provider-logo-assets'
+
+/** Logo for a usage/rate-limit provider that ships a bundled PNG instead of an SVG glyph. */
+export function ProviderLogoIcon({
+  provider,
+  size = 14
+}: {
+  provider: string
+  size?: number
+}): React.JSX.Element | null {
+  const src = PROVIDER_LOGO_ASSETS[provider]
+  if (!src) {
+    return null
+  }
+  return <img src={src} width={size} height={size} alt="" aria-hidden style={{ borderRadius: 2 }} />
+}
 
 export function OpenAIIcon({ size = 14 }: { size?: number }): React.JSX.Element {
   return (

@@ -189,10 +189,10 @@ describe('daemon pty foreground scan cadence', () => {
   })
 
   it.each(['darwin', 'win32'] as const)(
-    'keeps wrapped pi reads on the cached omp owner between bounded %s scans',
+    'keeps wrapper reads on the cached agent owner between bounded %s scans',
     async (targetPlatform) => {
-      resolveAgentForegroundProcessMock.mockResolvedValue('omp')
-      const { handle } = spawnShellSubprocess('pi', targetPlatform)
+      resolveAgentForegroundProcessMock.mockResolvedValue('claude')
+      const { handle } = spawnShellSubprocess('node', targetPlatform)
 
       const reads: (string | null)[] = []
       for (let atMs = 0; atMs <= 3_000; atMs += 250) {
@@ -200,42 +200,42 @@ describe('daemon pty foreground scan cadence', () => {
       }
 
       // The first synchronous read precedes enrichment; every later read stays on
-      // OMP even when its 1s cache entry expires while the next scan is in flight.
-      expect(reads).toEqual(['pi', ...Array.from({ length: 12 }, () => 'omp')])
+      // the resolved agent even when its 1s cache entry expires mid-scan.
+      expect(reads).toEqual(['node', ...Array.from({ length: 12 }, () => 'claude')])
       expect(resolveAgentForegroundProcessMock).toHaveBeenCalledTimes(4)
 
-      await expect(handle.confirmForegroundProcess!()).resolves.toBe('omp')
+      await expect(handle.confirmForegroundProcess!()).resolves.toBe('claude')
       expect(resolveAgentForegroundProcessMock).toHaveBeenLastCalledWith(
         12345,
-        'pi',
+        'node',
         expect.objectContaining({ fresh: true })
       )
     }
   )
 
   it.each(['darwin', 'win32'] as const)(
-    'keeps authoritative %s omp reads on the zero-scan path',
+    'keeps authoritative %s agent reads on the zero-scan path',
     async (targetPlatform) => {
-      const { handle } = spawnShellSubprocess('omp', targetPlatform)
+      const { handle } = spawnShellSubprocess('claude', targetPlatform)
 
       for (let atMs = 0; atMs <= 3_000; atMs += 250) {
-        expect(await readForegroundAt(handle, atMs)).toBe('omp')
+        expect(await readForegroundAt(handle, atMs)).toBe('claude')
       }
       expect(resolveAgentForegroundProcessMock).not.toHaveBeenCalled()
     }
   )
 
   it.each(['darwin', 'win32'] as const)(
-    'keeps the cached omp owner when a %s wrapper scan is unavailable',
+    'keeps the cached agent owner when a %s wrapper scan is unavailable',
     async (targetPlatform) => {
       resolveAgentForegroundProcessMock
-        .mockResolvedValueOnce('omp')
-        .mockResolvedValue({ available: false, processName: 'pi' })
-      const { handle } = spawnShellSubprocess('pi', targetPlatform)
+        .mockResolvedValueOnce('claude')
+        .mockResolvedValue({ available: false, processName: 'node' })
+      const { handle } = spawnShellSubprocess('node', targetPlatform)
 
-      expect(await readForegroundAt(handle, 0)).toBe('pi')
-      expect(await readForegroundAt(handle, 1_000)).toBe('omp')
-      expect(await readForegroundAt(handle, 2_500)).toBe('omp')
+      expect(await readForegroundAt(handle, 0)).toBe('node')
+      expect(await readForegroundAt(handle, 1_000)).toBe('claude')
+      expect(await readForegroundAt(handle, 2_500)).toBe('claude')
     }
   )
 })

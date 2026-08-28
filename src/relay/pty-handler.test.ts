@@ -2079,25 +2079,25 @@ describe('PtyHandler', () => {
   })
 
   it('passes process and renderer env to env augmenters before augmenter overrides are applied', async () => {
-    const oldProcessValue = process.env.OPENCODE_CONFIG_DIR
-    process.env.OPENCODE_CONFIG_DIR = '/remote/default-opencode'
+    const oldProcessValue = process.env.CLAUDE_CONFIG_DIR
+    process.env.CLAUDE_CONFIG_DIR = '/remote/default-claude'
     try {
       handler.addEnvAugmenter((ctx) => ({
-        SEEN_OPENCODE_CONFIG_DIR: ctx.env.OPENCODE_CONFIG_DIR,
-        SEEN_PI_CODING_AGENT_DIR: ctx.env.PI_CODING_AGENT_DIR
+        SEEN_CLAUDE_CONFIG_DIR: ctx.env.CLAUDE_CONFIG_DIR,
+        SEEN_CODEX_HOME: ctx.env.CODEX_HOME
       }))
 
       await dispatcher.callRequest('pty.spawn', {
         env: {
-          OPENCODE_CONFIG_DIR: '/remote/renderer-opencode',
-          PI_CODING_AGENT_DIR: '/remote/pi'
+          CLAUDE_CONFIG_DIR: '/remote/renderer-claude',
+          CODEX_HOME: '/remote/codex'
         }
       })
     } finally {
       if (oldProcessValue === undefined) {
-        delete process.env.OPENCODE_CONFIG_DIR
+        delete process.env.CLAUDE_CONFIG_DIR
       } else {
-        process.env.OPENCODE_CONFIG_DIR = oldProcessValue
+        process.env.CLAUDE_CONFIG_DIR = oldProcessValue
       }
     }
 
@@ -2106,8 +2106,8 @@ describe('PtyHandler', () => {
       env: Record<string, string>
     }
     expect(spawnEnv.name).toBe('xterm-256color')
-    expect(spawnEnv.env.SEEN_OPENCODE_CONFIG_DIR).toBe('/remote/renderer-opencode')
-    expect(spawnEnv.env.SEEN_PI_CODING_AGENT_DIR).toBe('/remote/pi')
+    expect(spawnEnv.env.SEEN_CLAUDE_CONFIG_DIR).toBe('/remote/renderer-claude')
+    expect(spawnEnv.env.SEEN_CODEX_HOME).toBe('/remote/codex')
   })
 
   it('applies identity defaults, then deletions, while preserving explicit TERM', async () => {
@@ -2217,11 +2217,11 @@ describe('PtyHandler', () => {
 
     await dispatcher.callRequest('pty.spawn', {
       command: 'powershell wait-wrapper',
-      env: { [SETUP_AGENT_SEQUENCE_STARTUP_COMMAND_ENV]: 'omp --resume' }
+      env: { [SETUP_AGENT_SEQUENCE_STARTUP_COMMAND_ENV]: 'codex resume' }
     })
 
     const spawnEnv = mockPtySpawn.mock.calls[0][2] as { env: Record<string, string> }
-    expect(spawnEnv.env.SEEN_LAUNCH_COMMAND_HINT).toBe('omp --resume')
+    expect(spawnEnv.env.SEEN_LAUNCH_COMMAND_HINT).toBe('codex resume')
   })
 
   it.skipIf(process.platform === 'win32')(
@@ -2229,21 +2229,17 @@ describe('PtyHandler', () => {
     async () => {
       const oldShell = process.env.SHELL
       const oldHome = process.env.HOME
-      const oldOrcaPi = process.env.ORCA_PI_CODING_AGENT_DIR
       const homeDir = mkdtempSync(join(tmpdir(), 'relay-pty-shell-launch-'))
 
       process.env.SHELL = '/bin/bash'
       process.env.HOME = homeDir
-      delete process.env.ORCA_PI_CODING_AGENT_DIR
       try {
         if (!existsSync('/bin/bash')) {
           return
         }
 
         handler.addEnvAugmenter(() => ({
-          OPENCODE_CONFIG_DIR: '/remote/overlay/opencode',
-          ORCA_OPENCODE_CONFIG_DIR: '/remote/overlay/opencode',
-          ORCA_OMP_STATUS_EXTENSION: '/remote/.omp/agent/extensions/orca-agent-status.ts'
+          ORCA_REMOTE_CLI_BIN_DIR: '/remote/.orca-relay/bin'
         }))
 
         await dispatcher.callRequest('pty.spawn', { env: { HOME: homeDir } })
@@ -2258,11 +2254,6 @@ describe('PtyHandler', () => {
         } else {
           process.env.HOME = oldHome
         }
-        if (oldOrcaPi === undefined) {
-          delete process.env.ORCA_PI_CODING_AGENT_DIR
-        } else {
-          process.env.ORCA_PI_CODING_AGENT_DIR = oldOrcaPi
-        }
       }
 
       const shellArgs = mockPtySpawn.mock.calls[0][1]
@@ -2270,13 +2261,10 @@ describe('PtyHandler', () => {
       const rcfile = join(homeDir, '.orca-relay', 'shell-ready', 'bash', 'rcfile')
 
       expect(shellArgs).toEqual(['--rcfile', rcfile])
-      expect(spawnOptions.env.ORCA_OPENCODE_CONFIG_DIR).toBe('/remote/overlay/opencode')
-      expect(spawnOptions.env.ORCA_PI_CODING_AGENT_DIR).toBeUndefined()
+      expect(spawnOptions.env.ORCA_REMOTE_CLI_BIN_DIR).toBe('/remote/.orca-relay/bin')
       expect(readFileSync(rcfile, 'utf8')).toContain(
-        'export OPENCODE_CONFIG_DIR="${ORCA_OPENCODE_CONFIG_DIR}"'
+        'export PATH="${ORCA_REMOTE_CLI_BIN_DIR}:$PATH"'
       )
-      expect(readFileSync(rcfile, 'utf8')).not.toContain('ORCA_PI_CODING_AGENT_DIR')
-      expect(readFileSync(rcfile, 'utf8')).toContain('command omp --extension')
 
       rmSync(homeDir, { recursive: true, force: true })
     }

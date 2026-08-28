@@ -23,7 +23,6 @@ import { normalizeTerminalLineHeight } from '../../../../shared/terminal-line-he
 import { normalizeTerminalTuiMouseWheelMultiplier } from '@/lib/pane-manager/pane-terminal-mouse-wheel'
 import { buildWindowsPtyCompatibilityOptions } from '@/lib/pane-manager/windows-pty-compatibility'
 import { buildTerminalKeyboardProtocolOptions } from '@/lib/pane-manager/terminal-keyboard-protocol'
-import { resolvePaneKeyboardProtocolAgent } from './terminal-keyboard-protocol-pane-agent'
 import { useAppStore } from '@/store'
 import type { DirectSshPaneRetryAttemptId } from '@/store/slices/direct-ssh-terminal-recovery'
 import {
@@ -1303,23 +1302,17 @@ export function useTerminalPaneLifecycle({
           (candidate) => candidate.id === tabId
         )
         const platformInfo = window.api.platform?.get?.()
-        // Why: launch identity is per-pane; a tab-wide hint would leak Grok's KKP exception to shell splits.
-        const knownTuiAgent = resolvePaneKeyboardProtocolAgent(
-          ptyDeps.startup,
-          currentTab?.launchAgent
-        )
         const ptyBackendContext = {
           userAgent: navigator.userAgent,
           osRelease: platformInfo?.osRelease,
           connectionId: getConnectionId(worktreeId),
           cwd: startupCwd,
           shellOverride: currentTab?.shellOverride,
-          executionHostId: getExecutionHostIdForWorktree(storeState, worktreeId),
-          tuiAgent: knownTuiAgent
+          executionHostId: getExecutionHostIdForWorktree(storeState, worktreeId)
         }
         const windowsPtyCompatibilityOptions =
           buildWindowsPtyCompatibilityOptions(ptyBackendContext)
-        // Why: local Windows ConPTY reads the Kitty advertisement but can't decode CSI-u, so withhold it to restore Enter/Up/Down nav (issue #2434); Grok keeps it.
+        // Why: local Windows ConPTY reads the Kitty advertisement but can't decode CSI-u, so withhold it to restore Enter/Up/Down nav (issue #2434).
         const keyboardProtocolOptions = buildTerminalKeyboardProtocolOptions(ptyBackendContext)
         return {
           ...windowsPtyCompatibilityOptions,

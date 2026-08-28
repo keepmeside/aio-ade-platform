@@ -20,7 +20,7 @@ function makeRecord(
     paneKey,
     tabId: 'tab-1',
     worktreeId: 'wt-1',
-    agent: 'omp',
+    agent: 'codex',
     providerSession: { key: 'session_id', id: 'sess-1' },
     prompt: 'finish the task',
     state: 'working',

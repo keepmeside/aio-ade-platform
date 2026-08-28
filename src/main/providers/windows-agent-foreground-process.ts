@@ -1,14 +1,9 @@
 import {
   isAgentForegroundWrapperProcess,
   isExpectedAgentProcess,
-  recognizeAgentProcess,
   recognizeAgentProcessFromCommandLine,
   type RecognizedAgentProcess
 } from '../../shared/agent-process-recognition'
-import {
-  resolveOuterWrapperForegroundProcess,
-  shouldInspectOuterWrapperForegroundProcess
-} from '../../shared/foreground-wrapper-agent'
 import { isShellProcess } from '../../shared/shell-process-detection'
 import {
   queryWindowsProcessDescendants,
@@ -32,12 +27,7 @@ export type WindowsAgentForegroundResolution = {
 }
 
 export function shouldInspectWindowsAgentForeground(fallbackProcess: string): boolean {
-  const recognized = recognizeAgentProcess(fallbackProcess)
-  return (
-    isAgentForegroundWrapperProcess(fallbackProcess) ||
-    isShellProcess(fallbackProcess) ||
-    (recognized !== null && shouldInspectOuterWrapperForegroundProcess(recognized))
-  )
+  return isAgentForegroundWrapperProcess(fallbackProcess) || isShellProcess(fallbackProcess)
 }
 
 export async function resolveWindowsAgentForegroundProcess(
@@ -128,7 +118,7 @@ function resolveWindowsProcessName(
     recognizeAgentProcessFromCommandLine(candidate.command) ??
     recognizeAgentProcessFromCommandLine(candidate.name)
   if (recognized) {
-    return resolveOuterWrapperForegroundProcess(recognized, candidate, candidates)
+    return recognized.processName
   }
   return null
 }
@@ -204,9 +194,7 @@ function resolveRecognizedWindowsProcessCandidates(
       )
   )
   const leafProcessNames = new Set(
-    leafCandidates.map((candidate) =>
-      resolveOuterWrapperForegroundProcess(candidate.recognized, candidate, allCandidates)
-    )
+    leafCandidates.map((candidate) => candidate.recognized.processName)
   )
   // Why: Windows lacks a cheap PTY foreground marker like POSIX '+'. A single
   // recognized lineage leaf is strong enough; sibling agent leaves are not.

@@ -76,7 +76,7 @@ vi.mock('@/hooks/useInstalledAgentSkills', () => ({
 
 vi.mock('@/hooks/useDetectedAgents', () => ({
   useDetectedAgents: () => ({
-    detectedIds: ['claude', 'codex', 'gemini'],
+    detectedIds: ['claude', 'codex', 'claude-agent-teams'],
     isLoading: false,
     isRefreshing: false,
     refresh: vi.fn()
@@ -145,7 +145,7 @@ describe('OrchestrationPane', () => {
     expect(markup).not.toContain('Prefer your own terminal?')
     expect(markup).not.toContain('Copy update command')
     expect(markup).toContain('detected agents')
-    expect(markup).toContain('Gemini')
+    expect(markup).toContain('Claude Agent Teams')
     expect(markup).toContain('Ready')
     expect(markup).toContain('How to use it')
     expect(markup).not.toContain('See examples')

@@ -2,46 +2,55 @@ import { describe, expect, it } from 'vitest'
 import { resolvePaneDisplayTitle, resolvePaneTitleDecision } from './terminal-title-evidence'
 
 describe('resolvePaneDisplayTitle', () => {
-  it('normalizes a Pi-compatible title to the resolved OMP owner', () => {
-    expect(resolvePaneDisplayTitle('Pi ready', 'omp')).toBe('OMP ready')
-  })
-
   it('passes an unowned title through unchanged', () => {
     expect(resolvePaneDisplayTitle('bash', undefined)).toBe('bash')
+  })
+
+  it('passes a shipped agent title through unchanged', () => {
+    expect(resolvePaneDisplayTitle('✳ Claude Code', 'claude')).toBe('✳ Claude Code')
   })
 })
 
 describe('resolvePaneTitleDecision', () => {
-  it('derives the display label and the renderer veto from a pane-scoped OMP owner', () => {
+  it('keeps the raw title beside the display label', () => {
     const decision = resolvePaneTitleDecision({
-      normalizedTitle: 'Pi ready',
-      rawTitle: '✦ Gemini CLI',
-      displayOwnerAgentType: 'omp',
-      rendererOwnerAgentType: 'omp',
+      normalizedTitle: '✳ ship the carve',
+      rawTitle: '✳ ship the carve',
+      displayOwnerAgentType: 'claude',
+      rendererOwnerAgentType: 'claude',
       userGpuMode: 'auto'
     })
-    expect(decision.displayTitle).toBe('OMP ready')
-    expect(decision.rawTitle).toBe('✦ Gemini CLI')
-    // Why: the OMP owner renames the label and vetoes the Gemini glyph fallback.
+    expect(decision.displayTitle).toBe('✳ ship the carve')
+    expect(decision.rawTitle).toBe('✳ ship the carve')
     expect(decision.rendererPolicy.gpuEnabled).toBe(true)
   })
 
   it('uses the renderer owner, not the display owner, for the GPU veto', () => {
     const decision = resolvePaneTitleDecision({
-      normalizedTitle: 'Pi ready',
+      normalizedTitle: '✦ Gemini CLI',
       rawTitle: '✦ Gemini CLI',
-      // Display label follows the sticky/tab-scoped owner, but the renderer veto
-      // sees no current pane-scoped owner, so the genuine Gemini pane goes DOM.
-      displayOwnerAgentType: 'omp',
+      // A sticky/tab-scoped owner keeps GPU for the label's pane, but the veto reads the
+      // pane-scoped owner, which here is absent — so the hand-run Gemini pane goes DOM.
+      displayOwnerAgentType: 'claude',
       rendererOwnerAgentType: undefined,
       userGpuMode: 'auto'
     })
-    expect(decision.displayTitle).toBe('OMP ready')
     expect(decision.rendererPolicy.gpuEnabled).toBe(false)
     expect(decision.rendererPolicy.reason).toBe('agent-compatibility')
   })
 
-  it('DOM-gates a genuine Gemini pane while preserving its raw title', () => {
+  it('keeps GPU when a shipped agent owns a pane whose text mentions Gemini', () => {
+    const decision = resolvePaneTitleDecision({
+      normalizedTitle: '✦ Gemini CLI',
+      rawTitle: '✦ Gemini CLI',
+      displayOwnerAgentType: 'claude',
+      rendererOwnerAgentType: 'claude',
+      userGpuMode: 'auto'
+    })
+    expect(decision.rendererPolicy.gpuEnabled).toBe(true)
+  })
+
+  it('DOM-gates a hand-run Gemini pane while preserving its raw title', () => {
     const decision = resolvePaneTitleDecision({
       normalizedTitle: '✦ Gemini CLI',
       rawTitle: '✦ Gemini CLI',

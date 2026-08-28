@@ -11,9 +11,10 @@ function createRateLimitStore(): StoreApi<AppState> {
 }
 
 describe('createRateLimitSlice', () => {
-  it('initializes Antigravity usage with a stable pending key', () => {
+  it('initializes shipped provider usage with a stable pending key', () => {
     const store = createRateLimitStore()
 
-    expect(store.getState().rateLimits.antigravity).toBeNull()
+    expect(store.getState().rateLimits.claude).toBeNull()
+    expect(store.getState().rateLimits.codex).toBeNull()
   })
 })

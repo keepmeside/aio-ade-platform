@@ -443,7 +443,7 @@ describe('SshRelaySession agent hooks over a fake relay transport', () => {
 
     relay.notifyAgentHook(
       makeEnvelope({
-        source: 'pi',
+        source: 'codex',
         hookEventName: 'session_start',
         promptInteractionKey: 'command-code-transcript-user-3',
         toolUseId: 'toolu-1',

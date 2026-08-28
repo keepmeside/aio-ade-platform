@@ -50,8 +50,8 @@ describe('runManagedHookInstallers', () => {
   })
 
   it('continues running later installers after an earlier one throws (fail-open)', () => {
-    const codex = vi.fn()
-    const gemini = vi.fn()
+    const firstLater = vi.fn()
+    const secondLater = vi.fn()
     runManagedHookInstallers([
       [
         'claude',
@@ -59,11 +59,11 @@ describe('runManagedHookInstallers', () => {
           throw new Error('claude failed')
         }
       ],
-      ['codex', codex],
-      ['gemini', gemini]
+      ['codex', firstLater],
+      ['codex', secondLater]
     ])
-    expect(codex).toHaveBeenCalledTimes(1)
-    expect(gemini).toHaveBeenCalledTimes(1)
+    expect(firstLater).toHaveBeenCalledTimes(1)
+    expect(secondLater).toHaveBeenCalledTimes(1)
     expect(trackMock).toHaveBeenCalledTimes(1)
     expect(trackMock).toHaveBeenCalledWith(
       'agent_hook_install_failed',
@@ -75,7 +75,7 @@ describe('runManagedHookInstallers', () => {
     const longMessage = 'x'.repeat(500)
     runManagedHookInstallers([
       [
-        'gemini',
+        'codex',
         () => {
           throw new Error(longMessage)
         }
@@ -89,22 +89,22 @@ describe('runManagedHookInstallers', () => {
   it('handles non-Error throws', () => {
     runManagedHookInstallers([
       [
-        'cursor',
+        'codex',
         () => {
-          throw 'cursor string failure'
+          throw 'plain string failure'
         }
       ]
     ])
     expect(trackMock).toHaveBeenCalledWith('agent_hook_install_failed', {
-      agent: 'cursor',
-      error_message: 'cursor string failure'
+      agent: 'codex',
+      error_message: 'plain string failure'
     })
   })
 
   it('serializes thrown objects through JSON.stringify', () => {
     runManagedHookInstallers([
       [
-        'cursor',
+        'codex',
         () => {
           throw { code: 'EACCES', path: '/tmp' }
         }
@@ -112,7 +112,7 @@ describe('runManagedHookInstallers', () => {
     ])
     expect(trackMock).toHaveBeenCalledTimes(1)
     expect(trackMock).toHaveBeenCalledWith('agent_hook_install_failed', {
-      agent: 'cursor',
+      agent: 'codex',
       error_message: '{"code":"EACCES","path":"/tmp"}'
     })
   })
@@ -121,7 +121,7 @@ describe('runManagedHookInstallers', () => {
     expect(() =>
       runManagedHookInstallers([
         [
-          'cursor',
+          'codex',
           () => {
             throw undefined
           }

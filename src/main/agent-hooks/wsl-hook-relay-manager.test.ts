@@ -212,7 +212,6 @@ describe('WslHookRelayManager', () => {
       waitForSentinel: vi.fn(async () => guestTransport()),
       ingest: vi.fn(),
       installHooks: vi.fn(async () => []),
-      pluginSources: () => ({ opencodePluginSource: '// opencode plugin source' }),
       warn: vi.fn(),
       transientRetryDelayMs: 1,
       ...overrides
@@ -250,25 +249,6 @@ describe('WslHookRelayManager', () => {
     guest.notify(AGENT_HOOK_NOTIFICATION_METHOD, { payload: { state: 'working' } })
     await new Promise((resolve) => setTimeout(resolve, 20))
     expect(deps.ingest).toHaveBeenCalledTimes(1)
-    manager.disposeAll()
-  })
-
-  it('ships the OpenCode plugin to the guest and exposes the overlay dir', async () => {
-    const { manager } = createManager({})
-    manager.ensureForDistro('Ubuntu')
-    await vi.waitFor(() => expect(manager.getOpenCodeOverlayDir('Ubuntu')).toBe(opencodeOverlayDir))
-    manager.disposeAll()
-  })
-
-  it('leaves the overlay dir null when the guest bundle lacks the installPlugins handler', async () => {
-    const waitForSentinel = vi.fn(async () => guestTransport(false))
-    const { manager, deps } = createManager({ waitForSentinel })
-    manager.ensureForDistro('Ubuntu')
-    // Connect still completes (hooks install); the -32601 is swallowed silently.
-    await vi.waitFor(() => expect(deps.installHooks).toHaveBeenCalledTimes(1))
-    await new Promise((resolve) => setTimeout(resolve, 20))
-    expect(manager.getOpenCodeOverlayDir('Ubuntu')).toBeNull()
-    expect(deps.warn).not.toHaveBeenCalledWith(expect.stringContaining('installPlugins'))
     manager.disposeAll()
   })
 

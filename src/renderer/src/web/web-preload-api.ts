@@ -72,6 +72,10 @@ import { toRuntimeWorktreeSelector } from '../runtime/runtime-worktree-selector'
 import { callAbortableRuntimeEnvironment } from '../runtime/abortable-runtime-environment-call'
 import { normalizeDisabledTuiAgents } from '../../../shared/tui-agent-selection'
 import {
+  normalizeDefaultTuiAgent,
+  normalizeTuiAgentCommandOverrides
+} from '../../../shared/tui-agent-settings-normalization'
+import {
   normalizeTuiAgentArgsRecord,
   normalizeTuiAgentEnvRecord
 } from '../../../shared/tui-agent-launch-defaults'
@@ -797,8 +801,6 @@ function createWebPreloadApi(): Partial<PreloadApi> {
     preflight: createPreflightApi(),
     notifications: createNotificationsApi(),
     rateLimits: createRateLimitsApi(),
-    minimaxCredentials: createMiniMaxCredentialsApi(),
-    grokAccounts: createGrokAccountsApi(),
     codexAccounts: createAccountsApi(),
     claudeAccounts: createAccountsApi(),
     cli: createCliApi(),
@@ -2720,22 +2722,7 @@ function createCliApi(): NonNullable<Partial<PreloadApi>['cli']> {
 }
 
 function createAgentHooksApi(): NonNullable<Partial<PreloadApi>['agentHooks']> {
-  const status = (
-    agent:
-      | 'claude'
-      | 'openclaude'
-      | 'codex'
-      | 'gemini'
-      | 'antigravity'
-      | 'amp'
-      | 'cursor'
-      | 'droid'
-      | 'command-code'
-      | 'grok'
-      | 'copilot'
-      | 'hermes'
-      | 'devin'
-  ) =>
+  const status = (agent: 'claude' | 'codex') =>
     Promise.resolve({
       agent,
       state: 'not_installed',
@@ -2745,18 +2732,7 @@ function createAgentHooksApi(): NonNullable<Partial<PreloadApi>['agentHooks']> {
     } as const)
   return {
     claudeStatus: () => status('claude'),
-    openClaudeStatus: () => status('openclaude'),
-    codexStatus: () => status('codex'),
-    geminiStatus: () => status('gemini'),
-    antigravityStatus: () => status('antigravity'),
-    ampStatus: () => status('amp'),
-    cursorStatus: () => status('cursor'),
-    droidStatus: () => status('droid'),
-    commandCodeStatus: () => status('command-code'),
-    grokStatus: () => status('grok'),
-    copilotStatus: () => status('copilot'),
-    hermesStatus: () => status('hermes'),
-    devinStatus: () => status('devin')
+    codexStatus: () => status('codex')
   }
 }
 
@@ -2852,14 +2828,6 @@ function createRateLimitsApi(): NonNullable<Partial<PreloadApi>['rateLimits']> {
   const empty: RateLimitState = {
     claude: null,
     codex: null,
-    gemini: null,
-    opencodeGo: null,
-    kimi: null,
-    antigravity: null,
-    minimax: null,
-    grok: null,
-    minimaxCookieConfigured: false,
-    grokAuthConfigured: false,
     claudeTarget: { runtime: 'host', wslDistro: null },
     codexTarget: { runtime: 'host', wslDistro: null },
     inactiveClaudeAccounts: [],
@@ -2875,32 +2843,7 @@ function createRateLimitsApi(): NonNullable<Partial<PreloadApi>['rateLimits']> {
     setPollingInterval: () => Promise.resolve(),
     fetchInactiveClaudeAccounts: () => Promise.resolve(),
     fetchInactiveCodexAccounts: () => Promise.resolve(),
-    refreshMiniMax: () => Promise.resolve(empty),
-    refreshGrok: () => Promise.resolve(empty),
     onUpdate: () => noopUnsubscribe
-  }
-}
-
-function createMiniMaxCredentialsApi(): NonNullable<Partial<PreloadApi>['minimaxCredentials']> {
-  const notConfigured = { configured: false }
-  const unsupportedError = new Error('MiniMax cookie storage is only available in the desktop app.')
-  return {
-    getStatus: () => Promise.resolve(notConfigured),
-    saveCookie: () => Promise.reject(unsupportedError),
-    clearCookie: () => Promise.resolve(notConfigured)
-  }
-}
-
-function createGrokAccountsApi(): NonNullable<Partial<PreloadApi>['grokAccounts']> {
-  const unsigned = {
-    signedIn: false,
-    email: null,
-    teamId: null,
-    tokenFresh: false,
-    error: null
-  }
-  return {
-    getStatus: () => Promise.resolve(unsigned)
   }
 }
 
@@ -3763,6 +3706,14 @@ function mergeSettings(
     } as GlobalSettings['githubProjects'],
     disabledTuiAgents: normalizeDisabledTuiAgents(
       updates.disabledTuiAgents ?? base.disabledTuiAgents
+    ),
+    // Why: this is the web client's equivalent of the desktop disk-load boundary, so a
+    // stored blob naming an agent this build cannot launch must be coerced here too —
+    // otherwise it reaches the composer as a default and the launch path indexes a
+    // missing TUI_AGENT_CONFIG entry.
+    defaultTuiAgent: normalizeDefaultTuiAgent(updates.defaultTuiAgent ?? base.defaultTuiAgent),
+    agentCmdOverrides: normalizeTuiAgentCommandOverrides(
+      updates.agentCmdOverrides ?? base.agentCmdOverrides
     ),
     agentDefaultArgs: normalizeTuiAgentArgsRecord(
       updates.agentDefaultArgs ?? base.agentDefaultArgs

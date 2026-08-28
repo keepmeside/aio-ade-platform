@@ -1,15 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
-import type * as ReactModule from 'react'
 import type { ProviderRateLimits } from '../../../../shared/rate-limit-types'
-
-vi.mock('@/lib/agent-catalog', async () => {
-  const ReactActual = await vi.importActual<typeof ReactModule>('react')
-  return {
-    AgentIcon: ({ agent }: { agent: string }) =>
-      ReactActual.createElement('span', { 'data-agent-icon': agent })
-  }
-})
 
 vi.mock('@/i18n/i18n', () => ({
   translate: (_key: string, fallback: string, values?: Record<string, string>) => {
@@ -45,16 +36,7 @@ function provider(overrides: Partial<ProviderRateLimits> = {}): ProviderRateLimi
   }
 }
 
-const PROVIDER_IDS: ProviderRateLimits['provider'][] = [
-  'claude',
-  'codex',
-  'gemini',
-  'antigravity',
-  'opencode-go',
-  'kimi',
-  'minimax',
-  'grok'
-]
+const PROVIDER_IDS: ProviderRateLimits['provider'][] = ['claude', 'codex']
 
 afterEach(() => {
   vi.useRealTimers()
@@ -103,68 +85,28 @@ describe('provider usage error copy', () => {
       error:
         'Your access token could not be refreshed because your refresh token was already used. Please log out and sign in again.'
     })
-    const gemini = provider({
-      provider: 'gemini',
-      error: 'Gemini CLI credentials not found'
-    })
 
     expect(getProviderUsageStatusLabel(codex)).toBe('Refresh failed')
     expect(getProviderUsageErrorMessage(codex)).toBe(
       'Codex usage could not be refreshed. Agent sessions may still be signed in.'
     )
-    expect(getProviderUsageErrorMessage(gemini)).toBe(
-      'Gemini usage could not be refreshed. Agent sessions may still be signed in.'
-    )
   })
 
   it('frames credential-file and login failures as auth-shaped usage failures', () => {
-    const kimi = provider({
-      provider: 'kimi',
-      error: 'Kimi credentials-file is invalid'
+    const credentialFile = provider({
+      provider: 'claude',
+      error: 'Claude credentials-file is invalid'
     })
-    const opencodeGo = provider({
-      provider: 'opencode-go',
+    const loginRequired = provider({
+      provider: 'codex',
       error: 'Please log in before refreshing usage.'
     })
 
-    expect(getProviderUsageErrorMessage(kimi)).toBe(
-      'Kimi usage could not be refreshed. Agent sessions may still be signed in.'
+    expect(getProviderUsageErrorMessage(credentialFile)).toBe(
+      'Claude usage could not be refreshed. Agent sessions may still be signed in.'
     )
-    expect(getProviderUsageErrorMessage(opencodeGo)).toBe(
-      'OpenCode Go usage could not be refreshed. Agent sessions may still be signed in.'
-    )
-  })
-
-  it('shows the exact Grok CLI recovery flow for an expired refreshable session (#8497)', () => {
-    const grok = provider({
-      provider: 'grok',
-      error:
-        'Grok sign-in expired — run grok on the computer running Orca; sign in if prompted. No chat message is needed.',
-      usageMetadata: {
-        failureKind: 'delegated-refresh-required',
-        source: 'oauth'
-      }
-    })
-
-    expect(getProviderUsageStatusLabel(grok)).toBe('Run Grok to refresh')
-    expect(getProviderUsageErrorMessage(grok)).toBe(
-      'Run grok in a terminal on the computer running Orca and wait for it to start. If prompted, complete sign-in, then retry usage. You do not need to send a chat message.'
-    )
-  })
-
-  it('shows the exact Kimi CLI recovery flow for an expired read-only session', () => {
-    const kimi = provider({
-      provider: 'kimi',
-      error: 'Kimi session expired — run kimi on the computer running Orca, then retry usage.',
-      usageMetadata: {
-        failureKind: 'delegated-refresh-required',
-        source: 'oauth'
-      }
-    })
-
-    expect(getProviderUsageStatusLabel(kimi)).toBe('Run Kimi to refresh')
-    expect(getProviderUsageErrorMessage(kimi)).toBe(
-      'Run kimi in a terminal on the computer running Orca and wait for it to start, then retry usage.'
+    expect(getProviderUsageErrorMessage(loginRequired)).toBe(
+      'Codex usage could not be refreshed. Agent sessions may still be signed in.'
     )
   })
 
@@ -295,7 +237,7 @@ describe('provider usage error copy', () => {
 describe('getWindowSections', () => {
   it('returns buckets as sections when present', () => {
     const p: ProviderRateLimits = {
-      provider: 'gemini',
+      provider: 'codex',
       session: { usedPercent: 80, windowMinutes: 300, resetsAt: null, resetDescription: null },
       weekly: null,
       buckets: [
@@ -367,7 +309,7 @@ describe('getWindowSections', () => {
 
   it('returns session and weekly for empty buckets array', () => {
     const p: ProviderRateLimits = {
-      provider: 'gemini',
+      provider: 'codex',
       session: { usedPercent: 50, windowMinutes: 300, resetsAt: null, resetDescription: null },
       weekly: null,
       buckets: [],
@@ -388,7 +330,7 @@ describe('getWindowSections', () => {
     // views, while the plain session value remains independently available for
     // compact rendering without bucket names bleeding through.
     const p: ProviderRateLimits = {
-      provider: 'gemini',
+      provider: 'codex',
       session: { usedPercent: 80, windowMinutes: 300, resetsAt: null, resetDescription: null },
       weekly: null,
       buckets: [
@@ -423,7 +365,7 @@ describe('getWindowSections', () => {
 
   it('preserves reset metadata inside bucket windows', () => {
     const p: ProviderRateLimits = {
-      provider: 'gemini',
+      provider: 'codex',
       session: null,
       weekly: null,
       buckets: [
@@ -473,7 +415,7 @@ describe('ProviderPanel reset rendering', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 6, 4, 15, 0))
     const p = provider({
-      provider: 'minimax',
+      provider: 'codex',
       status: 'ok',
       session: {
         usedPercent: 35,
@@ -495,7 +437,7 @@ describe('ProviderPanel reset rendering', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 6, 4, 15, 0))
     const p = provider({
-      provider: 'minimax',
+      provider: 'codex',
       status: 'ok',
       session: {
         usedPercent: 100,
@@ -515,7 +457,7 @@ describe('ProviderPanel reset rendering', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 6, 4, 15, 0))
     const p = provider({
-      provider: 'minimax',
+      provider: 'codex',
       status: 'ok',
       session: {
         usedPercent: 140,
@@ -577,18 +519,24 @@ describe('barColor', () => {
 })
 
 describe('ProviderIcon', () => {
-  it('renders the Antigravity agent icon for the antigravity provider', () => {
-    const markup = renderToStaticMarkup(ProviderIcon({ provider: 'antigravity' }))
-    expect(markup).toContain('data-agent-icon="antigravity"')
+  // Why: the roster icons sit next to a text provider label, so none may carry an
+  // accessible name of its own or a screen reader announces the provider twice.
+  it.each(['claude', 'codex'] as const)('renders a nameless icon for %s', (provider) => {
+    const markup = renderToStaticMarkup(ProviderIcon({ provider }))
+
+    expect(markup).not.toContain('aria-label')
+    expect(markup).not.toContain('<title')
   })
 
-  it('renders the official MiniMax icon asset for the minimax provider', () => {
-    // Why: the icon must travel to the status bar / tooltip unchanged so the
-    // user recognises the brand. We pin it to an <img> with a non-empty
-    // resource URL and aria-hidden so the icon stays purely decorative.
-    const markup = renderToStaticMarkup(ProviderIcon({ provider: 'minimax' }))
-    expect(markup.startsWith('<img')).toBe(true)
-    expect(markup).toContain('aria-hidden="true"')
-    expect(markup).toMatch(/src="[^"]+"/)
+  it('distinguishes the two shipped providers', () => {
+    expect(renderToStaticMarkup(ProviderIcon({ provider: 'codex' }))).not.toBe(
+      renderToStaticMarkup(ProviderIcon({ provider: 'claude' }))
+    )
+  })
+
+  it('falls back to the Claude icon for an unrecognized provider', () => {
+    expect(renderToStaticMarkup(ProviderIcon({ provider: 'not-a-provider' }))).toBe(
+      renderToStaticMarkup(ProviderIcon({ provider: 'claude' }))
+    )
   })
 })

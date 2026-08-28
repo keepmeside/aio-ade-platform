@@ -1301,8 +1301,7 @@ function copySleepingAgentLaunchConfig(
   return {
     ...(config.agentCommand ? { agentCommand: config.agentCommand } : {}),
     agentArgs: config.agentArgs,
-    agentEnv: { ...config.agentEnv },
-    ...(config.ompResumeFilePath ? { ompResumeFilePath: config.ompResumeFilePath } : {})
+    agentEnv: { ...config.agentEnv }
   }
 }
 
@@ -8418,8 +8417,8 @@ export class OrcaRuntimeService {
   private applyTrackedPtyTitle(ptyId: string, rawTitle: string, normalizedTitle: string): boolean {
     // Why: status is detected from the RAW title (mirrors the renderer tracker),
     // so working/idle transitions are unaffected by normalization; the records
-    // store the NORMALIZED title so rotating Grok/Pi/Gemini frames collapse to
-    // one stable stored label (#7880) instead of churning `ps`/mobile tabs.
+    // store the NORMALIZED title so rotating agent frames collapse to one stable
+    // stored label (#7880) instead of churning `ps`/mobile tabs.
     const agentStatus = detectAgentStatusFromTitle(rawTitle)
     let ptyRecordChanged = false
     const pty = this.ptysById.get(ptyId)
@@ -21929,7 +21928,6 @@ export class OrcaRuntimeService {
           ? request.agentArgs
           : resolveTuiAgentLaunchArgs(request.agent, settings.agentDefaultArgs),
       agentEnv: resolveTuiAgentLaunchEnv(request.agent, settings.agentDefaultEnv),
-      ompResumeFilePath: request.ompResumeFilePath,
       sessionOptions: this.toAgentSessionOptions(request.launchPreferences),
       platform,
       shell,

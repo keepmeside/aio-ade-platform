@@ -7,11 +7,9 @@ import {
   isClaudeManagementTitle,
   isCursorAgentTitle,
   isGeminiTerminalTitle,
-  isPiAgentTitle,
   titleHasAgentName
 } from './agent-title-core'
 import { isOpenCodeNativeTitle } from './opencode-terminal-title'
-import { getPiCompatibleSyntheticAgentLabel } from './pi-compatible-synthetic-title'
 
 /**
  * Returns true when the terminal title matches Claude Code's title conventions.
@@ -65,16 +63,6 @@ export function getAgentLabel(title: string): string | null {
   if (isGeminiTerminalTitle(title)) {
     return 'Gemini CLI'
   }
-  // Why: Pi-compatible synthetic titles can carry braille spinners, which the
-  // generic agent-title heuristics would otherwise claim first.
-  const piCompatibleSyntheticAgentLabel = getPiCompatibleSyntheticAgentLabel(title)
-  if (piCompatibleSyntheticAgentLabel) {
-    return piCompatibleSyntheticAgentLabel
-  }
-  if (isPiAgentTitle(title)) {
-    return 'Pi'
-  }
-
   if (titleHasAgentName(title, 'codex')) {
     return 'Codex'
   }

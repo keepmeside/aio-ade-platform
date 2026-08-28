@@ -1940,49 +1940,6 @@ describe('applyWebSessionTabsSnapshot', () => {
     expect(patch.sortEpoch).toBe(12)
   })
 
-  it('keeps mirrored OMP tabs from repainting to Pi-compatible titles', () => {
-    const hostPaneKey = makePaneKey('host-tab-1', LEAF_ID)
-    const patch = applyWebSessionTabsSnapshot(
-      makeState(),
-      makeSnapshot([
-        {
-          type: 'terminal',
-          id: HOST_SURFACE_ID,
-          title: 'Pi ready',
-          parentTabId: 'host-tab-1',
-          leafId: LEAF_ID,
-          isActive: true,
-          status: 'ready',
-          terminal: 'terminal-1',
-          launchAgent: 'omp',
-          agentStatus: {
-            state: 'done',
-            prompt: '',
-            updatedAt: NOW - 100,
-            stateStartedAt: NOW - 1_000,
-            agentType: 'pi',
-            paneKey: hostPaneKey,
-            terminalTitle: 'Pi ready',
-            stateHistory: []
-          }
-        }
-      ]),
-      ENV,
-      NOW
-    ) as Partial<WebSessionTabsSyncState>
-
-    const mirroredId = patch.tabsByWorktree?.[WT]?.[0]?.id
-    const mirroredPaneKey = makePaneKey(mirroredId!, LEAF_ID)
-    expect(patch.tabsByWorktree?.[WT]?.[0]).toMatchObject({
-      title: 'OMP ready',
-      launchAgent: 'omp'
-    })
-    expect(patch.agentStatusByPaneKey?.[mirroredPaneKey]).toMatchObject({
-      agentType: 'omp',
-      terminalTitle: 'OMP ready'
-    })
-  })
-
   it('bumps sort epoch for mirrored Command Code same-state turn starts', () => {
     const hostPaneKey = makePaneKey('host-tab-1', LEAF_ID)
     const initialPatch = applyWebSessionTabsSnapshot(

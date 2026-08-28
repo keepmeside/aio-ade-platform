@@ -17,12 +17,9 @@ import {
   containsBrailleSpinner,
   containsLegacyAgentName,
   isClaudeManagementTitle,
-  isGeminiTerminalTitle,
-  isPiAgentTitle,
-  isPiTerminalTitle
+  isGeminiTerminalTitle
 } from './agent-title-core'
 import type { AgentStatus } from './agent-title-core'
-import { getPiCompatibleSyntheticAgentStatus } from './pi-compatible-synthetic-title'
 import { isGrokRotatingWorkingTitle } from './terminal-title-agent-type'
 
 /**
@@ -112,17 +109,6 @@ export function normalizeTerminalTitle(title: string): string {
     }
   }
 
-  // Why: Pi animates every 80ms; collapse frames while preserving status.
-  if (isPiAgentTitle(title)) {
-    const status = detectAgentStatusFromTitle(title)
-    if (status === 'working') {
-      return '\u280b Pi'
-    }
-    if (status === 'idle') {
-      return 'Pi'
-    }
-  }
-
   // Why: Grok Build interpolates a rotating status/tool phrase between the
   // spinner and its name, so its working frames change the title many times per
   // turn. Collapse them to one stable label; idle/session titles carry no
@@ -152,17 +138,7 @@ export function detectAgentStatusFromTitle(title: string): AgentStatus | null {
     return 'idle'
   }
 
-  // Why: resolve synthetic Pi/OMP permission/idle labels before the broader
-  // Pi and braille-spinner checks below.
-  const piCompatibleSyntheticAgentStatus = getPiCompatibleSyntheticAgentStatus(title)
-  if (piCompatibleSyntheticAgentStatus) {
-    return piCompatibleSyntheticAgentStatus
-  }
-
   if (title.startsWith(`${CLAUDE_IDLE} `) || title === CLAUDE_IDLE) {
-    return 'idle'
-  }
-  if (isPiTerminalTitle(title)) {
     return 'idle'
   }
   if (containsBrailleSpinner(title)) {

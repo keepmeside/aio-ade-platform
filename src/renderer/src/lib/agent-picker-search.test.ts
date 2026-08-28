@@ -10,14 +10,8 @@ import { AGENT_CATALOG, type AgentCatalogEntry } from './agent-catalog'
 
 const agents = [
   entry('claude', 'Claude', 'claude'),
-  entry('codex', 'Codex', 'codex'),
-  entry('copilot', 'GitHub Copilot', 'copilot'),
-  entry('opencode', 'OpenCode', 'opencode'),
-  entry('mistral-vibe', 'Mistral Vibe', 'vibe'),
-  entry('qwen-code', 'Qwen Code', 'qwen-code'),
-  entry('crush', 'Charm', 'crush'),
-  entry('antigravity', 'Antigravity', 'agy'),
-  entry('cursor', 'Cursor', 'cursor-agent')
+  entry('claude-agent-teams', 'Claude Agent Teams', 'orca claude-teams'),
+  entry('codex', 'Codex', 'codex')
 ]
 
 afterEach(() => {
@@ -32,28 +26,28 @@ describe('agent picker search', () => {
   })
 
   it('prefers label matches over command and id aliases', () => {
-    expect(
-      searchAgentPickerEntries(agents, 'cod')
-        .map((agent) => agent.id)
-        .slice(0, 3)
-    ).toEqual(['codex', 'opencode', 'qwen-code'])
+    // Why: every entry carries "claude" in its id or command, so only label scoring can put
+    // the plain Claude row ahead of the Agent Teams row whose command is `orca claude-teams`.
+    expect(searchAgentPickerEntries(agents, 'claude').map((agent) => agent.id)).toEqual([
+      'claude',
+      'claude-agent-teams'
+    ])
   })
 
   it('matches multi-word agents by initials and ordered shorthand', () => {
-    expect(searchAgentPickerEntries(agents, 'gc')[0]?.id).toBe('copilot')
-    expect(searchAgentPickerEntries(agents, 'mv')[0]?.id).toBe('mistral-vibe')
-    expect(searchAgentPickerEntries(agents, 'qc')[0]?.id).toBe('qwen-code')
+    expect(searchAgentPickerEntries(agents, 'cat')[0]?.id).toBe('claude-agent-teams')
+    expect(searchAgentPickerEntries(agents, 'agent teams')[0]?.id).toBe('claude-agent-teams')
   })
 
   it('matches command aliases that do not appear in the display label', () => {
-    expect(searchAgentPickerEntries(agents, 'agy')[0]?.id).toBe('antigravity')
-    expect(searchAgentPickerEntries(agents, 'cursor-agent')[0]?.id).toBe('cursor')
+    expect(searchAgentPickerEntries(agents, 'orca')[0]?.id).toBe('claude-agent-teams')
+    expect(searchAgentPickerEntries(agents, 'claude-teams')[0]?.id).toBe('claude-agent-teams')
   })
 
   it('normalizes accepted pasted whitespace without regex replacement', () => {
     const replaceSpy = vi.spyOn(String.prototype, 'replace')
 
-    expect(searchAgentPickerEntries(agents, '  qwen\n\tcode  ')[0]?.id).toBe('qwen-code')
+    expect(searchAgentPickerEntries(agents, '  agent\n\tteams  ')[0]?.id).toBe('claude-agent-teams')
 
     expect(replaceSpy).not.toHaveBeenCalled()
   })
@@ -116,7 +110,7 @@ describe('agent picker search', () => {
   })
 
   it('highlights the current value until a search should choose the first visible result', () => {
-    const filteredAgents = searchAgentPickerEntries(agents, 'gc')
+    const filteredAgents = searchAgentPickerEntries(agents, 'cat')
 
     expect(
       getAgentPickerCommandValue({
@@ -133,9 +127,9 @@ describe('agent picker search', () => {
         blankMatchesQuery: false,
         currentValue: 'claude',
         filteredAgents,
-        rawQuery: 'gc'
+        rawQuery: 'cat'
       })
-    ).toBe('copilot')
+    ).toBe('claude-agent-teams')
     expect(
       getAgentPickerCommandValue({
         blankValue: '__none__',

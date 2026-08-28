@@ -151,18 +151,20 @@ describe('CommitMessageAiPane', () => {
   it('uses known model flags when building source-control CLI argument placeholders', () => {
     expect(getSourceControlAgentArgsPlaceholder('claude')).toBe('--model sonnet')
     expect(getSourceControlAgentArgsPlaceholder('codex')).toBe('--model gpt-5.4-mini')
-    expect(getSourceControlAgentArgsPlaceholder('amp')).toBe('--mode smart')
-    expect(getSourceControlAgentArgsPlaceholder('aider')).toBe('--model <model>')
+    // An agent with no non-interactive capability falls back to a generic hint.
+    expect(getSourceControlAgentArgsPlaceholder('claude-agent-teams')).toBe('--model <model>')
   })
 
   it('only offers non-interactive generation agents for text generation actions', () => {
     expect(getAgentCatalogForAction('commitMessage', null).map((agent) => agent.id)).not.toContain(
-      'aider'
+      'claude-agent-teams'
     )
     expect(getAgentCatalogForAction('pullRequest', null).map((agent) => agent.id)).not.toContain(
-      'aider'
+      'claude-agent-teams'
     )
-    expect(getAgentCatalogForAction('fixChecks', null).map((agent) => agent.id)).toContain('aider')
+    expect(getAgentCatalogForAction('fixChecks', null).map((agent) => agent.id)).toContain(
+      'claude-agent-teams'
+    )
   })
 
   it('explains which agents are supported for text-generation recipes', () => {
@@ -205,7 +207,7 @@ describe('CommitMessageAiPane', () => {
           customAgentCommand: '',
           actions: {
             commitMessage: {
-              agentId: 'aider'
+              agentId: 'claude-agent-teams'
             }
           },
           prCreationDefaults: {},
@@ -215,7 +217,7 @@ describe('CommitMessageAiPane', () => {
     )
 
     expect(markup).toContain(
-      'Aider cannot run this text-generation recipe. Pick one of the supported agents below.'
+      'Claude Agent Teams cannot run this text-generation recipe. Pick one of the supported agents below.'
     )
     expect(markup).toContain('Supported agents for this recipe:')
   })
@@ -225,8 +227,8 @@ describe('CommitMessageAiPane', () => {
       buildSettings({
         commitMessageAi: {
           enabled: true,
-          agentId: 'copilot',
-          selectedModelByAgent: { copilot: 'gpt-5.5' },
+          agentId: 'codex',
+          selectedModelByAgent: { codex: 'gpt-5.5' },
           selectedThinkingByModel: {},
           customPrompt: '',
           customAgentCommand: ''
@@ -331,7 +333,7 @@ describe('CommitMessageAiPane', () => {
   it('allows default-agent recipes even when the old default generator is unsupported', () => {
     const markup = renderPane(
       buildSettings({
-        defaultTuiAgent: 'aider',
+        defaultTuiAgent: 'claude-agent-teams',
         commitMessageAi: {
           enabled: true,
           agentId: null,
@@ -349,25 +351,6 @@ describe('CommitMessageAiPane', () => {
     expect(markup).not.toContain('Thinking effort')
   })
 
-  it('removes the old Gemini text-generation lockout from the settings pane', () => {
-    const markup = renderPane(
-      buildSettings({
-        commitMessageAi: {
-          enabled: true,
-          agentId: 'gemini',
-          selectedModelByAgent: {},
-          selectedThinkingByModel: {},
-          customPrompt: '',
-          customAgentCommand: ''
-        }
-      })
-    )
-
-    expect(markup).toContain('Action recipes')
-    expect(markup).not.toContain('Gemini Source Control AI is coming soon')
-    expect(markup).not.toContain('Which model Source Control AI uses')
-  })
-
   it('keeps action recipes discoverable in settings search metadata', () => {
     const actionRecipesEntry = getCommitMessageAiPaneSearchEntries().find(
       (entry) => entry.title === 'Action recipes'
@@ -381,8 +364,8 @@ describe('CommitMessageAiPane', () => {
   it('merges discovered models without clobbering newer settings fields', () => {
     const config: SourceControlAiSettings = {
       enabled: true,
-      agentId: 'cursor',
-      selectedModelByAgent: { cursor: 'stale-model', codex: 'gpt-5.5' },
+      agentId: 'claude',
+      selectedModelByAgent: { claude: 'stale-model', codex: 'gpt-5.5' },
       selectedThinkingByModel: { 'gpt-5.5': 'low' },
       instructionsByOperation: { commitMessage: 'Use Conventional Commits.' },
       customAgentCommand: '',
@@ -391,19 +374,19 @@ describe('CommitMessageAiPane', () => {
 
     const merged = mergeDiscoveredModelsIntoCommitMessageConfig(
       config,
-      'cursor',
+      'claude',
       [{ id: 'auto', label: 'Auto' }],
       'auto'
     )
 
     expect(merged.instructionsByOperation.commitMessage).toBe('Use Conventional Commits.')
-    expect(merged.agentId).toBe('cursor')
+    expect(merged.agentId).toBe('claude')
     expect(merged.selectedModelByAgent).toEqual({
-      cursor: 'auto',
+      claude: 'auto',
       codex: 'gpt-5.5'
     })
-    expect(merged.discoveredModelsByAgent?.cursor).toEqual([{ id: 'auto', label: 'Auto' }])
-    expect(merged.discoveredModelsByAgentByHost?.local?.cursor).toEqual([
+    expect(merged.discoveredModelsByAgent?.claude).toEqual([{ id: 'auto', label: 'Auto' }])
+    expect(merged.discoveredModelsByAgentByHost?.local?.claude).toEqual([
       { id: 'auto', label: 'Auto' }
     ])
   })
@@ -411,28 +394,28 @@ describe('CommitMessageAiPane', () => {
   it('keeps SSH discovered models out of the legacy local cache', () => {
     const config: SourceControlAiSettings = {
       enabled: true,
-      agentId: 'cursor',
-      selectedModelByAgent: { cursor: 'auto' },
+      agentId: 'codex',
+      selectedModelByAgent: { codex: 'auto' },
       selectedThinkingByModel: {},
       instructionsByOperation: {},
       customAgentCommand: '',
-      discoveredModelsByAgent: { cursor: [{ id: 'auto', label: 'Auto' }] },
+      discoveredModelsByAgent: { codex: [{ id: 'auto', label: 'Auto' }] },
       selectedModelByAgentByHost: {},
       discoveredModelsByAgentByHost: {}
     }
 
     const merged = mergeDiscoveredModelsIntoCommitMessageConfig(
       config,
-      'cursor',
+      'codex',
       [{ id: 'remote-only', label: 'Remote Only' }],
       'remote-only',
       'ssh:conn-1'
     )
 
-    expect(merged.selectedModelByAgent.cursor).toBe('auto')
-    expect(merged.discoveredModelsByAgent?.cursor).toEqual([{ id: 'auto', label: 'Auto' }])
-    expect(merged.selectedModelByAgentByHost?.['ssh:conn-1']?.cursor).toBe('remote-only')
-    expect(merged.discoveredModelsByAgentByHost?.['ssh:conn-1']?.cursor).toEqual([
+    expect(merged.selectedModelByAgent.codex).toBe('auto')
+    expect(merged.discoveredModelsByAgent?.codex).toEqual([{ id: 'auto', label: 'Auto' }])
+    expect(merged.selectedModelByAgentByHost?.['ssh:conn-1']?.codex).toBe('remote-only')
+    expect(merged.discoveredModelsByAgentByHost?.['ssh:conn-1']?.codex).toEqual([
       { id: 'remote-only', label: 'Remote Only' }
     ])
   })

@@ -15,10 +15,8 @@ import {
   createHookListenerState,
   getEndpointFileName,
   hasCodexTranscriptSubagents,
-  hasPendingAgentResultText,
   HOOK_REQUEST_SLOWLORIS_MS,
   normalizeHookPayload,
-  preparePendingGrokResultDiscovery,
   readRequestBody,
   resolveHookSource,
   writeEndpointFile,
@@ -36,8 +34,6 @@ export type RelayHookForward = (envelope: AgentHookRelayEnvelope) => void
 // Why: relay's userData equivalent under $HOME so each user on a shared dev box gets their own 0o700 dir.
 const RELAY_HOOKS_DIR_NAME = '.orca-relay'
 const RELAY_HOOKS_SUBDIR = 'agent-hooks'
-const ASSISTANT_MESSAGE_RETRY_ATTEMPTS = 5
-const ASSISTANT_MESSAGE_RETRY_MS = 50
 const CODEX_SUBAGENT_POLL_MS = 1_000
 
 // Why: cap env/version at 64 chars so a misbehaving agent CLI can't grow the meta cache unboundedly; canonical values are short.
@@ -102,7 +98,6 @@ export class RelayAgentHookServer {
     string,
     { source: AgentHookSource; env?: string; version?: string }
   > = new Map()
-  private assistantMessageRetryTimers = new Map<string, ReturnType<typeof setTimeout>>()
   private codexSubagentPollTimers = new Map<string, ReturnType<typeof setTimeout>>()
   private forward: RelayHookForward
   private fixedToken: string | undefined
@@ -192,10 +187,6 @@ export class RelayAgentHookServer {
     this.port = 0
     this.token = ''
     this.endpointFileWritten = false
-    for (const timer of this.assistantMessageRetryTimers.values()) {
-      clearTimeout(timer)
-    }
-    this.assistantMessageRetryTimers.clear()
     for (const timer of this.codexSubagentPollTimers.values()) {
       clearTimeout(timer)
     }
@@ -222,7 +213,6 @@ export class RelayAgentHookServer {
 
   /** Drop a paneKey's cached entries on PTY exit so a terminated pane can't resurface as a ghost event on reconnect. */
   clearPaneState(paneKey: string): void {
-    this.clearAssistantMessageRetry(paneKey)
     this.clearCodexSubagentPoll(paneKey)
     clearPaneCacheState(this.state, paneKey)
     this.lastEnvelopeMetaByPaneKey.delete(paneKey)
@@ -281,7 +271,6 @@ export class RelayAgentHookServer {
         const env = this.bodyEnv(body)
         const version = this.bodyVersion(body)
         this.applyEvent(event, source, env, version)
-        this.scheduleAssistantMessageRetry(source, body, event, env, version)
         this.scheduleCodexSubagentPoll(source, body, event, env, version)
       }
       res.writeHead(204)
@@ -333,7 +322,6 @@ export class RelayAgentHookServer {
     version?: string
   ): void {
     if (event.payload.state !== 'done' || event.payload.lastAssistantMessage) {
-      this.clearAssistantMessageRetry(event.paneKey)
     }
     // Why: delete-then-set makes Map insertion order = recency, so the cap below evicts the longest-idle pane.
     this.state.lastStatusByPaneKey.delete(event.paneKey)
@@ -348,15 +336,6 @@ export class RelayAgentHookServer {
       this.clearPaneState(oldest)
     }
     this.forwardEvent(event, source, env, version)
-  }
-
-  private clearAssistantMessageRetry(paneKey: string): void {
-    const timer = this.assistantMessageRetryTimers.get(paneKey)
-    if (!timer) {
-      return
-    }
-    clearTimeout(timer)
-    this.assistantMessageRetryTimers.delete(paneKey)
   }
 
   private clearCodexSubagentPoll(paneKey: string): void {
@@ -404,100 +383,6 @@ export class RelayAgentHookServer {
     if (typeof timer.unref === 'function') {
       timer.unref()
     }
-  }
-
-  private scheduleAssistantMessageRetry(
-    source: AgentHookSource,
-    body: unknown,
-    original: AgentHookEventPayload,
-    env?: string,
-    version?: string,
-    attempt = 1,
-    discoveryReady = false
-  ): void {
-    if (
-      original.payload.lastAssistantMessage ||
-      !hasPendingAgentResultText(source, body) ||
-      attempt > ASSISTANT_MESSAGE_RETRY_ATTEMPTS
-    ) {
-      return
-    }
-    this.clearAssistantMessageRetry(original.paneKey)
-    if (!discoveryReady) {
-      const discovery = preparePendingGrokResultDiscovery(source, body)
-      if (discovery) {
-        // Why: slug-group discovery can outlive the bounded flush timers, so its completion drives the first retry.
-        void discovery
-          .then(() => {
-            if (this.server) {
-              this.applyAssistantMessageRetry(source, body, original, env, version, 1, true)
-            }
-          })
-          .catch((err) => {
-            process.stderr.write(
-              `[relay-hook-server] Grok result discovery failed: ${err instanceof Error ? err.message : String(err)}\n`
-            )
-          })
-        return
-      }
-    }
-    const timer = setTimeout(() => {
-      try {
-        this.assistantMessageRetryTimers.delete(original.paneKey)
-        this.applyAssistantMessageRetry(
-          source,
-          body,
-          original,
-          env,
-          version,
-          attempt + 1,
-          discoveryReady
-        )
-      } catch (err) {
-        process.stderr.write(
-          `[relay-hook-server] assistant message retry failed: ${err instanceof Error ? err.message : String(err)}\n`
-        )
-      }
-    }, ASSISTANT_MESSAGE_RETRY_MS)
-    this.assistantMessageRetryTimers.set(original.paneKey, timer)
-    if (typeof timer.unref === 'function') {
-      timer.unref()
-    }
-  }
-
-  private applyAssistantMessageRetry(
-    source: AgentHookSource,
-    body: unknown,
-    original: AgentHookEventPayload,
-    env: string | undefined,
-    version: string | undefined,
-    nextAttempt: number,
-    requireExactOriginal: boolean
-  ): void {
-    const current = this.state.lastStatusByPaneKey.get(original.paneKey)
-    if (
-      !current ||
-      (requireExactOriginal && current !== original) ||
-      current.payload.agentType !== original.payload.agentType ||
-      current.payload.prompt !== original.payload.prompt ||
-      current.payload.lastAssistantMessage
-    ) {
-      return
-    }
-    const event = normalizeHookPayload(this.state, source, body, this.env)
-    if (!event?.payload.lastAssistantMessage) {
-      this.scheduleAssistantMessageRetry(
-        source,
-        body,
-        original,
-        env,
-        version,
-        nextAttempt,
-        requireExactOriginal
-      )
-      return
-    }
-    this.applyEvent(event, source, env, version)
   }
 
   private bodyEnv(body: unknown): string | undefined {

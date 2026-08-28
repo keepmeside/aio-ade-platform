@@ -375,16 +375,16 @@ describe('DaemonServer', () => {
         sessionId: 'agent-session',
         cols: 80,
         rows: 24,
-        launchAgent: 'droid'
+        launchAgent: 'claude'
       })
-      expect(first).toMatchObject({ isNew: true, launchAgent: 'droid' })
+      expect(first).toMatchObject({ isNew: true, launchAgent: 'claude' })
 
       const second = await c.request('createOrAttach', {
         sessionId: 'agent-session',
         cols: 80,
         rows: 24
       })
-      expect(second).toMatchObject({ isNew: false, launchAgent: 'droid' })
+      expect(second).toMatchObject({ isNew: false, launchAgent: 'claude' })
 
       const unknown = await c.request('createOrAttach', {
         sessionId: 'unknown-agent-session',

@@ -33,9 +33,7 @@ import { PortScanHandler } from './port-scan-handler'
 import { AgentExecHandler } from './agent-exec-handler'
 import { WorkspaceSessionHandler } from './workspace-session-handler'
 import { endpointDirForRelaySocket, RelayAgentHookServer } from './agent-hook-server'
-import { PluginOverlayManager, getRelayPiStatusExtensionPath } from './plugin-overlay'
 import {
-  AGENT_HOOK_INSTALL_PLUGINS_METHOD,
   AGENT_HOOK_NOTIFICATION_METHOD,
   AGENT_HOOK_REQUEST_REPLAY_METHOD
 } from '../shared/agent-hook-relay'
@@ -43,10 +41,6 @@ import {
   DEFAULT_SSH_RELAY_GRACE_PERIOD_SECONDS,
   SSH_RELAY_CONFIGURE_GRACE_TIME_METHOD
 } from '../shared/ssh-types'
-import { assertPluginSourceUnderByteCap } from './plugin-source-limit'
-import { resolveOpenCodeSourceConfigDir, resolvePiSourceAgentDir } from './plugin-overlay-env'
-import { detectPiAgentKindFromCommand } from '../shared/pi-agent-kind'
-import { resolveSetupAgentSequenceLaunchCommand } from '../shared/setup-agent-sequencing'
 import { pickRemoteCliEnv } from './remote-cli-env'
 import { relayLogLine } from './relay-diagnostic-log'
 import { remoteCliRequestTimeoutMs } from './remote-cli-timeout'
@@ -485,59 +479,11 @@ async function main(): Promise<void> {
   // Why: read the augmenter on every spawn so a late (or restarted) hook-server bind still lands in the next PTY's ORCA_AGENT_HOOK_* env.
   ptyHandler.addEnvAugmenter(() => hookServer.buildPtyEnv())
 
-  // Why: plugin paths resolve on the relay host — OpenCode gets a relay-local overlay; Pi/OMP get extensions in their real remote dirs.
-  const pluginOverlay = new PluginOverlayManager()
-  ptyHandler.addEnvAugmenter((ctx) => {
-    const env: Record<string, string> = {}
-    // Why: prefer paneKey for overlay identity so a renderer remount reusing it lands in the same dir; fall back to pty-id when absent.
-    const overlayId = ctx.paneKey ?? ctx.id
-    if (pluginOverlay.hasOpenCodeSource()) {
-      const sourceDir = resolveOpenCodeSourceConfigDir(ctx.env, ctx.shell)
-      const dir = pluginOverlay.materializeOpenCode(overlayId, sourceDir)
-      if (dir) {
-        env.OPENCODE_CONFIG_DIR = dir
-        env.ORCA_OPENCODE_CONFIG_DIR = dir
-        if (sourceDir) {
-          env.ORCA_OPENCODE_SOURCE_CONFIG_DIR = sourceDir
-        }
-      }
-    }
-    if (pluginOverlay.hasPiSource()) {
-      // Why: install Orca's guarded extension into the launched agent's (Pi vs OMP) real remote dir without redirecting PI_CODING_AGENT_DIR.
-      const launchCommandHint = resolveSetupAgentSequenceLaunchCommand(ctx.env, ctx.command)
-      const kind = detectPiAgentKindFromCommand(launchCommandHint)
-      const hasLaunchCommand =
-        typeof launchCommandHint === 'string' && launchCommandHint.trim().length > 0
-      const shouldPrepareOmpShadow = kind === 'omp' || !hasLaunchCommand
-      if (kind === 'pi') {
-        const sourceDir = resolvePiSourceAgentDir(ctx.env, ctx.shell, 'pi')
-        const dir = pluginOverlay.materializePi(overlayId, sourceDir, 'pi')
-        if (dir) {
-          env.ORCA_PI_SOURCE_AGENT_DIR = dir
-        }
-      }
-      if (shouldPrepareOmpShadow) {
-        // Why: prepare OMP's status extension for a bare shell so a typed `omp` gets integration, without making OMP the shell's home.
-        const sourceDir =
-          kind === 'omp'
-            ? resolvePiSourceAgentDir(ctx.env, ctx.shell, 'omp')
-            : ctx.env.ORCA_OMP_SOURCE_AGENT_DIR
-        const dir = pluginOverlay.materializePi(overlayId, sourceDir, 'omp')
-        if (dir) {
-          env.ORCA_OMP_STATUS_EXTENSION = getRelayPiStatusExtensionPath(dir)
-          env.ORCA_OMP_SOURCE_AGENT_DIR = dir
-        }
-      }
-    }
-    return env
-  })
-
-  // Why: evict pane status cache + overlay dirs on PTY exit so panes don't ghost after reconnect (§5 Path 3) or leak dirs.
-  ptyHandler.setExitListener(({ paneKey, id }) => {
+  // Why: evict pane status cache on PTY exit so panes don't ghost after reconnect (§5 Path 3).
+  ptyHandler.setExitListener(({ paneKey }) => {
     if (paneKey) {
       hookServer.clearPaneState(paneKey)
     }
-    pluginOverlay.clearOverlay(paneKey ?? id)
   })
 
   // Why: forward cached entries as notifications before returning so the response trails all replays, closing a reconnect race. See docs/design/agent-status-over-ssh.md §5 Path 3.
@@ -548,29 +494,6 @@ async function main(): Promise<void> {
 
   // Why: relay-local installers collapse hundreds of SFTP request/response RTTs to one RPC.
   registerManagedHookInstaller(dispatcher)
-
-  // Why: plugin sources ship over the wire so an Orca update doesn't force a relay redeploy; cache them per spawn. See docs/design/agent-status-over-ssh.md §4.
-  // Why: bound per-source size so a buggy/hostile Orca can't OOM the relay by pushing a giant string.
-  dispatcher.onRequest(AGENT_HOOK_INSTALL_PLUGINS_METHOD, async (params) => {
-    const opencode = params.opencodePluginSource
-    const pi = params.piExtensionSource
-    const omp = params.ompExtensionSource
-    assertPluginSourceUnderByteCap('opencodePluginSource', opencode)
-    assertPluginSourceUnderByteCap('piExtensionSource', pi)
-    assertPluginSourceUnderByteCap('ompExtensionSource', omp)
-    pluginOverlay.setSources({
-      opencodePluginSource: typeof opencode === 'string' ? opencode : undefined,
-      piExtensionSource: typeof pi === 'string' ? pi : undefined,
-      ompExtensionSource: typeof omp === 'string' ? omp : undefined
-    })
-    return {
-      installed: {
-        opencode: pluginOverlay.hasOpenCodeSource(),
-        pi: pluginOverlay.hasPiSource('pi'),
-        omp: pluginOverlay.hasPiSource('omp')
-      }
-    }
-  })
 
   // ── Socket server for reconnection ──────────────────────────────────
   // Why: the SSH channel dies on app restart; a Unix socket lets a new --connect bridge reach the dispatcher that owns live PTYs.

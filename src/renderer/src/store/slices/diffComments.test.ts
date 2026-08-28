@@ -83,22 +83,6 @@ const mockApi = {
     getDaily: vi.fn().mockResolvedValue([]),
     getBreakdown: vi.fn().mockResolvedValue([]),
     getRecentSessions: vi.fn().mockResolvedValue([])
-  },
-  openCodeUsage: {
-    getScanState: vi.fn().mockResolvedValue({
-      enabled: false,
-      isScanning: false,
-      lastScanStartedAt: null,
-      lastScanCompletedAt: null,
-      lastScanError: null,
-      hasAnyOpenCodeData: false
-    }),
-    setEnabled: vi.fn().mockResolvedValue({}),
-    refresh: vi.fn().mockResolvedValue({}),
-    getSummary: vi.fn().mockResolvedValue(null),
-    getDaily: vi.fn().mockResolvedValue([]),
-    getBreakdown: vi.fn().mockResolvedValue([]),
-    getRecentSessions: vi.fn().mockResolvedValue([])
   }
 }
 
@@ -124,7 +108,6 @@ import { createMemorySlice } from './memory'
 import { createWorkspaceSpaceSlice } from './workspace-space'
 import { createClaudeUsageSlice } from './claude-usage'
 import { createCodexUsageSlice } from './codex-usage'
-import { createOpenCodeUsageSlice } from './opencode-usage'
 import { createBrowserSlice } from './browser'
 import { createRateLimitSlice } from './rate-limits'
 import { createSshSlice } from './ssh'
@@ -167,7 +150,6 @@ function createTestStore() {
     ...createWorkspaceSpaceSlice(...a),
     ...createClaudeUsageSlice(...a),
     ...createCodexUsageSlice(...a),
-    ...createOpenCodeUsageSlice(...a),
     ...createBrowserSlice(...a),
     ...createRateLimitSlice(...a),
     ...createSshSlice(...a),

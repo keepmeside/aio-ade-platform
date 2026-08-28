@@ -93,7 +93,7 @@ describe('resolveTabAgentFromSignals sleeping-session precedence', () => {
         isRemote: false,
         title: '✳ Claude Code',
         hookAgent: null,
-        sleepingSessionAgent: 'gemini',
+        sleepingSessionAgent: 'codex',
         launchAgent: 'codex'
       })
     ).toBe('claude')

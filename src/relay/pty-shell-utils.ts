@@ -11,10 +11,6 @@ import {
 } from '../shared/agent-process-recognition'
 import { getFirstCommandToken } from '../shared/command-token-scanner'
 import { getProcessTableSnapshot, type ProcessTableRow } from '../shared/process-table-snapshot'
-import {
-  resolveOuterWrapperForegroundProcess,
-  shouldInspectOuterWrapperForegroundProcess
-} from '../shared/foreground-wrapper-agent'
 import { isShellProcess } from '../shared/shell-process-detection'
 import {
   resolveWindowsAgentForegroundProcess,
@@ -265,9 +261,7 @@ async function getRecognizedForegroundDescendant(
     for (const candidate of inspectionCandidates) {
       const recognized = recognizeAgentProcessFromCommandLine(candidate.command)
       if (recognized) {
-        // Why: return the outer wrapper (omp) rather than the deeper wrapped child
-        // (pi) of a shell→omp→pi tree — see resolveOuterWrapperForegroundProcess.
-        return resolveOuterWrapperForegroundProcess(recognized, candidate, candidates)
+        return recognized.processName
       }
     }
   } catch {
@@ -286,20 +280,6 @@ export async function getForegroundProcessName(
   if (fallbackProcess) {
     const fallbackRecognition = recognizeAgentProcess(fallbackProcess)
     if (fallbackRecognition) {
-      // Why: node-pty can report OMP's wrapped Pi; enrich only that ambiguous
-      // fallback so authoritative OMP reads keep the zero-subprocess fast path.
-      if (shouldInspectOuterWrapperForegroundProcess(fallbackRecognition)) {
-        if (process.platform === 'win32') {
-          return (
-            (await resolveWindowsAgentForegroundProcess(pid, fallbackProcess, {})) ??
-            fallbackRecognition.processName
-          )
-        }
-        return (
-          (await getRecognizedForegroundDescendant(pid, fallbackProcess)) ??
-          fallbackRecognition.processName
-        )
-      }
       return fallbackRecognition.processName
     }
     if (process.platform === 'win32') {

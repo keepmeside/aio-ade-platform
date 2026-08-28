@@ -3431,8 +3431,7 @@ export function useComposerState(options: UseComposerStateOptions): UseComposerS
         shell: selectedRepoStartupShell,
         isRemote: selectedRepoIsRemote
       })
-      const shouldSeedInitialAgentStatus =
-        tuiAgent === 'command-code' && submitStartupPrompt.trim().length > 0
+      const shouldSeedInitialAgentStatus = false
 
       // Why: backend startup is safe only for self-contained launch commands; agents needing post-ready paste stay on the renderer path.
       const composerTelemetry: AgentStartedTelemetry = {

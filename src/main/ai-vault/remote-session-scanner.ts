@@ -16,7 +16,6 @@ import { discoverRemoteSourceCandidates } from './remote-session-scanner-discove
 import { remoteSessionSources } from './remote-session-scanner-sources'
 import type { RemoteScannerContext, RemoteSessionCandidate } from './remote-session-scanner-types'
 import { sessionSortTime } from './session-scanner-accumulator'
-import { createAntigravityWorkspaceResolver } from './session-scanner-antigravity-history'
 import { errorMessage } from './session-scanner-values'
 
 const DEFAULT_REMOTE_SCAN_LIMIT = 1000
@@ -37,15 +36,7 @@ export async function scanRemoteAiVaultSessions(args: {
     provider: args.provider,
     executionHostId: args.executionHostId,
     hostPlatform: args.hostPlatform,
-    titleCaches: new Map(),
-    antigravityWorkspaceResolver: createAntigravityWorkspaceResolver(async (historyPath) => {
-      try {
-        const read = await args.provider.readFile(historyPath)
-        return read.isBinary ? null : read.content
-      } catch {
-        return null
-      }
-    })
+    titleCaches: new Map()
   }
   const candidates = dedupeCodexRolloutFileAliases(
     (

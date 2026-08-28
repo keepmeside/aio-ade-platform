@@ -16,7 +16,6 @@ import {
   createHookListenerState,
   getEndpointFileName,
   hasCodexTranscriptSubagents,
-  hasPendingAgentResultText,
   HOOK_REQUEST_SLOWLORIS_MS,
   markClaudeLeadTurnInterrupted,
   markCodexLeadTurnInterrupted,
@@ -27,7 +26,6 @@ import {
   readRequestBody,
   reconcileRemoteCodexState,
   resolveHookSource,
-  preparePendingGrokResultDiscovery,
   seedClaudeSubagentRosterFromSnapshots,
   seedCodexStateFromSnapshot,
   warnOnHookEnvOrVersionMismatch,
@@ -64,11 +62,7 @@ import {
 } from '../../shared/agent-question-answered-intent'
 import { parseLegacyNumericPaneKey, parsePaneKey } from '../../shared/stable-pane-id'
 import type { LegacyPaneKeyAliasEntry } from '../../shared/types'
-import {
-  getAgentResumeArgv,
-  normalizeAgentProviderSession,
-  type AgentProviderSessionMetadata
-} from '../../shared/agent-session-resume'
+import { normalizeAgentProviderSession } from '../../shared/agent-session-resume'
 import { isCommandCodeNewTurnWhileWorking } from '../../shared/command-code-turn-boundary'
 
 export type { AgentHookSource }
@@ -105,8 +99,6 @@ type PaneKeyAliasEntry = {
 
 // Why: co-located with the endpoint file in userData/agent-hooks/ so hook-server cross-restart artifacts stay together.
 const LAST_STATUS_FILE_NAME = 'last-status.json'
-const ASSISTANT_MESSAGE_RETRY_ATTEMPTS = 5
-const ASSISTANT_MESSAGE_RETRY_MS = 50
 const CODEX_SUBAGENT_POLL_MS = 1_000
 const INTERRUPTED_DONE_LATE_WORKING_SUPPRESSION_MS = 15_000
 
@@ -183,14 +175,6 @@ function dropHydratedIdleClaudeSubagents(
   }
 }
 
-// Why: the sole gate for keeping a providerSessionOnly row; shared so hydrate and relay-ingest can't drift.
-function isValidPiProviderSessionOnly(
-  providerSession: AgentProviderSessionMetadata | undefined,
-  agentType: AgentType | undefined
-): boolean {
-  return Boolean(providerSession && agentType === 'pi' && getAgentResumeArgv('pi', providerSession))
-}
-
 function sanitizeHydratedEntry(
   paneKey: string,
   rawEntry: unknown
@@ -245,8 +229,9 @@ function sanitizeHydratedEntry(
     return null
   }
   const providerSession = normalizeAgentProviderSession(record.providerSession) ?? undefined
-  const providerSessionOnly = record.providerSessionOnly === true
-  if (providerSessionOnly && !isValidPiProviderSessionOnly(providerSession, payload.agentType)) {
+  // No shipped agent reports resume identity without a status row, so a persisted or relayed
+  // providerSessionOnly record can only come from an older build; drop it.
+  if (record.providerSessionOnly === true) {
     return null
   }
   return {
@@ -261,7 +246,6 @@ function sanitizeHydratedEntry(
     toolAgentId: typeof record.toolAgentId === 'string' ? record.toolAgentId : undefined,
     toolAgentType: typeof record.toolAgentType === 'string' ? record.toolAgentType : undefined,
     providerSession,
-    providerSessionOnly: providerSessionOnly ? true : undefined,
     payload,
     receivedAt,
     stateStartedAt
@@ -485,7 +469,6 @@ export class AgentHookServer {
   private lastStatusFilePath: string | null = null
   // Why: trailing-edge debounce timer, per-instance so test servers in one process don't share state.
   private statusPersistTimer: ReturnType<typeof setTimeout> | null = null
-  private assistantMessageRetryTimers = new Map<string, ReturnType<typeof setTimeout>>()
   private codexSubagentPollTimers = new Map<string, ReturnType<typeof setTimeout>>()
   private promptSentDedupeByPaneKey = new Map<string, AgentPromptSentDedupeEntry>()
   private promptSentHashSalt = randomBytes(16).toString('hex')
@@ -849,7 +832,7 @@ export class AgentHookServer {
       previousDedupe?.agentKind === agentKind &&
       previousDedupe.promptInteractionKey !== undefined &&
       previousDedupe.promptInteractionKey === promptInteractionKey &&
-      (agentKind === 'opencode' || previousDedupe.promptHash === promptHash)
+      previousDedupe.promptHash === promptHash
     ) {
       return
     }
@@ -900,7 +883,6 @@ export class AgentHookServer {
     if (payload.providerSessionOnly) {
       // Why: Pi session_start replaces stale turn state and survives replay, but must not emit prompt telemetry or a fabricated status.
       const enriched = this.attachStatusTiming(payload, now)
-      this.clearAssistantMessageRetry(enriched.paneKey)
       this.runtimeObservedStatusPaneKeys.delete(enriched.paneKey)
       this.state.lastStatusByPaneKey.set(enriched.paneKey, enriched)
       this.scheduleStatusPersist()
@@ -1003,12 +985,6 @@ export class AgentHookServer {
     ) {
       return previous
     }
-    if (
-      effectivePayload.payload.state !== 'done' ||
-      effectivePayload.payload.lastAssistantMessage
-    ) {
-      this.clearAssistantMessageRetry(effectivePayload.paneKey)
-    }
     if (!identity.inheritedFromActivePane) {
       this.maybeTrackAgentPromptSent(effectivePayload, previous)
     }
@@ -1032,15 +1008,6 @@ export class AgentHookServer {
         console.error('[agent-hooks] enriched status listener threw', err)
       }
     }
-  }
-
-  private clearAssistantMessageRetry(paneKey: string): void {
-    const timer = this.assistantMessageRetryTimers.get(paneKey)
-    if (!timer) {
-      return
-    }
-    clearTimeout(timer)
-    this.assistantMessageRetryTimers.delete(paneKey)
   }
 
   private clearCodexSubagentPoll(paneKey: string): void {
@@ -1084,79 +1051,6 @@ export class AgentHookServer {
     if (typeof timer.unref === 'function') {
       timer.unref()
     }
-  }
-
-  private scheduleAssistantMessageRetry(
-    source: AgentHookSource,
-    body: unknown,
-    original: EnrichedAgentHookEventPayload,
-    attempt = 1,
-    discoveryReady = false
-  ): void {
-    if (
-      original.payload.lastAssistantMessage ||
-      !hasPendingAgentResultText(source, body) ||
-      attempt > ASSISTANT_MESSAGE_RETRY_ATTEMPTS
-    ) {
-      return
-    }
-    this.clearAssistantMessageRetry(original.paneKey)
-    if (!discoveryReady) {
-      const discovery = preparePendingGrokResultDiscovery(source, body)
-      if (discovery) {
-        // Why: slug-group discovery can outlive the bounded flush timers; its completion must drive the first retry deterministically.
-        void discovery
-          .then(() => {
-            if (this.server) {
-              this.applyAssistantMessageRetry(source, body, original, 1, true)
-            }
-          })
-          .catch((err) => {
-            console.error('[agent-hooks] Grok result discovery failed:', err)
-          })
-        return
-      }
-    }
-    const timer = setTimeout(() => {
-      try {
-        this.assistantMessageRetryTimers.delete(original.paneKey)
-        this.applyAssistantMessageRetry(source, body, original, attempt + 1, discoveryReady)
-      } catch (err) {
-        console.error('[agent-hooks] assistant message retry failed:', err)
-      }
-    }, ASSISTANT_MESSAGE_RETRY_MS)
-    this.assistantMessageRetryTimers.set(original.paneKey, timer)
-    if (typeof timer.unref === 'function') {
-      timer.unref()
-    }
-  }
-
-  private applyAssistantMessageRetry(
-    source: AgentHookSource,
-    body: unknown,
-    original: EnrichedAgentHookEventPayload,
-    nextAttempt: number,
-    requireExactOriginal: boolean
-  ): void {
-    const current = this.state.lastStatusByPaneKey.get(original.paneKey) as
-      | EnrichedAgentHookEventPayload
-      | undefined
-    if (
-      !current ||
-      (requireExactOriginal && current !== original) ||
-      current.payload.agentType !== original.payload.agentType ||
-      current.payload.prompt !== original.payload.prompt ||
-      current.payload.lastAssistantMessage
-    ) {
-      return
-    }
-    const normalized = normalizeHookPayload(this.state, source, body, this.env)
-    if (!normalized?.payload.lastAssistantMessage) {
-      this.scheduleAssistantMessageRetry(source, body, original, nextAttempt, requireExactOriginal)
-      return
-    }
-    // Why: some agents POST Stop before their transcript line is flushed; discovery is event-driven, later content retries stay timed.
-    this.applyNormalizedStatus(normalized)
   }
 
   setPaneKeyAliasPersistenceListener(listener: PaneKeyAliasPersistenceListener | null): void {
@@ -1309,7 +1203,6 @@ export class AgentHookServer {
       this.promptSentDedupeByPaneKey.delete(previousOwnerPaneKey)
       this.promptSentDedupeByPaneKey.set(toPaneKey, promptDedupe)
     }
-    this.clearAssistantMessageRetry(previousOwnerPaneKey)
     this.clearCodexSubagentPoll(previousOwnerPaneKey)
     // Why: the live process keeps posting the physical source key after detach; persist a chain-safe mapping to the current owner.
     this.legacyPaneKeyAliases.set(physicalPaneKey, {
@@ -1342,7 +1235,6 @@ export class AgentHookServer {
     const hadStatus = [...paneKeys].some((key) => this.state.lastStatusByPaneKey.has(key))
     for (const key of paneKeys) {
       this.markPaneClosedForAgentStatus(key)
-      this.clearAssistantMessageRetry(key)
       this.clearCodexSubagentPoll(key)
       clearPaneCacheState(this.state, key)
       this.runtimeObservedStatusPaneKeys.delete(key)
@@ -1573,10 +1465,7 @@ export class AgentHookServer {
     if (!normalizedPayload) {
       return
     }
-    if (
-      envelope.providerSessionOnly === true &&
-      !isValidPiProviderSessionOnly(providerSession, normalizedPayload.agentType)
-    ) {
+    if (envelope.providerSessionOnly === true) {
       return
     }
     // Why: run the HTTP path's warn-once version/env-mismatch diagnostics with this.env as expected.
@@ -1598,7 +1487,6 @@ export class AgentHookServer {
       toolAgentId,
       toolAgentType,
       providerSession,
-      providerSessionOnly: envelope.providerSessionOnly === true ? true : undefined,
       isReplay: envelope.isReplay === true ? true : undefined,
       payload: normalizedPayload
     }
@@ -1674,7 +1562,6 @@ export class AgentHookServer {
         const normalized = normalizeHookPayload(this.state, source, aliasedBody, this.env)
         if (normalized && !this.shouldSuppressClosedTabStatus(normalized.paneKey)) {
           const enriched = this.applyNormalizedStatus(normalized)
-          this.scheduleAssistantMessageRetry(source, aliasedBody, enriched)
           this.scheduleCodexSubagentPoll(source, aliasedBody, enriched)
         }
 
@@ -1724,10 +1611,6 @@ export class AgentHookServer {
     this.env = 'production'
     this.onAgentStatus = null
     this.onPaneStatusCleared = null
-    for (const timer of this.assistantMessageRetryTimers.values()) {
-      clearTimeout(timer)
-    }
-    this.assistantMessageRetryTimers.clear()
     for (const timer of this.codexSubagentPollTimers.values()) {
       clearTimeout(timer)
     }
@@ -1807,7 +1690,6 @@ export class AgentHookServer {
       return null
     }
     this.state.lastStatusByPaneKey.delete(resolvedPaneKey)
-    this.clearAssistantMessageRetry(resolvedPaneKey)
     this.clearCodexSubagentPoll(resolvedPaneKey)
     this.runtimeObservedStatusPaneKeys.delete(resolvedPaneKey)
     if (existing.payload.state === 'done') {
@@ -1873,7 +1755,6 @@ export class AgentHookServer {
       if (this.state.lastStatusByPaneKey.has(paneKey)) {
         statusChanged = true
       }
-      this.clearAssistantMessageRetry(paneKey)
       this.clearCodexSubagentPoll(paneKey)
       clearPaneCacheState(this.state, paneKey)
       this.runtimeObservedStatusPaneKeys.delete(paneKey)
@@ -1892,7 +1773,6 @@ export class AgentHookServer {
     const resolvedPaneKey = this.resolvePaneKeyAlias(paneKey)
     // Why: only persist when a status entry was actually evicted; dropping prompt/tool caches doesn't change the file.
     const hadStatus = this.state.lastStatusByPaneKey.has(resolvedPaneKey)
-    this.clearAssistantMessageRetry(resolvedPaneKey)
     this.clearCodexSubagentPoll(resolvedPaneKey)
     clearPaneCacheState(this.state, resolvedPaneKey)
     this.promptSentDedupeByPaneKey.delete(resolvedPaneKey)

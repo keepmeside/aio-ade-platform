@@ -46,8 +46,8 @@ describe('resolveNativeChatLeafTitleAgent', () => {
         leafId: 'leaf-1',
         panes: [panes[0]],
         runtimePaneTitlesByPaneId: {},
-        terminalTitle: 'OpenClaude'
+        terminalTitle: 'Claude Code'
       })
-    ).toBe('openclaude')
+    ).toBe('claude')
   })
 })

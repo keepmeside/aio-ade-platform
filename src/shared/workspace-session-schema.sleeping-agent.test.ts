@@ -41,7 +41,7 @@ describe('parseWorkspaceSession sleeping agents', () => {
     }
   })
 
-  it('preserves the authoritative Pi session file through hydration', () => {
+  it('preserves the authoritative session transcript file through hydration', () => {
     const result = parseWorkspaceSession({
       activeRepoId: null,
       activeWorktreeId: null,
@@ -53,11 +53,11 @@ describe('parseWorkspaceSession sleeping agents', () => {
           paneKey: 'tab1:pane-1',
           tabId: 'tab1',
           worktreeId: 'wt',
-          agent: 'pi',
+          agent: 'claude',
           providerSession: {
             key: 'session_id',
-            id: 'pi-session',
-            transcriptPath: '/tmp/pi-session.jsonl'
+            id: 'claude-session',
+            transcriptPath: '/tmp/claude-session.jsonl'
           },
           prompt: '',
           state: 'working',
@@ -73,76 +73,10 @@ describe('parseWorkspaceSession sleeping agents', () => {
       expect(result.value.sleepingAgentSessionsByPaneKey?.['tab1:pane-1']?.providerSession).toEqual(
         {
           key: 'session_id',
-          id: 'pi-session',
-          transcriptPath: '/tmp/pi-session.jsonl'
+          id: 'claude-session',
+          transcriptPath: '/tmp/claude-session.jsonl'
         }
       )
-    }
-  })
-
-  it('preserves the AI Vault OMP resume file through hydration', () => {
-    const result = parseWorkspaceSession({
-      activeRepoId: null,
-      activeWorktreeId: null,
-      activeTabId: null,
-      tabsByWorktree: {},
-      terminalLayoutsByTabId: {},
-      sleepingAgentSessionsByPaneKey: {
-        'tab1:pane-1': {
-          paneKey: 'tab1:pane-1',
-          tabId: 'tab1',
-          worktreeId: 'wt',
-          agent: 'omp',
-          providerSession: { key: 'session_id', id: 'omp-session' },
-          prompt: '',
-          state: 'working',
-          capturedAt: 10,
-          updatedAt: 10,
-          launchConfig: {
-            agentArgs: '',
-            agentEnv: {},
-            ompResumeFilePath: '/custom/omp-sessions/project/session.jsonl'
-          },
-          origin: 'quit'
-        }
-      }
-    })
-
-    expect(result.ok).toBe(true)
-    if (result.ok) {
-      expect(
-        result.value.sleepingAgentSessionsByPaneKey?.['tab1:pane-1']?.launchConfig
-          ?.ompResumeFilePath
-      ).toBe('/custom/omp-sessions/project/session.jsonl')
-    }
-  })
-
-  it('drops Pi sleeping-agent records without an authoritative session file', () => {
-    const result = parseWorkspaceSession({
-      activeRepoId: null,
-      activeWorktreeId: null,
-      activeTabId: null,
-      tabsByWorktree: {},
-      terminalLayoutsByTabId: {},
-      sleepingAgentSessionsByPaneKey: {
-        'tab1:pane-1': {
-          paneKey: 'tab1:pane-1',
-          tabId: 'tab1',
-          worktreeId: 'wt',
-          agent: 'pi',
-          providerSession: { key: 'session_id', id: 'pi-session' },
-          prompt: '',
-          state: 'done',
-          capturedAt: 10,
-          updatedAt: 10,
-          origin: 'live'
-        }
-      }
-    })
-
-    expect(result.ok).toBe(true)
-    if (result.ok) {
-      expect(result.value.sleepingAgentSessionsByPaneKey).toBeUndefined()
     }
   })
 
@@ -312,8 +246,8 @@ describe('parseWorkspaceSession sleeping agents', () => {
           paneKey: 'tab1:pane-1',
           tabId: 'tab1',
           worktreeId: 'wt',
-          agent: 'devin',
-          providerSession: { key: 'session_id', id: 'devin-session' },
+          agent: 'claude',
+          providerSession: { key: 'session_id', id: 'claude-session' },
           prompt: 'continue',
           state: 'working',
           capturedAt: 10,

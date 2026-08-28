@@ -15,8 +15,7 @@ vi.mock('@/runtime/runtime-terminal-inspection', () => ({
 // process starts. These are pip console-scripts, so the PTY foreground comm is
 // python/python3 — never the agent's own name.
 const INTERPRETER_WRAPPED_AGENTS = [
-  { agent: 'aider', expectedProcess: TUI_AGENT_CONFIG.aider.expectedProcess },
-  { agent: 'mistral-vibe', expectedProcess: TUI_AGENT_CONFIG['mistral-vibe'].expectedProcess }
+  { agent: 'codex', expectedProcess: TUI_AGENT_CONFIG.codex.expectedProcess }
 ] as const
 
 describe('sendFollowupPromptWhenAgentReady — interpreter-wrapped agents', () => {
@@ -25,11 +24,6 @@ describe('sendFollowupPromptWhenAgentReady — interpreter-wrapped agents', () =
     vi.stubGlobal('globalThis', globalThis)
     // Deliver the prompt write eagerly so the test does not depend on retries.
     vi.mocked(sendRuntimePtyInputVerified).mockResolvedValue(true)
-  })
-
-  it('sanity: config keeps aider/vibe as stdin-after-start with python-style expected process', () => {
-    expect(TUI_AGENT_CONFIG.aider.promptInjectionMode).toBe('stdin-after-start')
-    expect(TUI_AGENT_CONFIG['mistral-vibe'].promptInjectionMode).toBe('stdin-after-start')
   })
 
   for (const { agent, expectedProcess } of INTERPRETER_WRAPPED_AGENTS) {
@@ -90,16 +84,16 @@ describe('sendFollowupPromptWhenAgentReady — interpreter-wrapped agents', () =
   }
 
   it('types immediately when the resolver already returns the agent name (local ps path)', async () => {
-    // On local desktop the ps-table resolver usually resolves python3 → aider
-    // before we poll; the exact-match path must keep working.
+    // On local desktop the ps-table resolver usually resolves python3 → the agent
+    // name before we poll; the exact-match path must keep working.
     vi.mocked(inspectRuntimeTerminalProcess).mockResolvedValue({
-      foregroundProcess: 'aider',
+      foregroundProcess: 'codex',
       hasChildProcesses: true
     })
 
     const delivered = await sendFollowupPromptWhenAgentReady({
       ptyId: 'pty-1',
-      expectedProcess: 'aider',
+      expectedProcess: 'codex',
       prompt: 'ship it',
       settings: null
     })

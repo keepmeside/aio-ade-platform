@@ -71,7 +71,7 @@ describe('getRelayShellLaunchConfig', () => {
     () => {
       const config = getRelayShellLaunchConfig('/bin/zsh', {
         HOME: homeDir,
-        ORCA_OPENCODE_CONFIG_DIR: '/tmp/orca-opencode-overlay'
+        ORCA_REMOTE_CLI_BIN_DIR: '/tmp/orca-remote-cli-bin'
       })
       const zshRoot = join(homeDir, '.orca-relay', 'shell-ready', 'zsh')
 
@@ -129,7 +129,7 @@ describe('getRelayShellLaunchConfig', () => {
 
     getRelayShellLaunchConfig('/bin/zsh', {
       HOME: homeDir,
-      ORCA_OPENCODE_CONFIG_DIR: '/tmp/orca-opencode-overlay'
+      ORCA_REMOTE_CLI_BIN_DIR: '/tmp/orca-remote-cli-bin'
     })
 
     expect(readFileSync(join(zshRoot, '.zshenv'), 'utf8')).toContain(
@@ -138,20 +138,20 @@ describe('getRelayShellLaunchConfig', () => {
   })
 
   it.skipIf(process.platform === 'win32')(
-    'wraps zsh when MiMo home must survive shell startup',
+    'wraps zsh when the remote CLI bin dir must survive shell startup',
     () => {
       const config = getRelayShellLaunchConfig('/bin/zsh', {
         HOME: homeDir,
-        ORCA_MIMOCODE_HOME: '/tmp/orca-mimocode-overlay'
+        ORCA_REMOTE_CLI_BIN_DIR: '/tmp/orca-remote-cli-bin'
       })
       const zshRoot = join(homeDir, '.orca-relay', 'shell-ready', 'zsh')
       const zshrc = readFileSync(join(zshRoot, '.zshrc'), 'utf8')
 
       expect(config.args).toEqual(['-l'])
       expect(config.env.ZDOTDIR).toBe(zshRoot)
-      expect(zshrc).toContain(
-        '[[ -n "${ORCA_MIMOCODE_HOME:-}" ]] && export MIMOCODE_HOME="${ORCA_MIMOCODE_HOME}"'
-      )
+      expect(zshrc).toContain('ORCA_REMOTE_CLI_BIN_DIR')
+      expect(zshrc).not.toContain('MIMOCODE_HOME')
+      expect(zshrc).not.toContain('OPENCODE_CONFIG_DIR')
     }
   )
 

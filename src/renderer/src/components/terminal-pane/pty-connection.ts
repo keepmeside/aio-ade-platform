@@ -1186,11 +1186,7 @@ export function connectPanePty(
         paneKey !== consumed.paneKey &&
         record.worktreeId === consumed.record.worktreeId &&
         record.agent === consumed.record.agent &&
-        agentProviderSessionsEqual(
-          record.agent,
-          record.providerSession,
-          consumed.record.providerSession
-        )
+        agentProviderSessionsEqual(record.providerSession, consumed.record.providerSession)
       ) {
         // Why: legacy pane aliases can leave multiple sleeping rows for one
         // provider session; once this pane resumes it, every alias is stale.
@@ -1303,7 +1299,6 @@ export function connectPanePty(
   let commandInferredPaneAgentGeneration = 0
   let shellCommandInferenceSuspendedUntilCommandEnd = false
   let startAcceptedInferredCommand = (_agent: TuiAgent): void => {}
-  let requestKnownDroidReconfirmation = (): void => {}
   const resetPendingShellCommandLine = (): void => {
     pendingShellCommandLine = ''
     pendingShellCommandCursor = 0
@@ -1553,7 +1548,6 @@ export function connectPanePty(
     ) {
       // Why: shells without OSC 133 give no command/exit boundary. An accepted
       // submit or interrupt revokes only stale Droid routing and confirms once.
-      requestKnownDroidReconfirmation()
     }
     if (commandInferredPaneAgent) {
       return
@@ -2129,27 +2123,6 @@ export function connectPanePty(
   }
   startAcceptedInferredCommand = (agent) => {
     paneForegroundAgentTracker.onCommandStarted(agent)
-  }
-  requestKnownDroidReconfirmation = () => {
-    const foreground = useAppStore.getState().paneForegroundAgentByPaneKey[cacheKey]
-    // Why: daemon reattach/launch metadata is display-only until a live
-    // provider read confirms it. Submit/interrupt/title-exit evidence must
-    // revoke that launch-only hint too, otherwise Shift+Enter can route bytes
-    // to a Droid that already exited before confirmation ever ran.
-    if (foreground?.agent !== 'droid') {
-      return
-    }
-    // Why: cmd.exe and Git Bash have no OSC command boundaries. Keep the icon
-    // as a hint, but revoke bytes until one current provider confirmation lands.
-    useAppStore.getState().setPaneForegroundAgent(cacheKey, {
-      agent: 'droid',
-      shellForeground: false
-    })
-    visibleForegroundSamplePending = false
-    visibleForegroundSampleSettled = false
-    // Why: hook rows can suppress display-only sampling, but cannot restore
-    // byte authority after this function explicitly revoked routing trust.
-    sampleVisiblePaneForegroundAgent(true)
   }
   const commandLifecycle = createTerminalCommandLifecycle({
     onCommandStarted: () => {
@@ -3228,7 +3201,6 @@ export function connectPanePty(
     deps.onAgentExitedRef.current(pane.leafId)
     clearSuppressedTitleSideEffects()
     clearCommandInferredPaneAgent()
-    requestKnownDroidReconfirmation()
     // Why: when the terminal title reverts to a plain shell (e.g., "bash", "zsh"),
     // the agent has exited. Clear any running cache timer so the sidebar doesn't
     // show a stale countdown for a tab that no longer has an active Claude session.
@@ -4791,7 +4763,7 @@ export function connectPanePty(
         sleepingRecord?.launchConfig &&
         (!useLiveEntry ||
           (sleepingRecord.agent === agent &&
-            agentProviderSessionsEqual(agent, sleepingRecord.providerSession, providerSession)))
+            agentProviderSessionsEqual(sleepingRecord.providerSession, providerSession)))
           ? sleepingRecord.launchConfig
           : undefined
       const launchConfig =
@@ -4811,9 +4783,6 @@ export function connectPanePty(
             ? launchConfig.agentEnv
             : resolveTuiAgentLaunchEnv(agent, state.settings?.agentDefaultEnv),
         ...(launchConfig?.agentCommand ? { agentCommand: launchConfig.agentCommand } : {}),
-        ...(launchConfig?.ompResumeFilePath
-          ? { ompResumeFilePath: launchConfig.ompResumeFilePath }
-          : {}),
         platform: resumePlatform
       })
       if (!startupPlan) {
@@ -8616,7 +8585,6 @@ export function connectPanePty(
     noteVisibilityResume() {
       ptySizeReassertion.request({ fit: false })
       consumeHibernatedAgentWake()
-      requestKnownDroidReconfirmation()
       sampleVisiblePaneForegroundAgent()
     },
     reassertPtySizeAfterWindowWake() {
@@ -8661,7 +8629,6 @@ export function connectPanePty(
       return null
     },
     sampleForegroundAgentOnFocus() {
-      requestKnownDroidReconfirmation()
       sampleVisiblePaneForegroundAgent()
     },
     requestDroidReconfirmation() {
@@ -8671,7 +8638,6 @@ export function connectPanePty(
       // Why: confirm the Droid composer only after the Shift+Enter burst goes idle, to preserve rapid multiline input.
       shiftEnterReconfirmTimer = setTimeout(() => {
         shiftEnterReconfirmTimer = null
-        requestKnownDroidReconfirmation()
         sampleVisiblePaneForegroundAgent()
       }, SHIFT_ENTER_RECONFIRM_IDLE_MS)
     },

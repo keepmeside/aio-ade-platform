@@ -18,7 +18,6 @@ import type {
   SleepingAgentLaunchConfig,
   AgentProviderSessionMetadata
 } from '../../../shared/agent-session-resume'
-import { AGENT_SESSION_OMP_RESUME_PATH_RUNTIME_CAPABILITY } from '../../../shared/protocol-version'
 import type {
   AgentLaunchPreferences,
   AgentPromptDelivery,
@@ -230,9 +229,6 @@ async function createWebRuntimeSessionTerminalResult(
                       worktree: toRuntimeWorktreeSelector(args.worktreeId),
                       agent,
                       providerSession: args.providerSession!,
-                      ...(args.launchConfig?.ompResumeFilePath
-                        ? { ompResumeFilePath: args.launchConfig.ompResumeFilePath }
-                        : {}),
                       ...(agentArgsOverride !== undefined ? { agentArgs: agentArgsOverride } : {}),
                       ...(args.launchPreferences
                         ? { launchPreferences: args.launchPreferences }
@@ -275,9 +271,6 @@ async function createWebRuntimeSessionTerminalResult(
       }>({
         environmentId,
         ...(hostAuthority ? { hostAuthority } : {}),
-        ...(args.agentSessionKind === 'resume' && agent === 'omp'
-          ? { hostAuthorityCapability: AGENT_SESSION_OMP_RESUME_PATH_RUNTIME_CAPABILITY }
-          : {}),
         legacy: async () => {
           const response = await callEnvironment({
             method: 'session.tabs.createTerminal',

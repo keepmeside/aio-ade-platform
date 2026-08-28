@@ -183,10 +183,10 @@ describe('AgentHookServer Codex subagent transcript polling', () => {
       })
       expect(server.getStatusSnapshot()[0]?.subagents).toHaveLength(1)
 
-      const nested = await post('/hook/copilot', {
+      const nested = await post('/hook/claude', {
         hook_event_name: 'Stop',
         session_id: 'nested-session',
-        transcript_path: join(dir, 'nested-copilot-transcript.jsonl')
+        transcript_path: join(dir, 'nested-claude-transcript.jsonl')
       })
       expect(nested.status).toBe(204)
       // The nested completion is suppressed, so the pane is still the same live codex turn.

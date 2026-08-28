@@ -103,61 +103,33 @@ describe('resolveTabAgentFromSignals', () => {
     ).toBe('claude')
   })
 
-  it('maps OpenClaude titles to the distinct OpenClaude tab icon', () => {
-    expect(
-      resolveTabAgentFromSignals({
-        hasObservedAgentSignal: false,
-        isRemote: false,
-        title: '⠋ OpenClaude',
-        hookAgent: null,
-        launchAgent: undefined
-      })
-    ).toBe('openclaude')
+  it('yields no identity for titles of CLIs Orca does not launch', () => {
+    // Their labels still keep a spinner title from being read as Claude, but
+    // they map to no launchable agent id.
+    for (const title of ['✦ Gemini CLI', 'MiMo Code', 'π - my-project']) {
+      expect(
+        resolveTabAgentFromSignals({
+          hasObservedAgentSignal: false,
+          isRemote: false,
+          title,
+          hookAgent: null,
+          launchAgent: undefined
+        })
+      ).toBeNull()
+    }
   })
 
-  it('keeps title fallback for real Gemini, MiMo, and Pi titles', () => {
-    expect(
-      resolveTabAgentFromSignals({
-        hasObservedAgentSignal: false,
-        isRemote: false,
-        title: '✦ Gemini CLI',
-        hookAgent: null,
-        launchAgent: undefined
-      })
-    ).toBe('gemini')
-
-    expect(
-      resolveTabAgentFromSignals({
-        hasObservedAgentSignal: false,
-        isRemote: false,
-        title: 'MiMo Code',
-        hookAgent: null,
-        launchAgent: undefined
-      })
-    ).toBe('mimo-code')
-
-    expect(
-      resolveTabAgentFromSignals({
-        hasObservedAgentSignal: false,
-        isRemote: false,
-        title: 'π - my-project',
-        hookAgent: null,
-        launchAgent: undefined
-      })
-    ).toBe('pi')
-  })
-
-  it("uses completed OpenClaude hook identity over Claude's generic task-title heuristic", () => {
+  it("uses completed hook identity over Claude's generic task-title heuristic", () => {
     expect(
       resolveTabAgentFromSignals({
         hasObservedAgentSignal: true,
         isRemote: false,
         title: '✳ Say hi',
         hookAgent: null,
-        focusedCompletedHookAgent: 'openclaude',
-        launchAgent: 'openclaude'
+        focusedCompletedHookAgent: 'codex',
+        launchAgent: 'codex'
       })
-    ).toBe('openclaude')
+    ).toBe('codex')
   })
 
   it('keeps launch identity over title identity while hooks have not arrived', () => {
@@ -167,9 +139,9 @@ describe('resolveTabAgentFromSignals', () => {
         isRemote: false,
         title: '✳ Say hi',
         hookAgent: null,
-        launchAgent: 'openclaude'
+        launchAgent: 'codex'
       })
-    ).toBe('openclaude')
+    ).toBe('codex')
   })
 
   it("keeps Codex launch intent over Claude's generic spinner title fallback", () => {
@@ -234,18 +206,6 @@ describe('resolveTabAgentFromSignals', () => {
     ).toBe('codex')
   })
 
-  it('keeps launch identity over explicit Claude Code titles without hook evidence', () => {
-    expect(
-      resolveTabAgentFromSignals({
-        hasObservedAgentSignal: false,
-        isRemote: false,
-        title: '✳ Claude Code',
-        hookAgent: null,
-        launchAgent: 'openclaude'
-      })
-    ).toBe('openclaude')
-  })
-
   it('lets an explicit title override stale launch identity after the pane shows newer activity', () => {
     expect(
       resolveTabAgentFromSignals({
@@ -258,20 +218,6 @@ describe('resolveTabAgentFromSignals', () => {
     ).toBe('claude')
   })
 
-  // Why: #8478 — OpenCode native `OC | …` titles must reclaim a stale Claude
-  // launch identity so the tab icon is OpenCode, not Claude.
-  it('uses OpenCode native session titles to replace stale Claude launch identity', () => {
-    expect(
-      resolveTabAgentFromSignals({
-        hasObservedAgentSignal: true,
-        isRemote: false,
-        title: 'OC | Understand about the plugin',
-        hookAgent: null,
-        launchAgent: 'claude'
-      })
-    ).toBe('opencode')
-  })
-
   it('does not let an explicit title override launch identity before any activity is observed', () => {
     expect(
       resolveTabAgentFromSignals({
@@ -279,14 +225,10 @@ describe('resolveTabAgentFromSignals', () => {
         isRemote: false,
         title: '✳ Claude Code',
         hookAgent: null,
-
         launchAgent: 'codex'
       })
     ).toBe('codex')
   })
-
-  // Pi/OMP identity (shared title-identity group, launchAgent-loss flicker)
-  // lives in use-tab-agent-pi-identity.test.ts.
 
   it('prefers explicit hook identity over a conflicting title mention', () => {
     expect(
@@ -307,7 +249,7 @@ describe('resolveTabAgentFromSignals', () => {
         isRemote: false,
         title: '✦ Gemini CLI',
         hookAgent: 'claude',
-        launchAgent: 'gemini'
+        launchAgent: 'codex'
       })
     ).toBe('claude')
   })
@@ -319,7 +261,7 @@ describe('resolveTabAgentFromSignals', () => {
         isRemote: false,
         title: 'Terminal 1',
         hookAgent: 'claude',
-        siblingHookAgent: 'gemini',
+        siblingHookAgent: 'codex',
         launchAgent: 'codex'
       })
     ).toBe('claude')
@@ -358,9 +300,9 @@ describe('resolveTabAgentFromSignals', () => {
         isRemote: false,
         title: '✳ Gemini CLI',
         hookAgent: null,
-        launchAgent: 'gemini'
+        launchAgent: 'codex'
       })
-    ).toBe('gemini')
+    ).toBe('codex')
   })
 
   it('keeps launch identity over Claude-owned punctuation-prefixed task text', () => {
@@ -370,9 +312,9 @@ describe('resolveTabAgentFromSignals', () => {
         isRemote: false,
         title: '. Compare Opencode Vs Orca',
         hookAgent: null,
-        launchAgent: 'opencode'
+        launchAgent: 'codex'
       })
-    ).toBe('opencode')
+    ).toBe('codex')
 
     expect(
       resolveTabAgentFromSignals({
@@ -428,7 +370,7 @@ describe('resolveTabAgentFromSignals', () => {
         isRemote: false,
         title: 'zsh',
         hookAgent: null,
-        siblingHookAgent: 'gemini',
+        siblingHookAgent: 'codex',
         launchAgent: 'claude'
       })
     ).toBe('claude')
@@ -781,14 +723,14 @@ describe('useTabAgent', () => {
   })
 
   it('clears hookless launch identity once its own title evidence ends at a shell', async () => {
-    const geminiTab = { ...baseTab, launchAgent: 'gemini' as const, title: '✦ Gemini CLI' }
+    const titleOnlyTab = { ...baseTab, launchAgent: 'codex' as const, title: '⠸ codex working' }
 
-    // Why: agents without hook integration prove activity via a title naming
+    // Why: a launch whose hooks never reported proves activity via a title naming
     // the launched agent; the later shell title is then exit evidence.
-    const root = await renderHookProbe(geminiTab)
+    const root = await renderHookProbe(titleOnlyTab)
     expect(clearTabLaunchAgent).not.toHaveBeenCalled()
 
-    await rerenderHookProbe(root, { ...geminiTab, title: 'zsh' })
+    await rerenderHookProbe(root, { ...titleOnlyTab, title: 'zsh' })
 
     expect(clearTabLaunchAgent).toHaveBeenCalledWith('tab-1')
   })

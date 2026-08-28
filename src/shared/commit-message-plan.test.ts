@@ -33,102 +33,11 @@ describe('planCommitMessageGeneration', () => {
     })
   })
 
-  it('plans OpenCode run with prompt on stdin and model variant', () => {
-    const result = planCommitMessageGeneration(
-      {
-        agentId: 'opencode',
-        model: 'opencode/gpt-5.4-mini',
-        thinkingLevel: 'high'
-      },
-      'PROMPT'
-    )
-
-    expect(result).toEqual({
-      ok: true,
-      plan: {
-        binary: 'opencode',
-        args: [
-          'run',
-          '--model',
-          'opencode/gpt-5.4-mini',
-          '--agent',
-          'build',
-          '--format',
-          'default',
-          '--variant',
-          'high'
-        ],
-        stdinPayload: 'PROMPT',
-        label: 'OpenCode'
-      }
-    })
-  })
-
-  it('keeps OpenCode preset command overrides while sending the prompt on stdin', () => {
-    const result = planCommitMessageGeneration(
-      {
-        agentId: 'opencode',
-        model: 'opencode/gpt-5.4-mini',
-        agentCommandOverride: 'npx opencode'
-      },
-      'PROMPT'
-    )
-
-    expect(result).toEqual({
-      ok: true,
-      plan: {
-        binary: 'npx',
-        args: [
-          'opencode',
-          'run',
-          '--model',
-          'opencode/gpt-5.4-mini',
-          '--agent',
-          'build',
-          '--format',
-          'default'
-        ],
-        stdinPayload: 'PROMPT',
-        label: 'OpenCode'
-      }
-    })
-  })
-
-  it('plans Amp execute generation without the removed archive flag', () => {
-    const result = planCommitMessageGeneration(
-      {
-        agentId: 'amp',
-        model: 'large',
-        thinkingLevel: 'medium'
-      },
-      'PROMPT'
-    )
-
-    expect(result).toEqual({
-      ok: true,
-      plan: {
-        binary: 'amp',
-        args: [
-          '--execute',
-          '--no-notifications',
-          '--no-ide',
-          '--no-jetbrains',
-          '--mode',
-          'large',
-          '--effort',
-          'medium'
-        ],
-        stdinPayload: 'PROMPT',
-        label: 'Amp'
-      }
-    })
-  })
-
   it('allows discovered dynamic models that are not in the seed catalog', () => {
     const result = planCommitMessageGeneration(
       {
-        agentId: 'cursor',
-        model: 'gpt-5.2',
+        agentId: 'codex',
+        model: 'gpt-5.6-turbo',
         thinkingLevel: 'xhigh'
       },
       'PROMPT'
@@ -137,20 +46,20 @@ describe('planCommitMessageGeneration', () => {
     expect(result).toEqual({
       ok: true,
       plan: {
-        binary: 'cursor-agent',
+        binary: 'codex',
         args: [
-          '--print',
-          '--mode',
-          'ask',
-          '--trust',
-          '--output-format',
-          'text',
+          'exec',
+          '--ephemeral',
+          '--skip-git-repo-check',
+          '-s',
+          'read-only',
           '--model',
-          'gpt-5.2',
-          'PROMPT'
+          'gpt-5.6-turbo',
+          '-c',
+          'model_reasoning_effort=xhigh'
         ],
-        stdinPayload: null,
-        label: 'Cursor'
+        stdinPayload: 'PROMPT',
+        label: 'Codex'
       }
     })
   })
@@ -314,9 +223,10 @@ describe('planCommitMessageGeneration', () => {
   it('appends per-action CLI arguments for stdin agents', () => {
     const result = planCommitMessageGeneration(
       {
-        agentId: 'opencode',
-        model: 'opencode/gpt-5.4-mini',
-        agentArgs: '--model opencode/gpt-5.5'
+        agentId: 'claude',
+        model: 'sonnet',
+        thinkingLevel: 'high',
+        agentArgs: '--add-dir "/tmp/shared context"'
       },
       'PROMPT'
     )
@@ -325,15 +235,17 @@ describe('planCommitMessageGeneration', () => {
       ok: true,
       plan: {
         args: [
-          'run',
+          '-p',
+          '--output-format',
+          'text',
           '--model',
-          'opencode/gpt-5.4-mini',
-          '--agent',
-          'build',
-          '--format',
-          'default',
-          '--model',
-          'opencode/gpt-5.5'
+          'sonnet',
+          '--permission-mode',
+          'plan',
+          '--effort',
+          'high',
+          '--add-dir',
+          '/tmp/shared context'
         ],
         stdinPayload: 'PROMPT'
       }

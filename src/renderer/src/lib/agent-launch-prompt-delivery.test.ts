@@ -104,7 +104,7 @@ describe('deliverLaunchPromptToAgentTab', () => {
     })
     await deliverLaunchPromptToAgentTab({
       tabId: 'unsupported-tab',
-      agent: 'gemini',
+      agent: 'claude-agent-teams',
       content: 'Fix failing checks',
       submit: true,
       forcePaste: true
@@ -163,7 +163,7 @@ describe('deliverLaunchPromptToAgentTab', () => {
     })
     await deliverLaunchPromptToAgentTab({
       tabId: 'unsupported-tab',
-      agent: 'gemini',
+      agent: 'claude-agent-teams',
       content: 'Review first',
       submit: false,
       forcePaste: false
@@ -236,7 +236,7 @@ describe('deliverLaunchPromptToAgentTab', () => {
 
     await deliverLaunchPromptToAgentTab({
       tabId: 'tab-1',
-      agent: 'gemini',
+      agent: 'claude-agent-teams',
       content: 'Large generated prompt',
       submit: true,
       forcePaste: true
