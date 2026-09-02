@@ -121,7 +121,7 @@ describe('links to content that is not in the artifact', () => {
       './phase-05-rebrand-orca-to-aio-ide.md',
       '../research/baseline/local-verification-baseline.md',
       '/plans/260730-0117-aio-ide-rebrand-and-integration/plan.md',
-      'file:///home/stackops/devops-learning/aio-ade-platform/plans/plan.md'
+      'file:///srv/checkout/plans/260730-0117-aio-ide-rebrand-and-integration/plan.md'
     ]) {
       expect(rules(`<a href="${href}">x</a>`), href).toContain('unpublished-local-link')
     }

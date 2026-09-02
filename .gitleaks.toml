@@ -1,0 +1,76 @@
+# Secret-scan configuration for this repository.
+#
+# Every allowlist below subtracts a path or pattern that was individually triaged and found not to be
+# a credential — test vectors that exist so crypto has deterministic fixtures, a redactor's own
+# negative controls, a throwaway self-signed certificate, a documented-public OAuth client id, and
+# `key:`-shaped properties whose values are model ids or keybindings. Rules are never subtracted,
+# only paths and patterns, so a new rule upstream still fires everywhere.
+#
+# Adding an entry here without a written verdict turns this file into a way to make the scan quieter
+# rather than the repository cleaner.
+
+title = "aio-ade-platform"
+
+# Inherit every upstream rule; we only ever subtract known-false paths, never rules.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "pnpm patch files: high-entropy substrings of minified @xterm vendor bundles, not credentials (38 findings)"
+paths = ['''^config/patches/.*\.patch$''']
+
+[[allowlists]]
+description = "Mobile/desktop E2EE test vectors: hard-coded session keys that exist so the pairing crypto has deterministic fixtures"
+paths = [
+  '''^src/shared/mobile-e2ee-v2-fixtures\.ts$''',
+  '''^src/shared/mobile-e2ee-legacy-fixtures\.ts$''',
+  '''^src/shared/pairing\.test\.ts$'''
+]
+
+[[allowlists]]
+description = "Redactor negative controls: the scrubber's own test inputs must contain secret-shaped strings or the suite proves nothing"
+paths = ['''^src/main/observability/redactor\.test\.ts$''']
+
+[[allowlists]]
+description = "Test-only self-signed TLS keypair for the local HTTPS e2e server; throwaway, regenerated at will"
+paths = ['''^tests/e2e/helpers/local-https-test-certificate\.ts$''']
+
+[[allowlists]]
+description = "Synthetic terminal fixture rows used to force horizontal scroll; the long hex string is table content"
+paths = [
+  '''^tests/e2e/terminal-long-table-fixtures\.ts$''',
+  '''^tests/e2e/terminal-long-table-scroll-restore\.spec\.ts$'''
+]
+
+[[allowlists]]
+description = """
+The secret-scan triage document itself. It tabulates every finding this configuration subtracts and
+quotes the offending strings so each verdict can be audited, which makes a document about
+secret-shaped strings inherently secret-shaped. The one match is its own row describing the
+synthetic `deviceToken` in src/shared/pairing.test.ts, a repeating hex pattern. The file is no longer
+tracked at the tip, but history is in scope for this scan, so without this entry the gate stays red
+for the document that explains it.
+"""
+paths = ['''^plans/.*/research/baseline/secret-scan-triage\.md$''']
+
+[[allowlists]]
+description = "bitbucket-client-id fires on an import list in this unit test, not on an id"
+targetRules = ["bitbucket-client-id"]
+paths = ['''^src/main/bitbucket/client\.test\.ts$''']
+
+[[allowlists]]
+description = "Public Claude Code OAuth client id (documented as public in the surrounding comment); public client ids are not secrets"
+paths = ['''^src/main/claude-accounts/oauth-refresh\.ts$''']
+regexes = ['''9d1c250a-e61b-44d9-88ed-5944d1962f5e''']
+
+[[allowlists]]
+description = "Structural false positives: generic-api-key firing on `key:`/`*Key:` properties whose values are model ids, plugin ids, keybindings, or operation names"
+regexTarget = "match"
+regexes = [
+  '''row\.key === 'claude-[a-z0-9.\-]+'''',
+  '''pluginKey === 'stablyai\.orca-e2e-skills'''',
+  '''pluginKey: 'stablyai\.orca-e2e-skills'''',
+  '''key: 'CmdOrCtrl\+''',
+  '''operationKey: 'reply_invocation_\d+'''',
+  '''TEST_KEY = '0123456789abcdef0123456789abcdef''''
+]
