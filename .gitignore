@@ -129,6 +129,17 @@ src/renderer/src/i18n/locales/.es-catalog-cache.json
 tools/benchmarks/results/terminal-pipeline-*.json
 
 # Internal operating history: decision log, coupling maps, audits. Kept on disk, not shipped.
-plans/
+# Written as `plans/*` rather than `plans/`: git refuses to descend into an excluded directory, so a
+# trailing-slash rule makes every negation below unreachable. Each level is re-excluded after being
+# opened, which is what keeps the allowlist to exactly two patterns.
+plans/*
+!plans/260730-0117-aio-ide-rebrand-and-integration/
+# Exception: the roadmap and its phase files are the source the published plan page is generated
+# from, so CI must be able to check them out. Everything else in that directory stays internal —
+# decisions.md, feature-catalog.md, digest-audits.md, plan.html, research/ and reports/ are
+# deliberately absent from the allowlist.
+plans/260730-0117-aio-ide-rebrand-and-integration/*
+!plans/260730-0117-aio-ide-rebrand-and-integration/plan.md
+!plans/260730-0117-aio-ide-rebrand-and-integration/phase-*.md
 # Agent scratch memory. Same class as plans/: local working notes, not product source.
 /.claude/agent-memory/

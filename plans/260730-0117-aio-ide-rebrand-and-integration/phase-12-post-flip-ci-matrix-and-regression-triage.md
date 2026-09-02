@@ -17,10 +17,12 @@ Phase 01-05 verify local-only vì repo còn private và Actions bị billing-blo
 
 ## Requirements
 
-- Functional: mọi workflow CI hiện có chạy được trên repo mới sau flip. Cụ thể phải sửa các guard/label chặn:
-  - 3 workflow có `if: github.repository == 'stablyai/orca'` (`release-cut.yml:68`, `release-mac-build.yml:26`, `readme-downloads-badge.yml:23`) — không bao giờ chạy dưới `keepmeside`, phải đổi guard hoặc disable có chủ đích.
-  - `release-mac-build.yml:30` dùng `runs-on: blacksmith-6vcpu-macos-15` — runner pool third-party (Blacksmith), không phải GitHub-hosted. Fork owner không administer pool này → job sẽ không schedule. Phải đổi sang `macos-latest`/`macos-15` hoặc onboard Blacksmith có chủ đích.
-  - `track-community-prs.yaml` mint app token với `owner: stablyai` → không resolve dưới `keepmeside`.
+- Functional: mọi workflow CI hiện có chạy được trên repo mới sau flip. Trạng thái re-verify 2026-09-02 (bằng `grep -r`, không phải `git grep` — xem ghi chú cuối mục):
+  - **Đã đóng ở phase 05, không còn là việc của phase này:** 3 repo guard `if: github.repository == 'stablyai/orca'` giờ đã là `'keepmeside/aio-ade-platform'` (`release-cut.yml:68`, `release-mac-build.yml:26`, `readme-downloads-badge.yml:23`).
+  - **Còn phải sửa:** `release-mac-build.yml:30` dùng `runs-on: blacksmith-6vcpu-macos-15` — runner pool third-party (Blacksmith), không phải GitHub-hosted. Fork owner không administer pool này → job sẽ không schedule. Phải đổi sang `macos-latest`/`macos-15` hoặc onboard Blacksmith có chủ đích. Lưu ý comment ở `:27-29` vẫn viện dẫn **SignPath**, mà `decisions.md` đã loại SignPath — sửa runner thì sửa luôn lý do cho khỏi dẫn sai.
+  - **Còn phải sửa:** `track-community-prs.yaml` có **hai** reference `stablyai`, không phải một: `:27` `owner:` của app-token mint, và `:32` `PROJECT_OWNER`. Cả hai đều không resolve dưới `keepmeside`.
+
+  **Ghi chú phương pháp:** `git grep` chỉ đọc file đã tracked, nên trong lúc phase 05 còn 29 file mới chưa `git add`, mọi audit bằng `git grep` sẽ under-report trong im lặng (lần đo đầu cho "0 occurrence `stablyai/orca`", `grep -r` cho 4 file). Dùng `grep -r` cho tới khi phase 05 được commit.
 - Functional: chạy full matrix trên code của phase 01-05, triage mọi failure thành: (a) regression do phase 02-05, (b) workflow/config cần cập nhật cho fork, (c) flake sẵn có từ upstream.
 - Functional: các tiêu chí 3-OS bị defer từ phase 03 và 05 (packaged smoke, PATH/uninstall trên Windows shims + macOS/Linux links + WSL + SSH host, artifact naming `aio-ade-*`, build metadata nhất quán, chỉ-một-binary-không-alias) được verify thật ở đây và tick lại vào phase gốc.
 - Functional: xác nhận **artifact unsigned chạy được** trên cả 3 OS sau khi bypass (macOS: `right-click → Open` / `xattr -d com.apple.quarantine`; Windows: SmartScreen "Run anyway"). Đây là trạng thái đã duyệt cho bản đầu, không phải bug — nhưng phải verify là app thực sự khởi động được, không bị chặn cứng.
@@ -30,13 +32,13 @@ Phase 01-05 verify local-only vì repo còn private và Actions bị billing-blo
 
 ## Related Code Files
 
-- Modify: `.github/workflows/release-cut.yml`, `release-mac-build.yml`, `readme-downloads-badge.yml`, `track-community-prs.yaml` (guards, runner labels, token owner).
+- Modify: `.github/workflows/release-mac-build.yml` (runner label + lý do SignPath đã lỗi thời), `track-community-prs.yaml` (`owner:` và `PROJECT_OWNER`). Ba repo guard đã đóng ở phase 05 — không mở lại.
 - Modify: source files theo regression tìm được (scope mở, thuộc phase gốc).
 - Create: `plans/260730-0117-aio-ide-rebrand-and-integration/reports/post-flip-ci-triage.md` (bảng failure → phân loại → owner → trạng thái).
 
 ## Implementation Steps
 
-1. Sửa guard/label/token owner của 4 workflow trên trước khi chạy matrix — nếu không, phần lớn matrix sẽ skip im lặng và cho cảm giác xanh giả.
+1. Sửa runner label + token owner (2 workflow, 3 chỗ) trước khi chạy matrix — nếu không, phần lớn matrix sẽ skip im lặng và cho cảm giác xanh giả. Re-verify lại 3 repo guard bằng `grep -r` để chắc phase 05 không bị revert.
 2. Chạy full CI matrix trên `main` sau flip. Ghi lại mọi failure.
 3. Triage theo 3 nhóm (a)/(b)/(c). Nhóm (c) đối chiếu upstream history để xác nhận không phải do fork.
 4. Fix nhóm (b) trong phase này. Fix nhóm (a) theo commit gắn với phase gốc.
@@ -45,7 +47,7 @@ Phase 01-05 verify local-only vì repo còn private và Actions bị billing-blo
 
 ## Success Criteria
 
-- [ ] 4 workflow chặn fork (3 repo guard + Blacksmith runner + app-token owner) đã sửa hoặc disable có chủ đích, ghi rõ lựa chọn.
+- [ ] Mọi chỗ còn chặn fork đã sửa hoặc disable có chủ đích, ghi rõ lựa chọn: Blacksmith runner label, `track-community-prs.yaml` `owner:` + `PROJECT_OWNER`; và 3 repo guard của phase 05 vẫn đúng.
 - [ ] Full CI matrix chạy trên 3 OS, không có job skip im lặng vì guard sai.
 - [ ] Mọi failure được phân loại (a)/(b)/(c) trong triage report.
 - [ ] Tiêu chí 3-OS defer từ phase 03/05 có verdict thật kèm link CI run, không còn tick dựa trên local-only.
@@ -53,7 +55,7 @@ Phase 01-05 verify local-only vì repo còn private và Actions bị billing-blo
 
 ## Risk Assessment
 
-Rủi ro chính: **CI xanh giả**. Nếu guard `stablyai/orca` và runner label Blacksmith không sửa trước, nhiều job skip mà UI vẫn hiện xanh — đây chính là lỗi đã xảy ra một lần trong audit của plan này (grep `self-hosted` không bắt được `blacksmith-*`). Mitigation: bước 1 đứng trước bước 2, và tiêu chí thành công yêu cầu "không job skip im lặng".
+Rủi ro chính: **CI xanh giả**. Nếu runner label Blacksmith và token owner không sửa trước, nhiều job skip mà UI vẫn hiện xanh — đây chính là lỗi đã xảy ra một lần trong audit của plan này (grep `self-hosted` không bắt được `blacksmith-*`). Mitigation: bước 1 đứng trước bước 2, và tiêu chí thành công yêu cầu "không job skip im lặng".
 
 Rủi ro thứ hai: **scope mở**. Số regression không biết trước. Mitigation: phase riêng có effort range mở, phân loại bắt buộc, và cho phép defer bằng issue thay vì kéo dài vô hạn.
 

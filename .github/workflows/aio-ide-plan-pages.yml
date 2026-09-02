@@ -18,27 +18,31 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      # The guard script is stdlib-only, but pin the runtime anyway so a runner image change cannot
-      # alter what the publication gate accepts.
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+      # Pin the runtime so a runner image change cannot alter what the publication gate accepts.
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version-file: package.json
+          cache: pnpm
+      # The renderer needs `marked` for the GFM tables the plan is full of; everything else it uses
+      # is stdlib. `--ignore-scripts` keeps a docs publish from building native modules it never runs.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Build static artifact
         shell: bash
         run: |
           set -euo pipefail
-          PLAN_HTML='plans/260730-0117-aio-ide-rebrand-and-integration/plan.html'
-          # Why this check exists: `plans/` is internal operating history and is no longer tracked
-          # (it is in .gitignore), so a fresh checkout does not contain it. Publishing the plan
-          # therefore needs an explicit decision about how the artifact reaches CI — generate it
-          # outside the repo, or allowlist this one file. That decision belongs to the
-          # pre-publication gate, not to this workflow silently failing on a missing path.
-          if [[ ! -f "$PLAN_HTML" ]]; then
-            echo "::error::$PLAN_HTML is not in the checkout: plans/ is intentionally untracked." >&2
-            echo "::error::Publishing it requires generating the artifact outside the repo or allowlisting this file." >&2
-            exit 1
-          fi
+          PLAN_DIR='plans/260730-0117-aio-ide-rebrand-and-integration'
+          PLAN_HTML="$RUNNER_TEMP/plan.html"
+          # Generated here rather than committed: the previous artifact was hand-maintained and went
+          # stale — it predated four phases and a brand change while still reading as current. Only
+          # plan.md and phase-*.md are allowlisted out of plans/, and they are the whole input, so the
+          # page cannot disagree with the plan. Everything else under plans/ stays internal.
+          node config/scripts/render-plan-html.mjs "$PLAN_DIR" "$PLAN_HTML"
           # Content preconditions live in a tested script, not in a grep: the pre-flip version of this
           # check refused this repository's own URL, which is a valid public citation now that the repo
           # is public — and the plan's baseline table cites it, so the guard blocked every deploy.
