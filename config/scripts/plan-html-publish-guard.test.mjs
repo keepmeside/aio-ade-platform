@@ -118,7 +118,7 @@ describe('links to content that is not in the artifact', () => {
   it('refuses relative and absolute filesystem links', () => {
     for (const href of [
       'decisions.md',
-      './phase-05-rebrand-orca-to-aio-ide.md',
+      './phase-12-post-flip-ci-matrix-and-regression-triage.md',
       '../research/baseline/local-verification-baseline.md',
       '/plans/260730-0117-aio-ide-rebrand-and-integration/plan.md',
       'file:///srv/checkout/plans/260730-0117-aio-ide-rebrand-and-integration/plan.md'

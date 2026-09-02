@@ -2249,7 +2249,9 @@ describe('registerPtyHandlers', () => {
       }))
 
       expect(env.AIO_ADE_ENABLE_GIT_ATTRIBUTION).toBe('1')
-      expect(env.AIO_ADE_GIT_COMMIT_TRAILER).toBe('Co-authored-by: AIO-ADE <help@stably.ai>')
+      expect(env.AIO_ADE_GIT_COMMIT_TRAILER).toBe(
+        'Co-authored-by: AIO-ADE <noreply@keepmeside.dev>'
+      )
       expect(env.AIO_ADE_GH_PR_FOOTER).toBe(
         'Made with [AIO-ADE](https://github.com/keepmeside/aio-ade-platform) 🐋'
       )

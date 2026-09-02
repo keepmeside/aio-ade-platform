@@ -3,4 +3,4 @@
 // the terminal git/gh shim and the AI commit-message generator so the two
 // code paths agree on the exact string.
 
-export const AIO_ADE_GIT_COMMIT_TRAILER = 'Co-authored-by: AIO-ADE <help@stably.ai>'
+export const AIO_ADE_GIT_COMMIT_TRAILER = 'Co-authored-by: AIO-ADE <noreply@keepmeside.dev>'

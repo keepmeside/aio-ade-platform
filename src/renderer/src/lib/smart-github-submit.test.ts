@@ -33,13 +33,11 @@ describe('getSmartGitHubSubmitIntent', () => {
 
   it('finds a GitHub item URL embedded in a short instruction', () => {
     expect(
-      getSmartGitHubSubmitIntent(
-        'https://github.com/mvanhorn/cli-printing-press/issues/2635 and fix it'
-      )
+      getSmartGitHubSubmitIntent('https://github.com/dev/cli-printing-press/issues/2635 and fix it')
     ).toEqual({
       kind: 'link',
       host: 'github.com',
-      owner: 'mvanhorn',
+      owner: 'dev',
       repo: 'cli-printing-press',
       number: 2635,
       type: 'issue'

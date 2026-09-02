@@ -2,7 +2,7 @@
 
 ## Problem
 
-`orchestration.reset` silently clears all orchestration state when no scope is provided. The RPC schema accepts every scope as optional at [src/main/runtime/rpc/methods/orchestration.ts](/Users/jinwoohong/aio-ade/workspaces/aio-ade/bug-orchestration.reset-wipes-all-orchestration/src/main/runtime/rpc/methods/orchestration.ts:139), and the handler falls through to `db.resetAll()` at [src/main/runtime/rpc/methods/orchestration.ts](/Users/jinwoohong/aio-ade/workspaces/aio-ade/bug-orchestration.reset-wipes-all-orchestration/src/main/runtime/rpc/methods/orchestration.ts:585). Existing reset tests only cover explicit single scopes at [src/main/runtime/rpc/methods/orchestration.test.ts](/Users/jinwoohong/aio-ade/workspaces/aio-ade/bug-orchestration.reset-wipes-all-orchestration/src/main/runtime/rpc/methods/orchestration.test.ts:1024).
+`orchestration.reset` silently clears all orchestration state when no scope is provided. The RPC schema accepts every scope as optional at [src/main/runtime/rpc/methods/orchestration.ts](src/main/runtime/rpc/methods/orchestration.ts:139), and the handler falls through to `db.resetAll()` at [src/main/runtime/rpc/methods/orchestration.ts](src/main/runtime/rpc/methods/orchestration.ts:585). Existing reset tests only cover explicit single scopes at [src/main/runtime/rpc/methods/orchestration.test.ts](src/main/runtime/rpc/methods/orchestration.test.ts:1024).
 
 ## Root Cause
 
@@ -19,7 +19,7 @@
 
 1. Enforce exactly one truthy reset scope at the `ResetParams` schema using `superRefine`.
 2. Remove the handler fallthrough to `db.resetAll()` so only validated explicit scopes can mutate state.
-3. Preserve the existing CLI no-flag shortcut by having [src/cli/handlers/orchestration.ts](/Users/jinwoohong/aio-ade/workspaces/aio-ade/bug-orchestration.reset-wipes-all-orchestration/src/cli/handlers/orchestration.ts:440) pass `all: true` when no reset scope flag is present. This keeps CLI compatibility explicit while preventing ambiguous direct RPC calls.
+3. Preserve the existing CLI no-flag shortcut by having [src/cli/handlers/orchestration.ts](src/cli/handlers/orchestration.ts:440) pass `all: true` when no reset scope flag is present. This keeps CLI compatibility explicit while preventing ambiguous direct RPC calls.
 4. Let explicit multi-flag CLI invocations reach RPC validation and fail with the shared invalid-argument path. Duplicating scope validation in the CLI is unnecessary because all CLI calls already pass through this RPC method.
 5. Add RPC regression tests that seed one message and one task, call invalid reset params, assert rejection, and assert both seeded records remain.
 6. Add CLI parser tests that `aio-ade orchestration reset` calls RPC with `all: true`, and that explicit flags are passed through unchanged for RPC validation.

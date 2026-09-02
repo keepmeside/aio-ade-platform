@@ -6,6 +6,8 @@ Make AIO-ADE's Claude usage limit tracking behave like CodexBar's Claude impleme
 
 This plan intentionally does not introduce new product behavior from scratch. Each proposed change is based on CodexBar's existing implementation.
 
+> `codexbar:` prefixes a path inside CodexBar, a separate and private codebase. The paths are relative to that repository's root, so they are citations for whoever has access rather than links a reader can follow here.
+
 ## User-Facing Principle
 
 Users should not need to pick a usage source.
@@ -24,30 +26,30 @@ Any "source planner" described below is internal plumbing only. It should not im
 CodexBar's Claude implementation already separates source selection from execution:
 
 - `ClaudeSourcePlanner.resolve(...)` builds an ordered automatic plan.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeSourcePlanner.swift:173`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeSourcePlanner.swift:173`
 - App auto mode tries OAuth, then CLI, then web.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeSourcePlanner.swift:173`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeSourcePlanner.swift:173`
 - CLI runtime auto mode tries web, then CLI.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeSourcePlanner.swift:181`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeSourcePlanner.swift:181`
 - `ClaudeUsageFetcher.StepExecutor` executes the selected path.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:461`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:461`
 - OAuth failures can trigger delegated Claude CLI refresh, then credentials are reloaded and OAuth is retried.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:324`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:324`
 - OAuth credential loading accounts for Keychain prompt policy and cached credentials.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:250`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:250`
 - Claude source types are explicit: auto, api, oauth, web, cli.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeUsageDataSource.swift:3`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeUsageDataSource.swift:3`
 
 CodexBar's Codex implementation is also a useful pattern for fallback discipline:
 
 - Auto mode tries OAuth, then CLI.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Codex/CodexProviderDescriptor.swift:43`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Codex/CodexProviderDescriptor.swift:43`
 - Codex OAuth refresh is performed before usage fetch when credentials need refresh.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Codex/CodexProviderDescriptor.swift:169`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Codex/CodexProviderDescriptor.swift:169`
 - Fallback from OAuth to CLI is limited to failures the CLI can plausibly repair.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Codex/CodexProviderDescriptor.swift:199`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Codex/CodexProviderDescriptor.swift:199`
 - Codex CLI usage is fetched through `codex app-server` JSON-RPC.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/UsageFetcher.swift:1012`
+  Reference: `codexbar:Sources/CodexBarCore/UsageFetcher.swift:1012`
 
 ## Current AIO-ADE Behavior To Preserve Or Change
 
@@ -90,9 +92,9 @@ Initial app automatic order should match CodexBar's app auto ordering:
 CodexBar basis:
 
 - `ClaudeSourcePlanner.makeSteps` app auto returns OAuth, CLI, web.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeSourcePlanner.swift:173`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeSourcePlanner.swift:173`
 - `ClaudeUsageDataSource` defines source identifiers separately from execution.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeUsageDataSource.swift:3`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeUsageDataSource.swift:3`
 
 AIO-ADE implementation target:
 
@@ -107,7 +109,7 @@ Separate "which source should be tried" from "how each source fetches usage."
 CodexBar basis:
 
 - `StepExecutor.loadLatestUsage` switches on source and executes OAuth, web, or CLI.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:461`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:461`
 
 AIO-ADE implementation target:
 
@@ -139,11 +141,11 @@ Failure kinds should include:
 CodexBar basis:
 
 - Codex fallback is intentionally limited to specific OAuth credential/auth errors.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Codex/CodexProviderDescriptor.swift:199`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Codex/CodexProviderDescriptor.swift:199`
 - Claude OAuth maps credential/fetch errors distinctly before retrying or surfacing.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:286`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:286`
 - Missing Claude OAuth scope gets a specific actionable message.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:444`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:444`
 
 AIO-ADE implementation target:
 
@@ -161,11 +163,11 @@ When OAuth credentials appear stale or access is unauthorized, let Claude CLI re
 CodexBar basis:
 
 - Expired Claude OAuth credentials can trigger `loadAfterDelegatedRefresh`.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:324`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:324`
 - CodexBar asserts delegated refresh is allowed in the current interaction context before running it.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:345`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:345`
 - After delegated refresh, CodexBar invalidates changed credential caches, syncs Keychain without prompt, reloads credentials, and retries OAuth.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:369`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:369`
 
 AIO-ADE implementation target:
 
@@ -182,9 +184,9 @@ Change the user-visible outcome from generic failure to a deferred state.
 CodexBar basis:
 
 - Delegated refresh is gated by interaction policy and can be unavailable rather than blindly attempted.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:345`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:345`
 - CodexBar tracks delegated refresh outcomes and reports them distinctly.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:350`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:350`
 
 AIO-ADE implementation target:
 
@@ -207,9 +209,9 @@ System default can still fail when:
 CodexBar basis:
 
 - OAuth credential loading accounts for cached credentials, Keychain prompt policy, and Keychain access.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:250`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:250`
 - Post-delegation retry re-reads credentials instead of reusing the stale token.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:408`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:408`
 
 AIO-ADE implementation target:
 
@@ -234,10 +236,10 @@ Suggested metadata:
 CodexBar basis:
 
 - Source labels are preserved in fetch results for Codex OAuth and CLI.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Codex/CodexProviderDescriptor.swift:132`
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Codex/CodexProviderDescriptor.swift:253`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Codex/CodexProviderDescriptor.swift:132`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Codex/CodexProviderDescriptor.swift:253`
 - Claude planner logs selected source and ordered steps.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:512`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:512`
 
 AIO-ADE implementation target:
 
@@ -261,9 +263,9 @@ Suggested user-facing states:
 CodexBar basis:
 
 - Claude OAuth failures distinguish expired/delegated-refresh states from generic parse/network failure.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:338`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:338`
 - Codex OAuth refresh errors include specific relogin messages for expired/revoked/reused refresh tokens.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Codex/CodexOAuth/CodexTokenRefresher.swift:17`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Codex/CodexOAuth/CodexTokenRefresher.swift:17`
 
 AIO-ADE implementation target:
 
@@ -285,9 +287,9 @@ For debugging/support, it is useful to expose what happened:
 CodexBar basis:
 
 - CodexBar has explicit source labels and source modes, but the app default remains automatic.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Codex/CodexProviderDescriptor.swift:35`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Codex/CodexProviderDescriptor.swift:35`
 - Claude planner can describe selected and ordered sources.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeSourcePlanner.swift:99`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeSourcePlanner.swift:99`
 
 AIO-ADE implementation target:
 
@@ -301,9 +303,9 @@ Do not implement Claude web/cookie tracking in the first pass.
 CodexBar basis:
 
 - CodexBar supports web as a later fallback source in Claude app auto.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeSourcePlanner.swift:177`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeSourcePlanner.swift:177`
 - CodexBar's web paths are substantial and involve browser session/cookie machinery.
-  Reference: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeWeb/ClaudeWebAPIFetcher.swift:100`
+  Reference: `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeWeb/ClaudeWebAPIFetcher.swift:100`
 
 AIO-ADE implementation target:
 
@@ -321,9 +323,9 @@ AIO-ADE implementation target:
 
 CodexBar references:
 
-- `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeSourcePlanner.swift:173`
-- `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:461`
-- `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Codex/CodexProviderDescriptor.swift:199`
+- `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeSourcePlanner.swift:173`
+- `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:461`
+- `codexbar:Sources/CodexBarCore/Providers/Codex/CodexProviderDescriptor.swift:199`
 
 ### PR 2: CLI Fallback In Automatic Mode
 
@@ -333,9 +335,9 @@ CodexBar references:
 
 CodexBar references:
 
-- `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeSourcePlanner.swift:173`
-- `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:461`
-- `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/UsageFetcher.swift:1012`
+- `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeSourcePlanner.swift:173`
+- `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:461`
+- `codexbar:Sources/CodexBarCore/UsageFetcher.swift:1012`
 
 ### PR 3: Delegated Refresh + Retry
 
@@ -346,10 +348,10 @@ CodexBar references:
 
 CodexBar references:
 
-- `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:324`
-- `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:345`
-- `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:369`
-- `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:408`
+- `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:324`
+- `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:345`
+- `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:369`
+- `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:408`
 
 ### PR 4: Renderer State Copy
 
@@ -359,8 +361,8 @@ CodexBar references:
 
 CodexBar references:
 
-- `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:338`
-- `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Codex/CodexOAuth/CodexTokenRefresher.swift:17`
+- `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:338`
+- `codexbar:Sources/CodexBarCore/Providers/Codex/CodexOAuth/CodexTokenRefresher.swift:17`
 
 ## Test Plan
 
@@ -379,9 +381,9 @@ Add unit tests for:
 
 CodexBar references:
 
-- Source planning: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeSourcePlanner.swift:173`
-- OAuth delegated refresh: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:324`
-- Fallback discipline: `/Users/jinwoohong/stably/codexbar/Sources/CodexBarCore/Providers/Codex/CodexProviderDescriptor.swift:199`
+- Source planning: `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeSourcePlanner.swift:173`
+- OAuth delegated refresh: `codexbar:Sources/CodexBarCore/Providers/Claude/ClaudeUsageFetcher.swift:324`
+- Fallback discipline: `codexbar:Sources/CodexBarCore/Providers/Codex/CodexProviderDescriptor.swift:199`
 
 ## Non-Goals
 

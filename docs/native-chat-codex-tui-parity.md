@@ -5,24 +5,26 @@ This note maps Codex TUI behavior to AIO-ADE native chat on branch
 surface is a PTY harness around the running TUI, while real native parity should
 move selected paths to Codex app-server protocol v2.
 
+> `codex:` prefixes a path inside the Codex CLI repository, which is separate and private. The paths are relative to that repository's root, so they are citations for whoever has access rather than links a reader can follow here.
+
 ## Source Map
 
-- Codex TUI composer: `/Users/jinwoohong/stably/codex/codex-rs/tui/src/bottom_pane/chat_composer.rs`
+- Codex TUI composer: `codex:codex-rs/tui/src/bottom_pane/chat_composer.rs`
 - Slash command parsing and popup:
-  `/Users/jinwoohong/stably/codex/codex-rs/tui/src/bottom_pane/prompt_args.rs`,
-  `/Users/jinwoohong/stably/codex/codex-rs/tui/src/bottom_pane/slash_commands.rs`,
-  `/Users/jinwoohong/stably/codex/codex-rs/tui/src/slash_command.rs`,
-  `/Users/jinwoohong/stably/codex/codex-rs/tui/src/chatwidget/slash_dispatch.rs`
+  `codex:codex-rs/tui/src/bottom_pane/prompt_args.rs`,
+  `codex:codex-rs/tui/src/bottom_pane/slash_commands.rs`,
+  `codex:codex-rs/tui/src/slash_command.rs`,
+  `codex:codex-rs/tui/src/chatwidget/slash_dispatch.rs`
 - Skills and mentions:
-  `/Users/jinwoohong/stably/codex/codex-rs/tui/src/bottom_pane/skill_popup.rs`,
-  `/Users/jinwoohong/stably/codex/codex-rs/tui/src/skills_helpers.rs`,
-  `/Users/jinwoohong/stably/codex/codex-rs/core-skills/src/loader.rs`,
-  `/Users/jinwoohong/stably/codex/codex-rs/core-skills/src/root_loader.rs`,
-  `/Users/jinwoohong/stably/codex/codex-rs/core-skills/src/injection.rs`
+  `codex:codex-rs/tui/src/bottom_pane/skill_popup.rs`,
+  `codex:codex-rs/tui/src/skills_helpers.rs`,
+  `codex:codex-rs/core-skills/src/loader.rs`,
+  `codex:codex-rs/core-skills/src/root_loader.rs`,
+  `codex:codex-rs/core-skills/src/injection.rs`
 - Structured input and native protocol:
-  `/Users/jinwoohong/stably/codex/codex-rs/protocol/src/user_input.rs`,
-  `/Users/jinwoohong/stably/codex/codex-rs/app-server-protocol/src/protocol/v2/turn.rs`,
-  `/Users/jinwoohong/stably/codex/codex-rs/app-server-protocol/src/protocol/common.rs`
+  `codex:codex-rs/protocol/src/user_input.rs`,
+  `codex:codex-rs/app-server-protocol/src/protocol/v2/turn.rs`,
+  `codex:codex-rs/app-server-protocol/src/protocol/common.rs`
 
 ## Current AIO-ADE Architecture
 

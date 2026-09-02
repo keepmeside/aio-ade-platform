@@ -282,7 +282,7 @@ for arg in "$@"; do
   esac
 done
 
-trailer="\${AIO_ADE_GIT_COMMIT_TRAILER:-Co-authored-by: AIO-ADE <help@stably.ai>}"
+trailer="\${AIO_ADE_GIT_COMMIT_TRAILER:-Co-authored-by: AIO-ADE <noreply@keepmeside.dev>}"
 
 has_explicit_commit_message() {
   local arg
@@ -700,7 +700,7 @@ exit /b %ERRORLEVEL%
 
 const WIN32_GIT_PS_WRAPPER = String.raw`$ErrorActionPreference = 'Stop'
 $realGit = if ($env:AIO_ADE_REAL_GIT) { $env:AIO_ADE_REAL_GIT } else { 'git' }
-$trailer = if ($env:AIO_ADE_GIT_COMMIT_TRAILER) { $env:AIO_ADE_GIT_COMMIT_TRAILER } else { 'Co-authored-by: AIO-ADE <help@stably.ai>' }
+$trailer = if ($env:AIO_ADE_GIT_COMMIT_TRAILER) { $env:AIO_ADE_GIT_COMMIT_TRAILER } else { 'Co-authored-by: AIO-ADE <noreply@keepmeside.dev>' }
 
 if ($args -contains '--dry-run') {
   & $realGit @args

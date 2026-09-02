@@ -85,8 +85,12 @@ const CLASSIFIED_PATHS: readonly { prefix: string; why: Classification }[] = [
   /* A plugin key is `publisher.id` and it is persisted: it names the install directory and is what
    * `disabledPlugins` stores. The three bundled plugins were published under the previous publisher
    * token, so their keys, the release-hash index that addresses them, and the fixtures that assert
-   * against them all keep that spelling. Renaming a key orphans an installed copy. */
-  { prefix: 'resources/plugins/launch/bundled-plugins.json', why: 'wire-compat' },
+   * against them all keep that spelling. Renaming a key orphans an installed copy.
+   *
+   * The whole tree is covered rather than one file because every occurrence in it is one of the same
+   * three things: a persisted plugin key, the upstream repository a bundled plugin is fetched from,
+   * or prose describing plugins that upstream published and still owns. */
+  { prefix: 'resources/plugins/launch/', why: 'wire-compat' },
   { prefix: 'src/main/plugins/plugin-launch-content.test.ts', why: 'wire-compat' },
   { prefix: 'config/scripts/verify-packaged-plugin-resources.test.mjs', why: 'wire-compat' },
   { prefix: 'tests/e2e/plugin-marketplace-content.spec.ts', why: 'wire-compat' },
@@ -94,6 +98,10 @@ const CLASSIFIED_PATHS: readonly { prefix: string; why: Classification }[] = [
   { prefix: 'src/shared/plugins/plugin-marketplace.ts', why: 'legacy-data-read' },
   // Accepts the pre-rebrand panel message dialect and replies in the dialect it was asked in.
   { prefix: 'src/shared/plugins/plugin-panel-bridge.ts', why: 'wire-compat' },
+  // Pins that the pre-rebrand panel dialect is still the one an old panel may send.
+  { prefix: 'src/shared/plugins/plugin-panel-bridge-brand.test.ts', why: 'wire-compat' },
+  // Pins the in-repo `.orca/` directory and `orca.yaml` a pre-rebrand checkout still has on disk.
+  { prefix: 'src/shared/repo-app-paths.test.ts', why: 'legacy-data-read' },
 
   /* The pre-rebrand PATH names, and the WSL/Codex registrations written under them. An upgrade has
    * to recognize what an older build left on disk in order to reclaim or repair it; matching only

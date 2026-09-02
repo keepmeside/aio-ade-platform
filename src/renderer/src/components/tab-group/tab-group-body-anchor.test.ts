@@ -10,7 +10,7 @@ describe('tabGroupBodyAnchorName', () => {
 
   it('encodes remote runtime group ids that include path separators', () => {
     const anchorName = tabGroupBodyAnchorName(
-      'headless-terminals:repo::/Users/jinwoohong/aio-ade/workspaces/aio-ade/branch'
+      'headless-terminals:repo::/Users/dev/aio-ade/workspaces/aio-ade/branch'
     )
 
     expect(anchorName).not.toContain(':')
