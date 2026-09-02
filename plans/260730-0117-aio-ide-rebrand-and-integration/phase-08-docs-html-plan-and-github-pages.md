@@ -65,8 +65,8 @@ Nếu scan tìm thấy secret thuộc upstream (`stablyai`/Lovecast) mà owner n
 2. **(xong)** Thay "regenerate plan.html" bằng **generator**: `render-plan-html.mjs` đọc `plan.md` + `phase-*.md` và sinh HTML tự chứa (inline CSS/JS, SVG dependency diagram tính từ frontmatter, phase card + dialog, filter). Chạy trong CI mỗi lần dispatch nên artifact không stale được.
 3. **(xong)** Smoke: guard chạy xanh trên output; 16 test pin phase list, cạnh phụ thuộc, criteria state, a11y (dialog aria, chip `aria-pressed`, `role="status"`, SVG `title`/`desc`), `prefers-reduced-motion`, breakpoint 375px, và tính xác định của output.
 4. **(xong)** Sửa private-URL guard sang threat model sau flip (không block URL của chính repo này) và verify workflow: manual-dispatch only, configure-pages, chỉ copy self-contained HTML sang `_site/index.html`. Guard chạy xanh trên output mới — và **bắt thật**: bản đầu của trang có link tương đối tới `decisions.md` + 2 file `research/` (dead link cho reader), nên renderer giờ đổi mọi ref nội bộ thành text có tooltip thay vì link.
-5. Chuẩn bị artifact còn thiếu: thêm `"license": "MIT"` vào `package.json`, verify NOTICE do phase 05 tạo, chạy secret-scan tool đã pin ở phase 01.
-6. Chạy pre-publication gate (5 items ở Requirements). Secret của fork → rotate bắt buộc. Secret upstream không rotate được → chọn một nhánh contingency, không tự quyết.
+5. **(xong)** `"license": "MIT"` đã có từ phase 05; NOTICE verify xong; secret-scan tool đã pin ở phase 01 giờ install thật ở root (`.gitleaks.toml`) và chạy trên toàn history.
+6. **(xong)** Gate 5 items đã chạy — xem bảng kết quả. Không có secret nào phải rotate.
 7. Sau khi gate pass, owner tự flip visibility sang public (agent không làm bước này). Xác nhận qua `gh repo view --json visibility`.
 8. Owner/admin bật Pages (source: GitHub Actions). Dispatch `aio-ide-plan-pages.yml`, theo dõi deploy.
 9. Commit focused docs/workflow changes, push theo scope đã duyệt, confirm Pages URL với `gh api` và HTTP check.
@@ -90,11 +90,23 @@ User chọn hướng **repo public** (hàng 2 của matrix cũ nhưng áp dụng
 | Public static-only repo | Bỏ — thay bằng public hoá repo chính |
 | Local review only | Fallback nếu gate pre-publication fail |
 
+## Kết quả pre-publication gate (chạy 2026-09-02)
+
+| Item | Verdict | Bằng chứng |
+|---|---|---|
+| 1. License / NOTICE | **PASS** | `package.json`: `license: MIT`, `author: Keepmeside`, `contributors: [Keepmeside, SalyyS1]`. Dòng copyright `Lovecast Inc.` còn nguyên ở **cả** `LICENSE` và `NOTICE`; 7 test trong `attribution-notice.test.ts` pin nó |
+| 2. History secret scan | **PASS** | gitleaks 8.30.1, config đã install ở root (`.gitleaks.toml`), `--log-opts=--all`: **16.371 commit / 304 MB, 0 finding**, exit 0. Finding duy nhất lúc đầu là chính `secret-scan-triage.md` — tài liệu liệt kê các finding nên bản thân nó chứa chuỗi hình-dạng-secret; match là dòng mô tả `deviceToken` tổng hợp trong `pairing.test.ts`. Verdict ghi vào config, không phải làm scan im lặng đi |
+| 3. PII / issues / PR | **PASS sau khi sửa** | Issues + PR: 1 + 1, sạch (chỉ có chữ "secret"/"token" trong văn xuôi). **Đã sửa 3 việc:** (a) trailer commit của app ghi `help@stably.ai` — địa chỉ support của upstream — vào git history của user; giờ là `noreply@keepmeside.dev` ở cả shared constant và 2 fallback shell/PowerShell; (b) 4 doc dẫn đường dẫn tuyệt đối trong home của một contributor (`/Users/jinwoohong/…`) — 2 doc trỏ vào file của repo này nên đổi thành đường dẫn tương đối (11/12 link resolve; link thứ 12 trỏ file đã bị xoá upstream nên gỡ link, giữ tên); 2 doc trỏ repo private khác nên dùng prefix `codex:`/`codexbar:` kèm ghi chú; (c) username thật trong fixture test và trong một error message được document |
+| 4. Workflow / runner audit | **PASS (đã enumerate)** | 8 label `runs-on` phân biệt; 3 repo guard đã là `keepmeside/aio-ade-platform`; **còn 2 chỗ thuộc phase 12** (Blacksmith runner label, `track-community-prs.yaml` `owner:` + `PROJECT_OWNER`); 1 `pull_request_target` duy nhất không checkout PR head. **Chưa làm được:** set Actions permissions cho external contributor — là setting của owner |
+| 5. Upstream endpoints inert | **PASS** | `TELEMETRY_ENABLED = false`, `TELEMETRY_INGEST_HOST = telemetry.aio-ade.keepmeside.dev`, `UPDATE_CHANNEL_AUTHENTICATED = false`. 0 occurrence `i.posthog.com` và `onorca.dev` trong source. `stablyai/orca` còn lại: attribution MIT bắt buộc trong `README.md:241` + văn xuôi plan. `stablyai/orca-*` trong `resources/plugins/launch/` là repo upstream của 3 plugin bundled — persisted identity, **không được rename** |
+
+**Phát hiện chưa đóng, cần quyết định:** rebrand đã rewrite `stablyai/orca` → `keepmeside/aio-ade-platform` **bên trong URL issue/PR**, nên có **178 link phân biệt** dạng `github.com/keepmeside/aio-ade-platform/issues/NNNN` trong khi repo này chỉ có 2 issue. Rewrite đúng cú pháp nhưng sai nghĩa: những issue đó nằm ở tracker của upstream. Sau flip chúng thành link chết trỏ vào chính repo mình. Chọn một: trỏ lại `stablyai/orca` (đúng nơi issue tồn tại, nhưng đưa URL upstream trở lại), hoặc gỡ link giữ số, hoặc để phase 09 xử lý.
+
 ## Success Criteria
 
 - [x] Mở `plan.html` local không network vẫn đủ nội dung và tương tác; nội dung khớp `plan.md` + phase files hiện tại (gồm 09/10/11/12) — **khớp theo cấu tạo**, vì nó được sinh từ chính hai nguồn đó. 184 KB, 0 external asset, đọc được không JS (`.phase-detail[hidden]` được noscript stylesheet mở lại).
 - [x] Private-URL guard đã sửa cho threat model sau flip và chạy xanh trên `plan.html` mới (không false-positive vì URL repo trong bảng baseline) — `plan-html-publish-guard.mjs`, 4 rule, 14 test.
-- [ ] Pre-publication gate pass cả 5 items: license/NOTICE (`package.json` có `"license": "MIT"`, NOTICE giữ copyright Lovecast Inc.), history secret scan (17.5k commit) sạch hoặc đã rotate hoặc đã chọn nhánh contingency, PII + issues/PR content review, workflow/runner audit enumerate đầy đủ, upstream telemetry/updater inert.
+- [x] Pre-publication gate pass cả 5 items — xem bảng "Kết quả pre-publication gate". Nhánh contingency **không cần dùng**: scan 16.371 commit trả 0 finding, nên không có secret nào của fork hay của upstream phải rotate. Còn 1 item của owner (Actions permissions cho external contributor) và 1 phát hiện chờ quyết định (178 link issue bị rewrite).
 - [ ] Owner là người flip visibility; có xác nhận `gh repo view --json visibility` = PUBLIC sau flip.
 - [ ] GitHub Pages URL trả HTTP 200 và artifact khớp commit đã push.
 - [x] Published HTML không link tới nội dung không có trong artifact; source citations dùng public URL hoặc inline safe summary — guard rule `unpublished-local-link` bắt mọi href không phải `https://` public / `#fragment` / `mailto:`, và renderer đổi ref tới tài liệu nội bộ thành text có tooltip. Chỉ còn 1 external link: URL repo trong bảng baseline.
