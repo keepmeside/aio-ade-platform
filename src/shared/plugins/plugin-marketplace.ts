@@ -2,14 +2,46 @@ import { z } from 'zod'
 import { isAllowedPluginGitUrl } from './plugin-install-lockfile'
 import { isQualifiedPluginKey } from './plugin-manifest'
 
-export const PLUGIN_MARKETPLACE_FILENAME = 'orca-marketplace.json'
+export {
+  LEGACY_PLUGIN_MARKETPLACE_FILENAME,
+  PLUGIN_MARKETPLACE_FILENAME,
+  PLUGIN_MARKETPLACE_FILENAMES
+} from './plugin-brand-tokens'
 export const PLUGIN_MARKETPLACE_ENTRY_LIMIT = 2_048
 export const PLUGIN_MARKETPLACE_CATEGORY_LIMIT = 16
 
-export const OFFICIAL_PLUGIN_PUBLISHER = 'stablyai'
-export const OFFICIAL_PLUGIN_ID_PREFIX = 'orca-'
-export const OFFICIAL_MARKETPLACE_OWNER = 'stablyai'
-export const OFFICIAL_MARKETPLACE_REPOSITORY = 'orca-plugins'
+export const OFFICIAL_PLUGIN_PUBLISHER = 'keepmeside'
+export const OFFICIAL_PLUGIN_ID_PREFIX = 'aio-ade-'
+export const OFFICIAL_MARKETPLACE_OWNER = 'keepmeside'
+export const OFFICIAL_MARKETPLACE_REPOSITORY = 'aio-ade-platform-plugins'
+
+/* Why both token families: a plugin key is a persisted identity — it names the install directory
+ * and is what `disabledPlugins` stores. The official/reserved gates have to answer the same way
+ * before and after the publisher token changed, or an already-installed official plugin stops being
+ * recognized as official and a user's disable choice stops matching a key that is still on disk.
+ *
+ * These are read-side only. Nothing writes them, and a later sweep that "finishes the rename" by
+ * setting them to the canonical tokens would silently un-official every installed plugin —
+ * `plugin-marketplace.test.ts` pins them against exactly that. */
+export const LEGACY_OFFICIAL_PLUGIN_PUBLISHER = 'stablyai'
+export const LEGACY_OFFICIAL_PLUGIN_ID_PREFIX = 'orca-'
+
+const OFFICIAL_PLUGIN_PUBLISHERS: readonly string[] = [
+  OFFICIAL_PLUGIN_PUBLISHER,
+  LEGACY_OFFICIAL_PLUGIN_PUBLISHER
+]
+const OFFICIAL_PLUGIN_ID_PREFIXES: readonly string[] = [
+  OFFICIAL_PLUGIN_ID_PREFIX,
+  LEGACY_OFFICIAL_PLUGIN_ID_PREFIX
+]
+
+function isOfficialPluginPublisher(publisher: string): boolean {
+  return OFFICIAL_PLUGIN_PUBLISHERS.includes(publisher)
+}
+
+function hasOfficialPluginIdPrefix(id: string): boolean {
+  return OFFICIAL_PLUGIN_ID_PREFIXES.some((prefix) => id.startsWith(prefix))
+}
 
 // Why: theme/icon/skill contributions were deferred, so `contributes` now
 // rejects them and any plugin declaring one fails to install wholesale. The
@@ -116,7 +148,7 @@ export type PluginMarketplaceTrustMetadata = z.infer<typeof pluginMarketplaceTru
 
 export const OFFICIAL_MARKETPLACE_GIT_SOURCE: PluginMarketplaceGitSource = {
   kind: 'git',
-  url: 'https://github.com/stablyai/orca-plugins.git',
+  url: 'https://github.com/keepmeside/aio-ade-platform-plugins.git',
   ref: 'main'
 }
 
@@ -138,8 +170,7 @@ export function isReservedPluginIdentity(pluginKey: string): boolean {
   const identity = splitQualifiedPluginKey(pluginKey)
   return (
     identity !== null &&
-    (identity.publisher === OFFICIAL_PLUGIN_PUBLISHER ||
-      identity.id.startsWith(OFFICIAL_PLUGIN_ID_PREFIX))
+    (isOfficialPluginPublisher(identity.publisher) || hasOfficialPluginIdPrefix(identity.id))
   )
 }
 
@@ -147,8 +178,8 @@ export function isOfficialPluginIdentity(pluginKey: string): boolean {
   const identity = splitQualifiedPluginKey(pluginKey)
   return (
     identity !== null &&
-    identity.publisher === OFFICIAL_PLUGIN_PUBLISHER &&
-    identity.id.startsWith(OFFICIAL_PLUGIN_ID_PREFIX)
+    isOfficialPluginPublisher(identity.publisher) &&
+    hasOfficialPluginIdPrefix(identity.id)
   )
 }
 
@@ -194,7 +225,7 @@ function repositoryIdentity(host: string, repositoryPath: string): GitRepository
 
 export function isOfficialOrganizationGitSource(url: string): boolean {
   const source = parseGitRepositoryIdentity(url)
-  return source?.host === 'github.com' && source.owner.toLowerCase() === OFFICIAL_PLUGIN_PUBLISHER
+  return source?.host === 'github.com' && isOfficialPluginPublisher(source.owner.toLowerCase())
 }
 
 export function isOfficialMarketplaceGitSource(url: string): boolean {

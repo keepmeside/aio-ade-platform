@@ -81,7 +81,7 @@ export function createAgentStatusTracker(
   }
 }
 
-// Why: cursor's native title is constant and carries no working/idle info; keep it a no-op so per-turn re-emissions can't stomp Orca-synthesized state.
+// Why: cursor's native title is constant and carries no working/idle info; keep it a no-op so per-turn re-emissions can't stomp AIO-ADE-synthesized state.
 const CURSOR_NATIVE_TITLE_LOWER = 'cursor agent'
 
 export function detectAgentStatusFromTitle(title: string): AgentStatus | null {
@@ -91,7 +91,7 @@ export function detectAgentStatusFromTitle(title: string): AgentStatus | null {
   if (isClaudeManagementTitle(title)) {
     return null
   }
-  // Why: exact "Cursor Agent" is cursor's info-free native title; titles with extra tokens are Orca-synthesized and worth classifying.
+  // Why: exact "Cursor Agent" is cursor's info-free native title; titles with extra tokens are AIO-ADE-synthesized and worth classifying.
   if (title.trim().toLowerCase() === CURSOR_NATIVE_TITLE_LOWER) {
     return null
   }

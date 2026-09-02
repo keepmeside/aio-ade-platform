@@ -95,7 +95,7 @@ describe('CliSection project runtime defaults', () => {
     await capturedPanel.props?.onBeforeOpenTerminal()
 
     expect(capturedPanel.useInstalledAgentSkill).toHaveBeenCalledWith(
-      'orca-cli',
+      'aio-ade-cli',
       expect.objectContaining({
         discoveryTarget: { runtime: 'wsl', wslDistro: 'Ubuntu' },
         sourceKinds: ['global']
@@ -114,17 +114,17 @@ describe('CliSection project runtime defaults', () => {
   it('renders an inline unknown PATH state without offering a mutation', async () => {
     const getInstallStatus = vi.fn().mockResolvedValue({
       platform: 'win32',
-      commandName: 'orca',
-      commandPath: 'C:\\Program Files\\Orca\\resources\\bin\\orca.exe',
-      pathDirectory: 'C:\\Program Files\\Orca\\resources\\bin',
+      commandName: 'aio-ade',
+      commandPath: 'C:\\Program Files\\AIO-ADE\\resources\\bin\\aio-ade.exe',
+      pathDirectory: 'C:\\Program Files\\AIO-ADE\\resources\\bin',
       pathConfigured: null,
-      launcherPath: 'C:\\Program Files\\Orca\\resources\\bin\\orca.exe',
+      launcherPath: 'C:\\Program Files\\AIO-ADE\\resources\\bin\\aio-ade.exe',
       installMethod: 'wrapper',
       supported: true,
       state: 'installed',
-      currentTarget: 'C:\\Program Files\\Orca\\resources\\bin\\orca.exe',
+      currentTarget: 'C:\\Program Files\\AIO-ADE\\resources\\bin\\aio-ade.exe',
       unsupportedReason: null,
-      detail: 'Orca could not read the Windows user PATH registry value.'
+      detail: 'AIO-ADE could not read the Windows user PATH registry value.'
     })
     Object.assign(window, {
       api: {

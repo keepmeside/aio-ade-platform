@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import { isOrchestrationMutation } from '../../../shared/orchestration-rpc-contract'
-import type { OrcaRuntimeService } from '../orca-runtime'
+import type { AioAdeRuntimeService } from '../aio-ade-runtime'
 import { OrchestrationError } from '../orchestration/orchestration-error'
 import type { RpcRequest } from './core'
 
@@ -17,7 +17,7 @@ export type DurableMutationInvocation = {
 export class OrchestrationMutationExecutor {
   private readonly inFlight = new Map<string, Promise<unknown>>()
 
-  constructor(private readonly runtime: OrcaRuntimeService) {}
+  constructor(private readonly runtime: AioAdeRuntimeService) {}
 
   async run(
     request: RpcRequest,
@@ -72,7 +72,7 @@ export class OrchestrationMutationExecutor {
           ? {
               requestId,
               dispatchId: recovery.dispatchId,
-              recoveryCommand: `orca orchestration worker-show --dispatch ${recovery.dispatchId} --json`
+              recoveryCommand: `aio-ade orchestration worker-show --dispatch ${recovery.dispatchId} --json`
             }
           : { requestId }
       )

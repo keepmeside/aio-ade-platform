@@ -120,6 +120,12 @@ vi.mock('./updater-nudge', () => ({
 describe('updater mac install handoff', () => {
   beforeEach(() => {
     vi.resetModules()
+    /* Re-arm after `vi.resetModules()`: the gate resets to its production default, which keeps
+     * the updater inert while artifacts are unsigned. These suites test the machinery behind
+     * that gate. */
+    void import('./updater-distribution-gate').then((gate) =>
+      gate._setUpdateChannelAuthenticatedForTests(true)
+    )
     autoUpdaterMock.reset()
     nativeUpdaterMock.on.mockReset()
     browserWindowMock.getAllWindows.mockReset()

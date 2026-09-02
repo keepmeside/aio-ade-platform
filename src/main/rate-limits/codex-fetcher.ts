@@ -651,7 +651,7 @@ async function fetchViaRpc(options?: FetchCodexRateLimitsOptions): Promise<Provi
     let rateLimitsId: number | null = null
 
     const initId = sendRpc('initialize', {
-      clientInfo: { name: 'orca', version: '1.0.0' }
+      clientInfo: { name: 'aio-ade', version: '1.0.0' }
     })
 
     function sendNotification(method: string): void {

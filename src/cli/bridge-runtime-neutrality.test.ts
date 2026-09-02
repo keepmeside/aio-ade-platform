@@ -1,4 +1,4 @@
-/* Phase-03 guard (plans/260730-0117-aio-ade-rebrand-and-integration/phase-03).
+/* Guard: the CLI bridge transport must not depend on Electron APIs.
  *
  * Requirement: "bridge transport không phụ thuộc Electron API trực tiếp để tương thích go/no-go
  * Tauri v2 (phase 11)."
@@ -40,7 +40,7 @@ function trackedCliFilesImporting(pattern: string): string[] {
   }
 }
 
-describe('phase-03: the CLI agent bridge stays runtime-neutral', () => {
+describe('the CLI agent bridge stays runtime-neutral', () => {
   it('never imports the electron module', () => {
     expect(trackedCliFilesImporting("from 'electron'|require\\('electron'\\)")).toEqual([])
   })

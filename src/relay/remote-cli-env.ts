@@ -1,11 +1,11 @@
 export function pickRemoteCliEnv(env: NodeJS.ProcessEnv): Record<string, string> {
   const picked: Record<string, string> = {}
   for (const key of [
-    'ORCA_TERMINAL_HANDLE',
-    'ORCA_WORKTREE_ID',
-    'ORCA_PANE_KEY',
-    'ORCA_WORKSPACE_ID',
-    'ORCA_USER_DATA_PATH',
+    'AIO_ADE_TERMINAL_HANDLE',
+    'AIO_ADE_WORKTREE_ID',
+    'AIO_ADE_PANE_KEY',
+    'AIO_ADE_WORKSPACE_ID',
+    'AIO_ADE_USER_DATA_PATH',
     'PATH',
     'Path'
   ]) {

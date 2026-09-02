@@ -5,7 +5,7 @@
  * - Browser works and also retains state when switching tabs etc.
  */
 
-import { test, expect } from './helpers/orca-app'
+import { test, expect } from './helpers/aio-ade-app'
 import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import {
@@ -344,47 +344,47 @@ async function writeBrowserInputValue(
 }
 
 test.describe('Browser Tab', () => {
-  test.beforeEach(async ({ orcaPage }) => {
-    await waitForSessionReady(orcaPage)
-    await waitForActiveWorktree(orcaPage)
-    await ensureTerminalVisible(orcaPage)
+  test.beforeEach(async ({ aioAdePage }) => {
+    await waitForSessionReady(aioAdePage)
+    await waitForActiveWorktree(aioAdePage)
+    await ensureTerminalVisible(aioAdePage)
   })
 
   /**
    * User Prompt:
    * - Browser works and also retains state when switching tabs etc.
    */
-  test('creating a browser tab adds it and activates browser view', async ({ orcaPage }) => {
-    const worktreeId = (await getActiveWorktreeId(orcaPage))!
-    const browserTabsBefore = await getBrowserTabs(orcaPage, worktreeId)
+  test('creating a browser tab adds it and activates browser view', async ({ aioAdePage }) => {
+    const worktreeId = (await getActiveWorktreeId(aioAdePage))!
+    const browserTabsBefore = await getBrowserTabs(aioAdePage, worktreeId)
 
-    await createBrowserTab(orcaPage, worktreeId)
+    await createBrowserTab(aioAdePage, worktreeId)
 
     // Wait for the browser tab to appear in the store
     await expect
-      .poll(async () => (await getBrowserTabs(orcaPage, worktreeId)).length, { timeout: 5_000 })
+      .poll(async () => (await getBrowserTabs(aioAdePage, worktreeId)).length, { timeout: 5_000 })
       .toBe(browserTabsBefore.length + 1)
 
     // The active tab type should switch to 'browser'
-    await expect.poll(async () => getActiveTabType(orcaPage), { timeout: 3_000 }).toBe('browser')
+    await expect.poll(async () => getActiveTabType(aioAdePage), { timeout: 3_000 }).toBe('browser')
   })
 
   /**
    * User Prompt:
    * - Browser works and also retains state when switching tabs etc.
    */
-  test('browser tab is created and active in the store', async ({ orcaPage }) => {
-    const worktreeId = (await getActiveWorktreeId(orcaPage))!
+  test('browser tab is created and active in the store', async ({ aioAdePage }) => {
+    const worktreeId = (await getActiveWorktreeId(aioAdePage))!
 
-    await createBrowserTab(orcaPage, worktreeId)
-    await expect.poll(async () => getActiveTabType(orcaPage), { timeout: 5_000 }).toBe('browser')
+    await createBrowserTab(aioAdePage, worktreeId)
+    await expect.poll(async () => getActiveTabType(aioAdePage), { timeout: 5_000 }).toBe('browser')
 
     // Verify the browser tab exists in the store
-    const browserTabs = await getBrowserTabs(orcaPage, worktreeId)
+    const browserTabs = await getBrowserTabs(aioAdePage, worktreeId)
     expect(browserTabs.length).toBeGreaterThan(0)
 
     // The active browser tab should have a URL (even if it's about:blank or the default)
-    const activeBrowserTabId = await orcaPage.evaluate(() => {
+    const activeBrowserTabId = await aioAdePage.evaluate(() => {
       const store = window.__store
       return store?.getState().activeBrowserTabId ?? null
     })
@@ -395,88 +395,88 @@ test.describe('Browser Tab', () => {
    * User Prompt:
    * - Browser works and also retains state when switching tabs etc.
    */
-  test('browser tab retains state when switching to terminal and back', async ({ orcaPage }) => {
-    const worktreeId = (await getActiveWorktreeId(orcaPage))!
+  test('browser tab retains state when switching to terminal and back', async ({ aioAdePage }) => {
+    const worktreeId = (await getActiveWorktreeId(aioAdePage))!
 
-    await createBrowserTab(orcaPage, worktreeId)
-    await expect.poll(async () => getActiveTabType(orcaPage), { timeout: 5_000 }).toBe('browser')
+    await createBrowserTab(aioAdePage, worktreeId)
+    await expect.poll(async () => getActiveTabType(aioAdePage), { timeout: 5_000 }).toBe('browser')
 
     // Record the browser tab info
-    const browserTabsBefore = await getBrowserTabs(orcaPage, worktreeId)
+    const browserTabsBefore = await getBrowserTabs(aioAdePage, worktreeId)
     expect(browserTabsBefore.length).toBeGreaterThan(0)
     const browserTabId = browserTabsBefore.at(-1)?.id
     expect(browserTabId).toBeTruthy()
 
     // Switch to the terminal view
-    await switchToTerminalTab(orcaPage, worktreeId)
-    await expect.poll(async () => getActiveTabType(orcaPage), { timeout: 3_000 }).toBe('terminal')
+    await switchToTerminalTab(aioAdePage, worktreeId)
+    await expect.poll(async () => getActiveTabType(aioAdePage), { timeout: 3_000 }).toBe('terminal')
 
     // Switch back to browser tab
-    await switchToBrowserTab(orcaPage, worktreeId, browserTabId!)
-    await expect.poll(async () => getActiveTabType(orcaPage), { timeout: 3_000 }).toBe('browser')
+    await switchToBrowserTab(aioAdePage, worktreeId, browserTabId!)
+    await expect.poll(async () => getActiveTabType(aioAdePage), { timeout: 3_000 }).toBe('browser')
 
     // The browser tab should still exist with the same ID
-    const browserTabsAfter = await getBrowserTabs(orcaPage, worktreeId)
+    const browserTabsAfter = await getBrowserTabs(aioAdePage, worktreeId)
     const tabStillExists = browserTabsAfter.some((tab) => tab.id === browserTabId)
     expect(tabStillExists).toBe(true)
   })
 
   test('browser webview form state survives switching between browser tabs', async ({
-    orcaPage
+    aioAdePage
   }) => {
     const formServer = await startBrowserFormServer()
     try {
-      const worktreeId = (await getActiveWorktreeId(orcaPage))!
+      const worktreeId = (await getActiveWorktreeId(aioAdePage))!
       const firstTab = await createBrowserTab(
-        orcaPage,
+        aioAdePage,
         worktreeId,
         formServer.url('First search'),
         'First Form'
       )
       expect(firstTab?.id).toBeTruthy()
-      await writeBrowserInputValue(orcaPage, firstTab!.id, 'first typed value')
+      await writeBrowserInputValue(aioAdePage, firstTab!.id, 'first typed value')
 
       const secondTab = await createBrowserTab(
-        orcaPage,
+        aioAdePage,
         worktreeId,
         formServer.url('Second search'),
         'Second Form'
       )
       expect(secondTab?.id).toBeTruthy()
-      await writeBrowserInputValue(orcaPage, secondTab!.id, 'second typed value')
+      await writeBrowserInputValue(aioAdePage, secondTab!.id, 'second typed value')
 
       // Why: switching browser tabs used to unmount and reparent the inactive
       // Electron webview, which recreated the guest document and erased form DOM.
-      await switchToBrowserTab(orcaPage, worktreeId, firstTab!.id)
+      await switchToBrowserTab(aioAdePage, worktreeId, firstTab!.id)
       await expect
-        .poll(async () => readBrowserInputValue(orcaPage, firstTab!.id), { timeout: 5_000 })
+        .poll(async () => readBrowserInputValue(aioAdePage, firstTab!.id), { timeout: 5_000 })
         .toBe('first typed value')
 
-      await switchToBrowserTab(orcaPage, worktreeId, secondTab!.id)
+      await switchToBrowserTab(aioAdePage, worktreeId, secondTab!.id)
       await expect
-        .poll(async () => readBrowserInputValue(orcaPage, secondTab!.id), { timeout: 5_000 })
+        .poll(async () => readBrowserInputValue(aioAdePage, secondTab!.id), { timeout: 5_000 })
         .toBe('second typed value')
     } finally {
       await formServer.close()
     }
   })
 
-  test('browser page reload restores the configured 100% zoom', async ({ orcaPage }) => {
+  test('browser page reload restores the configured 100% zoom', async ({ aioAdePage }) => {
     const formServer = await startBrowserFormServer()
     try {
-      const worktreeId = (await getActiveWorktreeId(orcaPage))!
+      const worktreeId = (await getActiveWorktreeId(aioAdePage))!
       const browserTab = await createBrowserTab(
-        orcaPage,
+        aioAdePage,
         worktreeId,
         formServer.url('Zoom reload'),
         'Zoom Reload'
       )
       expect(browserTab?.id).toBeTruthy()
       await expect
-        .poll(async () => readBrowserInputValue(orcaPage, browserTab!.id), { timeout: 5_000 })
+        .poll(async () => readBrowserInputValue(aioAdePage, browserTab!.id), { timeout: 5_000 })
         .not.toBeNull()
 
-      const zoomLevels = await orcaPage.evaluate(async (browserTabId) => {
+      const zoomLevels = await aioAdePage.evaluate(async (browserTabId) => {
         const slot = document.querySelector(`[data-browser-overlay-tab-id="${browserTabId}"]`)
         const webview = slot?.querySelector('webview') as Electron.WebviewTag | null
         if (!webview) {
@@ -505,22 +505,22 @@ test.describe('Browser Tab', () => {
     }
   })
 
-  test('Cmd/Ctrl+0 resets a zoomed browser page to 100%', async ({ orcaPage }) => {
+  test('Cmd/Ctrl+0 resets a zoomed browser page to 100%', async ({ aioAdePage }) => {
     const formServer = await startBrowserFormServer()
     try {
-      const worktreeId = (await getActiveWorktreeId(orcaPage))!
+      const worktreeId = (await getActiveWorktreeId(aioAdePage))!
       const browserTab = await createBrowserTab(
-        orcaPage,
+        aioAdePage,
         worktreeId,
         formServer.url('Zoom reset'),
         'Zoom Reset'
       )
       expect(browserTab?.id).toBeTruthy()
       await expect
-        .poll(async () => readBrowserInputValue(orcaPage, browserTab!.id), { timeout: 5_000 })
+        .poll(async () => readBrowserInputValue(aioAdePage, browserTab!.id), { timeout: 5_000 })
         .not.toBeNull()
 
-      await orcaPage.evaluate(
+      await aioAdePage.evaluate(
         async ({ browserTabId, browserPageId, modifier }) => {
           const slot = document.querySelector(`[data-browser-overlay-tab-id="${browserTabId}"]`)
           const webview = slot?.querySelector('webview') as Electron.WebviewTag | null
@@ -528,7 +528,7 @@ test.describe('Browser Tab', () => {
             throw new Error(`Missing webview for browser tab ${browserTabId}`)
           }
           window.dispatchEvent(
-            new CustomEvent('orca:browser-page-zoom', {
+            new CustomEvent('aio-ade:browser-page-zoom', {
               detail: { browserPageId, direction: 'in' }
             })
           )
@@ -543,7 +543,7 @@ test.describe('Browser Tab', () => {
       )
       await expect
         .poll(() =>
-          orcaPage.evaluate((browserTabId) => {
+          aioAdePage.evaluate((browserTabId) => {
             const slot = document.querySelector(`[data-browser-overlay-tab-id="${browserTabId}"]`)
             return (slot?.querySelector('webview') as Electron.WebviewTag | null)?.getZoomLevel()
           }, browserTab!.id)
@@ -554,24 +554,34 @@ test.describe('Browser Tab', () => {
     }
   })
 
-  test('reloading one browser tab does not adopt another tab zoom', async ({ orcaPage }) => {
+  test('reloading one browser tab does not adopt another tab zoom', async ({ aioAdePage }) => {
     const [formServerA, formServerB] = await Promise.all([
       startBrowserFormServer(),
       startBrowserFormServer('localhost')
     ])
     try {
-      const worktreeId = (await getActiveWorktreeId(orcaPage))!
-      const tabA = await createBrowserTab(orcaPage, worktreeId, formServerA.url('Zoom A'), 'Zoom A')
-      const tabB = await createBrowserTab(orcaPage, worktreeId, formServerB.url('Zoom B'), 'Zoom B')
+      const worktreeId = (await getActiveWorktreeId(aioAdePage))!
+      const tabA = await createBrowserTab(
+        aioAdePage,
+        worktreeId,
+        formServerA.url('Zoom A'),
+        'Zoom A'
+      )
+      const tabB = await createBrowserTab(
+        aioAdePage,
+        worktreeId,
+        formServerB.url('Zoom B'),
+        'Zoom B'
+      )
       expect(tabA?.id).toBeTruthy()
       expect(tabB?.id).toBeTruthy()
       for (const tab of [tabA, tabB]) {
         await expect
-          .poll(async () => readBrowserInputValue(orcaPage, tab!.id), { timeout: 5_000 })
+          .poll(async () => readBrowserInputValue(aioAdePage, tab!.id), { timeout: 5_000 })
           .not.toBeNull()
       }
 
-      const levels = await orcaPage.evaluate(
+      const levels = await aioAdePage.evaluate(
         async ({ tabAId, tabBId, pageBId }) => {
           const webviewFor = (id: string): Electron.WebviewTag => {
             const slot = document.querySelector(`[data-browser-overlay-tab-id="${id}"]`)
@@ -587,7 +597,7 @@ test.describe('Browser Tab', () => {
           // Zoom only tab B through the real renderer zoom path (also writes the shared setting).
           for (let step = 0; step < 2; step += 1) {
             window.dispatchEvent(
-              new CustomEvent('orca:browser-page-zoom', {
+              new CustomEvent('aio-ade:browser-page-zoom', {
                 detail: { browserPageId: pageBId, direction: 'in' }
               })
             )
@@ -615,15 +625,15 @@ test.describe('Browser Tab', () => {
     }
   })
 
-  test('plain links stay current while explicit new-tab gestures activate Orca tabs', async ({
+  test('plain links stay current while explicit new-tab gestures activate AIO-ADE tabs', async ({
     electronApp,
-    orcaPage
+    aioAdePage
   }) => {
     const linkServer = await startBrowserLinkServer()
     try {
-      const worktreeId = (await getActiveWorktreeId(orcaPage))!
+      const worktreeId = (await getActiveWorktreeId(aioAdePage))!
       const sourceTab = await createBrowserTab(
-        orcaPage,
+        aioAdePage,
         worktreeId,
         linkServer.sourceUrl,
         'Source page'
@@ -633,52 +643,52 @@ test.describe('Browser Tab', () => {
       const baseWindowCount = await electronApp.evaluate(
         ({ BaseWindow }) => BaseWindow.getAllWindows().length
       )
-      const baseTabCount = await orcaPage.locator('[data-tab-id]').count()
-      await clickBrowserLink(orcaPage, sourceTab!.id, '#external-link')
+      const baseTabCount = await aioAdePage.locator('[data-tab-id]').count()
+      await clickBrowserLink(aioAdePage, sourceTab!.id, '#external-link')
 
-      const sourceTabLocator = orcaPage.locator(`[data-tab-id="${sourceTab!.id}"]`)
+      const sourceTabLocator = aioAdePage.locator(`[data-tab-id="${sourceTab!.id}"]`)
       await expect(sourceTabLocator).toContainText('Linked destination', { timeout: 10_000 })
-      await expect(orcaPage.locator('[data-tab-id]')).toHaveCount(baseTabCount)
+      await expect(aioAdePage.locator('[data-tab-id]')).toHaveCount(baseTabCount)
 
-      await clickBrowserLink(orcaPage, sourceTab!.id, '#return-link')
+      await clickBrowserLink(aioAdePage, sourceTab!.id, '#return-link')
       await expect(sourceTabLocator).toContainText('Source page', { timeout: 10_000 })
-      await clickBrowserLink(orcaPage, sourceTab!.id, '#frame-link', {
+      await clickBrowserLink(aioAdePage, sourceTab!.id, '#frame-link', {
         frameSelector: '#link-frame'
       })
       await expect(sourceTabLocator).toContainText('Frame destination', { timeout: 10_000 })
-      await expect(orcaPage.locator('[data-tab-id]')).toHaveCount(baseTabCount)
+      await expect(aioAdePage.locator('[data-tab-id]')).toHaveCount(baseTabCount)
 
-      await clickBrowserLink(orcaPage, sourceTab!.id, '#return-link')
+      await clickBrowserLink(aioAdePage, sourceTab!.id, '#return-link')
       await expect(sourceTabLocator).toContainText('Source page', { timeout: 10_000 })
 
-      await clickBrowserLink(orcaPage, sourceTab!.id, '#frame-modifier-link', {
+      await clickBrowserLink(aioAdePage, sourceTab!.id, '#frame-modifier-link', {
         frameSelector: '#link-frame',
         modifiers: process.platform === 'darwin' ? ['meta'] : ['control']
       })
-      await expectBrowserTabActive(orcaPage, 'Frame modifier destination')
-      await switchToBrowserTab(orcaPage, worktreeId, sourceTab!.id)
-      await clickBrowserLink(orcaPage, sourceTab!.id, '#frame-middle-link', {
+      await expectBrowserTabActive(aioAdePage, 'Frame modifier destination')
+      await switchToBrowserTab(aioAdePage, worktreeId, sourceTab!.id)
+      await clickBrowserLink(aioAdePage, sourceTab!.id, '#frame-middle-link', {
         button: 'middle',
         frameSelector: '#link-frame'
       })
-      await expectBrowserTabActive(orcaPage, 'Frame middle destination')
-      await switchToBrowserTab(orcaPage, worktreeId, sourceTab!.id)
+      await expectBrowserTabActive(aioAdePage, 'Frame middle destination')
+      await switchToBrowserTab(aioAdePage, worktreeId, sourceTab!.id)
 
-      await clickBrowserLink(orcaPage, sourceTab!.id, '#modifier-link', {
+      await clickBrowserLink(aioAdePage, sourceTab!.id, '#modifier-link', {
         modifiers: process.platform === 'darwin' ? ['meta'] : ['control']
       })
-      await expectBrowserTabActive(orcaPage, 'Modifier destination')
-      await switchToBrowserTab(orcaPage, worktreeId, sourceTab!.id)
+      await expectBrowserTabActive(aioAdePage, 'Modifier destination')
+      await switchToBrowserTab(aioAdePage, worktreeId, sourceTab!.id)
 
-      const tabCountBeforeCancelledClick = await orcaPage.locator('[data-tab-id]').count()
-      await clickBrowserLink(orcaPage, sourceTab!.id, '#cancelled-link')
+      const tabCountBeforeCancelledClick = await aioAdePage.locator('[data-tab-id]').count()
+      await clickBrowserLink(aioAdePage, sourceTab!.id, '#cancelled-link')
       await expect(
-        orcaPage.locator('[data-tab-id]').filter({ hasText: 'Click handled in page' })
+        aioAdePage.locator('[data-tab-id]').filter({ hasText: 'Click handled in page' })
       ).toBeVisible({ timeout: 10_000 })
-      await expect(orcaPage.locator('[data-tab-id]')).toHaveCount(tabCountBeforeCancelledClick)
+      await expect(aioAdePage.locator('[data-tab-id]')).toHaveCount(tabCountBeforeCancelledClick)
 
-      await clickBrowserLink(orcaPage, sourceTab!.id, '#middle-link', { button: 'middle' })
-      await expectBrowserTabActive(orcaPage, 'Middle-click destination')
+      await clickBrowserLink(aioAdePage, sourceTab!.id, '#middle-link', { button: 'middle' })
+      await expectBrowserTabActive(aioAdePage, 'Middle-click destination')
       await expect
         .poll(() => electronApp.evaluate(({ BaseWindow }) => BaseWindow.getAllWindows().length), {
           timeout: 5_000
@@ -693,33 +703,33 @@ test.describe('Browser Tab', () => {
    * User Prompt:
    * - Browser works and also retains state when switching tabs etc.
    */
-  test('browser tab retains state when switching worktrees and back', async ({ orcaPage }) => {
-    const allWorktreeIds = await getAllWorktreeIds(orcaPage)
+  test('browser tab retains state when switching worktrees and back', async ({ aioAdePage }) => {
+    const allWorktreeIds = await getAllWorktreeIds(aioAdePage)
     if (allWorktreeIds.length < 2) {
       test.skip(true, 'Need at least 2 worktrees to test worktree switching')
     }
 
-    const worktreeId = (await getActiveWorktreeId(orcaPage))!
+    const worktreeId = (await getActiveWorktreeId(aioAdePage))!
 
-    await createBrowserTab(orcaPage, worktreeId)
-    await expect.poll(async () => getActiveTabType(orcaPage), { timeout: 5_000 }).toBe('browser')
+    await createBrowserTab(aioAdePage, worktreeId)
+    await expect.poll(async () => getActiveTabType(aioAdePage), { timeout: 5_000 }).toBe('browser')
 
-    const browserTabsBefore = await getBrowserTabs(orcaPage, worktreeId)
+    const browserTabsBefore = await getBrowserTabs(aioAdePage, worktreeId)
     expect(browserTabsBefore.length).toBeGreaterThan(0)
 
     // Switch to a different worktree via the store
-    const otherId = await switchToOtherWorktree(orcaPage, worktreeId)
+    const otherId = await switchToOtherWorktree(aioAdePage, worktreeId)
     expect(otherId).not.toBeNull()
-    await expect.poll(async () => getActiveWorktreeId(orcaPage), { timeout: 5_000 }).toBe(otherId)
+    await expect.poll(async () => getActiveWorktreeId(aioAdePage), { timeout: 5_000 }).toBe(otherId)
 
     // Switch back to the original worktree
-    await switchToWorktree(orcaPage, worktreeId)
+    await switchToWorktree(aioAdePage, worktreeId)
     await expect
-      .poll(async () => getActiveWorktreeId(orcaPage), { timeout: 5_000 })
+      .poll(async () => getActiveWorktreeId(aioAdePage), { timeout: 5_000 })
       .toBe(worktreeId)
 
     // Browser tabs should still be preserved
-    const browserTabsAfter = await getBrowserTabs(orcaPage, worktreeId)
+    const browserTabsAfter = await getBrowserTabs(aioAdePage, worktreeId)
     expect(browserTabsAfter.length).toBe(browserTabsBefore.length)
   })
 })

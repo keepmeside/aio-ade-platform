@@ -27,7 +27,7 @@ type ShortcutItem = {
 }
 
 // Do not deep-link to /stargazers: GitHub 404s that page for users without repo write access.
-const ORCA_GITHUB_URL = 'https://github.com/stablyai/orca'
+const AIO_ADE_GITHUB_URL = 'https://github.com/keepmeside/aio-ade-platform'
 
 type StarState = 'loading' | 'starred' | 'not-starred' | 'web-fallback' | 'hidden'
 
@@ -39,7 +39,7 @@ function GitHubStarButton({ hasRepos }: { hasRepos: boolean }): React.JSX.Elemen
 
   useEffect(() => {
     let cancelled = false
-    void window.api.gh.checkOrcaStarred().then((result) => {
+    void window.api.gh.checkAioAdeStarred().then((result) => {
       if (cancelled) {
         return
       }
@@ -73,14 +73,14 @@ function GitHubStarButton({ hasRepos }: { hasRepos: boolean }): React.JSX.Elemen
       return
     }
     if (state === 'web-fallback') {
-      await window.api.shell.openUrl(ORCA_GITHUB_URL)
+      await window.api.shell.openUrl(AIO_ADE_GITHUB_URL)
       return
     }
     if (state !== 'not-starred') {
       return
     }
     setState('starred') // optimistic
-    const ok = await window.api.gh.starOrca('landing')
+    const ok = await window.api.gh.starAioAde('landing')
     if (!ok) {
       if (mountedRef.current) {
         setState('web-fallback')
@@ -256,7 +256,7 @@ export default function Landing(): React.JSX.Element {
     // oxlint-disable-next-line react-doctor/no-initialize-state -- Why: preflight status is read from an external IPC probe on mount and focus.
     refreshPreflight()
 
-    // Why: users often install/authenticate gh outside Orca. Re-check when the
+    // Why: users often install/authenticate gh outside AIO-ADE. Re-check when the
     // window becomes active again so the landing warning clears without relaunch.
     const handleWindowActive = (): void => {
       if (document.visibilityState === 'visible') {
@@ -280,7 +280,7 @@ export default function Landing(): React.JSX.Element {
     }
 
     let cancelled = false
-    // Why: some users complete `gh auth login` without ever leaving the Orca
+    // Why: some users complete `gh auth login` without ever leaving the AIO-ADE
     // window. Poll only while a warning is visible so the banner self-clears.
     const intervalId = window.setInterval(() => {
       void window.api.preflight.check({ force: true }).then((status) => {
@@ -324,12 +324,12 @@ export default function Landing(): React.JSX.Element {
           >
             <img
               src={logo}
-              alt={translate('auto.components.Landing.520304a067', 'Orca logo')}
+              alt={translate('auto.components.Landing.520304a067', 'AIO-ADE logo')}
               className="size-12"
             />
           </div>
           <h1 className="text-4xl font-bold text-foreground tracking-tight">
-            {translate('auto.components.Landing.6ca6ff404e', 'ORCA')}
+            {translate('auto.components.Landing.6ca6ff404e', 'AIO-ADE')}
           </h1>
 
           {preflightIssues.length > 0 && <PreflightBanner issues={preflightIssues} repos={repos} />}

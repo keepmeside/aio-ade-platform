@@ -127,3 +127,8 @@ src/renderer/src/i18n/locales/.es-catalog-cache.json
 
 # Bench result JSONs are working artifacts
 tools/benchmarks/results/terminal-pipeline-*.json
+
+# Internal operating history: decision log, coupling maps, audits. Kept on disk, not shipped.
+plans/
+# Agent scratch memory. Same class as plans/: local working notes, not product source.
+/.claude/agent-memory/

@@ -19,8 +19,8 @@ import {
 } from './plugin-host-call-adapter'
 import type { PluginHostServices } from './plugin-host-methods'
 
-const PLUGIN_KEY = 'orca-samples.demo'
-const WORKTREE_ID = 'repo-id::/Users/private/orca'
+const PLUGIN_KEY = 'aio-ade-samples.demo'
+const WORKTREE_ID = 'repo-id::/Users/private/aio-ade'
 const TERMINAL_ID = 'terminal:local:one'
 
 type HostCallAdapter = (request: unknown, viaPanel: boolean) => Promise<PluginPanelActionOutcome>
@@ -30,12 +30,12 @@ function createServices(): PluginHostServices {
     resolveActiveWorktreeContext: vi.fn().mockResolvedValue({
       worktreeId: WORKTREE_ID,
       branch: 'main',
-      displayName: 'Orca',
-      path: '/Users/private/orca'
+      displayName: 'AIO-ADE',
+      path: '/Users/private/aio-ade'
     }),
     listWorktreeTerminals: vi
       .fn()
-      .mockResolvedValue([{ id: TERMINAL_ID, title: '/home/private/orca' }]),
+      .mockResolvedValue([{ id: TERMINAL_ID, title: '/home/private/aio-ade' }]),
     sendTerminalText: vi.fn().mockResolvedValue({ accepted: true }),
     dispatchPluginNotification: vi.fn().mockResolvedValue({ delivered: true }),
     storage: {
@@ -151,7 +151,7 @@ describe('plugin host main/relay conformance', () => {
         ok: true,
         value: {
           branch: 'main',
-          displayName: 'Orca',
+          displayName: 'AIO-ADE',
           terminals: [{ id: TERMINAL_ID }]
         }
       })

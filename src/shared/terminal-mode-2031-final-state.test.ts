@@ -13,7 +13,7 @@ import {
 const ESC = '\x1b'
 
 // A fish prompt cycle: subscribe, paint the prompt, hand the tty to the child.
-const FISH_PROMPT_HANDOFF = `${ESC}[?2031h${ESC}[0m~/orca ${ESC}[32m❯${ESC}[0m ${ESC}[?2031l`
+const FISH_PROMPT_HANDOFF = `${ESC}[?2031h${ESC}[0m~/aio-ade ${ESC}[32m❯${ESC}[0m ${ESC}[?2031l`
 
 function trackerRecording(overrides: TerminalTitleTrackerCallbacks = {}): {
   subscribes: number

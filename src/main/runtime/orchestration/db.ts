@@ -91,7 +91,7 @@ function addLifecycleRejectionMarker(payload: string | null, code: string, reaso
   }
   return JSON.stringify({
     ...parsed,
-    _orcaLifecycleRejection: { code, reason }
+    _aioAdeLifecycleRejection: { code, reason }
   })
 }
 
@@ -149,7 +149,7 @@ const SCHEMA_VERSION = 18
 
 function hardenOrchestrationDatabaseFiles(dbPath: string | ':memory:'): void {
   if (dbPath === ':memory:' || process.platform === 'win32') {
-    // Why: Windows protects these files through Orca's current-user-only userData DACL; POSIX mode bits are inert there.
+    // Why: Windows protects these files through AIO-ADE's current-user-only userData DACL; POSIX mode bits are inert there.
     return
   }
   for (const path of [dbPath, `${dbPath}-wal`, `${dbPath}-shm`]) {
@@ -1258,7 +1258,7 @@ export class OrchestrationDb {
     }
 
     const originalBody = message.body ? `\n\nOriginal body:\n${message.body}` : ''
-    const body = `Orca rejected this ${message.type}: ${reason}${originalBody}`
+    const body = `AIO-ADE rejected this ${message.type}: ${reason}${originalBody}`
     const payload = addLifecycleRejectionMarker(message.payload, code, reason)
     // Why: rejected lifecycle signals stay auditable but must not reach read paths as actionable completion/liveness events.
     this.db

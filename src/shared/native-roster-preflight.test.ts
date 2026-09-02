@@ -1,4 +1,4 @@
-/* Phase-04 roster narrowing (plans/260730-0117-aio-ade-rebrand-and-integration/phase-04).
+/* Native agent roster: Claude Code + Codex only.
  *
  * Decision 2026-08-21: native support narrows to Claude Code + Codex. Every other agent returns
  * later through the generic ACP slot (phase 10), so this is not "those agents are gone forever" —
@@ -44,7 +44,7 @@ const REMOVED_IDS = [
   'devin'
 ]
 
-describe('phase-04: the native roster is exactly Claude and Codex', () => {
+describe('the native roster is exactly Claude and Codex', () => {
   it('configures only the three native entries', () => {
     expect(Object.keys(TUI_AGENT_CONFIG).sort()).toEqual([...NATIVE_ROSTER].sort())
   })
@@ -63,7 +63,7 @@ describe('phase-04: the native roster is exactly Claude and Codex', () => {
   })
 })
 
-describe('phase-04: telemetry kinds stay in lockstep with the roster', () => {
+describe('telemetry kinds stay in lockstep with the roster', () => {
   it('maps each native agent to a concrete telemetry kind', () => {
     for (const agent of NATIVE_ROSTER) {
       expect(tuiAgentToAgentKind(agent)).not.toBe('other')

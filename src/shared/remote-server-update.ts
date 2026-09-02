@@ -14,6 +14,10 @@ export type RemoteServerUpdateSupport = {
     | 'available'
     | 'manual-service-update-required'
     | 'unpackaged-build'
+    /* A packaged build whose artifacts are not signed or notarized, so it has no authenticated
+     * update channel to check. Distinct from 'unpackaged-build': this is a real user install, and
+     * telling them to update from a source checkout would be wrong. */
+    | 'unsigned-artifacts'
     | 'updater-unavailable'
 }
 

@@ -2,6 +2,7 @@ import type { Repo } from '../../../../shared/types'
 import type { SettingsSearchEntry } from './settings-search'
 import { translate } from '@/i18n/i18n'
 import { translateSearchKeyword } from './settings-search-keywords'
+import { PROJECT_CONFIG_FILE_NAME, REPO_APP_DIR_NAME } from '../../../../shared/repo-app-paths'
 
 export function getRepositoryGitHooksSearchEntries(repo: Repo): SettingsSearchEntry[] {
   return [
@@ -29,7 +30,7 @@ export function getRepositoryGitHooksSearchEntries(repo: Repo): SettingsSearchEn
         ),
         ...translateSearchKeyword(
           'auto.components.settings.repository.search.9cad92fe77',
-          'orca.yaml hooks'
+          'aio-ade.yaml hooks'
         ),
         ...translateSearchKeyword('auto.components.settings.repository.search.bf460fded8', 'yaml')
       ]
@@ -61,7 +62,7 @@ export function getRepositoryGitHooksSearchEntries(repo: Repo): SettingsSearchEn
         ),
         ...translateSearchKeyword(
           'auto.components.settings.repository.search.9cad92fe77',
-          'orca.yaml hooks'
+          'aio-ade.yaml hooks'
         ),
         ...translateSearchKeyword('auto.components.settings.repository.search.bf460fded8', 'yaml')
       ]
@@ -70,7 +71,7 @@ export function getRepositoryGitHooksSearchEntries(repo: Repo): SettingsSearchEn
       title: translate('auto.components.settings.repository.search.cc11699c3d', 'Advanced'),
       description: translate(
         'auto.components.settings.repository.search.d141897c90',
-        'Command source and orca.yaml details.'
+        'Command source and aio-ade.yaml details.'
       ),
       keywords: [
         repo.displayName,
@@ -85,7 +86,8 @@ export function getRepositoryGitHooksSearchEntries(repo: Repo): SettingsSearchEn
         ...translateSearchKeyword('auto.components.settings.repository.search.0432d2fb7c', 'local'),
         ...translateSearchKeyword(
           'auto.components.settings.repository.search.603c68b68c',
-          'orca.yaml'
+          'aio-ade.yaml',
+          { aliases: [PROJECT_CONFIG_FILE_NAME] }
         ),
         ...translateSearchKeyword(
           'auto.components.settings.repository.search.fcb8fa8144',
@@ -139,7 +141,7 @@ export function getRepositoryGitHooksSearchEntries(repo: Repo): SettingsSearchEn
       ),
       description: translate(
         'auto.components.settings.repository.search.d42d1e49c0',
-        'File-based linked-issue command configured via orca.yaml and optional local override.'
+        'File-based linked-issue command configured via aio-ade.yaml and optional local override.'
       ),
       keywords: [
         repo.displayName,
@@ -161,11 +163,14 @@ export function getRepositoryGitHooksSearchEntries(repo: Repo): SettingsSearchEn
         ),
         ...translateSearchKeyword(
           'auto.components.settings.repository.search.603c68b68c',
-          'orca.yaml'
+          'aio-ade.yaml',
+          { aliases: [PROJECT_CONFIG_FILE_NAME] }
         ),
         ...translateSearchKeyword(
           'auto.components.settings.repository.search.bc7e504b8e',
-          '.orca/issue-command'
+          '.aio-ade/issue-command',
+          // Why: the pre-rebrand path is still read, and it is what long-time users type.
+          { aliases: [`${REPO_APP_DIR_NAME}/issue-command`] }
         )
       ]
     }

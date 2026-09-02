@@ -46,7 +46,7 @@ import { copyTerminalHandleForPane } from './terminal-handle-copy'
 import { runCopyPaneId, runTerminalCopy } from './terminal-copy-rejection-guards'
 import { copyTerminalSelection } from './terminal-selection-copy'
 
-const CLOSE_ALL_CONTEXT_MENUS_EVENT = 'orca-close-all-context-menus'
+const CLOSE_ALL_CONTEXT_MENUS_EVENT = 'aio-ade-close-all-context-menus'
 
 export function recordContextMenuCreatedTerminalPaneSplit(
   createdPane: unknown,
@@ -178,7 +178,7 @@ export function useTerminalPaneContextMenu({
       return
     }
     await runCopyPaneId({
-      // Why: orchestration targets use ORCA_PANE_KEY, which survives renderer
+      // Why: orchestration targets use AIO_ADE_PANE_KEY, which survives renderer
       // remounts; the numeric PaneManager id is only a local runtime handle.
       paneKey: makePaneKey(tabId, pane.leafId),
       writeClipboardText: window.api.ui.writeTerminalClipboardText,

@@ -96,13 +96,19 @@ export function getRemoteServerManualUpdateHelp(entry: RemoteServerUpdateEntry):
   if (entry.support?.reason === 'manual-service-update-required') {
     return translate(
       'auto.components.settings.RemoteServerUpdateStatus.serviceManagerHelp',
-      'Update Orca through the service manager that starts this server.'
+      'Update AIO-ADE through the service manager that starts this server.'
     )
   }
   if (entry.support?.reason === 'unpackaged-build') {
     return translate(
       'auto.components.settings.RemoteServerUpdateStatus.unpackedHelp',
       'Development builds must be updated from their source checkout.'
+    )
+  }
+  if (entry.support?.reason === 'unsigned-artifacts') {
+    return translate(
+      'auto.components.settings.RemoteServerUpdateStatus.unsignedHelp',
+      'Automatic updates are off while builds are unsigned. Download the new release manually.'
     )
   }
   return translate(

@@ -57,9 +57,9 @@ export type ExecResponse = string | { reject: string }
 // Repair reconnect (isRelayAlreadyInstalled → true) where BOTH native deps are broken and the host
 // cannot compile node-pty, so the caller's resets must survive into the node-pty-less reinstall.
 export function makeRepairToolchainSkipExecResponses(): ExecResponse[] {
-  const bothMissing = 'ORCA-NATIVE-DEPS-MISSING:node-pty,@parcel/watcher\nMISSING'
+  const bothMissing = 'AIO_ADE-NATIVE-DEPS-MISSING:node-pty,@parcel/watcher\nMISSING'
   return [
-    '__ORCA_REMOTE_PLATFORM__ Linux x86_64',
+    '__AIO_ADE_REMOTE_PLATFORM__ Linux x86_64',
     '/home/u',
     bothMissing, // health probe before lock
     bothMissing, // re-probe under the repair lock
@@ -67,7 +67,7 @@ export function makeRepairToolchainSkipExecResponses(): ExecResponse[] {
     { reject: 'gyp ERR! stack Error: not found: make' },
     'PKG apk', // toolchain probe: no HAVE lines
     '', // reset both deps + reinstall without node-pty
-    'ORCA-NATIVE-DEPS-MISSING:node-pty\nMISSING\n', // watcher probe: only node-pty still absent
+    'AIO_ADE-NATIVE-DEPS-MISSING:node-pty\nMISSING\n', // watcher probe: only node-pty still absent
     '', // cat probe stderr
     '', // rm -f probe stderr
     'DEAD',
@@ -107,7 +107,7 @@ export function makeExecResponses(opts: {
   // reinstall succeeds; only then are the chmod/probe/launch slots reached.
   if (opts.npmInstall !== 'ok' && opts.nodePtySkipRetry !== 'ok') {
     return [
-      '__ORCA_REMOTE_PLATFORM__ Linux x86_64',
+      '__AIO_ADE_REMOTE_PLATFORM__ Linux x86_64',
       '/home/u',
       '', // mkdir remoteDir (uploadRelay)
       '', // chmod +x node
@@ -120,7 +120,7 @@ export function makeExecResponses(opts: {
     // Skip path, exactly as production runs it: no chmod-prebuilds (node-pty is gone) and no rebuild
     // (it provably can't compile here). The probe still runs to catch a dead @parcel/watcher.
     return [
-      '__ORCA_REMOTE_PLATFORM__ Linux x86_64',
+      '__AIO_ADE_REMOTE_PLATFORM__ Linux x86_64',
       '/home/u',
       '', // mkdir remoteDir (uploadRelay)
       '', // chmod +x node
@@ -129,8 +129,8 @@ export function makeExecResponses(opts: {
       '', // rm -rf node-pty + reinstall without it
       // node-pty is always reported missing here; the probe never resolves OK, so cat + rm both run.
       opts.nodePtySkipWatcher === 'missing'
-        ? 'ORCA-NATIVE-DEPS-MISSING:node-pty,@parcel/watcher\nMISSING\n'
-        : 'ORCA-NATIVE-DEPS-MISSING:node-pty\nMISSING\n',
+        ? 'AIO_ADE-NATIVE-DEPS-MISSING:node-pty,@parcel/watcher\nMISSING\n'
+        : 'AIO_ADE-NATIVE-DEPS-MISSING:node-pty\nMISSING\n',
       '', // cat probe stderr
       '', // rm -f probe stderr
       'DEAD',
@@ -142,14 +142,14 @@ export function makeExecResponses(opts: {
     opts.probeStdoutOverride !== undefined
       ? opts.probeStdoutOverride
       : probe === 'ok'
-        ? 'ORCA-NPTY-PROBE-OK\n'
+        ? 'AIO_ADE-NPTY-PROBE-OK\n'
         : probe === 'missing'
           ? 'MISSING\n' // shell-level `|| echo MISSING` after require throw
           : probe === 'dir-gone'
             ? { reject: 'cd: no such file or directory' }
             : probe
   const slots: ExecResponse[] = [
-    '__ORCA_REMOTE_PLATFORM__ Linux x86_64',
+    '__AIO_ADE_REMOTE_PLATFORM__ Linux x86_64',
     '/home/u',
     '', // mkdir remoteDir (uploadRelay)
     '', // chmod +x node
@@ -160,7 +160,7 @@ export function makeExecResponses(opts: {
   // Cleanup execs only run when the probe resolved (not when it rejected).
   const probeResolved = typeof probeSlot === 'string'
   if (probeResolved) {
-    const probeOk = probeSlot.includes('ORCA-NPTY-PROBE-OK')
+    const probeOk = probeSlot.includes('AIO_ADE-NPTY-PROBE-OK')
     if (!probeOk) {
       slots.push('') // cat stderr (graceful failure path captures detail)
     }
@@ -168,9 +168,9 @@ export function makeExecResponses(opts: {
     if (!probeOk) {
       slots.push('') // npm rebuild with lifecycle scripts explicitly enabled
       slots.push('') // chmod prebuilds after rebuild
-      const repairProbe = opts.repairProbe === 'ok' ? 'ORCA-NPTY-PROBE-OK\n' : 'MISSING\n'
+      const repairProbe = opts.repairProbe === 'ok' ? 'AIO_ADE-NPTY-PROBE-OK\n' : 'MISSING\n'
       slots.push(repairProbe)
-      if (!repairProbe.includes('ORCA-NPTY-PROBE-OK')) {
+      if (!repairProbe.includes('AIO_ADE-NPTY-PROBE-OK')) {
         slots.push('') // cat stderr after unsuccessful rebuild
       }
       slots.push('') // rm -f stderr after rebuild probe

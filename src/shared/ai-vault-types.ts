@@ -250,7 +250,7 @@ export function realHomeCodexResumeEnvDeletion(
   if (session.agent !== 'codex' || session.codexHome !== null) {
     return {}
   }
-  return { envToDelete: ['CODEX_HOME', 'ORCA_CODEX_HOME'] }
+  return { envToDelete: ['CODEX_HOME', 'AIO_ADE_CODEX_HOME'] }
 }
 
 export function aiVaultAgentLabel(agent: AiVaultAgent): string {

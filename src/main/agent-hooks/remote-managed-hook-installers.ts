@@ -5,7 +5,7 @@ import { codexHookService } from '../codex/hook-service'
 
 export type RemoteManagedHookInstallOptions = {
   /** Explicit CODEX_HOME dir for redirected runtimes (WSL managed runtime
-   *  home). Codex-only: it is the one agent whose home Orca redirects. Also
+   *  home). Codex-only: it is the one agent whose home AIO-ADE redirects. Also
    *  defers the config.toml trust write until that file exists, so the
    *  launch path's only-if-absent seed is never pre-empted. */
   codexHomeDir?: string

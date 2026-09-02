@@ -79,7 +79,7 @@ import { createPtySubprocess, checkPtySpawnHealth } from './pty-subprocess'
 import { PREVIOUS_DAEMON_PROTOCOL_VERSIONS, PROTOCOL_VERSION } from './types'
 import { TERMINAL_GIT_CREDENTIAL_GUARD_POLICY_ENV } from '../../shared/terminal-git-credential-guard'
 
-const ORCA_SHELL_WRAPPER_ENV = ['ORCA_ATTRIBUTION_SHIM_DIR', 'ORCA_CODEX_HOME'] as const
+const AIO_ADE_SHELL_WRAPPER_ENV = ['AIO_ADE_ATTRIBUTION_SHIM_DIR', 'AIO_ADE_CODEX_HOME'] as const
 const POWERSHELL_OSC133_COMMAND_ARGS = ['-NoLogo', '-NoExit', '-EncodedCommand', expect.any(String)]
 const ZSH_SHELL_READY_DIR = /shell-ready[\\/]zsh/
 const POWERLEVEL10K_WIZARD_DISABLE_ENV = 'POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD'
@@ -109,7 +109,7 @@ function mockPtyProcess(pid = 12345) {
 }
 
 describe('createPtySubprocess', () => {
-  const savedWrapperEnv: Partial<Record<(typeof ORCA_SHELL_WRAPPER_ENV)[number], string>> = {}
+  const savedWrapperEnv: Partial<Record<(typeof AIO_ADE_SHELL_WRAPPER_ENV)[number], string>> = {}
   let previousUserDataPath: string | undefined
   let previousPowerlevelWizardDisable: string | undefined
   let userDataPath: string
@@ -125,12 +125,12 @@ describe('createPtySubprocess', () => {
     resolveUnixShellPathMock.mockReset()
     resolveUnixShellPathMock.mockImplementation((shellPath: string) => shellPath)
     isPwshAvailableMock.mockReturnValue(false)
-    previousUserDataPath = process.env.ORCA_USER_DATA_PATH
+    previousUserDataPath = process.env.AIO_ADE_USER_DATA_PATH
     previousPowerlevelWizardDisable = process.env[POWERLEVEL10K_WIZARD_DISABLE_ENV]
     userDataPath = mkdtempSync(join(tmpdir(), 'daemon-pty-subprocess-test-'))
-    process.env.ORCA_USER_DATA_PATH = userDataPath
+    process.env.AIO_ADE_USER_DATA_PATH = userDataPath
     delete process.env[POWERLEVEL10K_WIZARD_DISABLE_ENV]
-    for (const key of ORCA_SHELL_WRAPPER_ENV) {
+    for (const key of AIO_ADE_SHELL_WRAPPER_ENV) {
       savedWrapperEnv[key] = process.env[key]
       delete process.env[key]
     }
@@ -138,9 +138,9 @@ describe('createPtySubprocess', () => {
 
   afterEach(() => {
     if (previousUserDataPath === undefined) {
-      delete process.env.ORCA_USER_DATA_PATH
+      delete process.env.AIO_ADE_USER_DATA_PATH
     } else {
-      process.env.ORCA_USER_DATA_PATH = previousUserDataPath
+      process.env.AIO_ADE_USER_DATA_PATH = previousUserDataPath
     }
     if (previousPowerlevelWizardDisable === undefined) {
       delete process.env[POWERLEVEL10K_WIZARD_DISABLE_ENV]
@@ -148,7 +148,7 @@ describe('createPtySubprocess', () => {
       process.env[POWERLEVEL10K_WIZARD_DISABLE_ENV] = previousPowerlevelWizardDisable
     }
     rmSync(userDataPath, { recursive: true, force: true })
-    for (const key of ORCA_SHELL_WRAPPER_ENV) {
+    for (const key of AIO_ADE_SHELL_WRAPPER_ENV) {
       if (savedWrapperEnv[key] === undefined) {
         delete process.env[key]
       } else {
@@ -376,14 +376,14 @@ describe('createPtySubprocess', () => {
     resolveUnixShellPathMock.mockReturnValue('/bin/sh')
     const platform = Object.getOwnPropertyDescriptor(process, 'platform')
     const previousShell = process.env.SHELL
-    const previousMarker = process.env.ORCA_SHELL_READY_MARKER
+    const previousMarker = process.env.AIO_ADE_SHELL_READY_MARKER
     const previousZdotdir = process.env.ZDOTDIR
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     Object.defineProperty(process, 'platform', { configurable: true, value: 'linux' })
     delete process.env.SHELL
-    // Why: the test runner itself can execute inside an Orca-wrapped shell
+    // Why: the test runner itself can execute inside an AIO-ADE-wrapped shell
     // whose exported wrapper vars would leak through the process.env spread.
-    delete process.env.ORCA_SHELL_READY_MARKER
+    delete process.env.AIO_ADE_SHELL_READY_MARKER
     delete process.env.ZDOTDIR
 
     try {
@@ -400,9 +400,9 @@ describe('createPtySubprocess', () => {
       expect(shellPath).toBe('/bin/sh')
       expect(shellArgs).toEqual(['-l'])
       // A launch config derived from the missing preferred zsh would inject
-      // ZDOTDIR and ORCA_SHELL_READY_MARKER; /bin/sh must spawn without them.
+      // ZDOTDIR and AIO_ADE_SHELL_READY_MARKER; /bin/sh must spawn without them.
       expect(spawnOptions.env.ZDOTDIR).toBeUndefined()
-      expect(spawnOptions.env.ORCA_SHELL_READY_MARKER).toBeUndefined()
+      expect(spawnOptions.env.AIO_ADE_SHELL_READY_MARKER).toBeUndefined()
       expect(spawnOptions.env.SHELL).toBe('/bin/sh')
     } finally {
       warn.mockRestore()
@@ -415,9 +415,9 @@ describe('createPtySubprocess', () => {
         process.env.SHELL = previousShell
       }
       if (previousMarker === undefined) {
-        delete process.env.ORCA_SHELL_READY_MARKER
+        delete process.env.AIO_ADE_SHELL_READY_MARKER
       } else {
-        process.env.ORCA_SHELL_READY_MARKER = previousMarker
+        process.env.AIO_ADE_SHELL_READY_MARKER = previousMarker
       }
       if (previousZdotdir === undefined) {
         delete process.env.ZDOTDIR
@@ -501,7 +501,7 @@ describe('createPtySubprocess', () => {
     spawnMock.mockReturnValue(proc)
     const platform = Object.getOwnPropertyDescriptor(process, 'platform')
     const originalCwd = process.cwd()
-    const deletedDaemonCwd = mkdtempSync(join(tmpdir(), 'orca-deleted-daemon-cwd-'))
+    const deletedDaemonCwd = mkdtempSync(join(tmpdir(), 'aio-ade-deleted-daemon-cwd-'))
     Object.defineProperty(process, 'platform', { value: 'darwin' })
 
     try {
@@ -538,7 +538,7 @@ describe('createPtySubprocess', () => {
     spawnMock.mockReturnValue(proc)
     const platform = Object.getOwnPropertyDescriptor(process, 'platform')
     const originalCwd = process.cwd()
-    const deletedDaemonCwd = mkdtempSync(join(tmpdir(), 'orca-deleted-daemon-cwd-'))
+    const deletedDaemonCwd = mkdtempSync(join(tmpdir(), 'aio-ade-deleted-daemon-cwd-'))
     Object.defineProperty(process, 'platform', { value: 'linux' })
 
     try {
@@ -971,7 +971,7 @@ describe('createPtySubprocess', () => {
         sessionId: 'test',
         cols: 80,
         rows: 24,
-        cwd: 'C:\\repo\\orca',
+        cwd: 'C:\\repo\\aio-ade',
         command: 'codex'
       })
 
@@ -1015,10 +1015,10 @@ describe('createPtySubprocess', () => {
 
     try {
       const handle = createPtySubprocess({
-        sessionId: 'repo::C:\\repo\\orca@@deadbeef',
+        sessionId: 'repo::C:\\repo\\aio-ade@@deadbeef',
         cols: 80,
         rows: 24,
-        cwd: 'C:\\repo\\orca',
+        cwd: 'C:\\repo\\aio-ade',
         command: 'codex'
       })
 
@@ -1027,7 +1027,7 @@ describe('createPtySubprocess', () => {
         proc.pid,
         'powershell.exe',
         expect.objectContaining({
-          contextPaths: expect.arrayContaining(['C:\\repo\\orca'])
+          contextPaths: expect.arrayContaining(['C:\\repo\\aio-ade'])
         })
       )
 
@@ -1120,17 +1120,17 @@ describe('createPtySubprocess', () => {
     }
   })
 
-  it('does not inherit parent Orca pane identity when caller omits pane env', () => {
+  it('does not inherit parent AIO-ADE pane identity when caller omits pane env', () => {
     const proc = mockPtyProcess()
     spawnMock.mockReturnValue(proc)
     const saved = {
-      ORCA_PANE_KEY: process.env.ORCA_PANE_KEY,
-      ORCA_TAB_ID: process.env.ORCA_TAB_ID,
-      ORCA_WORKTREE_ID: process.env.ORCA_WORKTREE_ID
+      AIO_ADE_PANE_KEY: process.env.AIO_ADE_PANE_KEY,
+      AIO_ADE_TAB_ID: process.env.AIO_ADE_TAB_ID,
+      AIO_ADE_WORKTREE_ID: process.env.AIO_ADE_WORKTREE_ID
     }
-    process.env.ORCA_PANE_KEY = 'parent-tab:parent-leaf'
-    process.env.ORCA_TAB_ID = 'parent-tab'
-    process.env.ORCA_WORKTREE_ID = 'parent-worktree'
+    process.env.AIO_ADE_PANE_KEY = 'parent-tab:parent-leaf'
+    process.env.AIO_ADE_TAB_ID = 'parent-tab'
+    process.env.AIO_ADE_WORKTREE_ID = 'parent-worktree'
 
     try {
       createPtySubprocess({ sessionId: 'test', cols: 80, rows: 24 })
@@ -1145,22 +1145,22 @@ describe('createPtySubprocess', () => {
     }
 
     const env = spawnMock.mock.calls.at(-1)?.[2].env
-    expect(env.ORCA_PANE_KEY).toBeUndefined()
-    expect(env.ORCA_TAB_ID).toBeUndefined()
-    expect(env.ORCA_WORKTREE_ID).toBeUndefined()
+    expect(env.AIO_ADE_PANE_KEY).toBeUndefined()
+    expect(env.AIO_ADE_TAB_ID).toBeUndefined()
+    expect(env.AIO_ADE_WORKTREE_ID).toBeUndefined()
   })
 
-  it('preserves explicit child Orca pane identity over parent env', () => {
+  it('preserves explicit child AIO-ADE pane identity over parent env', () => {
     const proc = mockPtyProcess()
     spawnMock.mockReturnValue(proc)
     const saved = {
-      ORCA_PANE_KEY: process.env.ORCA_PANE_KEY,
-      ORCA_TAB_ID: process.env.ORCA_TAB_ID,
-      ORCA_WORKTREE_ID: process.env.ORCA_WORKTREE_ID
+      AIO_ADE_PANE_KEY: process.env.AIO_ADE_PANE_KEY,
+      AIO_ADE_TAB_ID: process.env.AIO_ADE_TAB_ID,
+      AIO_ADE_WORKTREE_ID: process.env.AIO_ADE_WORKTREE_ID
     }
-    process.env.ORCA_PANE_KEY = 'parent-tab:parent-leaf'
-    process.env.ORCA_TAB_ID = 'parent-tab'
-    process.env.ORCA_WORKTREE_ID = 'parent-worktree'
+    process.env.AIO_ADE_PANE_KEY = 'parent-tab:parent-leaf'
+    process.env.AIO_ADE_TAB_ID = 'parent-tab'
+    process.env.AIO_ADE_WORKTREE_ID = 'parent-worktree'
 
     try {
       createPtySubprocess({
@@ -1168,9 +1168,9 @@ describe('createPtySubprocess', () => {
         cols: 80,
         rows: 24,
         env: {
-          ORCA_PANE_KEY: 'child-tab:child-leaf',
-          ORCA_TAB_ID: 'child-tab',
-          ORCA_WORKTREE_ID: 'child-worktree'
+          AIO_ADE_PANE_KEY: 'child-tab:child-leaf',
+          AIO_ADE_TAB_ID: 'child-tab',
+          AIO_ADE_WORKTREE_ID: 'child-worktree'
         }
       })
     } finally {
@@ -1184,9 +1184,9 @@ describe('createPtySubprocess', () => {
     }
 
     const env = spawnMock.mock.calls.at(-1)?.[2].env
-    expect(env.ORCA_PANE_KEY).toBe('child-tab:child-leaf')
-    expect(env.ORCA_TAB_ID).toBe('child-tab')
-    expect(env.ORCA_WORKTREE_ID).toBe('child-worktree')
+    expect(env.AIO_ADE_PANE_KEY).toBe('child-tab:child-leaf')
+    expect(env.AIO_ADE_TAB_ID).toBe('child-tab')
+    expect(env.AIO_ADE_WORKTREE_ID).toBe('child-worktree')
   })
 
   it('does not inherit ELECTRON_RUN_AS_NODE from the daemon process env', () => {
@@ -1212,8 +1212,8 @@ describe('createPtySubprocess', () => {
   })
 
   it('does not inherit NODE_ENV from the daemon process env', () => {
-    // Why: a dev-mode Orca forks the daemon with NODE_ENV=development; leaking
-    // Orca's build mode into user shells breaks `next build` and Vitest.
+    // Why: a dev-mode AIO-ADE forks the daemon with NODE_ENV=development; leaking
+    // AIO-ADE's build mode into user shells breaks `next build` and Vitest.
     const proc = mockPtyProcess()
     spawnMock.mockReturnValue(proc)
     const previous = process.env.NODE_ENV
@@ -1274,15 +1274,19 @@ describe('createPtySubprocess', () => {
       LD_LIBRARY_PATH: process.env.LD_LIBRARY_PATH
     }
     Object.defineProperty(process, 'platform', { value: 'linux' })
-    process.env.APPIMAGE = '/data/apps/orca.appimage'
-    process.env.APPDIR = '/tmp/.mount_orca123'
-    process.env.ARGV0 = '/data/apps/orca.appimage'
+    process.env.APPIMAGE = '/data/apps/aio-ade.appimage'
+    process.env.APPDIR = '/tmp/.mount_aio-ade123'
+    process.env.ARGV0 = '/data/apps/aio-ade.appimage'
     process.env.OWD = '/home/user/project'
-    process.env.APPIMAGE_LIBRARY_PATH = '/tmp/.mount_orca123/usr/lib'
-    process.env.PATH = ['/tmp/.mount_orca123', '/tmp/.mount_orca123/usr/sbin', '/usr/bin'].join(
+    process.env.APPIMAGE_LIBRARY_PATH = '/tmp/.mount_aio-ade123/usr/lib'
+    process.env.PATH = [
+      '/tmp/.mount_aio-ade123',
+      '/tmp/.mount_aio-ade123/usr/sbin',
+      '/usr/bin'
+    ].join(delimiter)
+    process.env.LD_LIBRARY_PATH = ['/tmp/.mount_aio-ade123/usr/lib', '/opt/audio/lib'].join(
       delimiter
     )
-    process.env.LD_LIBRARY_PATH = ['/tmp/.mount_orca123/usr/lib', '/opt/audio/lib'].join(delimiter)
 
     try {
       createPtySubprocess({ sessionId: 'test', cols: 80, rows: 24 })
@@ -1312,8 +1316,8 @@ describe('createPtySubprocess', () => {
   it('does not inherit parent agent hook endpoint for development hook env', () => {
     const proc = mockPtyProcess()
     spawnMock.mockReturnValue(proc)
-    const previousEndpoint = process.env.ORCA_AGENT_HOOK_ENDPOINT
-    process.env.ORCA_AGENT_HOOK_ENDPOINT = '/tmp/stale-endpoint.env'
+    const previousEndpoint = process.env.AIO_ADE_AGENT_HOOK_ENDPOINT
+    process.env.AIO_ADE_AGENT_HOOK_ENDPOINT = '/tmp/stale-endpoint.env'
 
     try {
       createPtySubprocess({
@@ -1321,32 +1325,32 @@ describe('createPtySubprocess', () => {
         cols: 80,
         rows: 24,
         env: {
-          ORCA_AGENT_HOOK_ENV: 'development',
-          ORCA_AGENT_HOOK_PORT: '1234',
-          ORCA_AGENT_HOOK_TOKEN: 'token',
-          ORCA_AGENT_HOOK_VERSION: '1'
+          AIO_ADE_AGENT_HOOK_ENV: 'development',
+          AIO_ADE_AGENT_HOOK_PORT: '1234',
+          AIO_ADE_AGENT_HOOK_TOKEN: 'token',
+          AIO_ADE_AGENT_HOOK_VERSION: '1'
         }
       })
     } finally {
       if (previousEndpoint === undefined) {
-        delete process.env.ORCA_AGENT_HOOK_ENDPOINT
+        delete process.env.AIO_ADE_AGENT_HOOK_ENDPOINT
       } else {
-        process.env.ORCA_AGENT_HOOK_ENDPOINT = previousEndpoint
+        process.env.AIO_ADE_AGENT_HOOK_ENDPOINT = previousEndpoint
       }
     }
 
     const env = spawnMock.mock.calls.at(-1)?.[2].env
-    expect(env.ORCA_AGENT_HOOK_ENDPOINT).toBeUndefined()
-    expect(env.ORCA_AGENT_HOOK_ENV).toBe('development')
-    expect(env.ORCA_AGENT_HOOK_PORT).toBe('1234')
-    expect(env.ORCA_AGENT_HOOK_TOKEN).toBe('token')
+    expect(env.AIO_ADE_AGENT_HOOK_ENDPOINT).toBeUndefined()
+    expect(env.AIO_ADE_AGENT_HOOK_ENV).toBe('development')
+    expect(env.AIO_ADE_AGENT_HOOK_PORT).toBe('1234')
+    expect(env.AIO_ADE_AGENT_HOOK_TOKEN).toBe('token')
   })
 
   it('preserves explicit development agent hook endpoint files', () => {
     const proc = mockPtyProcess()
     spawnMock.mockReturnValue(proc)
-    const previousEndpoint = process.env.ORCA_AGENT_HOOK_ENDPOINT
-    process.env.ORCA_AGENT_HOOK_ENDPOINT = '/tmp/stale-endpoint.env'
+    const previousEndpoint = process.env.AIO_ADE_AGENT_HOOK_ENDPOINT
+    process.env.AIO_ADE_AGENT_HOOK_ENDPOINT = '/tmp/stale-endpoint.env'
 
     try {
       createPtySubprocess({
@@ -1354,26 +1358,26 @@ describe('createPtySubprocess', () => {
         cols: 80,
         rows: 24,
         env: {
-          ORCA_AGENT_HOOK_ENV: 'development',
-          ORCA_AGENT_HOOK_PORT: '1234',
-          ORCA_AGENT_HOOK_TOKEN: 'token',
-          ORCA_AGENT_HOOK_VERSION: '1',
-          ORCA_AGENT_HOOK_ENDPOINT: '/tmp/fresh-endpoint.env'
+          AIO_ADE_AGENT_HOOK_ENV: 'development',
+          AIO_ADE_AGENT_HOOK_PORT: '1234',
+          AIO_ADE_AGENT_HOOK_TOKEN: 'token',
+          AIO_ADE_AGENT_HOOK_VERSION: '1',
+          AIO_ADE_AGENT_HOOK_ENDPOINT: '/tmp/fresh-endpoint.env'
         }
       })
     } finally {
       if (previousEndpoint === undefined) {
-        delete process.env.ORCA_AGENT_HOOK_ENDPOINT
+        delete process.env.AIO_ADE_AGENT_HOOK_ENDPOINT
       } else {
-        process.env.ORCA_AGENT_HOOK_ENDPOINT = previousEndpoint
+        process.env.AIO_ADE_AGENT_HOOK_ENDPOINT = previousEndpoint
       }
     }
 
     const env = spawnMock.mock.calls.at(-1)?.[2].env
-    expect(env.ORCA_AGENT_HOOK_ENDPOINT).toBe('/tmp/fresh-endpoint.env')
-    expect(env.ORCA_AGENT_HOOK_ENV).toBe('development')
-    expect(env.ORCA_AGENT_HOOK_PORT).toBe('1234')
-    expect(env.ORCA_AGENT_HOOK_TOKEN).toBe('token')
+    expect(env.AIO_ADE_AGENT_HOOK_ENDPOINT).toBe('/tmp/fresh-endpoint.env')
+    expect(env.AIO_ADE_AGENT_HOOK_ENV).toBe('development')
+    expect(env.AIO_ADE_AGENT_HOOK_PORT).toBe('1234')
+    expect(env.AIO_ADE_AGENT_HOOK_TOKEN).toBe('token')
   })
 
   it('forwards write calls', () => {
@@ -1667,9 +1671,9 @@ describe('createPtySubprocess', () => {
           sessionId: 'test',
           cols: 80,
           rows: 24,
-          cwd: '/definitely-missing-orca-cwd'
+          cwd: '/definitely-missing-aio-ade-cwd'
         })
-      ).toThrow(/definitely-missing-orca-cwd/)
+      ).toThrow(/definitely-missing-aio-ade-cwd/)
     } finally {
       if (platform) {
         Object.defineProperty(process, 'platform', platform)
@@ -1708,7 +1712,7 @@ describe('createPtySubprocess', () => {
         rows: 24,
         env: {
           SHELL: '/bin/zsh',
-          ORCA_ATTRIBUTION_SHIM_DIR: '/tmp/orca-terminal-attribution/posix'
+          AIO_ADE_ATTRIBUTION_SHIM_DIR: '/tmp/aio-ade-terminal-attribution/posix'
         }
       })
     } finally {
@@ -1720,7 +1724,7 @@ describe('createPtySubprocess', () => {
     const lastCall = spawnMock.mock.calls.at(-1)!
     expect(lastCall[1]).toEqual(['-l'])
     expect(lastCall[2].env.ZDOTDIR).toMatch(ZSH_SHELL_READY_DIR)
-    expect(lastCall[2].env.ORCA_SHELL_READY_MARKER).toBe('0')
+    expect(lastCall[2].env.AIO_ADE_SHELL_READY_MARKER).toBe('0')
   })
 
   it('uses shell wrapper when Codex home must survive shell startup', () => {
@@ -1736,8 +1740,8 @@ describe('createPtySubprocess', () => {
         rows: 24,
         env: {
           SHELL: '/bin/zsh',
-          CODEX_HOME: '/tmp/orca-codex-home',
-          ORCA_CODEX_HOME: '/tmp/orca-codex-home'
+          CODEX_HOME: '/tmp/aio-ade-codex-home',
+          AIO_ADE_CODEX_HOME: '/tmp/aio-ade-codex-home'
         }
       })
     } finally {
@@ -1749,7 +1753,7 @@ describe('createPtySubprocess', () => {
     const lastCall = spawnMock.mock.calls.at(-1)!
     expect(lastCall[1]).toEqual(['-l'])
     expect(lastCall[2].env.ZDOTDIR).toMatch(ZSH_SHELL_READY_DIR)
-    expect(lastCall[2].env.ORCA_SHELL_READY_MARKER).toBe('0')
+    expect(lastCall[2].env.AIO_ADE_SHELL_READY_MARKER).toBe('0')
   })
 
   it('uses shell wrapper when Agent Teams shim path must survive shell startup', () => {
@@ -1765,9 +1769,9 @@ describe('createPtySubprocess', () => {
         rows: 24,
         env: {
           SHELL: '/bin/zsh',
-          PATH: '/tmp/orca-agent-teams-bin:/usr/bin',
-          ORCA_AGENT_TEAMS_TEAM_ID: 'team-test',
-          ORCA_AGENT_TEAMS_SHIM_DIR: '/tmp/orca-agent-teams-bin'
+          PATH: '/tmp/aio-ade-agent-teams-bin:/usr/bin',
+          AIO_ADE_AGENT_TEAMS_TEAM_ID: 'team-test',
+          AIO_ADE_AGENT_TEAMS_SHIM_DIR: '/tmp/aio-ade-agent-teams-bin'
         }
       })
     } finally {
@@ -1779,7 +1783,7 @@ describe('createPtySubprocess', () => {
     const lastCall = spawnMock.mock.calls.at(-1)!
     expect(lastCall[1]).toEqual(['-l'])
     expect(lastCall[2].env.ZDOTDIR).toMatch(ZSH_SHELL_READY_DIR)
-    expect(lastCall[2].env.ORCA_SHELL_READY_MARKER).toBe('0')
+    expect(lastCall[2].env.AIO_ADE_SHELL_READY_MARKER).toBe('0')
   })
 
   it('keeps plain Codex startup commands on the no-marker wrapper', () => {
@@ -1806,7 +1810,7 @@ describe('createPtySubprocess', () => {
     const lastCall = spawnMock.mock.calls.at(-1)!
     expect(lastCall[1]).toEqual(['-l'])
     expect(lastCall[2].env.ZDOTDIR).toMatch(ZSH_SHELL_READY_DIR)
-    expect(lastCall[2].env.ORCA_SHELL_READY_MARKER).toBe('0')
+    expect(lastCall[2].env.AIO_ADE_SHELL_READY_MARKER).toBe('0')
   })
 
   it('uses shell-ready wrapper for delivery-hinted Codex startup commands', () => {
@@ -1834,7 +1838,7 @@ describe('createPtySubprocess', () => {
     const lastCall = spawnMock.mock.calls.at(-1)!
     expect(lastCall[1]).toEqual(['-l'])
     expect(lastCall[2].env.ZDOTDIR).toMatch(ZSH_SHELL_READY_DIR)
-    expect(lastCall[2].env.ORCA_SHELL_READY_MARKER).toBe('1')
+    expect(lastCall[2].env.AIO_ADE_SHELL_READY_MARKER).toBe('1')
   })
 
   it('uses shell-ready wrapper for Codex native prefill flags', () => {
@@ -1861,7 +1865,7 @@ describe('createPtySubprocess', () => {
     const lastCall = spawnMock.mock.calls.at(-1)!
     expect(lastCall[1]).toEqual(['-l'])
     expect(lastCall[2].env.ZDOTDIR).toMatch(ZSH_SHELL_READY_DIR)
-    expect(lastCall[2].env.ORCA_SHELL_READY_MARKER).toBe('1')
+    expect(lastCall[2].env.AIO_ADE_SHELL_READY_MARKER).toBe('1')
   })
 
   it('deletes requested env keys after merging daemon process env', () => {
@@ -1894,9 +1898,9 @@ describe('createPtySubprocess', () => {
     const proc = mockPtyProcess()
     spawnMock.mockReturnValue(proc)
     const previousCodexHome = process.env.CODEX_HOME
-    const previousOrcaCodexHome = process.env.ORCA_CODEX_HOME
+    const previousAioAdeCodexHome = process.env.AIO_ADE_CODEX_HOME
     process.env.CODEX_HOME = '/daemon/managed/codex-home'
-    process.env.ORCA_CODEX_HOME = '/daemon/managed/codex-home'
+    process.env.AIO_ADE_CODEX_HOME = '/daemon/managed/codex-home'
 
     try {
       createPtySubprocess({
@@ -1904,7 +1908,7 @@ describe('createPtySubprocess', () => {
         cols: 80,
         rows: 24,
         env: { SHELL: '/bin/bash' },
-        envToDelete: ['ORCA_CODEX_HOME']
+        envToDelete: ['AIO_ADE_CODEX_HOME']
       })
     } finally {
       if (previousCodexHome === undefined) {
@@ -1912,28 +1916,28 @@ describe('createPtySubprocess', () => {
       } else {
         process.env.CODEX_HOME = previousCodexHome
       }
-      if (previousOrcaCodexHome === undefined) {
-        delete process.env.ORCA_CODEX_HOME
+      if (previousAioAdeCodexHome === undefined) {
+        delete process.env.AIO_ADE_CODEX_HOME
       } else {
-        process.env.ORCA_CODEX_HOME = previousOrcaCodexHome
+        process.env.AIO_ADE_CODEX_HOME = previousAioAdeCodexHome
       }
     }
 
     const env = spawnMock.mock.calls.at(-1)![2].env
     expect(env.CODEX_HOME).toBeUndefined()
-    expect(env.ORCA_CODEX_HOME).toBeUndefined()
+    expect(env.AIO_ADE_CODEX_HOME).toBeUndefined()
   })
 
-  it('strips an inherited per-account self-contained CODEX_HOME overlay in a nested Orca (#5370)', () => {
+  it('strips an inherited per-account self-contained CODEX_HOME overlay in a nested AIO-ADE (#5370)', () => {
     const proc = mockPtyProcess()
     spawnMock.mockReturnValue(proc)
     const previousCodexHome = process.env.CODEX_HOME
-    const previousOrcaCodexHome = process.env.ORCA_CODEX_HOME
-    // A per-account home is injected as CODEX_HOME === ORCA_CODEX_HOME, so the
-    // nested-Orca strip must clear it exactly as it does the shared mirror.
+    const previousAioAdeCodexHome = process.env.AIO_ADE_CODEX_HOME
+    // A per-account home is injected as CODEX_HOME === AIO_ADE_CODEX_HOME, so the
+    // nested-AIO-ADE strip must clear it exactly as it does the shared mirror.
     const perAccountHome = '/daemon/managed/codex-accounts/019f0000-aaaa/home'
     process.env.CODEX_HOME = perAccountHome
-    process.env.ORCA_CODEX_HOME = perAccountHome
+    process.env.AIO_ADE_CODEX_HOME = perAccountHome
 
     try {
       createPtySubprocess({
@@ -1941,7 +1945,7 @@ describe('createPtySubprocess', () => {
         cols: 80,
         rows: 24,
         env: { SHELL: '/bin/bash' },
-        envToDelete: ['ORCA_CODEX_HOME']
+        envToDelete: ['AIO_ADE_CODEX_HOME']
       })
     } finally {
       if (previousCodexHome === undefined) {
@@ -1949,25 +1953,25 @@ describe('createPtySubprocess', () => {
       } else {
         process.env.CODEX_HOME = previousCodexHome
       }
-      if (previousOrcaCodexHome === undefined) {
-        delete process.env.ORCA_CODEX_HOME
+      if (previousAioAdeCodexHome === undefined) {
+        delete process.env.AIO_ADE_CODEX_HOME
       } else {
-        process.env.ORCA_CODEX_HOME = previousOrcaCodexHome
+        process.env.AIO_ADE_CODEX_HOME = previousAioAdeCodexHome
       }
     }
 
     const env = spawnMock.mock.calls.at(-1)![2].env
     expect(env.CODEX_HOME).toBeUndefined()
-    expect(env.ORCA_CODEX_HOME).toBeUndefined()
+    expect(env.AIO_ADE_CODEX_HOME).toBeUndefined()
   })
 
   it('preserves a daemon-owned custom Codex home while deleting a stale private marker', () => {
     const proc = mockPtyProcess()
     spawnMock.mockReturnValue(proc)
     const previousCodexHome = process.env.CODEX_HOME
-    const previousOrcaCodexHome = process.env.ORCA_CODEX_HOME
+    const previousAioAdeCodexHome = process.env.AIO_ADE_CODEX_HOME
     process.env.CODEX_HOME = '/daemon/user/codex-home'
-    process.env.ORCA_CODEX_HOME = '/daemon/stale/managed-home'
+    process.env.AIO_ADE_CODEX_HOME = '/daemon/stale/managed-home'
 
     try {
       createPtySubprocess({
@@ -1975,7 +1979,7 @@ describe('createPtySubprocess', () => {
         cols: 80,
         rows: 24,
         env: { SHELL: '/bin/bash' },
-        envToDelete: ['ORCA_CODEX_HOME']
+        envToDelete: ['AIO_ADE_CODEX_HOME']
       })
     } finally {
       if (previousCodexHome === undefined) {
@@ -1983,16 +1987,16 @@ describe('createPtySubprocess', () => {
       } else {
         process.env.CODEX_HOME = previousCodexHome
       }
-      if (previousOrcaCodexHome === undefined) {
-        delete process.env.ORCA_CODEX_HOME
+      if (previousAioAdeCodexHome === undefined) {
+        delete process.env.AIO_ADE_CODEX_HOME
       } else {
-        process.env.ORCA_CODEX_HOME = previousOrcaCodexHome
+        process.env.AIO_ADE_CODEX_HOME = previousAioAdeCodexHome
       }
     }
 
     const env = spawnMock.mock.calls.at(-1)![2].env
     expect(env.CODEX_HOME).toBe('/daemon/user/codex-home')
-    expect(env.ORCA_CODEX_HOME).toBeUndefined()
+    expect(env.AIO_ADE_CODEX_HOME).toBeUndefined()
   })
 
   it('honors explicit terminal env overrides after deleting requested defaults', () => {
@@ -2006,18 +2010,18 @@ describe('createPtySubprocess', () => {
       env: {
         SHELL: '/bin/bash',
         TERM: 'screen-256color',
-        PATH: '/tmp/orca-agent-teams-bin:/usr/bin',
-        ORCA_AGENT_TEAMS_TEAM_ID: 'team-test'
+        PATH: '/tmp/aio-ade-agent-teams-bin:/usr/bin',
+        AIO_ADE_AGENT_TEAMS_TEAM_ID: 'team-test'
       },
-      envToDelete: ['TERM_PROGRAM', 'ORCA_ATTRIBUTION_SHIM_DIR']
+      envToDelete: ['TERM_PROGRAM', 'AIO_ADE_ATTRIBUTION_SHIM_DIR']
     })
 
     const lastCall = spawnMock.mock.calls.at(-1)!
     expect(lastCall[2].name).toBe('screen-256color')
     expect(lastCall[2].env.TERM).toBe('screen-256color')
-    expect(lastCall[2].env.PATH.split(':')[0]).toBe('/tmp/orca-agent-teams-bin')
+    expect(lastCall[2].env.PATH.split(':')[0]).toBe('/tmp/aio-ade-agent-teams-bin')
     expect(lastCall[2].env.TERM_PROGRAM).toBeUndefined()
-    expect(lastCall[2].env.ORCA_ATTRIBUTION_SHIM_DIR).toBeUndefined()
+    expect(lastCall[2].env.AIO_ADE_ATTRIBUTION_SHIM_DIR).toBeUndefined()
   })
 
   it('combines HOMEDRIVE and HOMEPATH for Windows default cwd', () => {
@@ -2031,7 +2035,7 @@ describe('createPtySubprocess', () => {
     Object.defineProperty(process, 'platform', { value: 'win32' })
     delete process.env.USERPROFILE
     process.env.HOMEDRIVE = 'D:'
-    process.env.HOMEPATH = '\\Users\\orca'
+    process.env.HOMEPATH = '\\Users\\aio-ade'
 
     try {
       createPtySubprocess({ sessionId: 'test', cols: 80, rows: 24 })
@@ -2059,7 +2063,7 @@ describe('createPtySubprocess', () => {
     expect(spawnMock).toHaveBeenCalledWith(
       expect.any(String),
       expect.any(Array),
-      expect.objectContaining({ cwd: 'D:\\Users\\orca' })
+      expect.objectContaining({ cwd: 'D:\\Users\\aio-ade' })
     )
   })
 
@@ -2223,7 +2227,7 @@ describe('createPtySubprocess', () => {
         sessionId: 'test',
         cols: 80,
         rows: 24,
-        cwd: 'C:\\repo\\orca',
+        cwd: 'C:\\repo\\aio-ade',
         shellOverride: 'powershell.exe',
         command: "& 'codex' '--no-alt-screen'"
       })
@@ -2253,7 +2257,7 @@ describe('createPtySubprocess', () => {
         sessionId: 'test',
         cols: 80,
         rows: 24,
-        cwd: 'C:\\repo\\orca',
+        cwd: 'C:\\repo\\aio-ade',
         shellOverride: 'cmd.exe',
         command: `codex ${'x'.repeat(7000)}`
       })
@@ -2312,10 +2316,10 @@ describe('createPtySubprocess', () => {
           sessionId: 'test',
           cols: 80,
           rows: 24,
-          cwd: 'C:\\definitely-missing-orca-cwd',
+          cwd: 'C:\\definitely-missing-aio-ade-cwd',
           shellOverride: 'powershell.exe'
         })
-      ).toThrow(/Working directory "C:\\definitely-missing-orca-cwd" does not exist/)
+      ).toThrow(/Working directory "C:\\definitely-missing-aio-ade-cwd" does not exist/)
     } finally {
       if (platform) {
         Object.defineProperty(process, 'platform', platform)
@@ -2367,10 +2371,10 @@ describe('createPtySubprocess', () => {
           sessionId: 'test',
           cols: 80,
           rows: 24,
-          cwd: 'C:\\definitely-missing-orca-wsl-cwd',
+          cwd: 'C:\\definitely-missing-aio-ade-wsl-cwd',
           shellOverride: 'wsl.exe'
         })
-      ).toThrow(/Working directory "C:\\definitely-missing-orca-wsl-cwd" does not exist/)
+      ).toThrow(/Working directory "C:\\definitely-missing-aio-ade-wsl-cwd" does not exist/)
     } finally {
       if (platform) {
         Object.defineProperty(process, 'platform', platform)
@@ -2513,7 +2517,7 @@ describe('createPtySubprocess', () => {
         cols: 80,
         rows: 24,
         cwd: '\\\\wsl.localhost\\Ubuntu\\home\\jin\\repo',
-        env: { CODEX_HOME: 'C:\\Users\\jin\\.codex', ORCA_CODEX_HOME: 'C:\\Users\\jin\\.codex' }
+        env: { CODEX_HOME: 'C:\\Users\\jin\\.codex', AIO_ADE_CODEX_HOME: 'C:\\Users\\jin\\.codex' }
       })
     } finally {
       if (platform) {
@@ -2527,7 +2531,7 @@ describe('createPtySubprocess', () => {
       expect.objectContaining({
         env: expect.not.objectContaining({
           CODEX_HOME: expect.anything(),
-          ORCA_CODEX_HOME: expect.anything()
+          AIO_ADE_CODEX_HOME: expect.anything()
         })
       })
     )
@@ -2548,9 +2552,9 @@ describe('createPtySubprocess', () => {
         cwd: 'C:\\Users\\jin\\repo',
         env: {
           CODEX_HOME:
-            '\\\\wsl.localhost\\Ubuntu\\home\\jin\\.local\\share\\orca\\codex-accounts\\a\\home',
-          ORCA_CODEX_HOME:
-            '\\\\wsl.localhost\\Ubuntu\\home\\jin\\.local\\share\\orca\\codex-accounts\\a\\home'
+            '\\\\wsl.localhost\\Ubuntu\\home\\jin\\.local\\share\\aio-ade\\codex-accounts\\a\\home',
+          AIO_ADE_CODEX_HOME:
+            '\\\\wsl.localhost\\Ubuntu\\home\\jin\\.local\\share\\aio-ade\\codex-accounts\\a\\home'
         }
       })
     } finally {
@@ -2565,7 +2569,7 @@ describe('createPtySubprocess', () => {
       expect.objectContaining({
         env: expect.not.objectContaining({
           CODEX_HOME: expect.anything(),
-          ORCA_CODEX_HOME: expect.anything()
+          AIO_ADE_CODEX_HOME: expect.anything()
         })
       })
     )
@@ -2588,9 +2592,9 @@ describe('createPtySubprocess', () => {
         shellOverride: 'wsl.exe',
         env: {
           CODEX_HOME:
-            '\\\\wsl.localhost\\Ubuntu\\home\\jin\\.local\\share\\orca\\codex-accounts\\a\\home',
-          ORCA_CODEX_HOME:
-            '\\\\wsl.localhost\\Ubuntu\\home\\jin\\.local\\share\\orca\\codex-accounts\\a\\home'
+            '\\\\wsl.localhost\\Ubuntu\\home\\jin\\.local\\share\\aio-ade\\codex-accounts\\a\\home',
+          AIO_ADE_CODEX_HOME:
+            '\\\\wsl.localhost\\Ubuntu\\home\\jin\\.local\\share\\aio-ade\\codex-accounts\\a\\home'
         }
       })
     } finally {
@@ -2611,8 +2615,8 @@ describe('createPtySubprocess', () => {
       ['-d', 'Ubuntu', '--', 'sh', '-c', expect.stringContaining(`cd '${expectedLinuxCwd}'`)],
       expect.objectContaining({
         env: expect.objectContaining({
-          CODEX_HOME: '/home/jin/.local/share/orca/codex-accounts/a/home',
-          ORCA_CODEX_HOME: '/home/jin/.local/share/orca/codex-accounts/a/home',
+          CODEX_HOME: '/home/jin/.local/share/aio-ade/codex-accounts/a/home',
+          AIO_ADE_CODEX_HOME: '/home/jin/.local/share/aio-ade/codex-accounts/a/home',
           WSLENV: expect.stringContaining('CODEX_HOME')
         })
       })
@@ -2649,16 +2653,16 @@ describe('createPtySubprocess', () => {
     )
   })
 
-  it('marks Orca terminal handles for WSL env import in daemon WSL terminals', () => {
+  it('marks AIO-ADE terminal handles for WSL env import in daemon WSL terminals', () => {
     const proc = mockPtyProcess()
     spawnMock.mockReturnValue(proc)
     const platform = Object.getOwnPropertyDescriptor(process, 'platform')
     const savedCodexHome = process.env.CODEX_HOME
-    const savedOrcaCodexHome = process.env.ORCA_CODEX_HOME
+    const savedAioAdeCodexHome = process.env.AIO_ADE_CODEX_HOME
 
     Object.defineProperty(process, 'platform', { value: 'win32' })
     delete process.env.CODEX_HOME
-    delete process.env.ORCA_CODEX_HOME
+    delete process.env.AIO_ADE_CODEX_HOME
 
     try {
       createPtySubprocess({
@@ -2667,8 +2671,8 @@ describe('createPtySubprocess', () => {
         rows: 24,
         cwd: '\\\\wsl.localhost\\Ubuntu\\home\\jin\\repo',
         env: {
-          ORCA_TERMINAL_HANDLE: 'term_wsl',
-          ORCA_HERMES_STARTUP_QUERY: 'line one\nline two',
+          AIO_ADE_TERMINAL_HANDLE: 'term_wsl',
+          AIO_ADE_HERMES_STARTUP_QUERY: 'line one\nline two',
           WSLENV: 'FOO/u'
         }
       })
@@ -2681,24 +2685,24 @@ describe('createPtySubprocess', () => {
       } else {
         process.env.CODEX_HOME = savedCodexHome
       }
-      if (savedOrcaCodexHome === undefined) {
-        delete process.env.ORCA_CODEX_HOME
+      if (savedAioAdeCodexHome === undefined) {
+        delete process.env.AIO_ADE_CODEX_HOME
       } else {
-        process.env.ORCA_CODEX_HOME = savedOrcaCodexHome
+        process.env.AIO_ADE_CODEX_HOME = savedAioAdeCodexHome
       }
     }
 
     const spawnCall = spawnMock.mock.calls.at(-1)!
     expect(spawnCall[0]).toBe('wsl.exe')
     expect(spawnCall[1]).toEqual(expect.any(Array))
-    expect(spawnCall[2].env.ORCA_TERMINAL_HANDLE).toBe('term_wsl')
+    expect(spawnCall[2].env.AIO_ADE_TERMINAL_HANDLE).toBe('term_wsl')
     // Why: the daemon inherits optional agent-hook env in development. This
     // test owns only the terminal handle and Powerlevel10k WSLENV contract.
     expect(spawnCall[2].env.WSLENV?.split(':')).toEqual(
       expect.arrayContaining([
         'FOO/u',
-        'ORCA_TERMINAL_HANDLE/u',
-        'ORCA_HERMES_STARTUP_QUERY',
+        'AIO_ADE_TERMINAL_HANDLE/u',
+        'AIO_ADE_HERMES_STARTUP_QUERY',
         POWERLEVEL10K_WIZARD_DISABLE_ENV
       ])
     )
@@ -2974,16 +2978,16 @@ describe('checkPtySpawnHealth (retry on transient failure)', () => {
 
   beforeEach(() => {
     spawnMock.mockReset()
-    previousUserDataPath = process.env.ORCA_USER_DATA_PATH
+    previousUserDataPath = process.env.AIO_ADE_USER_DATA_PATH
     userDataPath = mkdtempSync(join(tmpdir(), 'daemon-pty-health-test-'))
-    process.env.ORCA_USER_DATA_PATH = userDataPath
+    process.env.AIO_ADE_USER_DATA_PATH = userDataPath
   })
 
   afterEach(() => {
     if (previousUserDataPath === undefined) {
-      delete process.env.ORCA_USER_DATA_PATH
+      delete process.env.AIO_ADE_USER_DATA_PATH
     } else {
-      process.env.ORCA_USER_DATA_PATH = previousUserDataPath
+      process.env.AIO_ADE_USER_DATA_PATH = previousUserDataPath
     }
     rmSync(userDataPath, { recursive: true, force: true })
   })

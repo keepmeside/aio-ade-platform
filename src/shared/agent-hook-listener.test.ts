@@ -323,7 +323,7 @@ describe('shared agent-hook-listener', () => {
   })
 
   it('reads the last assistant message behind an oversized line without quadratic copying', () => {
-    const tmpDir = mkdtempSync(join(tmpdir(), 'orca-assistant-huge-line-'))
+    const tmpDir = mkdtempSync(join(tmpdir(), 'aio-ade-assistant-huge-line-'))
     const transcriptPath = join(tmpDir, 'transcript.jsonl')
     const originalConcat = Buffer.concat
     let concatenatedBytes = 0
@@ -1182,9 +1182,9 @@ describe('shared agent-hook-listener', () => {
       })
       expect(ok).toBe(true)
       const text = readFileSync(finalPath, 'utf8')
-      expect(text).toContain('ORCA_AGENT_HOOK_PORT=12345')
-      expect(text).toContain('ORCA_AGENT_HOOK_TOKEN=abcdef-0123')
-      expect(text).toContain('ORCA_AGENT_HOOK_VERSION=1')
+      expect(text).toContain('AIO_ADE_AGENT_HOOK_PORT=12345')
+      expect(text).toContain('AIO_ADE_AGENT_HOOK_TOKEN=abcdef-0123')
+      expect(text).toContain('AIO_ADE_AGENT_HOOK_VERSION=1')
       // POSIX 0o600 — owner read/write only.
       if (process.platform !== 'win32') {
         const mode = statSync(finalPath).mode & 0o777

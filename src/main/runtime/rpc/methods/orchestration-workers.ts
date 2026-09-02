@@ -259,7 +259,7 @@ export const ORCHESTRATION_WORKER_START_METHODS: RpcMethod[] = [
           workerHandle: terminalHandle,
           dispatchCapability: capability,
           devMode: params.devMode,
-          cliCommand: runtime.getTerminalOrchestrationCliCommand(terminalHandle)
+          cliCommand: runtime.getTerminalOrchestrationCliCommand()
         })
         await runtime.sendTerminalAgentPrompt(terminalHandle, preamble)
         effects.push({

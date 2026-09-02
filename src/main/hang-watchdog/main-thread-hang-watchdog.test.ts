@@ -4,7 +4,7 @@ const { forkMock, appMock } = vi.hoisted(() => ({
   forkMock: vi.fn(),
   appMock: {
     isPackaged: true,
-    getAppPath: vi.fn(() => '/apps/orca/app.asar'),
+    getAppPath: vi.fn(() => '/apps/aio-ade/app.asar'),
     on: vi.fn()
   }
 }))
@@ -46,7 +46,7 @@ describe('installMainThreadHangWatchdog', () => {
     forkMock.mockReset()
     appMock.on.mockReset()
     appMock.isPackaged = true
-    delete process.env.ORCA_HANG_WATCHDOG_FORCE
+    delete process.env.AIO_ADE_HANG_WATCHDOG_FORCE
   })
 
   afterEach(() => {
@@ -68,13 +68,13 @@ describe('installMainThreadHangWatchdog', () => {
     expect(
       withPlatform('darwin', () => installMainThreadHangWatchdog({ userDataPath: '/ud' }))
     ).toBeNull()
-    process.env.ORCA_HANG_WATCHDOG_FORCE = '1'
+    process.env.AIO_ADE_HANG_WATCHDOG_FORCE = '1'
     const child = fakeChild()
     forkMock.mockReturnValue(child)
     expect(
       withPlatform('darwin', () => installMainThreadHangWatchdog({ userDataPath: '/ud' }))
     ).not.toBeNull()
-    delete process.env.ORCA_HANG_WATCHDOG_FORCE
+    delete process.env.AIO_ADE_HANG_WATCHDOG_FORCE
   })
 
   it('forks the watchdog as plain Node with pid, bundle, and marker config', () => {
@@ -86,8 +86,8 @@ describe('installMainThreadHangWatchdog', () => {
     expect(handle).not.toBeNull()
     const [, , options] = forkMock.mock.calls[0]
     expect(options.env.ELECTRON_RUN_AS_NODE).toBe('1')
-    expect(options.env.ORCA_HANG_WATCHDOG_PARENT_PID).toBe(String(process.pid))
-    expect(options.env.ORCA_HANG_WATCHDOG_MARKER_PATH).toContain('/ud')
+    expect(options.env.AIO_ADE_HANG_WATCHDOG_PARENT_PID).toBe(String(process.pid))
+    expect(options.env.AIO_ADE_HANG_WATCHDOG_MARKER_PATH).toContain('/ud')
   })
 
   it('sends heartbeats on an interval and shutdown+disconnect on stop', () => {

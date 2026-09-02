@@ -1,4 +1,4 @@
-/* Every shell Orca spawns sources a generated rc payload, and that payload used to re-export a
+/* Every shell AIO-ADE spawns sources a generated rc payload, and that payload used to re-export a
  * per-agent env var for each agent in the old roster. Leaving one behind is invisible on this
  * machine and harmful on a host that still has the agent installed: the OMP block redefined `omp`
  * as a shell function for every interactive shell, so a user's own binary silently gained an
@@ -18,18 +18,18 @@ import {
 } from '../providers/local-pty-shell-ready'
 import { getPowerShellOsc133Bootstrap } from '../powershell-osc133-bootstrap'
 import { getRelayShellLaunchConfig } from '../../relay/pty-shell-launch'
-import { addOrcaWslInteropEnv } from './wsl-orca-env'
+import { addAioAdeWslInteropEnv } from './wsl-aio-ade-env'
 
-/** Env names that existed only to point a dropped agent at an Orca-managed directory. */
+/** Env names that existed only to point a dropped agent at an AIO-ADE-managed directory. */
 const DROPPED_AGENT_ENV = [
   'OPENCODE_CONFIG_DIR',
   'MIMOCODE_HOME',
-  'ORCA_OMP_STATUS_EXTENSION',
-  'ORCA_OMP_SOURCE_AGENT_DIR',
+  'AIO_ADE_OMP_STATUS_EXTENSION',
+  'AIO_ADE_OMP_SOURCE_AGENT_DIR',
   'PI_CODING_AGENT_DIR'
 ]
 
-const home = mkdtempSync(join(tmpdir(), 'orca-roster-shell-env-'))
+const home = mkdtempSync(join(tmpdir(), 'aio-ade-roster-shell-env-'))
 
 afterAll(() => {
   rmSync(home, { recursive: true, force: true })
@@ -39,12 +39,12 @@ afterAll(() => {
 function relayWrapper(fileName: string, shellPath = '/bin/zsh'): string {
   getRelayShellLaunchConfig(
     shellPath,
-    // ORCA_REMOTE_CLI_BIN_DIR is the one overlay trigger that survives the roster narrowing.
-    { HOME: home, ORCA_REMOTE_CLI_BIN_DIR: '/remote/bin' },
+    // AIO_ADE_REMOTE_CLI_BIN_DIR is the one overlay trigger that survives the roster narrowing.
+    { HOME: home, AIO_ADE_REMOTE_CLI_BIN_DIR: '/remote/bin' },
     'linux'
   )
   const shellDir = fileName.startsWith('.z') ? 'zsh' : 'bash'
-  return readFileSync(join(home, '.orca-relay', 'shell-ready', shellDir, fileName), 'utf8')
+  return readFileSync(join(home, '.aio-ade-relay', 'shell-ready', shellDir, fileName), 'utf8')
 }
 
 const shellPayloads: [string, () => string][] = [
@@ -89,19 +89,19 @@ describe('the retained agents keep their shell plumbing', () => {
     (_l, getContent) => {
       const content = getContent()
 
-      expect(content).toContain('export CODEX_HOME="${ORCA_CODEX_HOME}"')
-      expect(content).toContain('ORCA_AGENT_TEAMS_SHIM_DIR')
-      expect(content).toContain('ORCA_ATTRIBUTION_SHIM_DIR')
+      expect(content).toContain('export CODEX_HOME="${AIO_ADE_CODEX_HOME}"')
+      expect(content).toContain('AIO_ADE_AGENT_TEAMS_SHIM_DIR')
+      expect(content).toContain('AIO_ADE_ATTRIBUTION_SHIM_DIR')
     }
   )
 
   it('powershell still restores CODEX_HOME', () => {
-    expect(getPowerShellOsc133Bootstrap()).toContain('$env:CODEX_HOME = $env:ORCA_CODEX_HOME')
+    expect(getPowerShellOsc133Bootstrap()).toContain('$env:CODEX_HOME = $env:AIO_ADE_CODEX_HOME')
   })
 
   it('relay wrappers still restore the remote CLI bin dir', () => {
-    expect(relayWrapper('.zshrc')).toContain('ORCA_REMOTE_CLI_BIN_DIR')
-    expect(relayWrapper('rcfile', '/bin/bash')).toContain('ORCA_REMOTE_CLI_BIN_DIR')
+    expect(relayWrapper('.zshrc')).toContain('AIO_ADE_REMOTE_CLI_BIN_DIR')
+    expect(relayWrapper('rcfile', '/bin/bash')).toContain('AIO_ADE_REMOTE_CLI_BIN_DIR')
   })
 })
 
@@ -109,19 +109,20 @@ describe('WSL passthrough', () => {
   it('carries the hook coordinates without the dropped agents’ overlay vars', () => {
     const env: Record<string, string> = {
       HOME: home,
-      ORCA_AGENT_HOOK_PORT: '51820',
-      ORCA_AGENT_HOOK_ENDPOINT: '/home/jin/.orca/hook.sock',
-      ORCA_OMP_STATUS_EXTENSION: 'C:\\Users\\jin\\.omp\\agent\\extensions\\orca-agent-status.ts',
-      ORCA_OMP_SOURCE_AGENT_DIR: 'C:\\Users\\jin\\.omp\\agent',
+      AIO_ADE_AGENT_HOOK_PORT: '51820',
+      AIO_ADE_AGENT_HOOK_ENDPOINT: '/home/jin/.aio-ade/hook.sock',
+      AIO_ADE_OMP_STATUS_EXTENSION:
+        'C:\\Users\\jin\\.omp\\agent\\extensions\\aio-ade-agent-status.ts',
+      AIO_ADE_OMP_SOURCE_AGENT_DIR: 'C:\\Users\\jin\\.omp\\agent',
       OPENCODE_CONFIG_DIR: '/home/jin/.config/opencode',
-      ORCA_OPENCODE_CONFIG_DIR: '/home/jin/.config/opencode'
+      AIO_ADE_OPENCODE_CONFIG_DIR: '/home/jin/.config/opencode'
     }
 
-    addOrcaWslInteropEnv(env)
+    addAioAdeWslInteropEnv(env)
 
-    expect(env.WSLENV).toContain('ORCA_AGENT_HOOK_PORT/u')
-    expect(env.WSLENV).toContain('ORCA_AGENT_HOOK_ENDPOINT/u')
-    expect(env.WSLENV).not.toContain('ORCA_OMP')
+    expect(env.WSLENV).toContain('AIO_ADE_AGENT_HOOK_PORT/u')
+    expect(env.WSLENV).toContain('AIO_ADE_AGENT_HOOK_ENDPOINT/u')
+    expect(env.WSLENV).not.toContain('AIO_ADE_OMP')
     expect(env.WSLENV).not.toContain('OPENCODE_CONFIG_DIR')
   })
 })

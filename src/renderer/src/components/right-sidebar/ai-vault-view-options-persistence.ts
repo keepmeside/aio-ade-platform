@@ -10,7 +10,7 @@ import {
   DEFAULT_AI_VAULT_SORT
 } from './ai-vault-view-defaults'
 
-export const AI_VAULT_VIEW_OPTIONS_STORAGE_KEY = 'orca.aiVault.viewOptions.v1'
+export const AI_VAULT_VIEW_OPTIONS_STORAGE_KEY = 'aio-ade.aiVault.viewOptions.v1'
 
 export type AiVaultViewOptions = {
   disabledAgents: AiVaultAgent[]

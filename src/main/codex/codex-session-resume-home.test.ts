@@ -83,7 +83,7 @@ describe('resolveTrustedCodexSessionResumeHome', () => {
   })
 
   it('requires the transcript provenance to name a regular rollout file', () => {
-    const homePath = mkdtempSync(join(tmpdir(), 'orca-codex-resume-home-'))
+    const homePath = mkdtempSync(join(tmpdir(), 'aio-ade-codex-resume-home-'))
     tempRoots.push(homePath)
     const rolloutDirectory = join(homePath, 'sessions', '2026', '07', '20', 'rollout-a.jsonl')
     mkdirSync(rolloutDirectory, { recursive: true })
@@ -106,7 +106,7 @@ describe('resolveTrustedCodexSessionResumeHome', () => {
   })
 
   it('follows Codex when a persisted plain rollout was compressed in place', async () => {
-    const homePath = mkdtempSync(join(tmpdir(), 'orca-codex-resume-home-'))
+    const homePath = mkdtempSync(join(tmpdir(), 'aio-ade-codex-resume-home-'))
     tempRoots.push(homePath)
     const plainPath = join(
       homePath,
@@ -141,7 +141,7 @@ describe('resolveTrustedCodexSessionResumeHome', () => {
   })
 
   it('finds compressed rollouts for legacy records without transcript provenance', async () => {
-    const homePath = mkdtempSync(join(tmpdir(), 'orca-codex-resume-home-'))
+    const homePath = mkdtempSync(join(tmpdir(), 'aio-ade-codex-resume-home-'))
     tempRoots.push(homePath)
     const sessionId = '019f81b9-19a9-7651-a8d1-352d9420bd11'
     const compressedPath = join(
@@ -302,7 +302,7 @@ describe('findTrustedCodexSessionResume legacy-rescan home ranking', () => {
   // Why: `/Users/…` already wins the tier-3 byte order, so the case above cannot tell the
   // system-home tier apart from the path tie-break. Pin it with a home that sorts last.
   it('ranks the real system home above the others even when its path sorts last', async () => {
-    const lateSortingSystemHome = join('/var', 'lib', 'orca', '.codex')
+    const lateSortingSystemHome = join('/var', 'lib', 'aio-ade', '.codex')
     await expect(
       findTrustedCodexSessionResume({
         sessionId,
@@ -360,8 +360,8 @@ describe('findTrustedCodexSessionResume legacy-rescan home ranking', () => {
   it('ranks Windows homes case-insensitively and keeps the caller path spelling', async () => {
     const windowsRoot = 'C:\\Users\\Example'
     const windowsSystemHome = `${windowsRoot}\\.codex`
-    const windowsAccountAHome = `${windowsRoot}\\AppData\\Roaming\\Orca\\codex-accounts\\a\\home`
-    const windowsAccountBHome = `${windowsRoot}\\AppData\\Roaming\\Orca\\codex-accounts\\b\\home`
+    const windowsAccountAHome = `${windowsRoot}\\AppData\\Roaming\\AIO-ADE\\codex-accounts\\a\\home`
+    const windowsAccountBHome = `${windowsRoot}\\AppData\\Roaming\\AIO-ADE\\codex-accounts\\b\\home`
     const windowsRolloutIn = (homePath: string): string =>
       `${join(homePath, 'sessions')}\\2026\\07\\20\\rollout-2026-07-20T15-50-19-${sessionId}.jsonl`
     const listSessionFiles = async function* (sessionsRoot: string): AsyncIterable<string> {
@@ -440,7 +440,7 @@ describe('claimsCodexRolloutLayout', () => {
     ).toBe(true)
   })
 
-  it('is true for a rollout under a home Orca no longer trusts, so resume cannot silently fall through to the selected account', () => {
+  it('is true for a rollout under a home AIO-ADE no longer trusts, so resume cannot silently fall through to the selected account', () => {
     expect(
       claimsCodexRolloutLayout('/removed/account/home/sessions/2026/07/20/rollout-a.jsonl')
     ).toBe(true)
@@ -466,7 +466,7 @@ describe('claimsCodexRolloutLayout', () => {
 
 describe('resolveCodexSessionResumeProvenance', () => {
   function writeRollout(sessionId: string): { homePath: string; rolloutPath: string } {
-    const homePath = mkdtempSync(join(tmpdir(), 'orca-codex-resume-provenance-'))
+    const homePath = mkdtempSync(join(tmpdir(), 'aio-ade-codex-resume-provenance-'))
     tempRoots.push(homePath)
     const rolloutPath = join(
       homePath,
@@ -481,12 +481,12 @@ describe('resolveCodexSessionResumeProvenance', () => {
     return { homePath, rolloutPath }
   }
 
-  it('starts fresh for a rollout file that really exists under a home Orca no longer trusts', async () => {
+  it('starts fresh for a rollout file that really exists under a home AIO-ADE no longer trusts', async () => {
     // Why: the discriminating case — the file is present, so only the trust check can
     // reject it. Resuming here would run the session under the selected account.
     const sessionId = '019f81b9-19a9-7651-a8d1-352d9420bd11'
     const removed = writeRollout(sessionId)
-    const trusted = mkdtempSync(join(tmpdir(), 'orca-codex-resume-provenance-'))
+    const trusted = mkdtempSync(join(tmpdir(), 'aio-ade-codex-resume-provenance-'))
     tempRoots.push(trusted)
 
     await expect(

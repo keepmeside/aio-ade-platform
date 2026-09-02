@@ -7,14 +7,14 @@ import {
   ORCHESTRATION_FEDERATION_RUNTIME_CAPABILITY
 } from '../../../../shared/protocol-version'
 import { orchestrationMigrationData } from '../../../../shared/orchestration-rpc-contract'
-import type { OrcaRuntimeService } from '../../orca-runtime'
+import type { AioAdeRuntimeService } from '../../aio-ade-runtime'
 import type { OrchestrationDb } from '../../orchestration/db'
 import { OrchestrationError } from '../../orchestration/orchestration-error'
 import type { WorkerStartInput } from './orchestration-worker-start-schema'
 
 export async function startFederatedWorker(args: {
   params: WorkerStartInput
-  runtime: OrcaRuntimeService
+  runtime: AioAdeRuntimeService
   db: OrchestrationDb
   runId: string
   task: { id: string; spec: string; status: string }
@@ -285,8 +285,8 @@ function federatedUnknownReceipt(
     effects: [],
     residualResources: [],
     nextCommands: [
-      `orca orchestration worker-show --dispatch ${worker.dispatch_id} --json`,
-      `orca orchestration worker-abandon --dispatch ${worker.dispatch_id} --json`
+      `aio-ade orchestration worker-show --dispatch ${worker.dispatch_id} --json`,
+      `aio-ade orchestration worker-abandon --dispatch ${worker.dispatch_id} --json`
     ]
   }
 }

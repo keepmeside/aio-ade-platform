@@ -1,6 +1,7 @@
 /* eslint-disable max-lines -- Why: co-locates all NewWorkspaceComposerCard state so the full-page composer and quick-composer modal share one source of truth. */
 /* oxlint-disable react-doctor/no-adjust-state-on-prop-change -- Why: composer state synchronizes selected repo metadata, setup policy, issue-command hooks, and provider link lookups from async runtime IPC. */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { getRepoAppPath } from '../../../shared/repo-app-paths'
 import { toast } from 'sonner'
 import { useShallow } from 'zustand/react/shallow'
 import { useAppStore } from '@/store'
@@ -41,7 +42,7 @@ import type {
   GitPushTarget,
   GitLabWorkItem,
   LinearIssue,
-  OrcaHooks,
+  AioAdeHooks,
   RepoHookSettings,
   SetupAgentStartupPolicy,
   SetupDecision,
@@ -160,7 +161,6 @@ import {
 import { CONTEXTUAL_TOUR_ENABLE_AUTO_WORKSPACE_NAME_EVENT } from '@/components/contextual-tours/contextual-tour-composer-events'
 import { ensureHooksConfirmed } from '@/lib/ensure-hooks-confirmed'
 import { normalizeSparseDirectoryLines, sparseDirectoriesMatch } from '@/lib/sparse-paths'
-import { joinPath } from '@/lib/path'
 import { importExternalPathsToRuntime } from '@/runtime/runtime-file-client'
 import {
   checkRuntimeHooks,
@@ -248,7 +248,7 @@ export type ComposerCardProps = {
   projectHostSetupOptions: ProjectHostSetupOption[]
   selectedProjectHostSetupId: string | null
   onProjectHostSetupChange: (setupId: string) => void
-  ephemeralVmRecipes: NonNullable<OrcaHooks['environmentRecipes']>
+  ephemeralVmRecipes: NonNullable<AioAdeHooks['environmentRecipes']>
   selectedEphemeralVmRecipeId: string | null
   onEphemeralVmRecipeChange: (recipeId: string | null) => void
   ephemeralVmRecipeError: string | null
@@ -509,7 +509,7 @@ export function getInitialAutoManagedWorkspaceName({
   initialName: string
   initialLinkedWorkItem?: LinkedWorkItemSummary | null
 }): string {
-  // Why: a prefilled name counts as user input unless it exactly matches the linked-item seed Orca generated.
+  // Why: a prefilled name counts as user input unless it exactly matches the linked-item seed AIO-ADE generated.
   const candidateName = draftName ?? initialName
   const seedName = getLinkedWorkItemSeedName(draftLinkedWorkItem ?? initialLinkedWorkItem)
   return candidateName && seedName && candidateName === seedName ? candidateName : ''
@@ -745,7 +745,7 @@ export function useComposerState(options: UseComposerStateOptions): UseComposerS
         )
     return getAgentLaunchPlatformForRepo(selectedRepo, projectRuntime)
   }, [activeRepoId, projects, repos, selectedRepo, settings, worktreesByRepo])
-  // Why: SSH remotes deploy the CLI shim as plain `orca`, so the Linux-only `orca-ide` rename must not apply to remote launch commands.
+  // Why: SSH remotes deploy the CLI shim as plain `aio-ade`, so the Linux-only `aio-ade` rename must not apply to remote launch commands.
   const selectedRepoIsRemote = selectedRepo ? repoIsRemote(selectedRepo) : false
   const selectedRepoStartupShell = resolveLocalWindowsAgentStartupShell({
     platform: selectedRepoAgentLaunchPlatform,
@@ -1055,7 +1055,7 @@ export function useComposerState(options: UseComposerStateOptions): UseComposerS
     [detectedAgentList]
   )
 
-  const [yamlHooks, setYamlHooks] = useState<OrcaHooks | null>(null)
+  const [yamlHooks, setYamlHooks] = useState<AioAdeHooks | null>(null)
   const [checkedHooksRepoId, setCheckedHooksRepoId] = useState<string | null>(null)
   const [issueCommandTemplate, setIssueCommandTemplate] = useState('')
   const [hasLoadedIssueCommand, setHasLoadedIssueCommand] = useState(false)
@@ -1271,7 +1271,7 @@ export function useComposerState(options: UseComposerStateOptions): UseComposerS
     return promise
   }, [])
   const commitHookCheckIfCurrent = useCallback(
-    (targetRepoId: string, hooks: OrcaHooks | null): boolean => {
+    (targetRepoId: string, hooks: AioAdeHooks | null): boolean => {
       if (repoIdRef.current !== targetRepoId) {
         return false
       }
@@ -2333,7 +2333,7 @@ export function useComposerState(options: UseComposerStateOptions): UseComposerS
         }
         return { filePaths: [], folderPaths: [] }
       }
-      const destinationDir = joinPath(targetRepoPath, '.orca/drops')
+      const destinationDir = getRepoAppPath(targetRepoPath, 'drops')
       const sshExpectation = targetConnectionId
         ? captureDirectSshMutationExpectation(
             useAppStore.getState(),

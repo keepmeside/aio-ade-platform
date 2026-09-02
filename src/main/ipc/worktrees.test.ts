@@ -1,5 +1,6 @@
 /* eslint-disable max-lines */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { PROJECT_CONFIG_FILE_NAME, REPO_APP_DIR_NAME } from '../../shared/repo-app-paths'
 import type * as GitUsernameModule from '../git/git-username'
 import { lstat, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -45,7 +46,7 @@ const {
   createSetupRunnerScriptMock,
   getEffectiveHooksFromConfigMock,
   getDefaultTabsLaunchMock,
-  parseOrcaYamlMock,
+  parseAioAdeYamlMock,
   shouldRunSetupForCreateMock,
   buildPosixRunnerScriptMock,
   buildWindowsRunnerScriptMock,
@@ -95,7 +96,7 @@ const {
   createSetupRunnerScriptMock: vi.fn(),
   getEffectiveHooksFromConfigMock: vi.fn(),
   getDefaultTabsLaunchMock: vi.fn(),
-  parseOrcaYamlMock: vi.fn(),
+  parseAioAdeYamlMock: vi.fn(),
   shouldRunSetupForCreateMock: vi.fn(),
   buildPosixRunnerScriptMock: vi.fn(),
   buildWindowsRunnerScriptMock: vi.fn(),
@@ -198,7 +199,7 @@ vi.mock('../hooks', () => ({
   getDefaultTabsLaunch: getDefaultTabsLaunchMock,
   getSetupRunnerEnvVars: getSetupRunnerEnvVarsMock,
   loadHooks: loadHooksMock,
-  parseOrcaYaml: parseOrcaYamlMock,
+  parseAioAdeYaml: parseAioAdeYamlMock,
   runHook: runHookMock,
   hasHooksFile: hasHooksFileMock,
   shouldRunSetupForCreate: shouldRunSetupForCreateMock
@@ -356,7 +357,7 @@ describe('registerWorktreeHandlers', () => {
       getEffectiveHooksMock,
       getEffectiveHooksFromConfigMock,
       getDefaultTabsLaunchMock,
-      parseOrcaYamlMock,
+      parseAioAdeYamlMock,
       createIssueCommandRunnerScriptMock,
       createSetupRunnerScriptMock,
       buildPosixRunnerScriptMock,
@@ -470,7 +471,7 @@ describe('registerWorktreeHandlers', () => {
     getEffectiveHooksMock.mockReturnValue(null)
     getEffectiveHooksFromConfigMock.mockImplementation(() => getEffectiveHooksMock())
     getDefaultTabsLaunchMock.mockReturnValue(undefined)
-    parseOrcaYamlMock.mockReturnValue(null)
+    parseAioAdeYamlMock.mockReturnValue(null)
     shouldRunSetupForCreateMock.mockReturnValue(false)
     buildPosixRunnerScriptMock.mockImplementation(
       (script: string) => `#!/usr/bin/env bash\nset -e\n${script.replace(/\r\n/g, '\n')}\n`
@@ -478,25 +479,25 @@ describe('registerWorktreeHandlers', () => {
     buildWindowsRunnerScriptMock.mockImplementation((script: string) => script)
     getSetupRunnerEnvVarsMock.mockImplementation(
       (repoArg: { path: string }, worktreePath: string) => ({
-        ORCA_ROOT_PATH: repoArg.path,
-        ORCA_WORKTREE_PATH: worktreePath,
-        ORCA_WORKSPACE_NAME: worktreePath.split('/').at(-1) ?? '',
+        AIO_ADE_ROOT_PATH: repoArg.path,
+        AIO_ADE_WORKTREE_PATH: worktreePath,
+        AIO_ADE_WORKSPACE_NAME: worktreePath.split('/').at(-1) ?? '',
         CONDUCTOR_ROOT_PATH: repoArg.path,
         GHOSTX_ROOT_PATH: repoArg.path
       })
     )
     createSetupRunnerScriptMock.mockReturnValue({
-      runnerScriptPath: '/workspace/repo/.git/orca/setup-runner.sh',
+      runnerScriptPath: '/workspace/repo/.git/aio-ade/setup-runner.sh',
       envVars: {
-        ORCA_ROOT_PATH: '/workspace/repo',
-        ORCA_WORKTREE_PATH: '/workspace/improve-dashboard'
+        AIO_ADE_ROOT_PATH: '/workspace/repo',
+        AIO_ADE_WORKTREE_PATH: '/workspace/improve-dashboard'
       }
     })
     createIssueCommandRunnerScriptMock.mockReturnValue({
-      runnerScriptPath: '/workspace/repo/.git/orca/issue-command-runner.sh',
+      runnerScriptPath: '/workspace/repo/.git/aio-ade/issue-command-runner.sh',
       envVars: {
-        ORCA_ROOT_PATH: '/workspace/repo',
-        ORCA_WORKTREE_PATH: '/workspace/improve-dashboard'
+        AIO_ADE_ROOT_PATH: '/workspace/repo',
+        AIO_ADE_WORKTREE_PATH: '/workspace/improve-dashboard'
       }
     })
     computeWorktreePathMock.mockImplementation(
@@ -812,7 +813,7 @@ describe('registerWorktreeHandlers', () => {
     ])
   }
 
-  it('strips Orca provenance fields from renderer metadata updates', () => {
+  it('strips AIO-ADE provenance fields from renderer metadata updates', () => {
     store.setWorktreeMeta.mockImplementation((_worktreeId, meta) => meta)
 
     const result = handlers['worktrees:updateMeta'](null, {
@@ -820,9 +821,9 @@ describe('registerWorktreeHandlers', () => {
       updates: {
         comment: 'keep me',
         isPinned: true,
-        orcaCreatedAt: 123,
-        orcaCreationSource: 'desktop',
-        orcaCreationWorkspaceLayout: { path: '/workspace', nestWorkspaces: false }
+        aioAdeCreatedAt: 123,
+        aioAdeCreationSource: 'desktop',
+        aioAdeCreationWorkspaceLayout: { path: '/workspace', nestWorkspaces: false }
       }
     })
 
@@ -988,7 +989,7 @@ describe('registerWorktreeHandlers', () => {
     expect(store.setWorktreeMeta).toHaveBeenCalledWith(
       'repo-1::../worktrees/feature',
       expect.objectContaining({
-        orcaCreationWorkspaceLayout: { path: '../worktrees', nestWorkspaces: false }
+        aioAdeCreationWorkspaceLayout: { path: '../worktrees', nestWorkspaces: false }
       })
     )
   })
@@ -1135,7 +1136,7 @@ describe('registerWorktreeHandlers', () => {
       createdWithAgent: 'claude',
       startup: {
         command: 'claude --prefill test',
-        env: { ORCA_AGENT_MODE: 'direct' },
+        env: { AIO_ADE_AGENT_MODE: 'direct' },
         telemetry: {
           agent_kind: 'claude',
           launch_source: 'new_workspace_composer',
@@ -1154,7 +1155,7 @@ describe('registerWorktreeHandlers', () => {
       {
         claudeAgentTeamsSourceCommand: 'claude --prefill test',
         command: 'claude --prefill test',
-        env: { ORCA_AGENT_MODE: 'direct' },
+        env: { AIO_ADE_AGENT_MODE: 'direct' },
         launchAgent: 'claude',
         startupCommandDelivery: undefined,
         telemetry: {
@@ -1170,10 +1171,10 @@ describe('registerWorktreeHandlers', () => {
       'id:repo-1::/workspace/improve-dashboard',
       {
         title: 'Setup',
-        command: expect.stringContaining('bash /workspace/repo/.git/orca/setup-runner.sh'),
+        command: expect.stringContaining('bash /workspace/repo/.git/aio-ade/setup-runner.sh'),
         env: {
-          ORCA_ROOT_PATH: '/workspace/repo',
-          ORCA_WORKTREE_PATH: '/workspace/improve-dashboard'
+          AIO_ADE_ROOT_PATH: '/workspace/repo',
+          AIO_ADE_WORKTREE_PATH: '/workspace/improve-dashboard'
         },
         activate: false
       }
@@ -1186,7 +1187,7 @@ describe('registerWorktreeHandlers', () => {
     const startupCommand = (startupCreateCall[1] as { command: string }).command
     const setupCommand = (setupCreateCall[1] as { command: string }).command
     expect(startupCommand).toBe('claude --prefill test')
-    expect(setupCommand).toBe('bash /workspace/repo/.git/orca/setup-runner.sh')
+    expect(setupCommand).toBe('bash /workspace/repo/.git/aio-ade/setup-runner.sh')
     expect(result.setup).toBeUndefined()
     expect(result.startupTerminal).toEqual({ spawned: true, surface: 'visible' })
     expect(result.timing?.phases.map((phase) => phase.phase)).toEqual(
@@ -1216,10 +1217,10 @@ describe('registerWorktreeHandlers', () => {
     getEffectiveHooksFromConfigMock.mockReturnValue({ scripts: { setup: 'pnpm install' } })
     shouldRunSetupForCreateMock.mockReturnValue(true)
     createSetupRunnerScriptMock.mockReturnValueOnce({
-      runnerScriptPath: '/workspace/repo/.git/orca/setup-runner.sh',
+      runnerScriptPath: '/workspace/repo/.git/aio-ade/setup-runner.sh',
       envVars: {
-        ORCA_ROOT_PATH: '/workspace/repo',
-        ORCA_WORKTREE_PATH: '/workspace/improve-dashboard'
+        AIO_ADE_ROOT_PATH: '/workspace/repo',
+        AIO_ADE_WORKTREE_PATH: '/workspace/improve-dashboard'
       },
       waitForAgentStartup: true
     })
@@ -1233,7 +1234,7 @@ describe('registerWorktreeHandlers', () => {
       createdWithAgent: 'claude',
       startup: {
         command: 'claude --prefill test',
-        env: { ORCA_AGENT_MODE: 'direct' },
+        env: { AIO_ADE_AGENT_MODE: 'direct' },
         telemetry: {
           agent_kind: 'claude',
           launch_source: 'new_workspace_composer',
@@ -1244,8 +1245,8 @@ describe('registerWorktreeHandlers', () => {
 
     expect(result.setup).toEqual(
       expect.objectContaining({
-        runnerScriptPath: '/workspace/repo/.git/orca/setup-runner.sh',
-        command: expect.stringContaining('bash /workspace/repo/.git/orca/setup-runner.sh')
+        runnerScriptPath: '/workspace/repo/.git/aio-ade/setup-runner.sh',
+        command: expect.stringContaining('bash /workspace/repo/.git/aio-ade/setup-runner.sh')
       })
     )
     expect(result.setup?.command).toContain('printf')
@@ -1994,21 +1995,21 @@ describe('registerWorktreeHandlers', () => {
       repoId: 'repo-1',
       name: 'improve-dashboard',
       pushTarget: {
-        remoteName: 'pr-prateek-orca',
+        remoteName: 'pr-prateek-aio-ade',
         branchName: 'prateek/fix-sidebar-agents-toggle',
-        remoteUrl: 'git@github.com:prateek/orca.git'
+        remoteUrl: 'git@github.com:prateek/aio-ade.git'
       }
     })
 
     expect(gitExecFileAsyncMock).toHaveBeenCalledWith(
-      ['remote', 'add', 'pr-prateek-orca', 'git@github.com:prateek/orca.git'],
+      ['remote', 'add', 'pr-prateek-aio-ade', 'git@github.com:prateek/aio-ade.git'],
       { cwd: '/workspace/repo' }
     )
     expect(gitExecFileAsyncMock).toHaveBeenCalledWith(
       [
         'fetch',
-        'pr-prateek-orca',
-        '+refs/heads/prateek/fix-sidebar-agents-toggle:refs/remotes/pr-prateek-orca/prateek/fix-sidebar-agents-toggle'
+        'pr-prateek-aio-ade',
+        '+refs/heads/prateek/fix-sidebar-agents-toggle:refs/remotes/pr-prateek-aio-ade/prateek/fix-sidebar-agents-toggle'
       ],
       { cwd: '/workspace/repo' }
     )
@@ -2016,7 +2017,7 @@ describe('registerWorktreeHandlers', () => {
       [
         'branch',
         '--set-upstream-to',
-        'pr-prateek-orca/prateek/fix-sidebar-agents-toggle',
+        'pr-prateek-aio-ade/prateek/fix-sidebar-agents-toggle',
         'improve-dashboard'
       ],
       { cwd: '/workspace/improve-dashboard' }
@@ -2025,16 +2026,16 @@ describe('registerWorktreeHandlers', () => {
       'repo-1::/workspace/improve-dashboard',
       expect.objectContaining({
         pushTarget: expect.objectContaining({
-          remoteName: 'pr-prateek-orca',
+          remoteName: 'pr-prateek-aio-ade',
           branchName: 'prateek/fix-sidebar-agents-toggle',
-          remoteUrl: 'git@github.com:prateek/orca.git',
+          remoteUrl: 'git@github.com:prateek/aio-ade.git',
           remoteCreated: true
         })
       })
     )
   })
 
-  it('keeps the Orca-created marker when a new worktree reuses an Orca-created fork remote', async () => {
+  it('keeps the AIO-ADE-created marker when a new worktree reuses an AIO-ADE-created fork remote', async () => {
     listWorktreesMock.mockResolvedValue([
       {
         path: '/workspace/improve-dashboard',
@@ -2045,9 +2046,9 @@ describe('registerWorktreeHandlers', () => {
       }
     ])
     const existingPushTarget = {
-      remoteName: 'pr-contributor-orca',
+      remoteName: 'pr-contributor-aio-ade',
       branchName: 'contributor/previous-fix',
-      remoteUrl: 'https://github.com/contributor/orca.git',
+      remoteUrl: 'https://github.com/contributor/aio-ade.git',
       remoteCreated: true
     }
     store.getAllWorktreeMeta.mockReturnValue({
@@ -2056,10 +2057,10 @@ describe('registerWorktreeHandlers', () => {
     store.setWorktreeMeta.mockImplementation((_worktreeId, meta) => meta)
     gitExecFileAsyncMock.mockImplementation(async (args: string[]) => {
       if (args[0] === 'remote' && args.length === 1) {
-        return { stdout: 'pr-contributor-orca\n', stderr: '' }
+        return { stdout: 'pr-contributor-aio-ade\n', stderr: '' }
       }
       if (args[0] === 'remote' && args[1] === 'get-url') {
-        return { stdout: 'https://github.com/contributor/orca.git\n', stderr: '' }
+        return { stdout: 'https://github.com/contributor/aio-ade.git\n', stderr: '' }
       }
       return { stdout: '', stderr: '' }
     })
@@ -2068,9 +2069,9 @@ describe('registerWorktreeHandlers', () => {
       repoId: 'repo-1',
       name: 'improve-dashboard',
       pushTarget: {
-        remoteName: 'pr-contributor-orca',
+        remoteName: 'pr-contributor-aio-ade',
         branchName: 'contributor/new-fix',
-        remoteUrl: 'https://github.com/contributor/orca.git'
+        remoteUrl: 'https://github.com/contributor/aio-ade.git'
       }
     })
 
@@ -2082,9 +2083,9 @@ describe('registerWorktreeHandlers', () => {
       'repo-1::/workspace/improve-dashboard',
       expect.objectContaining({
         pushTarget: expect.objectContaining({
-          remoteName: 'pr-contributor-orca',
+          remoteName: 'pr-contributor-aio-ade',
           branchName: 'contributor/new-fix',
-          remoteUrl: 'https://github.com/contributor/orca.git',
+          remoteUrl: 'https://github.com/contributor/aio-ade.git',
           remoteCreated: true
         })
       })
@@ -2103,9 +2104,9 @@ describe('registerWorktreeHandlers', () => {
     })
     getPullRequestPushTargetMock.mockResolvedValue({
       pushTarget: {
-        remoteName: 'pr-prateek-orca',
+        remoteName: 'pr-prateek-aio-ade',
         branchName: 'prateek/fix-sidebar-agents-toggle',
-        remoteUrl: 'git@github.com:prateek/orca.git'
+        remoteUrl: 'git@github.com:prateek/aio-ade.git'
       }
     })
     gitExecFileAsyncMock.mockImplementation(async (args: string[]) => {
@@ -2135,7 +2136,7 @@ describe('registerWorktreeHandlers', () => {
         'fetch',
         '--no-tags',
         'origin',
-        `+refs/pull/1738/head:refs/orca/pull/${ORIGIN_HEAD_COMPONENT}/1738`
+        `+refs/pull/1738/head:refs/aio-ade/pull/${ORIGIN_HEAD_COMPONENT}/1738`
       ],
       { cwd: '/workspace/repo', timeout: REVIEW_HEAD_FETCH_TIMEOUT_MS }
     )
@@ -2155,9 +2156,9 @@ describe('registerWorktreeHandlers', () => {
       headSha: 'abc123',
       branchNameOverride: 'prateek/fix-sidebar-agents-toggle',
       pushTarget: {
-        remoteName: 'pr-prateek-orca',
+        remoteName: 'pr-prateek-aio-ade',
         branchName: 'prateek/fix-sidebar-agents-toggle',
-        remoteUrl: 'git@github.com:prateek/orca.git'
+        remoteUrl: 'git@github.com:prateek/aio-ade.git'
       }
     })
   })
@@ -2260,9 +2261,9 @@ describe('registerWorktreeHandlers', () => {
       repoId: 'repo-1',
       name: 'wsl-fork',
       pushTarget: {
-        remoteName: 'pr-contributor-orca',
+        remoteName: 'pr-contributor-aio-ade',
         branchName: 'contributor/wsl-fork',
-        remoteUrl: 'git@github.com:contributor/orca.git'
+        remoteUrl: 'git@github.com:contributor/aio-ade.git'
       }
     })
 
@@ -2271,19 +2272,19 @@ describe('registerWorktreeHandlers', () => {
       { cwd: '/workspace/repo', wslDistro: 'Ubuntu' }
     )
     expect(gitExecFileAsyncMock).toHaveBeenCalledWith(
-      ['remote', 'add', 'pr-contributor-orca', 'git@github.com:contributor/orca.git'],
+      ['remote', 'add', 'pr-contributor-aio-ade', 'git@github.com:contributor/aio-ade.git'],
       { cwd: '/workspace/repo', wslDistro: 'Ubuntu' }
     )
     expect(gitExecFileAsyncMock).toHaveBeenCalledWith(
       [
         'fetch',
-        'pr-contributor-orca',
-        '+refs/heads/contributor/wsl-fork:refs/remotes/pr-contributor-orca/contributor/wsl-fork'
+        'pr-contributor-aio-ade',
+        '+refs/heads/contributor/wsl-fork:refs/remotes/pr-contributor-aio-ade/contributor/wsl-fork'
       ],
       { cwd: '/workspace/repo', wslDistro: 'Ubuntu' }
     )
     expect(gitExecFileAsyncMock).toHaveBeenCalledWith(
-      ['branch', '--set-upstream-to', 'pr-contributor-orca/contributor/wsl-fork', 'wsl-fork'],
+      ['branch', '--set-upstream-to', 'pr-contributor-aio-ade/contributor/wsl-fork', 'wsl-fork'],
       { cwd: '/workspace/wsl-fork', wslDistro: 'Ubuntu' }
     )
   })
@@ -4136,7 +4137,7 @@ describe('registerWorktreeHandlers', () => {
   })
 
   it('fetches a fork PR head via the SSH pull-head RPC, not git.exec', async () => {
-    const durableLocalRef = `refs/orca/pull/${ORIGIN_HEAD_COMPONENT}/42`
+    const durableLocalRef = `refs/aio-ade/pull/${ORIGIN_HEAD_COMPONENT}/42`
     const fetchGitHubPullRequestHead = vi.fn(async () => durableLocalRef)
     const exec = vi.fn(async (args: string[]) => {
       if (args[0] === 'remote') {
@@ -4179,7 +4180,7 @@ describe('registerWorktreeHandlers', () => {
   })
 
   it('fetches a fork PR head from origin, not the first remote, over SSH', async () => {
-    const durableLocalRef = `refs/orca/pull/${ORIGIN_HEAD_COMPONENT}/42`
+    const durableLocalRef = `refs/aio-ade/pull/${ORIGIN_HEAD_COMPONENT}/42`
     const fetchGitHubPullRequestHead = vi.fn(async () => durableLocalRef)
     // Why: `fork` is listed first, but fork PR heads live on the hosting remote (origin).
     const exec = vi.fn(async (args: string[]) => {
@@ -4251,7 +4252,7 @@ describe('registerWorktreeHandlers', () => {
         'fetch',
         '--no-tags',
         'origin',
-        `+refs/pull/1849/head:refs/orca/pull/${ORIGIN_HEAD_COMPONENT}/1849`
+        `+refs/pull/1849/head:refs/aio-ade/pull/${ORIGIN_HEAD_COMPONENT}/1849`
       ],
       { cwd: '/workspace/repo', timeout: REVIEW_HEAD_FETCH_TIMEOUT_MS }
     )
@@ -4301,7 +4302,7 @@ describe('registerWorktreeHandlers', () => {
         'fetch',
         '--no-tags',
         'origin',
-        `+refs/pull/1849/head:refs/orca/pull/${ORIGIN_HEAD_COMPONENT}/1849`
+        `+refs/pull/1849/head:refs/aio-ade/pull/${ORIGIN_HEAD_COMPONENT}/1849`
       ],
       { cwd: '/workspace/repo', timeout: REVIEW_HEAD_FETCH_TIMEOUT_MS }
     )
@@ -4841,7 +4842,7 @@ describe('registerWorktreeHandlers', () => {
     expect(result.localBaseRefUpdateSuggestion).toBeUndefined()
   })
 
-  it('reads remote orca.yaml and returns a setup launch payload during SSH create', async () => {
+  it('reads remote aio-ade.yaml and returns a setup launch payload during SSH create', async () => {
     const repo = {
       id: 'repo-ssh',
       path: '/remote/repo',
@@ -4858,7 +4859,7 @@ describe('registerWorktreeHandlers', () => {
         }
         if (args[0] === 'rev-parse' && args[1] === '--git-path') {
           return {
-            stdout: '/remote/repo/.git/worktrees/repo-improve-dashboard/orca/setup-runner.sh\n',
+            stdout: '/remote/repo/.git/worktrees/repo-improve-dashboard/aio-ade/setup-runner.sh\n',
             stderr: ''
           }
         }
@@ -4897,7 +4898,7 @@ describe('registerWorktreeHandlers', () => {
     getSshFilesystemProviderMock.mockReturnValue(fsProvider)
     getActiveMultiplexerMock.mockReturnValue(mux)
     store.setWorktreeMeta.mockImplementation((_worktreeId, meta) => meta)
-    parseOrcaYamlMock.mockReturnValue({ scripts: { setup: 'pnpm install' } })
+    parseAioAdeYamlMock.mockReturnValue({ scripts: { setup: 'pnpm install' } })
     getEffectiveHooksFromConfigMock.mockReturnValue({ scripts: { setup: 'pnpm install' } })
     shouldRunSetupForCreateMock.mockReturnValue(true)
 
@@ -4907,27 +4908,29 @@ describe('registerWorktreeHandlers', () => {
       setupDecision: 'run'
     })
 
-    expect(fsProvider.readFile).toHaveBeenCalledWith('/remote/repo/orca.yaml')
-    expect(fsProvider.readFile).toHaveBeenCalledWith('/remote/repo-improve-dashboard/orca.yaml')
+    expect(fsProvider.readFile).toHaveBeenCalledWith(`/remote/repo/${PROJECT_CONFIG_FILE_NAME}`)
+    expect(fsProvider.readFile).toHaveBeenCalledWith(
+      `/remote/repo-improve-dashboard/${PROJECT_CONFIG_FILE_NAME}`
+    )
     expect(provider.exec).toHaveBeenCalledWith(
-      ['rev-parse', '--git-path', 'orca/setup-runner.sh'],
+      ['rev-parse', '--git-path', 'aio-ade/setup-runner.sh'],
       '/remote/repo-improve-dashboard'
     )
     expect(fsProvider.createDir).toHaveBeenCalledWith(
-      '/remote/repo/.git/worktrees/repo-improve-dashboard/orca'
+      '/remote/repo/.git/worktrees/repo-improve-dashboard/aio-ade'
     )
     expect(fsProvider.writeFile).toHaveBeenCalledWith(
-      '/remote/repo/.git/worktrees/repo-improve-dashboard/orca/setup-runner.sh',
+      '/remote/repo/.git/worktrees/repo-improve-dashboard/aio-ade/setup-runner.sh',
       '#!/usr/bin/env bash\nset -e\npnpm install\n'
     )
     expect(result).toEqual(
       expect.objectContaining({
         setup: {
           runnerScriptPath:
-            '/remote/repo/.git/worktrees/repo-improve-dashboard/orca/setup-runner.sh',
+            '/remote/repo/.git/worktrees/repo-improve-dashboard/aio-ade/setup-runner.sh',
           envVars: expect.objectContaining({
-            ORCA_ROOT_PATH: '/remote/repo',
-            ORCA_WORKTREE_PATH: '/remote/repo-improve-dashboard'
+            AIO_ADE_ROOT_PATH: '/remote/repo',
+            AIO_ADE_WORKTREE_PATH: '/remote/repo-improve-dashboard'
           })
         }
       })
@@ -6576,10 +6579,10 @@ describe('registerWorktreeHandlers', () => {
       {}
     )
     expect(result).toMatchObject({
-      runnerScriptPath: '/workspace/repo/.git/orca/issue-command-runner.sh',
+      runnerScriptPath: '/workspace/repo/.git/aio-ade/issue-command-runner.sh',
       envVars: {
-        ORCA_ROOT_PATH: '/workspace/repo',
-        ORCA_WORKTREE_PATH: '/workspace/improve-dashboard'
+        AIO_ADE_ROOT_PATH: '/workspace/repo',
+        AIO_ADE_WORKTREE_PATH: '/workspace/improve-dashboard'
       }
     })
   })
@@ -7025,7 +7028,7 @@ describe('registerWorktreeHandlers', () => {
     store.getProjectHostSetups.mockReturnValue([
       {
         id: 'repo-1',
-        projectId: 'github:stablyai/orca',
+        projectId: 'github:keepmeside/aio-ade-platform',
         hostId: 'local',
         repoId: 'repo-1',
         path: '/workspace/repo',
@@ -7053,7 +7056,7 @@ describe('registerWorktreeHandlers', () => {
     })
     store.setWorktreeMeta.mockReturnValue({
       instanceId: 'existing-instance',
-      projectId: 'github:stablyai/orca',
+      projectId: 'github:keepmeside/aio-ade-platform',
       hostId: 'local',
       projectHostSetupId: 'repo-1',
       lastActivityAt: 42
@@ -7068,11 +7071,11 @@ describe('registerWorktreeHandlers', () => {
     }[]
 
     expect(store.setWorktreeMeta).toHaveBeenCalledWith('repo-1::/workspace/existing-wt', {
-      projectId: 'github:stablyai/orca'
+      projectId: 'github:keepmeside/aio-ade-platform'
     })
     expect(listed[0]).toMatchObject({
       id: 'repo-1::/workspace/existing-wt',
-      projectId: 'github:stablyai/orca',
+      projectId: 'github:keepmeside/aio-ade-platform',
       hostId: 'local',
       projectHostSetupId: 'repo-1',
       lastActivityAt: 42
@@ -7092,7 +7095,7 @@ describe('registerWorktreeHandlers', () => {
     store.getProjectHostSetups.mockReturnValue([
       {
         id: 'repo-1',
-        projectId: 'github:stablyai/orca',
+        projectId: 'github:keepmeside/aio-ade-platform',
         hostId: 'local',
         repoId: 'repo-1',
         path: '/workspace/repo',
@@ -7127,15 +7130,15 @@ describe('registerWorktreeHandlers', () => {
   it('repairs legacy project ids when SSH worktree listing falls back to persisted metadata', async () => {
     const repo = {
       id: 'repo-ssh',
-      path: '/remote/orca',
-      displayName: 'orca',
+      path: '/remote/aio-ade',
+      displayName: 'aio-ade',
       badgeColor: '#000',
       addedAt: 0,
       connectionId: 'ssh-target-1'
     }
     store.getRepo.mockReturnValue(repo)
     store.getAllWorktreeMeta.mockReturnValue({
-      'repo-ssh::/remote/orca': makeWorktreeMeta({
+      'repo-ssh::/remote/aio-ade': makeWorktreeMeta({
         instanceId: 'existing-instance',
         projectId: 'repo:repo-ssh',
         hostId: 'ssh:ssh-target-1',
@@ -7146,11 +7149,11 @@ describe('registerWorktreeHandlers', () => {
     store.getProjectHostSetups.mockReturnValue([
       {
         id: 'repo-ssh',
-        projectId: 'github:stablyai/orca',
+        projectId: 'github:keepmeside/aio-ade-platform',
         hostId: 'ssh:ssh-target-1',
         repoId: 'repo-ssh',
-        path: '/remote/orca',
-        displayName: 'orca',
+        path: '/remote/aio-ade',
+        displayName: 'aio-ade',
         setupState: 'ready',
         setupMethod: 'imported-existing-folder',
         createdAt: 0,
@@ -7160,7 +7163,7 @@ describe('registerWorktreeHandlers', () => {
     store.setWorktreeMeta.mockReturnValue(
       makeWorktreeMeta({
         instanceId: 'existing-instance',
-        projectId: 'github:stablyai/orca',
+        projectId: 'github:keepmeside/aio-ade-platform',
         hostId: 'ssh:ssh-target-1',
         projectHostSetupId: 'repo-ssh',
         lastActivityAt: 42
@@ -7176,13 +7179,13 @@ describe('registerWorktreeHandlers', () => {
     }[]
 
     expect(getSshGitProviderMock).toHaveBeenCalledWith('ssh-target-1')
-    expect(store.setWorktreeMeta).toHaveBeenCalledWith('repo-ssh::/remote/orca', {
-      projectId: 'github:stablyai/orca'
+    expect(store.setWorktreeMeta).toHaveBeenCalledWith('repo-ssh::/remote/aio-ade', {
+      projectId: 'github:keepmeside/aio-ade-platform'
     })
     expect(listed).toEqual([
       expect.objectContaining({
-        id: 'repo-ssh::/remote/orca',
-        projectId: 'github:stablyai/orca',
+        id: 'repo-ssh::/remote/aio-ade',
+        projectId: 'github:keepmeside/aio-ade-platform',
         hostId: 'ssh:ssh-target-1',
         projectHostSetupId: 'repo-ssh',
         lastActivityAt: 42
@@ -7561,10 +7564,10 @@ describe('registerWorktreeHandlers', () => {
         branch: 'improve-dashboard'
       }),
       setup: {
-        runnerScriptPath: '/workspace/repo/.git/orca/setup-runner.sh',
+        runnerScriptPath: '/workspace/repo/.git/aio-ade/setup-runner.sh',
         envVars: {
-          ORCA_ROOT_PATH: '/workspace/repo',
-          ORCA_WORKTREE_PATH: '/workspace/improve-dashboard'
+          AIO_ADE_ROOT_PATH: '/workspace/repo',
+          AIO_ADE_WORKTREE_PATH: '/workspace/improve-dashboard'
         }
       }
     })
@@ -7626,8 +7629,8 @@ describe('registerWorktreeHandlers', () => {
     )
   })
 
-  it('launches setup even when primary and worktree orca.yaml scripts diverge', async () => {
-    // Why: benign orca.yaml divergence must not disable setup (regression from #1280 content-equality gate); repo trust already gates execution.
+  it('launches setup even when primary and worktree aio-ade.yaml scripts diverge', async () => {
+    // Why: benign aio-ade.yaml divergence must not disable setup (regression from #1280 content-equality gate); repo trust already gates execution.
     listWorktreesMock.mockResolvedValue(createdWorktreeList)
     getEffectiveHooksMock.mockImplementation((_repo, worktreePath?: string) => ({
       scripts: {
@@ -7655,7 +7658,7 @@ describe('registerWorktreeHandlers', () => {
     expect(result).toEqual(
       expect.objectContaining({
         setup: expect.objectContaining({
-          runnerScriptPath: '/workspace/repo/.git/orca/setup-runner.sh'
+          runnerScriptPath: '/workspace/repo/.git/aio-ade/setup-runner.sh'
         })
       })
     )
@@ -7884,7 +7887,7 @@ describe('registerWorktreeHandlers', () => {
 
   it('recovers forced Windows long-path worktree removal through local deletion and prune', async () => {
     setPlatform('win32')
-    const parentDir = await mkdtemp(join(tmpdir(), 'orca-ipc-long-path-'))
+    const parentDir = await mkdtemp(join(tmpdir(), 'aio-ade-ipc-long-path-'))
     const repoPath = join(parentDir, 'repo')
     const worktreePath = join(parentDir, 'feature-wt')
     await mkdir(worktreePath, { recursive: true })
@@ -8308,7 +8311,7 @@ describe('registerWorktreeHandlers', () => {
       worktreeId: 'repo-ssh::/remote/feature-wt'
     })
 
-    expect(fsProvider.readFile).toHaveBeenCalledWith('/remote/repo/orca.yaml')
+    expect(fsProvider.readFile).toHaveBeenCalledWith(`/remote/repo/${PROJECT_CONFIG_FILE_NAME}`)
     expect(provider.execNonInteractive).toHaveBeenCalledWith(
       '/bin/bash',
       ['-lc', 'echo archived'],
@@ -8316,8 +8319,8 @@ describe('registerWorktreeHandlers', () => {
       120_000,
       undefined,
       expect.objectContaining({
-        ORCA_ROOT_PATH: '/remote/repo',
-        ORCA_WORKTREE_PATH: '/remote/feature-wt'
+        AIO_ADE_ROOT_PATH: '/remote/repo',
+        AIO_ADE_WORKTREE_PATH: '/remote/feature-wt'
       })
     )
     expect(provider.removeWorktree).toHaveBeenCalledWith('/remote/feature-wt', undefined)
@@ -8622,7 +8625,9 @@ describe('registerWorktreeHandlers', () => {
       worktreeId: 'repo-ssh::C:\\remote\\feature-wt'
     })
 
-    expect(fsProvider.readFile).toHaveBeenCalledWith('C:\\remote\\repo\\orca.yaml')
+    expect(fsProvider.readFile).toHaveBeenCalledWith(
+      `C:\\remote\\repo\\${PROJECT_CONFIG_FILE_NAME}`
+    )
     expect(provider.execNonInteractive).toHaveBeenCalledWith(
       'cmd.exe',
       ['/d', '/s', '/c', 'echo archived'],
@@ -8630,8 +8635,8 @@ describe('registerWorktreeHandlers', () => {
       120_000,
       undefined,
       expect.objectContaining({
-        ORCA_ROOT_PATH: 'C:\\remote\\repo',
-        ORCA_WORKTREE_PATH: 'C:\\remote\\feature-wt'
+        AIO_ADE_ROOT_PATH: 'C:\\remote\\repo',
+        AIO_ADE_WORKTREE_PATH: 'C:\\remote\\feature-wt'
       })
     )
   })
@@ -8774,7 +8779,7 @@ describe('registerWorktreeHandlers', () => {
     }
     store.getRepos.mockReturnValue([localRepo, sshRepo])
     getSshFilesystemProviderMock.mockReturnValue(fsProvider)
-    parseOrcaYamlMock.mockReturnValue({ scripts: { archive: 'remote-cleanup' } })
+    parseAioAdeYamlMock.mockReturnValue({ scripts: { archive: 'remote-cleanup' } })
 
     await expect(
       handlers['hooks:check'](null, {
@@ -8787,7 +8792,7 @@ describe('registerWorktreeHandlers', () => {
       hooks: { scripts: { archive: 'remote-cleanup' } },
       mayNeedUpdate: false
     })
-    expect(fsProvider.readFile).toHaveBeenCalledWith('/remote/repo/orca.yaml')
+    expect(fsProvider.readFile).toHaveBeenCalledWith(`/remote/repo/${PROJECT_CONFIG_FILE_NAME}`)
     expect(hasHooksFileMock).not.toHaveBeenCalled()
   })
 
@@ -8974,13 +8979,13 @@ describe('registerWorktreeHandlers', () => {
     expect(forceDeleteLocalBranchMock).not.toHaveBeenCalled()
   })
 
-  it('removes an unused Orca-created fork remote after deleting its worktree', async () => {
+  it('removes an unused AIO-ADE-created fork remote after deleting its worktree', async () => {
     mockKnownFeatureWorktree()
     removeWorktreeMock.mockResolvedValue(undefined)
     const pushTarget = {
-      remoteName: 'pr-contributor-orca',
+      remoteName: 'pr-contributor-aio-ade',
       branchName: 'feature/from-fork',
-      remoteUrl: 'https://github.com/contributor/orca.git',
+      remoteUrl: 'https://github.com/contributor/aio-ade.git',
       remoteCreated: true
     }
     store.getWorktreeMeta.mockReturnValue(makeWorktreeMeta({ pushTarget }))
@@ -8992,7 +8997,7 @@ describe('registerWorktreeHandlers', () => {
         throw new Error('no branch config')
       }
       if (args[0] === 'remote' && args[1] === 'get-url') {
-        return { stdout: 'https://github.com/contributor/orca.git\n', stderr: '' }
+        return { stdout: 'https://github.com/contributor/aio-ade.git\n', stderr: '' }
       }
       return { stdout: '', stderr: '' }
     })
@@ -9001,18 +9006,21 @@ describe('registerWorktreeHandlers', () => {
       worktreeId: 'repo-1::/workspace/feature-wt'
     })
 
-    expect(gitExecFileAsyncMock).toHaveBeenCalledWith(['remote', 'remove', 'pr-contributor-orca'], {
-      cwd: '/workspace/repo'
-    })
+    expect(gitExecFileAsyncMock).toHaveBeenCalledWith(
+      ['remote', 'remove', 'pr-contributor-aio-ade'],
+      {
+        cwd: '/workspace/repo'
+      }
+    )
   })
 
-  it('keeps an Orca-created fork remote while another worktree still uses it', async () => {
+  it('keeps an AIO-ADE-created fork remote while another worktree still uses it', async () => {
     mockKnownFeatureWorktree()
     removeWorktreeMock.mockResolvedValue(undefined)
     const pushTarget = {
-      remoteName: 'pr-contributor-orca',
+      remoteName: 'pr-contributor-aio-ade',
       branchName: 'feature/from-fork',
-      remoteUrl: 'https://github.com/contributor/orca.git',
+      remoteUrl: 'https://github.com/contributor/aio-ade.git',
       remoteCreated: true
     }
     store.getWorktreeMeta.mockReturnValue(makeWorktreeMeta({ pushTarget }))
@@ -9031,7 +9039,7 @@ describe('registerWorktreeHandlers', () => {
     })
 
     expect(gitExecFileAsyncMock).not.toHaveBeenCalledWith(
-      ['remote', 'remove', 'pr-contributor-orca'],
+      ['remote', 'remove', 'pr-contributor-aio-ade'],
       expect.any(Object)
     )
   })
@@ -9040,9 +9048,9 @@ describe('registerWorktreeHandlers', () => {
     mockKnownFeatureWorktree()
     removeWorktreeMock.mockResolvedValue(undefined)
     const pushTarget = {
-      remoteName: 'pr-contributor-orca',
+      remoteName: 'pr-contributor-aio-ade',
       branchName: 'feature/from-fork',
-      remoteUrl: 'https://github.com/contributor/orca.git',
+      remoteUrl: 'https://github.com/contributor/aio-ade.git',
       remoteCreated: true
     }
     store.getWorktreeMeta.mockReturnValue(makeWorktreeMeta({ pushTarget }))
@@ -9060,7 +9068,7 @@ describe('registerWorktreeHandlers', () => {
         throw new Error('no branch config')
       }
       if (args[0] === 'remote' && args[1] === 'get-url') {
-        return { stdout: 'https://github.com/contributor/orca.git\n', stderr: '' }
+        return { stdout: 'https://github.com/contributor/aio-ade.git\n', stderr: '' }
       }
       return { stdout: '', stderr: '' }
     })
@@ -9069,9 +9077,12 @@ describe('registerWorktreeHandlers', () => {
       worktreeId: 'repo-1::/workspace/feature-wt'
     })
 
-    expect(gitExecFileAsyncMock).toHaveBeenCalledWith(['remote', 'remove', 'pr-contributor-orca'], {
-      cwd: '/workspace/repo'
-    })
+    expect(gitExecFileAsyncMock).toHaveBeenCalledWith(
+      ['remote', 'remove', 'pr-contributor-aio-ade'],
+      {
+        cwd: '/workspace/repo'
+      }
+    )
   })
 
   it('reports already-missing unregistered delete paths before teardown, hooks, or git removal', async () => {
@@ -9163,8 +9174,8 @@ describe('registerWorktreeHandlers', () => {
     })
   })
 
-  it('force-removes a legacy Orca-created orphaned worktree directory after Git tracking is gone', async () => {
-    const parentDir = await mkdtemp(join(tmpdir(), 'orca-ipc-orphan-'))
+  it('force-removes a legacy AIO-ADE-created orphaned worktree directory after Git tracking is gone', async () => {
+    const parentDir = await mkdtemp(join(tmpdir(), 'aio-ade-ipc-orphan-'))
     const repoPath = join(parentDir, 'repo')
     const orphanPath = join(parentDir, 'orphan')
     const adminWorktreePath = join(repoPath, '.git', 'worktrees', 'orphan')
@@ -9210,8 +9221,8 @@ describe('registerWorktreeHandlers', () => {
     }
   })
 
-  it('prompts for force before removing an Orca-created orphaned worktree directory', async () => {
-    const parentDir = await mkdtemp(join(tmpdir(), 'orca-ipc-orphan-'))
+  it('prompts for force before removing an AIO-ADE-created orphaned worktree directory', async () => {
+    const parentDir = await mkdtemp(join(tmpdir(), 'aio-ade-ipc-orphan-'))
     const repoPath = join(parentDir, 'repo')
     const orphanPath = join(parentDir, 'orphan')
     const adminWorktreePath = join(repoPath, '.git', 'worktrees', 'orphan')
@@ -9231,7 +9242,7 @@ describe('registerWorktreeHandlers', () => {
     store.getRepos.mockReturnValue([repo])
     mockKnownFeatureWorktree(join(parentDir, 'real-feature'), repoPath)
     store.getWorktreeMeta.mockReturnValue(
-      makeWorktreeMeta({ orcaCreatedAt: Date.now(), orcaCreationSource: 'runtime' })
+      makeWorktreeMeta({ aioAdeCreatedAt: Date.now(), aioAdeCreationSource: 'runtime' })
     )
 
     try {
@@ -9249,8 +9260,8 @@ describe('registerWorktreeHandlers', () => {
     }
   })
 
-  it('prompts then force-removes an Orca-created unregistered leftover directory with no git marker', async () => {
-    const parentDir = await mkdtemp(join(tmpdir(), 'orca-ipc-leftover-'))
+  it('prompts then force-removes an AIO-ADE-created unregistered leftover directory with no git marker', async () => {
+    const parentDir = await mkdtemp(join(tmpdir(), 'aio-ade-ipc-leftover-'))
     const repoPath = join(parentDir, 'repo')
     const leftoverPath = join(parentDir, 'leftover')
     const worktreeId = `repo-1::${leftoverPath}`
@@ -9266,7 +9277,7 @@ describe('registerWorktreeHandlers', () => {
     })
     mockKnownFeatureWorktree(join(parentDir, 'real-feature'), repoPath)
     store.getWorktreeMeta.mockReturnValue(
-      makeWorktreeMeta({ orcaCreatedAt: Date.now(), orcaCreationSource: 'runtime' })
+      makeWorktreeMeta({ aioAdeCreatedAt: Date.now(), aioAdeCreationSource: 'runtime' })
     )
     gitExecFileAsyncMock.mockImplementation(async (args: string[]) => {
       if (args[0] === 'status') {
@@ -9305,8 +9316,8 @@ describe('registerWorktreeHandlers', () => {
     }
   })
 
-  it('rejects an Orca-created unregistered local directory with a git directory', async () => {
-    const parentDir = await mkdtemp(join(tmpdir(), 'orca-ipc-standalone-'))
+  it('rejects an AIO-ADE-created unregistered local directory with a git directory', async () => {
+    const parentDir = await mkdtemp(join(tmpdir(), 'aio-ade-ipc-standalone-'))
     const repoPath = join(parentDir, 'repo')
     const standalonePath = join(parentDir, 'standalone')
     await mkdir(join(standalonePath, '.git'), { recursive: true })
@@ -9320,7 +9331,7 @@ describe('registerWorktreeHandlers', () => {
     })
     mockKnownFeatureWorktree(join(parentDir, 'real-feature'), repoPath)
     store.getWorktreeMeta.mockReturnValue(
-      makeWorktreeMeta({ orcaCreatedAt: Date.now(), orcaCreationSource: 'runtime' })
+      makeWorktreeMeta({ aioAdeCreatedAt: Date.now(), aioAdeCreationSource: 'runtime' })
     )
 
     try {
@@ -9340,7 +9351,7 @@ describe('registerWorktreeHandlers', () => {
   })
 
   it('does not inspect or delete a local path when SSH orphan cleanup has no filesystem provider', async () => {
-    const localPath = await mkdtemp(join(tmpdir(), 'orca-ipc-ssh-missing-fs-'))
+    const localPath = await mkdtemp(join(tmpdir(), 'aio-ade-ipc-ssh-missing-fs-'))
     const repo = {
       id: 'repo-ssh-missing-fs',
       path: '/remote/repo',
@@ -9363,7 +9374,7 @@ describe('registerWorktreeHandlers', () => {
     }
     store.getRepo.mockReturnValue(repo)
     store.getWorktreeMeta.mockReturnValue(
-      makeWorktreeMeta({ orcaCreatedAt: Date.now(), orcaCreationSource: 'ssh' })
+      makeWorktreeMeta({ aioAdeCreatedAt: Date.now(), aioAdeCreationSource: 'ssh' })
     )
     getSshGitProviderMock.mockReturnValue(provider)
     getSshFilesystemProviderMock.mockReturnValue(undefined)
@@ -9414,7 +9425,7 @@ describe('registerWorktreeHandlers', () => {
     }
     store.getRepo.mockReturnValue(repo)
     store.getWorktreeMeta.mockReturnValue(
-      makeWorktreeMeta({ orcaCreatedAt: Date.now(), orcaCreationSource: 'ssh' })
+      makeWorktreeMeta({ aioAdeCreatedAt: Date.now(), aioAdeCreationSource: 'ssh' })
     )
     getSshGitProviderMock.mockReturnValue(provider)
     getSshFilesystemProviderMock.mockReturnValue(fsProvider)
@@ -9897,7 +9908,7 @@ describe('registerWorktreeHandlers', () => {
     }
     const fsProvider = {
       readFile: vi.fn(async (filePath: string) => {
-        if (filePath.endsWith('/.orca/issue-command')) {
+        if (filePath.endsWith(`/${REPO_APP_DIR_NAME}/issue-command`)) {
           return { content: 'local command\n', isBinary: false }
         }
         throw new Error('shared read failed')
@@ -9941,7 +9952,7 @@ describe('registerWorktreeHandlers', () => {
     await expect(
       handlers['hooks:writeIssueCommand'](null, {
         repoId: 'repo-ssh',
-        content: 'orca issue command'
+        content: 'aio-ade issue command'
       })
     ).rejects.toThrow('ssh read failed')
 
@@ -9964,7 +9975,7 @@ describe('registerWorktreeHandlers', () => {
     }
     const fsProvider = {
       readFile: vi.fn(async (filePath: string) => {
-        if (filePath.endsWith('/.orca/issue-command')) {
+        if (filePath.endsWith(`/${REPO_APP_DIR_NAME}/issue-command`)) {
           return { content: 'remote command\n', isBinary: false }
         }
         throw Object.assign(new Error('missing'), { code: 'ENOENT' })
@@ -9984,7 +9995,9 @@ describe('registerWorktreeHandlers', () => {
       effectiveContent: 'remote command',
       source: 'local'
     })
-    expect(fsProvider.readFile).toHaveBeenCalledWith('/remote/repo/.orca/issue-command')
+    expect(fsProvider.readFile).toHaveBeenCalledWith(
+      `/remote/repo/${REPO_APP_DIR_NAME}/issue-command`
+    )
   })
 
   it('creates remote .gitignore only when it is missing while writing SSH issue commands', async () => {
@@ -10009,14 +10022,18 @@ describe('registerWorktreeHandlers', () => {
 
     await handlers['hooks:writeIssueCommand'](null, {
       repoId: 'repo-ssh',
-      content: 'orca issue command'
+      content: 'aio-ade issue command'
     })
 
-    expect(fsProvider.writeFile).toHaveBeenNthCalledWith(1, '/remote/repo/.gitignore', '.orca\n')
+    expect(fsProvider.writeFile).toHaveBeenNthCalledWith(
+      1,
+      '/remote/repo/.gitignore',
+      `${REPO_APP_DIR_NAME}\n`
+    )
     expect(fsProvider.writeFile).toHaveBeenNthCalledWith(
       2,
-      '/remote/repo/.orca/issue-command',
-      'orca issue command\n'
+      `/remote/repo/${REPO_APP_DIR_NAME}/issue-command`,
+      'aio-ade issue command\n'
     )
   })
 
@@ -10036,7 +10053,7 @@ describe('registerWorktreeHandlers', () => {
     await expect(
       handlers['hooks:writeIssueCommand'](null, {
         repoId: 'repo-ssh',
-        content: 'orca issue command'
+        content: 'aio-ade issue command'
       })
     ).rejects.toThrow('Remote filesystem unavailable')
   })

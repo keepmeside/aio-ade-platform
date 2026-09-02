@@ -17,7 +17,7 @@ import { browserManager } from '../browser/browser-manager'
 import { browserSessionRegistry } from '../browser/browser-session-registry'
 import { translateMain } from '../i18n/main-i18n'
 import { normalizeBrowserNavigationUrl } from '../../shared/browser-url'
-import { ORCA_BROWSER_GUEST_WEB_PREFERENCES } from '../../shared/browser-guest-web-preferences'
+import { AIO_ADE_BROWSER_GUEST_WEB_PREFERENCES } from '../../shared/browser-guest-web-preferences'
 import { isCrashReportReason } from '../../shared/crash-reporting'
 import {
   DEFAULT_RENDERER_RECOVERY_MAX_RECOVERIES,
@@ -184,7 +184,7 @@ type CreateMainWindowOptions = {
     details: Electron.RenderProcessGoneDetails,
     webContentsId: number
   ) => void
-  /** Returns true when Orca should reload after renderer loss; update-relaunch/quit tear down children intentionally, so don't fight shutdown. */
+  /** Returns true when AIO-ADE should reload after renderer loss; update-relaunch/quit tear down children intentionally, so don't fight shutdown. */
   shouldRecoverRenderer?: (
     details: Electron.RenderProcessGoneDetails,
     webContentsId: number
@@ -259,9 +259,9 @@ export function createMainWindow(
     ...(savedBounds ? { x: savedBounds.x, y: savedBounds.y } : {}),
     minWidth: MIN_WIDTH,
     minHeight: MIN_HEIGHT,
-    title: opts?.title ?? 'Orca',
+    title: opts?.title ?? 'AIO-ADE',
     show: false,
-    // Why: macOS swallows the app-activating click by default, so clicking back into Orca needed a second click (Windows/Linux already deliver it).
+    // Why: macOS swallows the app-activating click by default, so clicking back into AIO-ADE needed a second click (Windows/Linux already deliver it).
     acceptFirstMouse: true,
     // Why: auto-hide the Windows/Linux menu bar to save a row (Alt reveals it); macOS uses the system menu bar anyway.
     autoHideMenuBar: true,
@@ -464,7 +464,7 @@ export function createMainWindow(
     webPreferences.contextIsolation = true
     webPreferences.sandbox = true
     // Why: force the browser guest policy even if host markup omits or misspells a preference.
-    Object.assign(webPreferences, ORCA_BROWSER_GUEST_WEB_PREFERENCES)
+    Object.assign(webPreferences, AIO_ADE_BROWSER_GUEST_WEB_PREFERENCES)
     // Why: keep the registry-validated partition so isolated session profiles use their own storage while other hardening stays intact.
     webPreferences.partition = partition
   })
@@ -729,7 +729,7 @@ export function createMainWindow(
 
     const capturedTerminalActionId =
       focusedShortcutContext.context === 'terminal' &&
-      focusedShortcutContext.terminalShortcutPolicy === 'orca-first' &&
+      focusedShortcutContext.terminalShortcutPolicy === 'aio-ade-first' &&
       windowShortcutActionCapturesTerminal(action)
         ? getWindowShortcutActionId(action)
         : null
@@ -790,7 +790,7 @@ export function createMainWindow(
     }
 
     if (isMacAppPasteInput(input)) {
-      // Why: chat/terminal panes hold focus without native editable controls, so route Cmd+V through Orca's paste ownership.
+      // Why: chat/terminal panes hold focus without native editable controls, so route Cmd+V through AIO-ADE's paste ownership.
       event.preventDefault()
       mainWindow.webContents.send('ui:appMenuPaste')
       return
@@ -969,10 +969,10 @@ export function createMainWindow(
     if (store.getUI().trayMinimizeNoticeShown !== true) {
       try {
         new Notification({
-          title: 'Orca',
+          title: 'AIO-ADE',
           body: translateMain(
             'tray.minimizeNotice.body',
-            'Orca is still running in the system tray'
+            'AIO-ADE is still running in the system tray'
           )
         }).show()
       } catch {

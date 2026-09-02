@@ -36,7 +36,7 @@ import { createPullRequestGenerationSlice } from './slices/pull-request-generati
 import { createCommitMessageGenerationSlice } from './slices/commit-message-generation'
 import { createPinnedTabCloseConfirmSlice } from './slices/pinned-tab-close-confirm'
 import { createRecentlyClosedTabsSlice } from './slices/recently-closed-tabs'
-import { createOrcaProfilesSlice } from './slices/orca-profiles'
+import { createAioAdeProfilesSlice } from './slices/aio-ade-profiles'
 import { createNewIssueDraftSlice } from './slices/new-issue-draft'
 import { createRemoteServerUpdatesSlice } from './slices/remote-server-updates'
 import { e2eConfig } from '@/lib/e2e-config'
@@ -88,7 +88,7 @@ export const useAppStore = create<AppState>()((...a) => {
     ...createCommitMessageGenerationSlice(...a),
     ...createPinnedTabCloseConfirmSlice(...a),
     ...createRecentlyClosedTabsSlice(...a),
-    ...createOrcaProfilesSlice(...a),
+    ...createAioAdeProfilesSlice(...a),
     ...createNewIssueDraftSlice(...a),
     ...createRemoteServerUpdatesSlice(...a)
   }

@@ -37,10 +37,10 @@ export function recordHangObservation(options: {
 }
 
 function runWatchdog(parentPid: number): void {
-  const markerPath = process.env.ORCA_HANG_WATCHDOG_MARKER_PATH ?? ''
-  const timeoutMs = Number(process.env.ORCA_HANG_WATCHDOG_TIMEOUT_MS) || DEFAULT_TIMEOUT_MS
+  const markerPath = process.env.AIO_ADE_HANG_WATCHDOG_MARKER_PATH ?? ''
+  const timeoutMs = Number(process.env.AIO_ADE_HANG_WATCHDOG_TIMEOUT_MS) || DEFAULT_TIMEOUT_MS
   const checkIntervalMs =
-    Number(process.env.ORCA_HANG_WATCHDOG_CHECK_INTERVAL_MS) || DEFAULT_CHECK_INTERVAL_MS
+    Number(process.env.AIO_ADE_HANG_WATCHDOG_CHECK_INTERVAL_MS) || DEFAULT_CHECK_INTERVAL_MS
 
   const loop = createHangWatchdogChildLoop({
     timeoutMs,
@@ -66,7 +66,7 @@ function runWatchdog(parentPid: number): void {
   setInterval(() => loop.tick(), checkIntervalMs)
 }
 
-const configuredParentPid = Number(process.env.ORCA_HANG_WATCHDOG_PARENT_PID)
+const configuredParentPid = Number(process.env.AIO_ADE_HANG_WATCHDOG_PARENT_PID)
 if (Number.isInteger(configuredParentPid) && configuredParentPid > 0) {
   runWatchdog(configuredParentPid)
 }

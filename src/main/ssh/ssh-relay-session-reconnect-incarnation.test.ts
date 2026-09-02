@@ -98,7 +98,7 @@ function emitExitDuringAttach(payload: { id: string; code: number; incarnationId
 describe('SshRelaySession reconnect incarnation ordering', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    delete process.env.ORCA_FEATURE_REMOTE_AGENT_HOOKS
+    delete process.env.AIO_ADE_FEATURE_REMOTE_AGENT_HOOKS
     muxRequestMock.mockReset()
     muxRequestMock.mockResolvedValue([])
     mockDeploySuccess()

@@ -98,7 +98,7 @@ export async function createOrAttachTerminalSession(
     sessionId: opts.sessionId,
     cols: size.cols,
     rows: size.rows,
-    terminalHandle: opts.env?.ORCA_TERMINAL_HANDLE,
+    terminalHandle: opts.env?.AIO_ADE_TERMINAL_HANDLE,
     launchAgent: opts.launchAgent,
     subprocess,
     ownerBackend: resolvePtyOwnerBackend({
@@ -122,7 +122,7 @@ export async function createOrAttachTerminalSession(
 
   if (opts.command && !subprocess.startupCommandDeliveredInShellArgs) {
     const submit = process.platform === 'win32' ? '\r' : '\n'
-    // Why: only Orca-wrapped shells advertise the paste-safe startup barrier.
+    // Why: only AIO-ADE-wrapped shells advertise the paste-safe startup barrier.
     session.write(
       buildStartupCommandSubmission(opts.command, {
         submit,

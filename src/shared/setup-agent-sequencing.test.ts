@@ -52,7 +52,7 @@ describe('createSequencedSetupAgentCommands', () => {
 
   it('wraps POSIX setup and startup commands with a matching nonce marker', () => {
     const result = createSequencedSetupAgentCommands({
-      runnerScriptPath: '/repo/.git/orca/setup-runner.sh',
+      runnerScriptPath: '/repo/.git/aio-ade/setup-runner.sh',
       startupCommand: "codex 'fix bug'",
       platform: 'posix',
       nonce: 'nonce-123',
@@ -60,11 +60,11 @@ describe('createSequencedSetupAgentCommands', () => {
     })
 
     expect(result.setupCommand).toMatch(/^bash -lc /)
-    expect(result.setupCommand).toContain('bash /repo/.git/orca/setup-runner.sh')
+    expect(result.setupCommand).toContain('bash /repo/.git/aio-ade/setup-runner.sh')
     expect(result.setupCommand).toContain('printf')
     expect(result.setupCommand).toContain('nonce-123 "$status"')
     expect(result.setupCommand).toContain(
-      'mv -f /repo/.git/orca/setup-runner.sh.nonce-123.done.tmp'
+      'mv -f /repo/.git/aio-ade/setup-runner.sh.nonce-123.done.tmp'
     )
     expect(result.startupCommand).toMatch(/^bash -lc /)
     expect(result.startupCommand).toContain('deadline=$((SECONDS + 9))')
@@ -72,7 +72,7 @@ describe('createSequencedSetupAgentCommands', () => {
     expect(result.startupCommand).toContain('Waiting for setup to finish before starting agent...')
     expect(result.startupCommand).toContain('[ "$seen" = nonce-123 ]')
     expect(result.startupCommand).toContain(
-      'rm -f /repo/.git/orca/setup-runner.sh.nonce-123.done /repo/.git/orca/setup-runner.sh.nonce-123.done.tmp'
+      'rm -f /repo/.git/aio-ade/setup-runner.sh.nonce-123.done /repo/.git/aio-ade/setup-runner.sh.nonce-123.done.tmp'
     )
     expect(result.startupCommand).toContain('exec codex')
     expect(result.startupCommand).toContain('fix bug')
@@ -85,29 +85,33 @@ describe('createSequencedSetupAgentCommands', () => {
 
   it('uses launch-specific marker paths for overlapping setup gates', () => {
     const first = createSequencedSetupAgentCommands({
-      runnerScriptPath: '/repo/.git/orca/setup-runner.sh',
+      runnerScriptPath: '/repo/.git/aio-ade/setup-runner.sh',
       startupCommand: 'claude',
       platform: 'posix',
       nonce: 'first-launch'
     })
     const second = createSequencedSetupAgentCommands({
-      runnerScriptPath: '/repo/.git/orca/setup-runner.sh',
+      runnerScriptPath: '/repo/.git/aio-ade/setup-runner.sh',
       startupCommand: 'codex',
       platform: 'posix',
       nonce: 'second-launch'
     })
 
-    expect(first.setupCommand).toContain('/repo/.git/orca/setup-runner.sh.first-launch.done')
-    expect(first.startupCommand).toContain('/repo/.git/orca/setup-runner.sh.first-launch.done')
-    expect(second.setupCommand).toContain('/repo/.git/orca/setup-runner.sh.second-launch.done')
-    expect(second.startupCommand).toContain('/repo/.git/orca/setup-runner.sh.second-launch.done')
-    expect(first.setupCommand).not.toContain('/repo/.git/orca/setup-runner.sh.second-launch.done')
-    expect(second.setupCommand).not.toContain('/repo/.git/orca/setup-runner.sh.first-launch.done')
+    expect(first.setupCommand).toContain('/repo/.git/aio-ade/setup-runner.sh.first-launch.done')
+    expect(first.startupCommand).toContain('/repo/.git/aio-ade/setup-runner.sh.first-launch.done')
+    expect(second.setupCommand).toContain('/repo/.git/aio-ade/setup-runner.sh.second-launch.done')
+    expect(second.startupCommand).toContain('/repo/.git/aio-ade/setup-runner.sh.second-launch.done')
+    expect(first.setupCommand).not.toContain(
+      '/repo/.git/aio-ade/setup-runner.sh.second-launch.done'
+    )
+    expect(second.setupCommand).not.toContain(
+      '/repo/.git/aio-ade/setup-runner.sh.first-launch.done'
+    )
   })
 
   it('keeps simple POSIX startup commands eligible for exec when quoted text has separators', () => {
     const result = createSequencedSetupAgentCommands({
-      runnerScriptPath: '/repo/.git/orca/setup-runner.sh',
+      runnerScriptPath: '/repo/.git/aio-ade/setup-runner.sh',
       startupCommand: "codex 'fix this; then test'",
       platform: 'posix',
       nonce: 'nonce-quoted',
@@ -120,7 +124,7 @@ describe('createSequencedSetupAgentCommands', () => {
 
   it('preserves POSIX inline environment assignment startup commands', () => {
     const result = createSequencedSetupAgentCommands({
-      runnerScriptPath: '/repo/.git/orca/setup-runner.sh',
+      runnerScriptPath: '/repo/.git/aio-ade/setup-runner.sh',
       startupCommand: 'FOO=bar claude',
       platform: 'posix',
       nonce: 'nonce-env',
@@ -135,7 +139,7 @@ describe('createSequencedSetupAgentCommands', () => {
   it('uses the converted Linux marker path for WSL UNC runners on Windows', () => {
     const result = createSequencedSetupAgentCommands({
       runnerScriptPath:
-        '\\\\wsl.localhost\\Ubuntu\\home\\jin\\repo\\.git\\worktrees\\feature\\orca\\setup-runner.sh',
+        '\\\\wsl.localhost\\Ubuntu\\home\\jin\\repo\\.git\\worktrees\\feature\\aio-ade\\setup-runner.sh',
       startupCommand: 'claude',
       platform: 'windows',
       nonce: 'nonce-wsl'
@@ -143,31 +147,31 @@ describe('createSequencedSetupAgentCommands', () => {
 
     expect(getSetupAgentSequenceShellForTests(resultPathWsl(), 'windows')).toBe('posix')
     expect(result.setupCommand).toContain(
-      'bash /home/jin/repo/.git/worktrees/feature/orca/setup-runner.sh'
+      'bash /home/jin/repo/.git/worktrees/feature/aio-ade/setup-runner.sh'
     )
     expect(result.setupCommand).toContain(
-      '/home/jin/repo/.git/worktrees/feature/orca/setup-runner.sh.nonce-wsl.done'
+      '/home/jin/repo/.git/worktrees/feature/aio-ade/setup-runner.sh.nonce-wsl.done'
     )
     expect(result.setupCommand).not.toContain('wsl.localhost')
   })
 
   it('keeps remote POSIX runners in bash even from a Windows client', () => {
     const result = createSequencedSetupAgentCommands({
-      runnerScriptPath: '/remote/repo/.git/worktrees/feature/orca/setup-runner.sh',
+      runnerScriptPath: '/remote/repo/.git/worktrees/feature/aio-ade/setup-runner.sh',
       startupCommand: 'claude',
       platform: 'windows',
       nonce: 'nonce-remote'
     })
 
     expect(result.setupCommand).toContain(
-      'bash /remote/repo/.git/worktrees/feature/orca/setup-runner.sh'
+      'bash /remote/repo/.git/worktrees/feature/aio-ade/setup-runner.sh'
     )
     expect(result.startupCommand).toContain('[ "$seen" = nonce-remote ]')
   })
 
   it('wraps native Windows runners in a cmd-pinned setup and startup gate', () => {
     const result = createSequencedSetupAgentCommands({
-      runnerScriptPath: 'C:\\repo\\.git\\orca\\setup-runner.cmd',
+      runnerScriptPath: 'C:\\repo\\.git\\aio-ade\\setup-runner.cmd',
       startupCommand: "codex --model gpt-5 'fix !PATH! & test'",
       platform: 'windows',
       nonce: 'nonce-win',
@@ -179,7 +183,7 @@ describe('createSequencedSetupAgentCommands', () => {
     expect(result.setupCommand).toContain(
       'powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand'
     )
-    expect(setupPowerShell).toContain("$runner = 'C:\\repo\\.git\\orca\\setup-runner.cmd'")
+    expect(setupPowerShell).toContain("$runner = 'C:\\repo\\.git\\aio-ade\\setup-runner.cmd'")
     expect(setupPowerShell).toContain('$nonce + ":" + $setupStatus')
     expect(result.startupCommand.match(/powershell\.exe/g)).toHaveLength(1)
     expect(result.startupCommand).toContain(
@@ -428,11 +432,11 @@ describe('createSetupAgentSequenceNonce', () => {
 })
 
 function resultPathWsl(): string {
-  return '\\\\wsl.localhost\\Ubuntu\\home\\jin\\repo\\.git\\worktrees\\feature\\orca\\setup-runner.sh'
+  return '\\\\wsl.localhost\\Ubuntu\\home\\jin\\repo\\.git\\worktrees\\feature\\aio-ade\\setup-runner.sh'
 }
 
 function makeTempDir(): string {
-  const dir = mkdtempSync(join(tmpdir(), 'orca-setup-sequencing-'))
+  const dir = mkdtempSync(join(tmpdir(), 'aio-ade-setup-sequencing-'))
   TEMP_DIRS.push(dir)
   return dir
 }

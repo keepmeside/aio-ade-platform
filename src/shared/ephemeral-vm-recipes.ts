@@ -69,9 +69,9 @@ export const EphemeralVmRecipeSshTargetSchema = z
 
 export type EphemeralVmRecipeSshTarget = z.infer<typeof EphemeralVmRecipeSshTargetSchema>
 
-const EphemeralVmRecipeOrcaServerConnectionSchema = z
+const EphemeralVmRecipeAioAdeServerConnectionSchema = z
   .object({
-    type: z.literal('orca-server'),
+    type: z.literal('aio-ade-server'),
     pairingCode: z.string().min(1),
     projectRoot: z.string().min(1)
   })
@@ -86,7 +86,7 @@ const EphemeralVmRecipeSshConnectionSchema = z
   .strict()
 
 export const EphemeralVmRecipeConnectionSchema = z.discriminatedUnion('type', [
-  EphemeralVmRecipeOrcaServerConnectionSchema,
+  EphemeralVmRecipeAioAdeServerConnectionSchema,
   EphemeralVmRecipeSshConnectionSchema
 ])
 
@@ -157,8 +157,8 @@ export function parseEphemeralVmRecipeResult(stdout: string): EphemeralVmRecipeR
     return { ok: false, error: result.error.issues[0]?.message ?? 'Invalid recipe result.' }
   }
   const connection = getEphemeralVmRecipeResultConnection(result.data)
-  if (connection.type === 'orca-server' && !parsePairingCode(connection.pairingCode)) {
-    return { ok: false, error: 'Recipe result pairingCode is not a valid Orca pairing code.' }
+  if (connection.type === 'aio-ade-server' && !parsePairingCode(connection.pairingCode)) {
+    return { ok: false, error: 'Recipe result pairingCode is not a valid AIO-ADE pairing code.' }
   }
   if (!isAbsoluteRuntimePath(connection.projectRoot)) {
     return { ok: false, error: 'Recipe result projectRoot must be an absolute runtime path.' }
@@ -173,7 +173,7 @@ export function getEphemeralVmRecipeResultConnection(
     return result.connection
   }
   return {
-    type: 'orca-server',
+    type: 'aio-ade-server',
     pairingCode: result.pairingCode,
     projectRoot: result.projectRoot
   }
@@ -187,7 +187,7 @@ export function getEphemeralVmRecipeResultPairingCode(
   result: EphemeralVmRecipeResult
 ): string | null {
   const connection = getEphemeralVmRecipeResultConnection(result)
-  return connection.type === 'orca-server' ? connection.pairingCode : null
+  return connection.type === 'aio-ade-server' ? connection.pairingCode : null
 }
 
 export function getEphemeralVmRecipeResultUserData(

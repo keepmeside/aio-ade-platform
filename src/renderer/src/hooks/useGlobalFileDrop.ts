@@ -1,10 +1,10 @@
 import { useEffect } from 'react'
+import { getRepoAppPath } from '../../../shared/repo-app-paths'
 import { toast } from 'sonner'
 import { detectLanguage } from '@/lib/language-detect'
 import { isPathInsideWorktree, toWorktreeRelativePath } from '@/lib/terminal-links'
 import { useAppStore } from '@/store'
 import { getConnectionId } from '@/lib/connection-context'
-import { joinPath } from '@/lib/path'
 import { getRuntimeEnvironmentIdForWorktree } from '@/lib/worktree-runtime-owner'
 import {
   importExternalPathsToRuntime,
@@ -107,7 +107,7 @@ export function useGlobalFileDrop(): void {
           try {
             // Why: OS file drops provide client-local paths. Remote runtime and
             // SSH editors must upload into the server worktree before opening.
-            const destinationDir = joinPath(worktreePath, '.orca/drops')
+            const destinationDir = getRepoAppPath(worktreePath, 'drops')
             const { results } = await importExternalPathsToRuntime(
               fileContext,
               data.paths,

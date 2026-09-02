@@ -1,6 +1,7 @@
 import { mkdtemp, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { APP_HOME_DIR_NAME } from '../../shared/app-home-paths'
 import { afterEach, describe, expect, it } from 'vitest'
 import { installRemoteManagedAgentHooks } from './remote-managed-hook-installers'
 import { createManagedHookLocalFilesystem } from './managed-hook-local-filesystem'
@@ -8,7 +9,7 @@ import { createManagedHookLocalFilesystem } from './managed-hook-local-filesyste
 const tempHomes: string[] = []
 
 async function createTempHome(): Promise<string> {
-  const home = await mkdtemp(join(tmpdir(), 'orca-managed-hooks-'))
+  const home = await mkdtemp(join(tmpdir(), 'aio-ade-managed-hooks-'))
   tempHomes.push(home)
   return home
 }
@@ -42,7 +43,7 @@ describe('managed-hook local filesystem', () => {
     expect(warm.filter((result) => result.state === 'error')).toEqual([])
     const files = await listFiles(home)
     expect(files.filter((path) => path.endsWith('.tmp'))).toEqual([])
-    const scripts = files.filter((path) => path.includes(join('.orca', 'agent-hooks')))
+    const scripts = files.filter((path) => path.includes(join(APP_HOME_DIR_NAME, 'agent-hooks')))
     expect(scripts.length).toBeGreaterThanOrEqual(2)
     if (process.platform !== 'win32') {
       for (const script of scripts) {

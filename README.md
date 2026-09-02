@@ -1,13 +1,9 @@
 <h1 align="center">
-  <a href="https://onOrca.dev"><img src="resources/build/icon.png" alt="Orca" width="64" valign="middle" /></a> Orca
+  <img src="resources/build/icon.png" alt="AIO-ADE" width="64" valign="middle" /> AIO-ADE
 </h1>
 
 <p align="center">
-  <a href="https://github.com/stablyai/orca"><img src="https://img.shields.io/github/stars/stablyai/orca?style=flat&amp;label=%E2%98%85&amp;color=08C" alt="GitHub stars" /></a>
-  <a href="https://github.com/stablyai/orca/releases"><img src="docs/assets/readme-downloads.svg" alt="Total downloads across all releases" /></a>
   <img src="https://img.shields.io/badge/license-MIT-08C?style=flat" alt="License: MIT" />
-  <a href="https://discord.gg/fzjDKHxv8Q"><img src="https://img.shields.io/badge/Discord-5865F2?logo=discord&logoColor=white" alt="Join the Orca Discord" /></a>
-  <a href="https://x.com/orca_build"><img src="https://img.shields.io/badge/X-000000?logo=x&logoColor=white" alt="Follow Orca on X" /></a>
   <img src="https://img.shields.io/badge/macOS%20%7C%20Windows%20%7C%20Linux-4493F8?style=flat-square" alt="Supported platforms: macOS, Windows, and Linux" />
 </p>
 
@@ -16,14 +12,12 @@
 </p>
 
 <p align="center">
-  <strong>The AI Orchestrator for 100x builders.</strong><br/>
-  Run Codex, ClaudeCode, OpenCode or Pi side-by-side — each in its own worktree, tracked in one place.
+  <strong>An AI coding agent orchestrator.</strong><br/>
+  Run Claude Code and Codex side-by-side — each in its own worktree, tracked in one place.
 </p>
 
-<h3 align="center"><a href="https://onorca.dev/download"><ins>Download Orca</ins></a></h3>
-
 <p align="center">
-  <img src="docs/assets/readme-hero.jpg" alt="Orca desktop app running agents in parallel worktrees" width="960" />
+  <img src="docs/assets/readme-hero.jpg" alt="AIO-ADE desktop app running agents in parallel worktrees" width="960" />
 </p>
 
 ## Features
@@ -36,11 +30,11 @@
 
 Fan one prompt across five agents, each in its own isolated git worktree — compare the results and merge the winner.
 
-[Docs →](https://www.onorca.dev/docs/model/worktrees)
+[Docs →](https://github.com/keepmeside/aio-ade-platform/docs/model/worktrees)
 
 </td>
 <td width="50%">
-  <a href="https://www.onorca.dev/docs/model/worktrees"><picture><source srcset="docs/assets/feature-wall/parallel-worktrees.gif" type="image/gif"><img src="docs/assets/feature-wall/parallel-worktrees.jpg" alt="Parallel worktree orchestration" width="100%" /></picture></a>
+  <a href="https://github.com/keepmeside/aio-ade-platform/docs/model/worktrees"><picture><source srcset="docs/assets/feature-wall/parallel-worktrees.gif" type="image/gif"><img src="docs/assets/feature-wall/parallel-worktrees.jpg" alt="Parallel worktree orchestration" width="100%" /></picture></a>
 </td>
 </tr>
 <tr>
@@ -50,11 +44,11 @@ Fan one prompt across five agents, each in its own isolated git worktree — com
 
 Ghostty-class terminals with WebGL rendering, infinite splits, and scrollback that survives restarts.
 
-[Docs →](https://www.onorca.dev/docs/terminal)
+[Docs →](https://github.com/keepmeside/aio-ade-platform/docs/terminal)
 
 </td>
 <td width="50%">
-  <a href="https://www.onorca.dev/docs/terminal"><picture><source srcset="docs/assets/feature-wall/terminal-splits.gif" type="image/gif"><img src="docs/assets/feature-wall/terminal-splits.jpg" alt="Terminal splits" width="100%" /></picture></a>
+  <a href="https://github.com/keepmeside/aio-ade-platform/docs/terminal"><picture><source srcset="docs/assets/feature-wall/terminal-splits.gif" type="image/gif"><img src="docs/assets/feature-wall/terminal-splits.jpg" alt="Terminal splits" width="100%" /></picture></a>
 </td>
 </tr>
 <tr>
@@ -64,11 +58,11 @@ Ghostty-class terminals with WebGL rendering, infinite splits, and scrollback th
 
 Click any UI element in a real Chromium window to send its HTML, CSS, and a cropped screenshot straight into your agent's prompt.
 
-[Docs →](https://www.onorca.dev/docs/browser/design-mode)
+[Docs →](https://github.com/keepmeside/aio-ade-platform/docs/browser/design-mode)
 
 </td>
 <td width="50%">
-  <a href="https://www.onorca.dev/docs/browser/design-mode"><picture><source srcset="docs/assets/feature-wall/design-mode.gif" type="image/gif"><img src="docs/assets/feature-wall/design-mode.jpg" alt="Embedded browser and Design Mode" width="100%" /></picture></a>
+  <a href="https://github.com/keepmeside/aio-ade-platform/docs/browser/design-mode"><picture><source srcset="docs/assets/feature-wall/design-mode.gif" type="image/gif"><img src="docs/assets/feature-wall/design-mode.jpg" alt="Embedded browser and Design Mode" width="100%" /></picture></a>
 </td>
 </tr>
 <tr>
@@ -78,11 +72,11 @@ Click any UI element in a real Chromium window to send its HTML, CSS, and a crop
 
 Browse PRs, issues, and project boards in-app — open a worktree from any task and review without a context switch.
 
-[Docs →](https://www.onorca.dev/docs/review/linear)
+[Docs →](https://github.com/keepmeside/aio-ade-platform/docs/review/linear)
 
 </td>
 <td width="50%">
-  <a href="https://www.onorca.dev/docs/review/linear"><picture><source srcset="docs/assets/feature-wall/github-linear.gif" type="image/gif"><img src="docs/assets/feature-wall/github-linear.jpg" alt="GitHub and Linear task workflows in Orca" width="100%" /></picture></a>
+  <a href="https://github.com/keepmeside/aio-ade-platform/docs/review/linear"><picture><source srcset="docs/assets/feature-wall/github-linear.gif" type="image/gif"><img src="docs/assets/feature-wall/github-linear.jpg" alt="GitHub and Linear task workflows in AIO-ADE" width="100%" /></picture></a>
 </td>
 </tr>
 <tr>
@@ -92,11 +86,11 @@ Browse PRs, issues, and project boards in-app — open a worktree from any task 
 
 Run agents on a beefy remote box with full file editing, git, and terminals — auto-reconnect and port forwarding included.
 
-[Docs →](https://www.onorca.dev/docs/ssh)
+[Docs →](https://github.com/keepmeside/aio-ade-platform/docs/ssh)
 
 </td>
 <td width="50%">
-  <a href="https://www.onorca.dev/docs/ssh"><picture><source srcset="docs/assets/feature-wall/ssh-worktrees.gif" type="image/gif"><img src="docs/assets/feature-wall/ssh-worktrees.jpg" alt="Remote worktrees over SSH" width="100%" /></picture></a>
+  <a href="https://github.com/keepmeside/aio-ade-platform/docs/ssh"><picture><source srcset="docs/assets/feature-wall/ssh-worktrees.gif" type="image/gif"><img src="docs/assets/feature-wall/ssh-worktrees.jpg" alt="Remote worktrees over SSH" width="100%" /></picture></a>
 </td>
 </tr>
 <tr>
@@ -104,13 +98,13 @@ Run agents on a beefy remote box with full file editing, git, and terminals — 
 
 ### Annotate AI Diffs
 
-Drop comments on any diff line and ship them back to the agent — review, edit, and commit without leaving Orca.
+Drop comments on any diff line and ship them back to the agent — review, edit, and commit without leaving AIO-ADE.
 
-[Docs →](https://www.onorca.dev/docs/review/annotate-ai-diff)
+[Docs →](https://github.com/keepmeside/aio-ade-platform/docs/review/annotate-ai-diff)
 
 </td>
 <td width="50%">
-  <a href="https://www.onorca.dev/docs/review/annotate-ai-diff"><picture><source srcset="docs/assets/feature-wall/annotate-diff.gif" type="image/gif"><img src="docs/assets/feature-wall/annotate-diff.jpg" alt="Annotate AI-generated diffs" width="100%" /></picture></a>
+  <a href="https://github.com/keepmeside/aio-ade-platform/docs/review/annotate-ai-diff"><picture><source srcset="docs/assets/feature-wall/annotate-diff.gif" type="image/gif"><img src="docs/assets/feature-wall/annotate-diff.jpg" alt="Annotate AI-generated diffs" width="100%" /></picture></a>
 </td>
 </tr>
 <tr>
@@ -120,43 +114,43 @@ Drop comments on any diff line and ship them back to the agent — review, edit,
 
 VS Code's editor with autosave everywhere — drag files or images straight into an agent prompt.
 
-[Docs →](https://www.onorca.dev/docs/editing/file-explorer)
+[Docs →](https://github.com/keepmeside/aio-ade-platform/docs/editing/file-explorer)
 
 </td>
 <td width="50%">
-  <a href="https://www.onorca.dev/docs/editing/file-explorer"><picture><source srcset="docs/assets/feature-wall/file-drag.gif" type="image/gif"><img src="docs/assets/feature-wall/file-drag.jpg" alt="Drag files and images into an agent prompt" width="100%" /></picture></a>
+  <a href="https://github.com/keepmeside/aio-ade-platform/docs/editing/file-explorer"><picture><source srcset="docs/assets/feature-wall/file-drag.gif" type="image/gif"><img src="docs/assets/feature-wall/file-drag.jpg" alt="Drag files and images into an agent prompt" width="100%" /></picture></a>
 </td>
 </tr>
 <tr>
 <td width="50%" valign="middle">
 
-### Orca CLI
+### AIO-ADE CLI
 
-Agents drive Orca too — script every workflow with `orca worktree create`, `snapshot`, `click`, and `fill`.
+Agents drive AIO-ADE too — script every workflow with `aio-ade worktree create`, `snapshot`, `click`, and `fill`.
 
-[Docs →](https://www.onorca.dev/docs/cli/overview)
+[Docs →](https://github.com/keepmeside/aio-ade-platform/docs/cli/overview)
 
 </td>
 <td width="50%">
-  <a href="https://www.onorca.dev/docs/cli/overview"><picture><source srcset="docs/assets/feature-wall/orca-cli.gif" type="image/gif"><img src="docs/assets/feature-wall/orca-cli.jpg" alt="Script Orca from the CLI" width="100%" /></picture></a>
+  <a href="https://github.com/keepmeside/aio-ade-platform/docs/cli/overview"><picture><source srcset="docs/assets/feature-wall/aio-ade-cli.gif" type="image/gif"><img src="docs/assets/feature-wall/aio-ade-cli.jpg" alt="Script AIO-ADE from the CLI" width="100%" /></picture></a>
 </td>
 </tr>
 </table>
 
 **Also in the box:**
 
-- **[Quick open](https://www.onorca.dev/docs/model/quick-open)** — Search across worktrees, files, agents, commands, and repo context without leaving your flow.
-- **[Account switcher &amp; usage tracking](https://www.onorca.dev/docs/agents/usage-tracking)** — See Claude and Codex usage and rate-limit resets, and hot-swap accounts without re-logging in.
-- **[Rich repo previews](https://www.onorca.dev/docs/editing/markdown)** — Preview Markdown, images, PDFs, and repo docs in the workspace.
-- **[Computer Use](https://www.onorca.dev/docs/cli/computer-use)** — Let agents operate desktop apps and visible UI when a workflow needs real interaction.
-- **[Notifications and unread state](https://www.onorca.dev/docs/notifications)** — Know when an agent finishes or needs attention, then mark threads unread to come back later.
-- **And many, many more** — we ship daily, so this list is perpetually behind. The [changelog](https://github.com/stablyai/orca/releases) is the real feature list.
+- **[Quick open](https://github.com/keepmeside/aio-ade-platform/docs/model/quick-open)** — Search across worktrees, files, agents, commands, and repo context without leaving your flow.
+- **[Account switcher &amp; usage tracking](https://github.com/keepmeside/aio-ade-platform/docs/agents/usage-tracking)** — See Claude and Codex usage and rate-limit resets, and hot-swap accounts without re-logging in.
+- **[Rich repo previews](https://github.com/keepmeside/aio-ade-platform/docs/editing/markdown)** — Preview Markdown, images, PDFs, and repo docs in the workspace.
+- **[Computer Use](https://github.com/keepmeside/aio-ade-platform/docs/cli/computer-use)** — Let agents operate desktop apps and visible UI when a workflow needs real interaction.
+- **[Notifications and unread state](https://github.com/keepmeside/aio-ade-platform/docs/notifications)** — Know when an agent finishes or needs attention, then mark threads unread to come back later.
+- **And many, many more** — we ship daily, so this list is perpetually behind. The [changelog](https://github.com/keepmeside/aio-ade-platform/releases) is the real feature list.
 
 ---
 
 ## Supported Agents
 
-Works with **any CLI agent** — if it runs in a terminal, it runs in Orca.
+Works with **any CLI agent** — if it runs in a terminal, it runs in AIO-ADE.
 
 <p>
   <a href="https://docs.anthropic.com/claude/docs/claude-code"><kbd><img src="docs/assets/claude-logo.svg" alt="Claude Code logo" width="16" valign="middle" /> Claude Code</kbd></a> &nbsp;
@@ -197,52 +191,60 @@ Works with **any CLI agent** — if it runs in a terminal, it runs in Orca.
 
 ### Desktop — macOS, Windows, Linux
 
-- **[Download from onOrca.dev](https://onorca.dev/download)**
-- Or grab a build directly: [macOS Apple Silicon](https://github.com/stablyai/orca/releases/latest/download/orca-macos-arm64.dmg) · [macOS Intel](https://github.com/stablyai/orca/releases/latest/download/orca-macos-x64.dmg) · [Windows (.exe)](https://github.com/stablyai/orca/releases/latest/download/orca-windows-setup.exe) · [Linux AppImage](https://github.com/stablyai/orca/releases/latest/download/orca-linux.AppImage) · [All builds](https://github.com/stablyai/orca/releases/latest)
-- Running `orca serve` on a headless Linux server? See the [headless Linux server guide](docs/reference/headless-linux-server.md).
-
-_Or via a package manager:_
+Builds are published on [GitHub Releases](https://github.com/keepmeside/aio-ade-platform/releases/latest):
+[macOS Apple Silicon](https://github.com/keepmeside/aio-ade-platform/releases/latest/download/aio-ade-macos-arm64.dmg) ·
+[macOS Intel](https://github.com/keepmeside/aio-ade-platform/releases/latest/download/aio-ade-macos-x64.dmg) ·
+[Windows (.exe)](https://github.com/keepmeside/aio-ade-platform/releases/latest/download/aio-ade-windows-setup.exe) ·
+[Linux AppImage](https://github.com/keepmeside/aio-ade-platform/releases/latest/download/aio-ade-linux.AppImage) ·
+[All builds](https://github.com/keepmeside/aio-ade-platform/releases/latest)
 
 ```bash
 # macOS (Homebrew)
-brew install --cask stablyai/orca/orca
-
-# Arch Linux (AUR) — or stably-orca-git to build from source
-yay -S stably-orca-bin
+brew install --cask keepmeside/aio-ade-platform/aio-ade
 ```
 
+Running `aio-ade serve` on a headless Linux server? See the
+[headless Linux server guide](docs/reference/headless-linux-server.md).
+
+### Builds are not signed yet
+
+There is no code-signing certificate for this project yet, so releases ship unsigned and
+unnotarized. Each OS reacts differently:
+
+- **macOS** — Gatekeeper blocks the app on first launch. Either right-click the app and choose
+  **Open** (which offers a one-time override the plain double-click does not), or clear the
+  quarantine attribute:
+
+  ```bash
+  xattr -d com.apple.quarantine /Applications/AIO-ADE.app
+  ```
+
+  A Homebrew install needs neither step: Homebrew removes the quarantine attribute itself.
+
+- **Windows** — SmartScreen shows an "unrecognized app" warning. Choose **More info → Run anyway**.
+
+- **Linux** — unaffected; the AppImage and packages install normally.
+
+**Automatic updates are off** for the same reason. An updater pointed at a channel the OS cannot
+authenticate is a worse position than no updater, so new versions are installed by downloading them
+(or by `brew upgrade`). Signing, notarization, and auto-update get enabled together once a
+certificate is in place.
+
 ---
 
-## Community &amp; Support
+## Contributing
 
-- **Discord:** Join the community on **[Discord](https://discord.gg/fzjDKHxv8Q)**.
-- **Twitter / X:** Follow **[@orca_build](https://x.com/orca_build)** for updates and announcements.
-- **WeChat:** If group 5 is full, you can join group 6.
+See [CONTRIBUTING.md](.github/CONTRIBUTING.md) to run the project locally.
 
-  <img src="docs/assets/wechat-qr.jpg" alt="WeChat group 5 QR code for the Orca community" width="160" style="margin-right: 16px;" />
-  <img src="docs/assets/wechat-qr-group6.jpg" alt="WeChat group 6 QR code for the Orca community" width="160" />
+## Attribution
 
-- **Feedback &amp; Ideas:** We ship fast. Missing something? [Request a new feature](https://github.com/stablyai/orca/issues).
-- **Privacy:** See the [privacy &amp; telemetry docs](https://www.onorca.dev/docs/telemetry) for what anonymous usage data Orca collects and how to opt out.
-- **Show Support:** [Star](https://github.com/stablyai/orca) this repo to follow along with our daily ships.
+AIO-ADE is a fork of [Orca](https://github.com/stablyai/orca) by Lovecast Inc., used under the MIT
+License. The upstream copyright notice is preserved in [LICENSE](LICENSE), and
+[NOTICE](NOTICE) records the third-party components this app bundles along with their licenses.
 
----
-
-## Developing
-
-Want to contribute or run locally? See our [CONTRIBUTING.md](.github/CONTRIBUTING.md) guide.
-
-<a href="https://github.com/stablyai/orca/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=stablyai/orca" alt="Orca contributors" />
-</a>
-
-<p align="center">
-  <img src="docs/assets/star-history.png" alt="GitHub star history chart for stablyai/orca" width="880" />
-</p>
-
-## Signed Builds
-Windows code signing sponored/provided by [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org).
+The MIT License grants no trademark rights, so this project is not affiliated with or endorsed by
+the upstream project, and does not use its name or branding.
 
 ## License
 
-Orca is free and open source under the [MIT License](LICENSE).
+AIO-ADE is free and open source under the [MIT License](LICENSE).

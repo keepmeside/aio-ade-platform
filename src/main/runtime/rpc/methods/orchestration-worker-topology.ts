@@ -1,5 +1,5 @@
 import type { TuiAgent } from '../../../../shared/types'
-import type { OrcaRuntimeService } from '../../orca-runtime'
+import type { AioAdeRuntimeService } from '../../aio-ade-runtime'
 import type { OrchestrationDb } from '../../orchestration/db'
 
 export type WorkerEffect = {
@@ -37,7 +37,7 @@ export type WorkerSetupReceipt = {
 }
 
 export async function createExistingWorktreeWorkerTerminal(args: {
-  runtime: OrcaRuntimeService
+  runtime: AioAdeRuntimeService
   worktreeId: string
   agent: TuiAgent
   taskId: string
@@ -80,11 +80,11 @@ export function applyWaitForSetupOutcome(
 }
 
 export async function createWorkerWorktree(args: {
-  runtime: OrcaRuntimeService
+  runtime: AioAdeRuntimeService
   db: OrchestrationDb
   dispatchId: string
   requestedWorktree: string
-  coordinatorWorktree: Awaited<ReturnType<OrcaRuntimeService['showManagedWorktree']>>
+  coordinatorWorktree: Awaited<ReturnType<AioAdeRuntimeService['showManagedWorktree']>>
   params: {
     repo?: string
     name?: string
@@ -97,7 +97,7 @@ export async function createWorkerWorktree(args: {
   agent: TuiAgent
   effects: WorkerEffect[]
 }): Promise<{
-  worktree: Awaited<ReturnType<OrcaRuntimeService['showManagedWorktree']>>
+  worktree: Awaited<ReturnType<AioAdeRuntimeService['showManagedWorktree']>>
   terminalHandle: string
   setupReceipt: WorkerSetupReceipt
 }> {
@@ -179,14 +179,14 @@ export async function createWorkerWorktree(args: {
     terminalId: setupTerminalHandle ?? setupTerminal?.id
   })
   return {
-    worktree: created.worktree as Awaited<ReturnType<OrcaRuntimeService['showManagedWorktree']>>,
+    worktree: created.worktree as Awaited<ReturnType<AioAdeRuntimeService['showManagedWorktree']>>,
     terminalHandle,
     setupReceipt
   }
 }
 
 export function monitorWorkerSetup(args: {
-  runtime: OrcaRuntimeService
+  runtime: AioAdeRuntimeService
   db: OrchestrationDb
   runId: string
   dispatchId: string

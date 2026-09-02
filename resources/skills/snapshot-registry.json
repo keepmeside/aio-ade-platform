@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "skills": {
-    "orca-cli": [
+    "aio-ade-cli": [
       {
         "releaseRevision": 1,
         "packageDigest": "a3831a8a5561b24f085cb3c185c23ccc368970898119d90723aa3406778aecb6",
@@ -561,6 +561,22 @@
             "identitySha256": "90228630bc4daab4ccf67b691153976d1f28ec064d7069a4c170621ed2ea99b5"
           }
         ]
+      },
+      {
+        "releaseRevision": 36,
+        "packageDigest": "4930327f37cb0321d66a9617001a77769fb160a4f3ecd7ffd1f38ec73d200385",
+        "gitTreeSha": "fd70d1fdb73ad0ca86c558290a56dcfd095bca51",
+        "files": [
+          {
+            "path": "SKILL.md",
+            "size": 3950,
+            "executable": false,
+            "classification": "text",
+            "exactSha256": "66664ab3427d1d3c713357458e8b48d398a5eea9d0aff8b2af02eea924e61fb9",
+            "textNormalizedSha256": "66664ab3427d1d3c713357458e8b48d398a5eea9d0aff8b2af02eea924e61fb9",
+            "identitySha256": "66664ab3427d1d3c713357458e8b48d398a5eea9d0aff8b2af02eea924e61fb9"
+          }
+        ]
       }
     ],
     "orchestration": [
@@ -1011,6 +1027,22 @@
             "identitySha256": "9ca228137b9a442b98c761aa07adecc2265708132ab175ad7e22b163fdc0bd7f"
           }
         ]
+      },
+      {
+        "releaseRevision": 29,
+        "packageDigest": "6062b4ead918f25602e0c58548d76342e38c4be3d27bd68ad25c4a78f9a0cb36",
+        "gitTreeSha": "e078169d5b7eb12571b6e0867589512410dad00b",
+        "files": [
+          {
+            "path": "SKILL.md",
+            "size": 4302,
+            "executable": false,
+            "classification": "text",
+            "exactSha256": "a8cbc40c0fae55693ed518441df1e3a2b5454e488ccfe4a5c4bac7b2db2aebfb",
+            "textNormalizedSha256": "a8cbc40c0fae55693ed518441df1e3a2b5454e488ccfe4a5c4bac7b2db2aebfb",
+            "identitySha256": "a8cbc40c0fae55693ed518441df1e3a2b5454e488ccfe4a5c4bac7b2db2aebfb"
+          }
+        ]
       }
     ],
     "mobile-fit-debug": [
@@ -1159,9 +1191,25 @@
             "identitySha256": "c4a11596b7c0338f4c991b24ba7ba453d93fb8dc045c642c517e7ae6d3c88467"
           }
         ]
+      },
+      {
+        "releaseRevision": 9,
+        "packageDigest": "4d15c3ce15d408b433ea7d60eed63c703e05f321f97a1ce94efd2129189ed8a2",
+        "gitTreeSha": "f4587963cd6c4bb23d52fdd22d42dc43c8c85a00",
+        "files": [
+          {
+            "path": "SKILL.md",
+            "size": 3728,
+            "executable": false,
+            "classification": "text",
+            "exactSha256": "718253c2208bedf9e72cd7e3919009dc10a100f6d0ee29c063f1bc82da69d5bd",
+            "textNormalizedSha256": "718253c2208bedf9e72cd7e3919009dc10a100f6d0ee29c063f1bc82da69d5bd",
+            "identitySha256": "718253c2208bedf9e72cd7e3919009dc10a100f6d0ee29c063f1bc82da69d5bd"
+          }
+        ]
       }
     ],
-    "orca-emulator": [
+    "aio-ade-emulator": [
       {
         "releaseRevision": 1,
         "packageDigest": "fdecfa3957c5502ec5f4933504f7112ab98c2c3b7b8902aad34db6cb1b7dc28a",
@@ -1271,6 +1319,22 @@
             "exactSha256": "796f2135824e0ecdfe4f6e8f8bd4690788c1816933df4104b2f9846ffe9a41e0",
             "textNormalizedSha256": "796f2135824e0ecdfe4f6e8f8bd4690788c1816933df4104b2f9846ffe9a41e0",
             "identitySha256": "796f2135824e0ecdfe4f6e8f8bd4690788c1816933df4104b2f9846ffe9a41e0"
+          }
+        ]
+      },
+      {
+        "releaseRevision": 8,
+        "packageDigest": "a30117711faf10f6ded51109b8983b294c363d942018f1ecf326a09b470eb241",
+        "gitTreeSha": "f167641634a83f3a9752cefbb4b4a32deeab8e89",
+        "files": [
+          {
+            "path": "SKILL.md",
+            "size": 3812,
+            "executable": false,
+            "classification": "text",
+            "exactSha256": "a29e2755a94afb2862a3d3b09e4ac03e420d944287a7d88485500f4e389f63b8",
+            "textNormalizedSha256": "a29e2755a94afb2862a3d3b09e4ac03e420d944287a7d88485500f4e389f63b8",
+            "identitySha256": "a29e2755a94afb2862a3d3b09e4ac03e420d944287a7d88485500f4e389f63b8"
           }
         ]
       }
@@ -1435,9 +1499,25 @@
             "identitySha256": "d2dec89eca8c71c820ee2dbd7bae4fb8528775554dbc6c7a71ed8a3422f53d23"
           }
         ]
+      },
+      {
+        "releaseRevision": 11,
+        "packageDigest": "7c65c48614a81dcaf26c0522616db146652692fe6d3f3e48c68b05db3c41766f",
+        "gitTreeSha": "bf58666f16e1fe4a29ae176d46933fcade134b66",
+        "files": [
+          {
+            "path": "SKILL.md",
+            "size": 4221,
+            "executable": false,
+            "classification": "text",
+            "exactSha256": "69d4bbec87ce4e4b720b4b97fad261968d6448f2ab6d060117de6dcff048aa3f",
+            "textNormalizedSha256": "69d4bbec87ce4e4b720b4b97fad261968d6448f2ab6d060117de6dcff048aa3f",
+            "identitySha256": "69d4bbec87ce4e4b720b4b97fad261968d6448f2ab6d060117de6dcff048aa3f"
+          }
+        ]
       }
     ],
-    "orca-linear": [
+    "aio-ade-linear": [
       {
         "releaseRevision": 1,
         "packageDigest": "9015e708218fe86620eee39041d3e4f9ddd4b67ff2c6d049beca9ffe3783e03d",
@@ -1565,9 +1645,25 @@
             "identitySha256": "39241e0aa2929344e3b38407215d737fb35de8421b4efb5cf2c767f91d0e7a9b"
           }
         ]
+      },
+      {
+        "releaseRevision": 9,
+        "packageDigest": "62a630b4f241251bd3c560d96f1e6294c22dfd5235351001f4cf9b6c14568436",
+        "gitTreeSha": "71fcbf5e373fffec8f1bef680e0c43d6fe1cde27",
+        "files": [
+          {
+            "path": "SKILL.md",
+            "size": 3981,
+            "executable": false,
+            "classification": "text",
+            "exactSha256": "d0da3daeeee17f257b51c4678c8e2fff0334c51a3e306e0e484f272cbc76e9de",
+            "textNormalizedSha256": "d0da3daeeee17f257b51c4678c8e2fff0334c51a3e306e0e484f272cbc76e9de",
+            "identitySha256": "d0da3daeeee17f257b51c4678c8e2fff0334c51a3e306e0e484f272cbc76e9de"
+          }
+        ]
       }
     ],
-    "orca-emulator-android": [
+    "aio-ade-emulator-android": [
       {
         "releaseRevision": 1,
         "packageDigest": "cf86dd085b981febd8e4e11b7796c90d69a60bd9c1dfaab5a16b99f77841aaa4",
@@ -1647,9 +1743,25 @@
             "identitySha256": "41d9cae07abd03a39236733884332058316bcf816e4b5b2d411c01b3a16ac8a6"
           }
         ]
+      },
+      {
+        "releaseRevision": 6,
+        "packageDigest": "84de21da51c918779736a58ea7bdb58a03c34e8a3685a7f88f651ae68876edf3",
+        "gitTreeSha": "fd33d24b6413c727b378ba513eef6c903ff9ba3a",
+        "files": [
+          {
+            "path": "SKILL.md",
+            "size": 3608,
+            "executable": false,
+            "classification": "text",
+            "exactSha256": "16de4a49dffc1a6ea6d27debbf3959429be37195a9282d4446655eda0fa3e233",
+            "textNormalizedSha256": "16de4a49dffc1a6ea6d27debbf3959429be37195a9282d4446655eda0fa3e233",
+            "identitySha256": "16de4a49dffc1a6ea6d27debbf3959429be37195a9282d4446655eda0fa3e233"
+          }
+        ]
       }
     ],
-    "orca-per-workspace-env": [
+    "aio-ade-per-workspace-env": [
       {
         "releaseRevision": 1,
         "packageDigest": "dc7f471327f55b27a40cd9575ca476fea7a79c2aba74881af00ce4e468cbf714",
@@ -1727,6 +1839,22 @@
             "exactSha256": "a7ae9a0d22b8bc14a6cb3bdb6fc6ebf1f11cc25ab489d1cc63928bd025d7dddc",
             "textNormalizedSha256": "a7ae9a0d22b8bc14a6cb3bdb6fc6ebf1f11cc25ab489d1cc63928bd025d7dddc",
             "identitySha256": "a7ae9a0d22b8bc14a6cb3bdb6fc6ebf1f11cc25ab489d1cc63928bd025d7dddc"
+          }
+        ]
+      },
+      {
+        "releaseRevision": 6,
+        "packageDigest": "1b5a3054d7a296a95ae36cb8cd6dcc5fe1edf111ae91a5f447e1bbca703a7114",
+        "gitTreeSha": "e383a24da95b02bfe85e639cb3079bb4d33c0c86",
+        "files": [
+          {
+            "path": "SKILL.md",
+            "size": 4298,
+            "executable": false,
+            "classification": "text",
+            "exactSha256": "6572bf548dc0b93f393c6413a57b374cee8baf834fa56a3d77ba34bba5f69242",
+            "textNormalizedSha256": "6572bf548dc0b93f393c6413a57b374cee8baf834fa56a3d77ba34bba5f69242",
+            "identitySha256": "6572bf548dc0b93f393c6413a57b374cee8baf834fa56a3d77ba34bba5f69242"
           }
         ]
       }

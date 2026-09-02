@@ -16,20 +16,20 @@ vi.mock('node:os', async () => {
 
 beforeEach(() => {
   vi.resetModules()
-  testState.userData = mkdtempSync(join(tmpdir(), 'orca-codex-status-home-ud-'))
-  testState.home = mkdtempSync(join(tmpdir(), 'orca-codex-status-home-'))
+  testState.userData = mkdtempSync(join(tmpdir(), 'aio-ade-codex-status-home-ud-'))
+  testState.home = mkdtempSync(join(tmpdir(), 'aio-ade-codex-status-home-'))
   // Why: the real-home check consults CODEX_HOME and the shell rc, so a
   // developer who exports one would otherwise fail this suite locally.
   for (const key of [
-    'ORCA_USER_DATA_PATH',
-    'ORCA_CODEX_SYSTEM_DEFAULT_REAL_HOME',
+    'AIO_ADE_USER_DATA_PATH',
+    'AIO_ADE_CODEX_SYSTEM_DEFAULT_REAL_HOME',
     'CODEX_HOME',
-    'ORCA_CODEX_HOME'
+    'AIO_ADE_CODEX_HOME'
   ]) {
     previousEnv[key] = process.env[key]
     delete process.env[key]
   }
-  process.env.ORCA_USER_DATA_PATH = testState.userData
+  process.env.AIO_ADE_USER_DATA_PATH = testState.userData
   mkdirSync(join(testState.home, '.codex'), { recursive: true })
 })
 
@@ -60,7 +60,7 @@ function createStore(accounts: CodexManagedAccount[], activeId: string | null) {
 function createManagedAccount(id: string): CodexManagedAccount {
   const home = join(testState.userData, 'codex-accounts', id, 'home')
   mkdirSync(home, { recursive: true })
-  writeFileSync(join(home, '.orca-managed-home'), `${id}\n`, 'utf-8')
+  writeFileSync(join(home, '.aio-ade-managed-home'), `${id}\n`, 'utf-8')
   writeFileSync(join(home, 'auth.json'), '{}', 'utf-8')
   return {
     id,
@@ -92,13 +92,13 @@ describe('CodexRuntimeHomeService.getMirroredHostHomePathForStatus', () => {
   })
 
   it('returns the shared runtime home when the real-home lane is off', async () => {
-    process.env.ORCA_CODEX_SYSTEM_DEFAULT_REAL_HOME = '0'
+    process.env.AIO_ADE_CODEX_SYSTEM_DEFAULT_REAL_HOME = '0'
     const { CodexRuntimeHomeService } = await import('./runtime-home-service')
-    const { getOrcaManagedCodexHomePath } = await import('../codex/codex-home-paths')
+    const { getAioAdeManagedCodexHomePath } = await import('../codex/codex-home-paths')
     const service = new CodexRuntimeHomeService(createStore([], null) as never)
 
     // Why: compare against the real helper, not a repeated literal, so the
     // status cannot silently drift if the managed home layout ever moves.
-    expect(service.getMirroredHostHomePathForStatus()).toBe(getOrcaManagedCodexHomePath())
+    expect(service.getMirroredHostHomePathForStatus()).toBe(getAioAdeManagedCodexHomePath())
   })
 })

@@ -318,7 +318,7 @@ describe('ghExecFileAsync WSL fallback', () => {
     })
 
     await expect(
-      ghExecFileAsync(['api', '-X', 'POST', 'repos/stablyai/orca/issues'])
+      ghExecFileAsync(['api', '-X', 'POST', 'repos/keepmeside/aio-ade-platform/issues'])
     ).rejects.toThrow('HTTP 502 Bad Gateway')
 
     expect(execFileMock).toHaveBeenCalledTimes(1)
@@ -357,7 +357,7 @@ describe('ghExecFileAsync WSL fallback', () => {
     })
 
     await expect(
-      ghExecFileAsync(['issue', 'edit', '5', '--repo', 'stablyai/orca'])
+      ghExecFileAsync(['issue', 'edit', '5', '--repo', 'keepmeside/aio-ade-platform'])
     ).rejects.toThrow('HTTP 502 Bad Gateway')
 
     expect(execFileMock).toHaveBeenCalledTimes(1)
@@ -455,9 +455,12 @@ describe('ghExecFileAsync WSL fallback', () => {
     })
 
     await expect(
-      glabExecFileAsync(['api', '-X', 'POST', 'projects/stablyai%2Forca/issues/5/notes'], {
-        cwd: String.raw`C:\repo`
-      })
+      glabExecFileAsync(
+        ['api', '-X', 'POST', 'projects/keepmeside%2Faio-ade-platform/issues/5/notes'],
+        {
+          cwd: String.raw`C:\repo`
+        }
+      )
     ).rejects.toThrow('HTTP 502 Bad Gateway')
 
     expect(execFileMock).toHaveBeenCalledTimes(1)
@@ -474,7 +477,7 @@ describe('ghExecFileAsync WSL fallback', () => {
     })
 
     await expect(
-      glabExecFileAsync(['issue', 'update', '5', '-R', 'stablyai/orca'], {
+      glabExecFileAsync(['issue', 'update', '5', '-R', 'keepmeside/aio-ade-platform'], {
         cwd: String.raw`C:\repo`
       })
     ).rejects.toThrow('HTTP 502 Bad Gateway')
@@ -618,7 +621,7 @@ describe('ghExecFileAsync WSL fallback', () => {
       })
 
     await expect(
-      glabExecFileAsync(['api', 'projects/stablyai%2Forca/issues'], {
+      glabExecFileAsync(['api', 'projects/keepmeside%2Faio-ade-platform/issues'], {
         cwd: String.raw`C:\repo`
       })
     ).resolves.toEqual({ stdout: '[]', stderr: '' })

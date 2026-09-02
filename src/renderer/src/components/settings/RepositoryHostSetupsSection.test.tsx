@@ -30,7 +30,7 @@ function makeRepo(overrides: Partial<Repo> & Pick<Repo, 'id' | 'displayName' | '
 function makeProject({ id, ...overrides }: Partial<Project> & Pick<Project, 'id'>): Project {
   return {
     id,
-    displayName: 'Orca',
+    displayName: 'AIO-ADE',
     badgeColor: '#737373',
     sourceRepoIds: ['local-repo', 'remote-repo'],
     createdAt: 100,
@@ -44,7 +44,7 @@ function makeSetup(
     Pick<ProjectHostSetup, 'id' | 'projectId' | 'repoId' | 'hostId' | 'path'>
 ): ProjectHostSetup {
   return {
-    displayName: 'Orca',
+    displayName: 'AIO-ADE',
     kind: 'git',
     setupState: 'ready',
     setupMethod: 'legacy-repo',
@@ -120,32 +120,32 @@ describe('RepositoryHostSetupsSection', () => {
   it('shows a viewing-host selector when the project has multiple settings-backed hosts', () => {
     const localRepo = makeRepo({
       id: 'local-repo',
-      displayName: 'Orca',
-      path: '/Users/alice/orca'
+      displayName: 'AIO-ADE',
+      path: '/Users/alice/aio-ade'
     })
     const remoteRepo = makeRepo({
       id: 'remote-repo',
-      displayName: 'Orca',
-      path: '/home/alice/orca',
+      displayName: 'AIO-ADE',
+      path: '/home/alice/aio-ade',
       connectionId: 'openclaw 2'
     })
     useAppStore.setState({
       repos: [localRepo, remoteRepo],
-      projects: [makeProject({ id: 'github:stablyai/orca' })],
+      projects: [makeProject({ id: 'github:keepmeside/aio-ade-platform' })],
       projectHostSetups: [
         makeSetup({
           id: 'local-repo',
-          projectId: 'github:stablyai/orca',
+          projectId: 'github:keepmeside/aio-ade-platform',
           repoId: 'local-repo',
           hostId: 'local',
-          path: '/Users/alice/orca'
+          path: '/Users/alice/aio-ade'
         }),
         makeSetup({
           id: 'remote-repo',
-          projectId: 'github:stablyai/orca',
+          projectId: 'github:keepmeside/aio-ade-platform',
           repoId: 'remote-repo',
           hostId: toSshExecutionHostId('openclaw 2'),
-          path: '/home/alice/orca'
+          path: '/home/alice/aio-ade'
         })
       ],
       sshTargetLabels: new Map([['openclaw 2', 'openclaw 2']])
@@ -163,32 +163,32 @@ describe('RepositoryHostSetupsSection', () => {
     const setSettingsProjectHostSelection = vi.fn()
     const localRepo = makeRepo({
       id: 'local-repo',
-      displayName: 'Orca',
-      path: '/Users/alice/orca'
+      displayName: 'AIO-ADE',
+      path: '/Users/alice/aio-ade'
     })
     const remoteRepo = makeRepo({
       id: 'remote-repo',
-      displayName: 'Orca',
-      path: '/home/alice/orca',
+      displayName: 'AIO-ADE',
+      path: '/home/alice/aio-ade',
       connectionId: 'openclaw 2'
     })
     useAppStore.setState({
       repos: [localRepo, remoteRepo],
-      projects: [makeProject({ id: 'github:stablyai/orca' })],
+      projects: [makeProject({ id: 'github:keepmeside/aio-ade-platform' })],
       projectHostSetups: [
         makeSetup({
           id: 'local-repo',
-          projectId: 'github:stablyai/orca',
+          projectId: 'github:keepmeside/aio-ade-platform',
           repoId: 'local-repo',
           hostId: 'local',
-          path: '/Users/alice/orca'
+          path: '/Users/alice/aio-ade'
         }),
         makeSetup({
           id: 'remote-repo',
-          projectId: 'github:stablyai/orca',
+          projectId: 'github:keepmeside/aio-ade-platform',
           repoId: 'remote-repo',
           hostId: toSshExecutionHostId('openclaw 2'),
-          path: '/home/alice/orca'
+          path: '/home/alice/aio-ade'
         })
       ],
       openSettingsPage,
@@ -210,7 +210,7 @@ describe('RepositoryHostSetupsSection', () => {
 
     // The single project pane switches host in place — no navigation.
     expect(setSettingsProjectHostSelection).toHaveBeenCalledWith(
-      'github:stablyai/orca',
+      'github:keepmeside/aio-ade-platform',
       toSshExecutionHostId('openclaw 2'),
       'remote-repo'
     )
@@ -221,31 +221,33 @@ describe('RepositoryHostSetupsSection', () => {
   it('keeps nested SSH setups distinct and derives readiness from their HUB owner', () => {
     const remoteRepo = makeRepo({
       id: 'remote-repo',
-      displayName: 'Orca',
-      path: '/srv/orca',
+      displayName: 'AIO-ADE',
+      path: '/srv/aio-ade',
       executionHostId: 'runtime:hub'
     })
     useAppStore.setState({
       repos: [remoteRepo],
-      projects: [makeProject({ id: 'github:stablyai/orca', sourceRepoIds: ['remote-repo'] })],
+      projects: [
+        makeProject({ id: 'github:keepmeside/aio-ade-platform', sourceRepoIds: ['remote-repo'] })
+      ],
       projectHostSetups: [
         makeSetup({
           id: 'direct-setup',
-          projectId: 'github:stablyai/orca',
+          projectId: 'github:keepmeside/aio-ade-platform',
           repoId: 'remote-repo',
           hostId: 'runtime:hub',
           executionHostId: 'ssh:direct',
           runtimeOwnerEnvironmentId: 'hub',
-          path: '/srv/orca'
+          path: '/srv/aio-ade'
         }),
         makeSetup({
           id: 'jump-setup',
-          projectId: 'github:stablyai/orca',
+          projectId: 'github:keepmeside/aio-ade-platform',
           repoId: 'remote-repo',
           hostId: 'runtime:hub',
           executionHostId: 'ssh:jump',
           runtimeOwnerEnvironmentId: 'hub',
-          path: '/srv/orca'
+          path: '/srv/aio-ade'
         })
       ],
       runtimeStatusByEnvironmentId: new Map([
@@ -320,22 +322,24 @@ describe('RepositoryHostSetupsSection', () => {
   it('shows HUB-local setups as disconnected when their owning runtime is unreachable', () => {
     const remoteRepo = makeRepo({
       id: 'remote-repo',
-      displayName: 'Orca',
-      path: '/srv/orca',
+      displayName: 'AIO-ADE',
+      path: '/srv/aio-ade',
       executionHostId: 'runtime:hub'
     })
     useAppStore.setState({
       repos: [remoteRepo],
-      projects: [makeProject({ id: 'github:stablyai/orca', sourceRepoIds: ['remote-repo'] })],
+      projects: [
+        makeProject({ id: 'github:keepmeside/aio-ade-platform', sourceRepoIds: ['remote-repo'] })
+      ],
       projectHostSetups: [
         makeSetup({
           id: 'hub-local-setup',
-          projectId: 'github:stablyai/orca',
+          projectId: 'github:keepmeside/aio-ade-platform',
           repoId: 'remote-repo',
           hostId: 'runtime:hub',
           executionHostId: 'local',
           runtimeOwnerEnvironmentId: 'hub',
-          path: '/srv/orca'
+          path: '/srv/aio-ade'
         })
       ],
       runtimeStatusByEnvironmentId: new Map([['hub', { checkedAt: 1, status: null }]])
@@ -349,10 +353,10 @@ describe('RepositoryHostSetupsSection', () => {
 
   it('removes independent setup metadata instead of opening an empty repo target', async () => {
     const deleteProjectHostSetup = vi.fn().mockResolvedValue({
-      project: makeProject({ id: 'github:stablyai/orca' }),
+      project: makeProject({ id: 'github:keepmeside/aio-ade-platform' }),
       setup: makeSetup({
         id: 'gpu-setup',
-        projectId: 'github:stablyai/orca',
+        projectId: 'github:keepmeside/aio-ade-platform',
         repoId: '',
         hostId: 'runtime:gpu',
         path: ''
@@ -362,23 +366,23 @@ describe('RepositoryHostSetupsSection', () => {
     const openSettingsTarget = vi.fn()
     const localRepo = makeRepo({
       id: 'local-repo',
-      displayName: 'Orca',
-      path: '/Users/alice/orca'
+      displayName: 'AIO-ADE',
+      path: '/Users/alice/aio-ade'
     })
     useAppStore.setState({
       repos: [localRepo],
-      projects: [makeProject({ id: 'github:stablyai/orca' })],
+      projects: [makeProject({ id: 'github:keepmeside/aio-ade-platform' })],
       projectHostSetups: [
         makeSetup({
           id: 'local-repo',
-          projectId: 'github:stablyai/orca',
+          projectId: 'github:keepmeside/aio-ade-platform',
           repoId: 'local-repo',
           hostId: 'local',
-          path: '/Users/alice/orca'
+          path: '/Users/alice/aio-ade'
         }),
         makeSetup({
           id: 'gpu-setup',
-          projectId: 'github:stablyai/orca',
+          projectId: 'github:keepmeside/aio-ade-platform',
           repoId: '',
           hostId: 'runtime:gpu',
           path: '',
@@ -413,36 +417,36 @@ describe('RepositoryHostSetupsSection', () => {
     const openSettingsTarget = vi.fn()
     const setSettingsProjectHostSelection = vi.fn()
     const setupProjectExistingFolder = vi.fn().mockResolvedValue({
-      project: makeProject({ id: 'github:stablyai/orca' }),
+      project: makeProject({ id: 'github:keepmeside/aio-ade-platform' }),
       setup: makeSetup({
         id: 'remote-repo',
-        projectId: 'github:stablyai/orca',
+        projectId: 'github:keepmeside/aio-ade-platform',
         repoId: 'remote-repo',
         hostId: toSshExecutionHostId('openclaw 2'),
-        path: '/home/alice/orca'
+        path: '/home/alice/aio-ade'
       }),
       repo: makeRepo({
         id: 'remote-repo',
-        displayName: 'Orca',
-        path: '/home/alice/orca',
+        displayName: 'AIO-ADE',
+        path: '/home/alice/aio-ade',
         connectionId: 'openclaw 2'
       })
     })
     const localRepo = makeRepo({
       id: 'local-repo',
-      displayName: 'Orca',
-      path: '/Users/alice/orca'
+      displayName: 'AIO-ADE',
+      path: '/Users/alice/aio-ade'
     })
     useAppStore.setState({
       repos: [localRepo],
-      projects: [makeProject({ id: 'github:stablyai/orca' })],
+      projects: [makeProject({ id: 'github:keepmeside/aio-ade-platform' })],
       projectHostSetups: [
         makeSetup({
           id: 'local-repo',
-          projectId: 'github:stablyai/orca',
+          projectId: 'github:keepmeside/aio-ade-platform',
           repoId: 'local-repo',
           hostId: 'local',
-          path: '/Users/alice/orca'
+          path: '/Users/alice/aio-ade'
         })
       ],
       sshTargetLabels: new Map([['openclaw 2', 'openclaw 2']]),
@@ -461,7 +465,7 @@ describe('RepositoryHostSetupsSection', () => {
       'input[placeholder="/path/to/project/on/host"]'
     )
     expect(pathInput).toBeTruthy()
-    typeIntoInput(pathInput!, '/home/alice/orca')
+    typeIntoInput(pathInput!, '/home/alice/aio-ade')
 
     const importButton = findButton('Import')
     expect(importButton).toBeTruthy()
@@ -471,14 +475,14 @@ describe('RepositoryHostSetupsSection', () => {
     })
 
     expect(setupProjectExistingFolder).toHaveBeenCalledWith({
-      projectId: 'github:stablyai/orca',
+      projectId: 'github:keepmeside/aio-ade-platform',
       hostId: 'ssh:openclaw%202',
-      path: '/home/alice/orca',
+      path: '/home/alice/aio-ade',
       kind: 'git',
-      displayName: 'Orca'
+      displayName: 'AIO-ADE'
     })
     expect(setSettingsProjectHostSelection).toHaveBeenCalledWith(
-      'github:stablyai/orca',
+      'github:keepmeside/aio-ade-platform',
       'ssh:openclaw%202'
     )
     expect(openSettingsPage).not.toHaveBeenCalled()
@@ -490,36 +494,36 @@ describe('RepositoryHostSetupsSection', () => {
     const openSettingsTarget = vi.fn()
     const setSettingsProjectHostSelection = vi.fn()
     const setupProjectClone = vi.fn().mockResolvedValue({
-      project: makeProject({ id: 'github:stablyai/orca' }),
+      project: makeProject({ id: 'github:keepmeside/aio-ade-platform' }),
       setup: makeSetup({
         id: 'remote-repo',
-        projectId: 'github:stablyai/orca',
+        projectId: 'github:keepmeside/aio-ade-platform',
         repoId: 'remote-repo',
         hostId: toSshExecutionHostId('openclaw 2'),
-        path: '/home/alice/orca'
+        path: '/home/alice/aio-ade'
       }),
       repo: makeRepo({
         id: 'remote-repo',
-        displayName: 'Orca',
-        path: '/home/alice/orca',
+        displayName: 'AIO-ADE',
+        path: '/home/alice/aio-ade',
         connectionId: 'openclaw 2'
       })
     })
     const localRepo = makeRepo({
       id: 'local-repo',
-      displayName: 'Orca',
-      path: '/Users/alice/orca'
+      displayName: 'AIO-ADE',
+      path: '/Users/alice/aio-ade'
     })
     useAppStore.setState({
       repos: [localRepo],
-      projects: [makeProject({ id: 'github:stablyai/orca' })],
+      projects: [makeProject({ id: 'github:keepmeside/aio-ade-platform' })],
       projectHostSetups: [
         makeSetup({
           id: 'local-repo',
-          projectId: 'github:stablyai/orca',
+          projectId: 'github:keepmeside/aio-ade-platform',
           repoId: 'local-repo',
           hostId: 'local',
-          path: '/Users/alice/orca'
+          path: '/Users/alice/aio-ade'
         })
       ],
       sshTargetLabels: new Map([['openclaw 2', 'openclaw 2']]),
@@ -542,7 +546,7 @@ describe('RepositoryHostSetupsSection', () => {
     )
     expect(urlInput).toBeTruthy()
     expect(destinationInput).toBeTruthy()
-    typeIntoInput(urlInput!, 'https://github.com/stablyai/orca.git')
+    typeIntoInput(urlInput!, 'https://github.com/keepmeside/aio-ade-platform.git')
     typeIntoInput(destinationInput!, '/home/alice')
 
     const cloneButton = findButton('Clone')
@@ -553,14 +557,14 @@ describe('RepositoryHostSetupsSection', () => {
     })
 
     expect(setupProjectClone).toHaveBeenCalledWith({
-      projectId: 'github:stablyai/orca',
+      projectId: 'github:keepmeside/aio-ade-platform',
       hostId: 'ssh:openclaw%202',
-      url: 'https://github.com/stablyai/orca.git',
+      url: 'https://github.com/keepmeside/aio-ade-platform.git',
       destination: '/home/alice',
-      displayName: 'Orca'
+      displayName: 'AIO-ADE'
     })
     expect(setSettingsProjectHostSelection).toHaveBeenCalledWith(
-      'github:stablyai/orca',
+      'github:keepmeside/aio-ade-platform',
       'ssh:openclaw%202'
     )
     expect(openSettingsPage).not.toHaveBeenCalled()
@@ -570,19 +574,19 @@ describe('RepositoryHostSetupsSection', () => {
   it('blocks path setup until an SSH host connects but keeps placeholders available', () => {
     const localRepo = makeRepo({
       id: 'local-repo',
-      displayName: 'Orca',
-      path: '/Users/alice/orca'
+      displayName: 'AIO-ADE',
+      path: '/Users/alice/aio-ade'
     })
     useAppStore.setState({
       repos: [localRepo],
-      projects: [makeProject({ id: 'github:stablyai/orca' })],
+      projects: [makeProject({ id: 'github:keepmeside/aio-ade-platform' })],
       projectHostSetups: [
         makeSetup({
           id: 'local-repo',
-          projectId: 'github:stablyai/orca',
+          projectId: 'github:keepmeside/aio-ade-platform',
           repoId: 'local-repo',
           hostId: 'local',
-          path: '/Users/alice/orca'
+          path: '/Users/alice/aio-ade'
         })
       ],
       sshTargetLabels: new Map([['openclaw 2', 'openclaw 2']])
@@ -608,10 +612,10 @@ describe('RepositoryHostSetupsSection', () => {
 
   it('creates pending setup metadata for a known host without requiring a path', async () => {
     const createProjectHostSetup = vi.fn().mockResolvedValue({
-      project: makeProject({ id: 'github:stablyai/orca' }),
+      project: makeProject({ id: 'github:keepmeside/aio-ade-platform' }),
       setup: makeSetup({
         id: 'gpu-setup',
-        projectId: 'github:stablyai/orca',
+        projectId: 'github:keepmeside/aio-ade-platform',
         repoId: '',
         hostId: 'runtime:gpu',
         path: '',
@@ -621,19 +625,19 @@ describe('RepositoryHostSetupsSection', () => {
     })
     const localRepo = makeRepo({
       id: 'local-repo',
-      displayName: 'Orca',
-      path: '/Users/alice/orca'
+      displayName: 'AIO-ADE',
+      path: '/Users/alice/aio-ade'
     })
     useAppStore.setState({
       repos: [localRepo],
-      projects: [makeProject({ id: 'github:stablyai/orca' })],
+      projects: [makeProject({ id: 'github:keepmeside/aio-ade-platform' })],
       projectHostSetups: [
         makeSetup({
           id: 'local-repo',
-          projectId: 'github:stablyai/orca',
+          projectId: 'github:keepmeside/aio-ade-platform',
           repoId: 'local-repo',
           hostId: 'local',
-          path: '/Users/alice/orca'
+          path: '/Users/alice/aio-ade'
         })
       ],
       settings: { activeRuntimeEnvironmentId: 'gpu' } as never,
@@ -676,9 +680,9 @@ describe('RepositoryHostSetupsSection', () => {
     })
 
     expect(createProjectHostSetup).toHaveBeenCalledWith({
-      projectId: 'github:stablyai/orca',
+      projectId: 'github:keepmeside/aio-ade-platform',
       hostId: 'runtime:gpu',
-      displayName: 'Orca',
+      displayName: 'AIO-ADE',
       setupState: 'not-set-up',
       setupMethod: 'provisioned'
     })
@@ -690,19 +694,19 @@ describe('RepositoryHostSetupsSection', () => {
     const setupProjectExistingFolder = vi.fn()
     const localRepo = makeRepo({
       id: 'local-repo',
-      displayName: 'Orca',
-      path: '/Users/alice/orca'
+      displayName: 'AIO-ADE',
+      path: '/Users/alice/aio-ade'
     })
     useAppStore.setState({
       repos: [localRepo],
-      projects: [makeProject({ id: 'github:stablyai/orca' })],
+      projects: [makeProject({ id: 'github:keepmeside/aio-ade-platform' })],
       projectHostSetups: [
         makeSetup({
           id: 'local-repo',
-          projectId: 'github:stablyai/orca',
+          projectId: 'github:keepmeside/aio-ade-platform',
           repoId: 'local-repo',
           hostId: 'local',
-          path: '/Users/alice/orca'
+          path: '/Users/alice/aio-ade'
         })
       ],
       settings: { activeRuntimeEnvironmentId: null } as never,
@@ -734,7 +738,7 @@ describe('RepositoryHostSetupsSection', () => {
     renderSection(localRepo)
     clickButton('Add to another host')
 
-    expect(container.textContent).toContain('Update Orca on this host to set up projects')
+    expect(container.textContent).toContain('Update AIO-ADE on this host to set up projects')
     const browseButton = findButton('Browse folder')
     const plannedButton = findButton('Add host placeholder')
     expect(browseButton?.disabled).toBe(true)
@@ -751,10 +755,10 @@ describe('RepositoryHostSetupsSection', () => {
 
   it('offers inactive runtime hosts discovered from hydrated runtime status', async () => {
     const createProjectHostSetup = vi.fn().mockResolvedValue({
-      project: makeProject({ id: 'github:stablyai/orca' }),
+      project: makeProject({ id: 'github:keepmeside/aio-ade-platform' }),
       setup: makeSetup({
         id: 'gpu-setup',
-        projectId: 'github:stablyai/orca',
+        projectId: 'github:keepmeside/aio-ade-platform',
         repoId: '',
         hostId: 'runtime:gpu',
         path: '',
@@ -764,19 +768,19 @@ describe('RepositoryHostSetupsSection', () => {
     })
     const localRepo = makeRepo({
       id: 'local-repo',
-      displayName: 'Orca',
-      path: '/Users/alice/orca'
+      displayName: 'AIO-ADE',
+      path: '/Users/alice/aio-ade'
     })
     useAppStore.setState({
       repos: [localRepo],
-      projects: [makeProject({ id: 'github:stablyai/orca' })],
+      projects: [makeProject({ id: 'github:keepmeside/aio-ade-platform' })],
       projectHostSetups: [
         makeSetup({
           id: 'local-repo',
-          projectId: 'github:stablyai/orca',
+          projectId: 'github:keepmeside/aio-ade-platform',
           repoId: 'local-repo',
           hostId: 'local',
-          path: '/Users/alice/orca'
+          path: '/Users/alice/aio-ade'
         })
       ],
       settings: { activeRuntimeEnvironmentId: null } as never,
@@ -818,9 +822,9 @@ describe('RepositoryHostSetupsSection', () => {
     })
 
     expect(createProjectHostSetup).toHaveBeenCalledWith({
-      projectId: 'github:stablyai/orca',
+      projectId: 'github:keepmeside/aio-ade-platform',
       hostId: 'runtime:gpu',
-      displayName: 'Orca',
+      displayName: 'AIO-ADE',
       setupState: 'not-set-up',
       setupMethod: 'provisioned'
     })

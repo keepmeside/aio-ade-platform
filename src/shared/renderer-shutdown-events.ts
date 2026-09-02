@@ -1,1 +1,1 @@
-export const ORCA_RENDERER_UNLOAD_PREVENTED_EVENT = 'orca:renderer-unload-prevented'
+export const AIO_ADE_RENDERER_UNLOAD_PREVENTED_EVENT = 'aio-ade:renderer-unload-prevented'

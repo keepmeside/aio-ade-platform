@@ -13,9 +13,9 @@ vi.mock('fs', () => ({
 
 vi.mock('./relay-protocol', () => ({
   RELAY_VERSION: '0.1.0',
-  RELAY_REMOTE_DIR: '.orca-remote',
+  RELAY_REMOTE_DIR: '.aio-ade-remote',
   parseUnameToRelayPlatform: vi.fn().mockReturnValue('linux-x64'),
-  RELAY_SENTINEL: 'ORCA-RELAY v0.1.0 READY\n',
+  RELAY_SENTINEL: 'AIO_ADE-RELAY v0.1.0 READY\n',
   RELAY_SENTINEL_TIMEOUT_MS: 10_000
 }))
 
@@ -38,7 +38,7 @@ vi.mock('./ssh-remote-node-resolution', () => ({
 
 vi.mock('./ssh-relay-versioned-install', () => ({
   readLocalFullVersion: vi.fn().mockReturnValue('0.1.0+testhash'),
-  computeRemoteRelayDir: (home: string, v: string) => `${home}/.orca-remote/relay-${v}`,
+  computeRemoteRelayDir: (home: string, v: string) => `${home}/.aio-ade-remote/relay-${v}`,
   isRelayAlreadyInstalled: vi.fn().mockResolvedValue(false),
   finalizeInstall: vi.fn().mockResolvedValue(undefined),
   abandonInstall: vi.fn().mockResolvedValue(undefined),
@@ -138,7 +138,7 @@ describe('installNativeDeps (via deployAndLaunchRelay)', () => {
     const written = sftpCapture.contents[pkgPath as string]
     expect(written).toBeTruthy()
     const parsed = JSON.parse(written) as Record<string, unknown>
-    expect(parsed.name).toBe('orca-relay')
+    expect(parsed.name).toBe('aio-ade-relay')
     expect(parsed.version).toBe('1.0.0')
     expect(parsed.private).toBe(true)
     // Why: pin commonjs so a future Node default flip can't break require('node-pty').
@@ -312,7 +312,7 @@ describe('installNativeDeps (via deployAndLaunchRelay)', () => {
       makeExecResponses({
         npmInstall: {
           reject:
-            'Command "export PATH=/usr/bin:$PATH && cd /home/u/.orca-remote/relay && npm install node-pty@1.1.0 2>&1" failed (exit 1): npm ERR! network ETIMEDOUT'
+            'Command "export PATH=/usr/bin:$PATH && cd /home/u/.aio-ade-remote/relay && npm install node-pty@1.1.0 2>&1" failed (exit 1): npm ERR! network ETIMEDOUT'
         },
         probe: 'ok',
         toolchainProbe: 'PKG apt-get'
@@ -366,7 +366,7 @@ describe('installNativeDeps (via deployAndLaunchRelay)', () => {
     // Why: rebuild degrades gracefully, but the post-rebuild probe must surface transport death, else a dead channel finalizes a half-repaired install.
     const conn = makeMockConnection(sftpCapture)
     feed([
-      '__ORCA_REMOTE_PLATFORM__ Linux x86_64', // uname
+      '__AIO_ADE_REMOTE_PLATFORM__ Linux x86_64', // uname
       '/home/u', // $HOME
       '', // mkdir remoteDir (uploadRelay)
       '', // chmod +x node
@@ -394,7 +394,7 @@ describe('installNativeDeps (via deployAndLaunchRelay)', () => {
     try {
       const conn = makeMockConnection(sftpCapture)
       feed([
-        '__ORCA_REMOTE_PLATFORM__ Linux x86_64',
+        '__AIO_ADE_REMOTE_PLATFORM__ Linux x86_64',
         '/home/u',
         '', // mkdir remoteDir
         '' // chmod +x node
@@ -523,7 +523,7 @@ describe('installNativeDeps (via deployAndLaunchRelay)', () => {
       makeExecResponses({
         npmInstall: 'ok',
         probe: 'ok',
-        probeStdoutOverride: 'Welcome to Acme Corp\nLast login: ...\nORCA-NPTY-PROBE-OK\n'
+        probeStdoutOverride: 'Welcome to Acme Corp\nLast login: ...\nAIO_ADE-NPTY-PROBE-OK\n'
       })
     )
 
@@ -558,7 +558,7 @@ describe('installNativeDeps (via deployAndLaunchRelay)', () => {
     vi.mocked(resolveRemoteNodePath).mockResolvedValueOnce('C:/Program Files/nodejs/node.exe')
     const conn = makeMockConnection(sftpCapture)
     feed([
-      '__ORCA_REMOTE_PLATFORM__ Windows AMD64',
+      '__AIO_ADE_REMOTE_PLATFORM__ Windows AMD64',
       'C:\\Users\\u',
       '', // mkdir remoteDir
       '', // npm install native deps
@@ -651,14 +651,14 @@ describe('installNativeDeps (via deployAndLaunchRelay)', () => {
     vi.mocked(isRelayAlreadyInstalled).mockResolvedValue(true)
     const conn = makeMockConnection(sftpCapture)
     feed([
-      '__ORCA_REMOTE_PLATFORM__ Linux x86_64',
+      '__AIO_ADE_REMOTE_PLATFORM__ Linux x86_64',
       '/home/u',
-      'ORCA-NATIVE-DEPS-MISSING:@parcel/watcher\nMISSING', // first probe before lock
-      'ORCA-NATIVE-DEPS-MISSING:@parcel/watcher\nMISSING', // re-probe after lock
+      'AIO_ADE-NATIVE-DEPS-MISSING:@parcel/watcher\nMISSING', // first probe before lock
+      'AIO_ADE-NATIVE-DEPS-MISSING:@parcel/watcher\nMISSING', // re-probe after lock
       '', // SFTP-namespace install-owner marker (repair)
       '', // npm install native deps
       '', // chmod prebuilds
-      'ORCA-NPTY-PROBE-OK\n',
+      'AIO_ADE-NPTY-PROBE-OK\n',
       '', // rm probe stderr
       'DEAD',
       'READY'
@@ -705,7 +705,7 @@ describe('installNativeDeps (via deployAndLaunchRelay)', () => {
     vi.mocked(isRelayAlreadyInstalled).mockResolvedValue(true)
     const conn = makeMockConnection(sftpCapture)
     feed([
-      '__ORCA_REMOTE_PLATFORM__ Linux x86_64',
+      '__AIO_ADE_REMOTE_PLATFORM__ Linux x86_64',
       '/home/u',
       'MISSING', // health probe: require() fails
       'MISSING', // re-probe after lock
@@ -728,7 +728,7 @@ describe('installNativeDeps (via deployAndLaunchRelay)', () => {
     vi.mocked(isRelayAlreadyInstalled).mockResolvedValue(true)
     const conn = makeMockConnection(sftpCapture)
     vi.mocked(execCommand)
-      .mockResolvedValueOnce('__ORCA_REMOTE_PLATFORM__ Linux x86_64')
+      .mockResolvedValueOnce('__AIO_ADE_REMOTE_PLATFORM__ Linux x86_64')
       .mockResolvedValueOnce('/home/u')
       .mockResolvedValueOnce('MISSING')
       .mockResolvedValueOnce('MISSING')
@@ -753,7 +753,7 @@ describe('installNativeDeps (via deployAndLaunchRelay)', () => {
     try {
       const conn = makeMockConnection(sftpCapture)
       feed([
-        '__ORCA_REMOTE_PLATFORM__ Linux x86_64',
+        '__AIO_ADE_REMOTE_PLATFORM__ Linux x86_64',
         '/home/u',
         '', // mkdir remoteDir
         '' // chmod +x node
@@ -800,7 +800,7 @@ describe('installNativeDeps (via deployAndLaunchRelay)', () => {
   it('does not finalize or release a first-install lock after unconfirmed rebuild teardown', async () => {
     const conn = makeMockConnection(sftpCapture)
     vi.mocked(execCommand)
-      .mockResolvedValueOnce('__ORCA_REMOTE_PLATFORM__ Linux x86_64')
+      .mockResolvedValueOnce('__AIO_ADE_REMOTE_PLATFORM__ Linux x86_64')
       .mockResolvedValueOnce('/home/u')
       .mockResolvedValueOnce('')
       .mockResolvedValueOnce('')
@@ -827,7 +827,7 @@ describe('installNativeDeps (via deployAndLaunchRelay)', () => {
     try {
       const conn = makeMockConnection(sftpCapture)
       feed([
-        '__ORCA_REMOTE_PLATFORM__ Linux x86_64',
+        '__AIO_ADE_REMOTE_PLATFORM__ Linux x86_64',
         '/home/u',
         '', // mkdir remoteDir
         '', // chmod +x node
@@ -880,7 +880,7 @@ describe('installNativeDeps (via deployAndLaunchRelay)', () => {
     vi.mocked(isRelayAlreadyInstalled).mockResolvedValue(true)
     vi.mocked(tryAcquireRelayRepairLock).mockResolvedValueOnce(lockResult)
     const conn = makeMockConnection(sftpCapture)
-    feed(['__ORCA_REMOTE_PLATFORM__ Linux x86_64', '/home/u', 'MISSING', 'DEAD', 'READY'])
+    feed(['__AIO_ADE_REMOTE_PLATFORM__ Linux x86_64', '/home/u', 'MISSING', 'DEAD', 'READY'])
 
     await deployAndLaunchRelay(conn)
 
@@ -896,9 +896,9 @@ describe('installNativeDeps (via deployAndLaunchRelay)', () => {
     vi.mocked(isRelayAlreadyInstalled).mockResolvedValue(true)
     const conn = makeMockConnection(sftpCapture)
     feed([
-      '__ORCA_REMOTE_PLATFORM__ Linux x86_64',
+      '__AIO_ADE_REMOTE_PLATFORM__ Linux x86_64',
       '/home/u',
-      'ORCA-NATIVE-DEPS-OK',
+      'AIO_ADE-NATIVE-DEPS-OK',
       'DEAD',
       'READY'
     ])
@@ -908,7 +908,7 @@ describe('installNativeDeps (via deployAndLaunchRelay)', () => {
     const healthProbe = vi
       .mocked(execCommand)
       .mock.calls.map(([, c]) => c)
-      .find((c) => c.includes('ORCA-NATIVE-DEPS-OK'))
+      .find((c) => c.includes('AIO_ADE-NATIVE-DEPS-OK'))
     expect(healthProbe).toContain('require("node-pty")')
     expect(healthProbe).toContain('loadNativeModule')
     expect(healthProbe).toContain('require("@parcel/watcher")')
@@ -919,9 +919,9 @@ describe('installNativeDeps (via deployAndLaunchRelay)', () => {
     vi.mocked(isRelayAlreadyInstalled).mockResolvedValue(true)
     const conn = makeMockConnection(sftpCapture)
     feed([
-      '__ORCA_REMOTE_PLATFORM__ Linux x86_64',
+      '__AIO_ADE_REMOTE_PLATFORM__ Linux x86_64',
       '/home/u',
-      'ORCA-NATIVE-DEPS-OK',
+      'AIO_ADE-NATIVE-DEPS-OK',
       'DEAD',
       'READY'
     ])

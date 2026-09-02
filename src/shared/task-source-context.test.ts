@@ -19,7 +19,7 @@ describe('task source context', () => {
       normalizeTaskSourceContext({
         provider: 'github',
         projectId: ' project-1 ',
-        providerIdentity: { provider: 'github', owner: 'stablyai', repo: 'orca' }
+        providerIdentity: { provider: 'github', owner: 'keepmeside', repo: 'aio-ade-platform' }
       })
     ).toEqual({
       kind: 'task-source',
@@ -28,7 +28,7 @@ describe('task source context', () => {
       hostId: 'local',
       projectHostSetupId: null,
       repoId: null,
-      providerIdentity: { provider: 'github', owner: 'stablyai', repo: 'orca' },
+      providerIdentity: { provider: 'github', owner: 'keepmeside', repo: 'aio-ade-platform' },
       accountLabel: null
     })
   })
@@ -79,21 +79,21 @@ describe('task source context', () => {
       projectId: 'project-1',
       hostId: 'local',
       repoId: 'repo-1',
-      providerIdentity: { provider: 'github', owner: 'stablyai', repo: 'orca' }
+      providerIdentity: { provider: 'github', owner: 'keepmeside', repo: 'aio-ade-platform' }
     })
     const ssh = getTaskSourceCacheScope({
       provider: 'github',
       projectId: 'project-1',
       hostId: toSshExecutionHostId('builder'),
       repoId: 'repo-1',
-      providerIdentity: { provider: 'github', owner: 'stablyai', repo: 'orca' }
+      providerIdentity: { provider: 'github', owner: 'keepmeside', repo: 'aio-ade-platform' }
     })
     const differentRepo = getTaskSourceCacheScope({
       provider: 'github',
       projectId: 'project-1',
       hostId: 'local',
       repoId: 'repo-1',
-      providerIdentity: { provider: 'github', owner: 'other', repo: 'orca' }
+      providerIdentity: { provider: 'github', owner: 'other', repo: 'aio-ade' }
     })
     const enterpriseRepo = getTaskSourceCacheScope({
       provider: 'github',
@@ -102,8 +102,8 @@ describe('task source context', () => {
       repoId: 'repo-1',
       providerIdentity: {
         provider: 'github',
-        owner: 'stablyai',
-        repo: 'orca',
+        owner: 'keepmeside',
+        repo: 'aio-ade-platform',
         host: 'github.acme.test'
       }
     })
@@ -124,9 +124,9 @@ describe('task source context', () => {
       getTaskSourceCacheScope({
         ...base,
         provider: 'gitlab',
-        providerIdentity: { provider: 'gitlab', namespace: 'stably', project: 'orca' }
+        providerIdentity: { provider: 'gitlab', namespace: 'stably', project: 'aio-ade' }
       })
-    ).toContain(encodeURIComponent('stably/orca'))
+    ).toContain(encodeURIComponent('stably/aio-ade'))
     expect(
       getTaskSourceCacheScope({
         ...base,
@@ -152,7 +152,7 @@ describe('task source context', () => {
       normalizeTaskSourceContext({
         provider: 'gitlab',
         projectId: 'project-1',
-        providerIdentity: { provider: 'github', owner: 'stablyai', repo: 'orca' }
+        providerIdentity: { provider: 'github', owner: 'keepmeside', repo: 'aio-ade-platform' }
       })?.providerIdentity
     ).toBeNull()
   })

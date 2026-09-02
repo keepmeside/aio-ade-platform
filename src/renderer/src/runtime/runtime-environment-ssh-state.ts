@@ -5,7 +5,7 @@ import { getEnvironmentSshStateGeneration } from '@/store/slices/runtime-environ
 import { admitSshConnectionState } from '../../../shared/ssh-retained-payload-admission'
 
 /**
- * Mirrors a remote Orca server's own SSH targets into that environment's
+ * Mirrors a remote AIO-ADE server's own SSH targets into that environment's
  * per-environment SSH bucket (store slice `runtime-environment-ssh`), so a
  * desktop client attached to the server gets live reconnect overlays for the
  * server's SSH-backed workspaces (STA-1468, desktop topology). Never touches

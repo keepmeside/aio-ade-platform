@@ -6,8 +6,11 @@ import {
   runtimePathExists
 } from '@/runtime/runtime-file-client'
 import { basename, joinPath, normalizeRelativePath } from './path'
+import { getRepoAppRelativeCandidates } from '../../../shared/repo-app-paths'
 
-const MARKDOWN_TEMPLATE_ROOT = '.orca/templates'
+/* Why: a repo may carry templates the user authored before the rebrand. Probe the current
+ * directory first and fall back, so the pre-rebrand folder keeps working untouched. */
+const MARKDOWN_TEMPLATE_ROOTS = getRepoAppRelativeCandidates('templates')
 const MARKDOWN_TEMPLATE_MAX_DEPTH = 8
 const MARKDOWN_TEMPLATE_MAX_COUNT = 100
 
@@ -135,13 +138,19 @@ export async function listMarkdownDocumentTemplates(
   worktreePath: string
 ): Promise<MarkdownDocumentTemplate[]> {
   const templates: MarkdownDocumentTemplate[] = []
-  const rootPath = joinPath(worktreePath, MARKDOWN_TEMPLATE_ROOT)
-
   // Why: missing template directories are the normal case. Probe quietly first
   // so Electron does not log an IPC handler error for an optional feature.
-  if (!(await runtimePathExists(context, rootPath))) {
+  let templateRoot: string | null = null
+  for (const candidate of MARKDOWN_TEMPLATE_ROOTS) {
+    if (await runtimePathExists(context, joinPath(worktreePath, candidate))) {
+      templateRoot = candidate
+      break
+    }
+  }
+  if (!templateRoot) {
     return []
   }
+  const rootPath = joinPath(worktreePath, templateRoot)
 
   async function visitDirectory(
     dirPath: string,
@@ -184,9 +193,7 @@ export async function listMarkdownDocumentTemplates(
       }
 
       const templateRelativePath = entryRelativePath
-      const rootRelativePath = normalizeRelativePath(
-        `${MARKDOWN_TEMPLATE_ROOT}/${templateRelativePath}`
-      )
+      const rootRelativePath = normalizeRelativePath(`${templateRoot}/${templateRelativePath}`)
       templates.push({
         id: rootRelativePath,
         name: titleFromName(entry.name),

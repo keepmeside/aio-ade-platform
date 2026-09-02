@@ -78,13 +78,13 @@ describe('landing preflight issues', () => {
       hasGitHubBackedProject([
         repo({
           id: 'github-repo',
-          path: '/Users/alice/orca',
-          displayName: 'orca',
+          path: '/Users/alice/aio-ade',
+          displayName: 'aio-ade',
           repoIcon: {
             type: 'image',
-            src: 'https://github.com/stablyai.png?size=64',
+            src: 'https://github.com/keepmeside.png?size=64',
             source: 'github',
-            label: 'stablyai/orca'
+            label: 'keepmeside/aio-ade-platform'
           }
         })
       ])
@@ -96,9 +96,9 @@ describe('landing preflight issues', () => {
       hasGitHubBackedProject([
         repo({
           id: 'github-repo',
-          path: '/Users/alice/orca',
-          displayName: 'orca',
-          upstream: { owner: 'stablyai', repo: 'orca' }
+          path: '/Users/alice/aio-ade',
+          displayName: 'aio-ade',
+          upstream: { owner: 'keepmeside', repo: 'aio-ade-platform' }
         })
       ])
     ).toBe(true)

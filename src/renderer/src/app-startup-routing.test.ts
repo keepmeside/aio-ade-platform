@@ -400,10 +400,10 @@ describe('renderer startup runtime routing', () => {
     expect(checkpointBlock).toContain('sessions: sessionSnapshots')
     expect(checkpointBlock).toContain('ui: buildActiveViewUnloadPatch(freshState)')
     expect(source).toContain(
-      'window.addEventListener(ORCA_APP_RESTART_ABORTED_EVENT, shutdownCheckpoint.reset)'
+      'window.addEventListener(AIO_ADE_APP_RESTART_ABORTED_EVENT, shutdownCheckpoint.reset)'
     )
     expect(source).toContain(
-      'window.addEventListener(ORCA_RENDERER_UNLOAD_PREVENTED_EVENT, shutdownCheckpoint.reset)'
+      'window.addEventListener(AIO_ADE_RENDERER_UNLOAD_PREVENTED_EVENT, shutdownCheckpoint.reset)'
     )
     expect(source).toContain("window.addEventListener('beforeunload', persistBeforeUnload)")
     expect(source.match(/window\.addEventListener\('beforeunload'/g) ?? []).toHaveLength(1)

@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import {
   isOfficialOrganizationGitSource,
   isOfficialPluginIdentity,
+  PLUGIN_MARKETPLACE_FILENAME,
   pluginMarketplaceSchema
 } from '../../shared/plugins/plugin-marketplace'
 import { bootstrapBundledPlugins, resolveBundledPluginRoot } from './plugin-bundled-bootstrap'
@@ -26,7 +27,7 @@ afterEach(async () => {
 describe('Phase 1 launch plugin content', () => {
   it('lists and validates the launch plugin packs', async () => {
     const marketplace = pluginMarketplaceSchema.parse(
-      await readJson(join(launchRoot, 'orca-marketplace.json'))
+      await readJson(join(launchRoot, PLUGIN_MARKETPLACE_FILENAME))
     )
     expect(marketplace.plugins.map((plugin) => plugin.id).sort()).toEqual([
       'stablyai.orca-multipass-recipes',
@@ -76,7 +77,7 @@ describe('Phase 1 launch plugin content', () => {
   })
 
   it('publishes every bundled pack only when its release hash matches exact bytes', async () => {
-    const userDataPath = await mkdtemp(join(tmpdir(), 'orca-launch-content-'))
+    const userDataPath = await mkdtemp(join(tmpdir(), 'aio-ade-launch-content-'))
     temporaryRoots.push(userDataPath)
 
     const result = await bootstrapBundledPlugins({
@@ -91,8 +92,8 @@ describe('Phase 1 launch plugin content', () => {
   })
 
   it('boots release-indexed content from the packaged resources layout', async () => {
-    const resourcesPath = await mkdtemp(join(tmpdir(), 'orca-packaged-resources-'))
-    const userDataPath = await mkdtemp(join(tmpdir(), 'orca-packaged-user-data-'))
+    const resourcesPath = await mkdtemp(join(tmpdir(), 'aio-ade-packaged-resources-'))
+    const userDataPath = await mkdtemp(join(tmpdir(), 'aio-ade-packaged-user-data-'))
     temporaryRoots.push(resourcesPath, userDataPath)
     const packagedRoot = join(resourcesPath, 'plugins', 'launch')
     await cp(launchRoot, packagedRoot, { recursive: true })

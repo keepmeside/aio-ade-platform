@@ -53,7 +53,7 @@ describe('agent process recognition', () => {
       agent: 'claude',
       processName: 'claude'
     })
-    // Why: past `--` nothing is a flag, so this is the interactive pane Orca itself launches.
+    // Why: past `--` nothing is a flag, so this is the interactive pane AIO-ADE itself launches.
     expect(recognizeAgentProcessFromCommandLine('claude -- "--print the release notes"')).toEqual({
       agent: 'claude',
       processName: 'claude'
@@ -91,24 +91,26 @@ describe('agent process recognition', () => {
     ).toEqual({ agent: 'codex', processName: 'codex' })
   })
 
-  it('recognizes only the agent subcommand of the generic Orca CLI', () => {
-    expect(recognizeAgentProcessFromCommandLine('orca claude-teams')).toEqual({
+  it('recognizes only the agent subcommand of the generic AIO-ADE CLI', () => {
+    expect(recognizeAgentProcessFromCommandLine('aio-ade claude-teams')).toEqual({
       agent: 'claude-agent-teams',
-      processName: 'orca'
+      processName: 'aio-ade'
     })
-    expect(recognizeAgentProcessFromCommandLine('orca status')).toBeNull()
-    expect(recognizeAgentProcessFromCommandLine('orca-dev terminal list')).toBeNull()
-    expect(recognizeAgentProcessFromCommandLine('node /usr/local/bin/orca claude-teams')).toEqual({
+    expect(recognizeAgentProcessFromCommandLine('aio-ade status')).toBeNull()
+    expect(recognizeAgentProcessFromCommandLine('aio-ade-dev terminal list')).toBeNull()
+    expect(
+      recognizeAgentProcessFromCommandLine('node /usr/local/bin/aio-ade claude-teams')
+    ).toEqual({
       agent: 'claude-agent-teams',
-      processName: 'orca'
+      processName: 'aio-ade'
     })
-    expect(recognizeAgentProcessFromCommandLine('node /usr/local/bin/orca status')).toBeNull()
+    expect(recognizeAgentProcessFromCommandLine('node /usr/local/bin/aio-ade status')).toBeNull()
   })
 
   it('does not classify prompt text as a wrapped agent command', () => {
     expect(
       recognizeAgentProcessFromCommandLine(
-        'node /tmp/not-an-agent.js "compare opencode vs orca in Gemini CLI"'
+        'node /tmp/not-an-agent.js "compare opencode vs aio-ade in Gemini CLI"'
       )
     ).toBeNull()
     expect(recognizeAgentProcessFromCommandLine(String.raw`node C:\tmp\not-an-agent.js`)).toBeNull()

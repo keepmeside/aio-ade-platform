@@ -8,7 +8,7 @@ const COLS = 157
 const ROWS = 59
 const INDENT = ''
 const FULL_URL = [
-  'http://127.0.0.1:8765/orca-double-open-repro-wrapped/',
+  'http://127.0.0.1:8765/aio-ade-double-open-repro-wrapped/',
   Array.from({ length: 79 }, (_value, index) => `seg${String(index + 1).padStart(4, '0')}`).join(
     '/'
   ),
@@ -192,7 +192,12 @@ describe('hard-wrapped terminal HTTP clicks', () => {
     expect(openUrlMock).toHaveBeenCalledTimes(1)
     expect(openUrlMock).toHaveBeenCalledWith(FULL_URL)
     expect(new URL(URL_ROWS[0]).pathname).toHaveLength(136)
-    expect(`${new URL(FULL_URL).pathname}${new URL(FULL_URL).search}`).toHaveLength(811)
+    // Stated as a relationship, not a literal: the exact length moves whenever the fixture slug
+    // changes, and what matters is that the URL is far longer than one row so the reconstruction
+    // path is genuinely under test. The exact reconstructed value is pinned above.
+    expect(`${new URL(FULL_URL).pathname}${new URL(FULL_URL).search}`.length).toBeGreaterThan(
+      COLS * 5
+    )
     expect(event.preventDefault).toHaveBeenCalled()
     expect(clearSelection).toHaveBeenCalled()
     disposable.dispose()
@@ -234,7 +239,9 @@ describe('hard-wrapped terminal HTTP clicks', () => {
 
     expect(openUrlMock).toHaveBeenCalledTimes(1)
     expect(openUrlMock).toHaveBeenCalledWith(FULL_URL)
-    expect(new URL(FRAMED_URL_ROWS[0]).pathname).toHaveLength(88)
+    // A cursor-positioned frame row ends where the TUI repositioned, not at the terminal width —
+    // that shortness is the property under test, and it survives a fixture rename.
+    expect(new URL(FRAMED_URL_ROWS[0]).pathname.length).toBeLessThan(COLS)
   })
 
   it('reconstructs a URL that fills each cursor-positioned TUI row up to its frame', () => {
@@ -382,7 +389,7 @@ describe('hard-wrapped terminal HTTP clicks', () => {
   it('does not glue the next logical line onto a URL that ends mid-row (#8832)', () => {
     const { terminal, registrations } = makeTerminal({
       cols: 80,
-      urlRows: ['Repo: https://github.com/stablyai/orca/', 'Description: 123'],
+      urlRows: ['Repo: https://github.com/keepmeside/aio-ade-platform/', 'Description: 123'],
       softWrapped: false
     })
     const disposable = installHttpLinkClickFallback(terminal, { worktreeId: 'wt-1' })
@@ -393,7 +400,7 @@ describe('hard-wrapped terminal HTTP clicks', () => {
     fallback!(mouseEventForRow(0))
 
     expect(openUrlMock).toHaveBeenCalledOnce()
-    expect(openUrlMock).toHaveBeenCalledWith('https://github.com/stablyai/orca/')
+    expect(openUrlMock).toHaveBeenCalledWith('https://github.com/keepmeside/aio-ade-platform/')
     disposable.dispose()
   })
 

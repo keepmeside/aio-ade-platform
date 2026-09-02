@@ -19,8 +19,8 @@ const isWindowsHost = process.platform === 'win32'
 const posixOnlyIt = isWindowsHost ? it.skip : it
 function expectedAttributionShimDir(): string {
   return join(
-    '/tmp/orca-user-data',
-    'orca-terminal-attribution',
+    '/tmp/aio-ade-user-data',
+    'aio-ade-terminal-attribution',
     process.platform === 'win32' ? 'win32' : 'posix'
   )
 }
@@ -150,9 +150,9 @@ vi.mock('../telemetry/classify-error', () => ({
 }))
 
 // Why: the real ensure writes to process.resourcesPath (absent under vitest); env assembly only needs the returned dir path.
-vi.mock('../cli/linux-terminal-orca-cli-shim', () => ({
-  ensureLinuxTerminalOrcaCliShimDir: (options: { userDataPath: string }) =>
-    join(options.userDataPath, 'linux-orca-cli-shim')
+vi.mock('../cli/linux-terminal-aio-ade-cli-shim', () => ({
+  ensureLinuxTerminalAioAdeCliShimDir: (options: { userDataPath: string }) =>
+    join(options.userDataPath, 'linux-aio-ade-cli-shim')
 }))
 
 vi.mock('../memory/pty-registry', () => ({
@@ -200,7 +200,7 @@ import {
   _resetHiddenRendererPtyDeliveryGateForTest,
   isHiddenRendererPty
 } from './pty-hidden-delivery-gate'
-import { OrcaRuntimeService } from '../runtime/orca-runtime'
+import { AioAdeRuntimeService } from '../runtime/aio-ade-runtime'
 import { hasLiveClaudePtys, markClaudePtySpawned } from '../claude-accounts/live-pty-gate'
 import * as livePtyGate from '../claude-accounts/live-pty-gate'
 import {
@@ -224,8 +224,8 @@ function powerShellOsc133ArgsForCwd(cwd: string = DEFAULT_WINDOWS_PTY_CWD): stri
 const POWERSHELL_OSC133_ARGS = powerShellOsc133ArgsForCwd()
 const TEST_CODEX_HOME =
   process.platform === 'win32'
-    ? 'C:\\Users\\test\\AppData\\Roaming\\orca\\codex-runtime-home\\home'
-    : '/tmp/orca-codex-home'
+    ? 'C:\\Users\\test\\AppData\\Roaming\\aio-ade\\codex-runtime-home\\home'
+    : '/tmp/aio-ade-codex-home'
 
 function makeDisposable() {
   return { dispose: vi.fn() }
@@ -260,19 +260,19 @@ describe('registerPtyHandlers', () => {
   }
 
   const savedOpenCodeConfigDir = process.env.OPENCODE_CONFIG_DIR
-  const savedOrcaOpenCodeConfigDir = process.env.ORCA_OPENCODE_CONFIG_DIR
-  const savedOrcaOpenCodeSourceConfigDir = process.env.ORCA_OPENCODE_SOURCE_CONFIG_DIR
+  const savedAioAdeOpenCodeConfigDir = process.env.AIO_ADE_OPENCODE_CONFIG_DIR
+  const savedAioAdeOpenCodeSourceConfigDir = process.env.AIO_ADE_OPENCODE_SOURCE_CONFIG_DIR
   const savedPiAgentDir = process.env.PI_CODING_AGENT_DIR
-  const savedOrcaPiAgentDir = process.env.ORCA_PI_CODING_AGENT_DIR
-  const savedOrcaPiSourceAgentDir = process.env.ORCA_PI_SOURCE_AGENT_DIR
-  const savedOrcaCodexHome = process.env.ORCA_CODEX_HOME
-  const savedOrcaOmpAgentDir = process.env.ORCA_OMP_CODING_AGENT_DIR
-  const savedOrcaOmpSourceAgentDir = process.env.ORCA_OMP_SOURCE_AGENT_DIR
-  const savedOrcaOmpStatusExtension = process.env.ORCA_OMP_STATUS_EXTENSION
-  const savedOrcaClaudeAgentStatusSettings = process.env.ORCA_CLAUDE_AGENT_STATUS_SETTINGS
+  const savedAioAdePiAgentDir = process.env.AIO_ADE_PI_CODING_AGENT_DIR
+  const savedAioAdePiSourceAgentDir = process.env.AIO_ADE_PI_SOURCE_AGENT_DIR
+  const savedAioAdeCodexHome = process.env.AIO_ADE_CODEX_HOME
+  const savedAioAdeOmpAgentDir = process.env.AIO_ADE_OMP_CODING_AGENT_DIR
+  const savedAioAdeOmpSourceAgentDir = process.env.AIO_ADE_OMP_SOURCE_AGENT_DIR
+  const savedAioAdeOmpStatusExtension = process.env.AIO_ADE_OMP_STATUS_EXTENSION
+  const savedAioAdeClaudeAgentStatusSettings = process.env.AIO_ADE_CLAUDE_AGENT_STATUS_SETTINGS
   const savedProcessPlatform = Object.getOwnPropertyDescriptor(process, 'platform')
-  const savedDisableMacosLoginShell = process.env.ORCA_DISABLE_MACOS_LOGIN_SHELL
-  const savedOrcaUserDataPath = process.env.ORCA_USER_DATA_PATH
+  const savedDisableMacosLoginShell = process.env.AIO_ADE_DISABLE_MACOS_LOGIN_SHELL
+  const savedAioAdeUserDataPath = process.env.AIO_ADE_USER_DATA_PATH
 
   beforeEach(() => {
     // Why: most PTY spawn tests assert POSIX shell behavior; Windows cases opt into win32 explicitly below.
@@ -281,19 +281,19 @@ describe('registerPtyHandlers', () => {
       value: 'darwin'
     })
     // Why: forced darwin makes the TCC login(1) wrapper rewrite every asserted argv; its own test below re-enables it.
-    process.env.ORCA_DISABLE_MACOS_LOGIN_SHELL = '1'
+    process.env.AIO_ADE_DISABLE_MACOS_LOGIN_SHELL = '1'
     delete process.env.OPENCODE_CONFIG_DIR
-    delete process.env.ORCA_OPENCODE_SOURCE_CONFIG_DIR
-    delete process.env.ORCA_OPENCODE_CONFIG_DIR
-    delete process.env.ORCA_AGENT_HOOK_ENDPOINT
-    delete process.env.ORCA_CLAUDE_AGENT_STATUS_SETTINGS
+    delete process.env.AIO_ADE_OPENCODE_SOURCE_CONFIG_DIR
+    delete process.env.AIO_ADE_OPENCODE_CONFIG_DIR
+    delete process.env.AIO_ADE_AGENT_HOOK_ENDPOINT
+    delete process.env.AIO_ADE_CLAUDE_AGENT_STATUS_SETTINGS
     delete process.env.PI_CODING_AGENT_DIR
-    delete process.env.ORCA_PI_SOURCE_AGENT_DIR
-    delete process.env.ORCA_PI_CODING_AGENT_DIR
-    delete process.env.ORCA_CODEX_HOME
-    delete process.env.ORCA_OMP_SOURCE_AGENT_DIR
-    delete process.env.ORCA_OMP_CODING_AGENT_DIR
-    delete process.env.ORCA_OMP_STATUS_EXTENSION
+    delete process.env.AIO_ADE_PI_SOURCE_AGENT_DIR
+    delete process.env.AIO_ADE_PI_CODING_AGENT_DIR
+    delete process.env.AIO_ADE_CODEX_HOME
+    delete process.env.AIO_ADE_OMP_SOURCE_AGENT_DIR
+    delete process.env.AIO_ADE_OMP_CODING_AGENT_DIR
+    delete process.env.AIO_ADE_OMP_STATUS_EXTENSION
     handlers.clear()
     handleMock.mockReset()
     onMock.mockReset()
@@ -349,15 +349,15 @@ describe('registerPtyHandlers', () => {
         }
       }
     })
-    getPathMock.mockReturnValue('/tmp/orca-user-data')
-    // Why: wrapper roots resolve from ORCA_USER_DATA_PATH; mirror the mocked userData so ZDOTDIR/wrapper assertions match.
-    process.env.ORCA_USER_DATA_PATH = '/tmp/orca-user-data'
+    getPathMock.mockReturnValue('/tmp/aio-ade-user-data')
+    // Why: wrapper roots resolve from AIO_ADE_USER_DATA_PATH; mirror the mocked userData so ZDOTDIR/wrapper assertions match.
+    process.env.AIO_ADE_USER_DATA_PATH = '/tmp/aio-ade-user-data'
     existsSyncMock.mockReturnValue(true)
     statSyncMock.mockReturnValue({ isDirectory: () => true, mode: 0o755 })
     readFileSyncMock.mockReturnValue('')
     buildAgentHookEnvMock.mockReturnValue({
-      ORCA_AGENT_HOOK_PORT: '5678',
-      ORCA_AGENT_HOOK_TOKEN: 'agent-token'
+      AIO_ADE_AGENT_HOOK_PORT: '5678',
+      AIO_ADE_AGENT_HOOK_TOKEN: 'agent-token'
     })
     isPwshAvailableMock.mockReturnValue(false)
     spawnMock.mockReturnValue({
@@ -394,69 +394,69 @@ describe('registerPtyHandlers', () => {
       Object.defineProperty(process, 'platform', savedProcessPlatform)
     }
     if (savedDisableMacosLoginShell !== undefined) {
-      process.env.ORCA_DISABLE_MACOS_LOGIN_SHELL = savedDisableMacosLoginShell
+      process.env.AIO_ADE_DISABLE_MACOS_LOGIN_SHELL = savedDisableMacosLoginShell
     } else {
-      delete process.env.ORCA_DISABLE_MACOS_LOGIN_SHELL
+      delete process.env.AIO_ADE_DISABLE_MACOS_LOGIN_SHELL
     }
-    if (savedOrcaUserDataPath !== undefined) {
-      process.env.ORCA_USER_DATA_PATH = savedOrcaUserDataPath
+    if (savedAioAdeUserDataPath !== undefined) {
+      process.env.AIO_ADE_USER_DATA_PATH = savedAioAdeUserDataPath
     } else {
-      delete process.env.ORCA_USER_DATA_PATH
+      delete process.env.AIO_ADE_USER_DATA_PATH
     }
     if (savedOpenCodeConfigDir !== undefined) {
       process.env.OPENCODE_CONFIG_DIR = savedOpenCodeConfigDir
     } else {
       delete process.env.OPENCODE_CONFIG_DIR
     }
-    if (savedOrcaOpenCodeConfigDir !== undefined) {
-      process.env.ORCA_OPENCODE_CONFIG_DIR = savedOrcaOpenCodeConfigDir
+    if (savedAioAdeOpenCodeConfigDir !== undefined) {
+      process.env.AIO_ADE_OPENCODE_CONFIG_DIR = savedAioAdeOpenCodeConfigDir
     } else {
-      delete process.env.ORCA_OPENCODE_CONFIG_DIR
+      delete process.env.AIO_ADE_OPENCODE_CONFIG_DIR
     }
-    if (savedOrcaOpenCodeSourceConfigDir !== undefined) {
-      process.env.ORCA_OPENCODE_SOURCE_CONFIG_DIR = savedOrcaOpenCodeSourceConfigDir
+    if (savedAioAdeOpenCodeSourceConfigDir !== undefined) {
+      process.env.AIO_ADE_OPENCODE_SOURCE_CONFIG_DIR = savedAioAdeOpenCodeSourceConfigDir
     } else {
-      delete process.env.ORCA_OPENCODE_SOURCE_CONFIG_DIR
+      delete process.env.AIO_ADE_OPENCODE_SOURCE_CONFIG_DIR
     }
     if (savedPiAgentDir !== undefined) {
       process.env.PI_CODING_AGENT_DIR = savedPiAgentDir
     } else {
       delete process.env.PI_CODING_AGENT_DIR
     }
-    if (savedOrcaPiAgentDir !== undefined) {
-      process.env.ORCA_PI_CODING_AGENT_DIR = savedOrcaPiAgentDir
+    if (savedAioAdePiAgentDir !== undefined) {
+      process.env.AIO_ADE_PI_CODING_AGENT_DIR = savedAioAdePiAgentDir
     } else {
-      delete process.env.ORCA_PI_CODING_AGENT_DIR
+      delete process.env.AIO_ADE_PI_CODING_AGENT_DIR
     }
-    if (savedOrcaPiSourceAgentDir === undefined) {
-      delete process.env.ORCA_PI_SOURCE_AGENT_DIR
+    if (savedAioAdePiSourceAgentDir === undefined) {
+      delete process.env.AIO_ADE_PI_SOURCE_AGENT_DIR
     } else {
-      process.env.ORCA_PI_SOURCE_AGENT_DIR = savedOrcaPiSourceAgentDir
+      process.env.AIO_ADE_PI_SOURCE_AGENT_DIR = savedAioAdePiSourceAgentDir
     }
-    if (savedOrcaCodexHome === undefined) {
-      delete process.env.ORCA_CODEX_HOME
+    if (savedAioAdeCodexHome === undefined) {
+      delete process.env.AIO_ADE_CODEX_HOME
     } else {
-      process.env.ORCA_CODEX_HOME = savedOrcaCodexHome
+      process.env.AIO_ADE_CODEX_HOME = savedAioAdeCodexHome
     }
-    if (savedOrcaOmpAgentDir !== undefined) {
-      process.env.ORCA_OMP_CODING_AGENT_DIR = savedOrcaOmpAgentDir
+    if (savedAioAdeOmpAgentDir !== undefined) {
+      process.env.AIO_ADE_OMP_CODING_AGENT_DIR = savedAioAdeOmpAgentDir
     } else {
-      delete process.env.ORCA_OMP_CODING_AGENT_DIR
+      delete process.env.AIO_ADE_OMP_CODING_AGENT_DIR
     }
-    if (savedOrcaOmpSourceAgentDir !== undefined) {
-      process.env.ORCA_OMP_SOURCE_AGENT_DIR = savedOrcaOmpSourceAgentDir
+    if (savedAioAdeOmpSourceAgentDir !== undefined) {
+      process.env.AIO_ADE_OMP_SOURCE_AGENT_DIR = savedAioAdeOmpSourceAgentDir
     } else {
-      delete process.env.ORCA_OMP_SOURCE_AGENT_DIR
+      delete process.env.AIO_ADE_OMP_SOURCE_AGENT_DIR
     }
-    if (savedOrcaOmpStatusExtension !== undefined) {
-      process.env.ORCA_OMP_STATUS_EXTENSION = savedOrcaOmpStatusExtension
+    if (savedAioAdeOmpStatusExtension !== undefined) {
+      process.env.AIO_ADE_OMP_STATUS_EXTENSION = savedAioAdeOmpStatusExtension
     } else {
-      delete process.env.ORCA_OMP_STATUS_EXTENSION
+      delete process.env.AIO_ADE_OMP_STATUS_EXTENSION
     }
-    if (savedOrcaClaudeAgentStatusSettings === undefined) {
-      delete process.env.ORCA_CLAUDE_AGENT_STATUS_SETTINGS
+    if (savedAioAdeClaudeAgentStatusSettings === undefined) {
+      delete process.env.AIO_ADE_CLAUDE_AGENT_STATUS_SETTINGS
     } else {
-      process.env.ORCA_CLAUDE_AGENT_STATUS_SETTINGS = savedOrcaClaudeAgentStatusSettings
+      process.env.AIO_ADE_CLAUDE_AGENT_STATUS_SETTINGS = savedAioAdeClaudeAgentStatusSettings
     }
   })
 
@@ -847,7 +847,7 @@ describe('registerPtyHandlers', () => {
   it('rejects renderer persistence when a local PTY exits before spawn settles', async () => {
     const ptyId = 'pty-renderer-early-exit'
     const incarnationId = 'incarnation-renderer-early-exit'
-    const runtime = new OrcaRuntimeService()
+    const runtime = new AioAdeRuntimeService()
     const registerRuntimePty = vi.spyOn(runtime, 'registerPty')
     const provider = createAgentClaimProvider({
       spawn: vi.fn(async () => {
@@ -983,7 +983,7 @@ describe('registerPtyHandlers', () => {
       ptyId: 'pty-adopted-exit',
       surface: recoveredAgentSurface
     }
-    const runtime = new OrcaRuntimeService()
+    const runtime = new AioAdeRuntimeService()
     const provider = createAgentClaimProvider({
       sessions: [
         {
@@ -1660,7 +1660,7 @@ describe('registerPtyHandlers', () => {
       const env = await spawnAndGetEnv()
       expect(env.TERM).toBe('xterm-256color')
       expect(env.COLORTERM).toBe('truecolor')
-      expect(env.TERM_PROGRAM).toBe('Orca')
+      expect(env.TERM_PROGRAM).toBe('AIO-ADE')
     })
 
     it('keeps indexed Git prompt guards in a local agent terminal env', async () => {
@@ -1685,25 +1685,25 @@ describe('registerPtyHandlers', () => {
     })
 
     it('advertises OSC 8 hyperlink support via FORCE_HYPERLINK', async () => {
-      // Why: supports-hyperlinks allowlists TERM_PROGRAM and reports false for Orca, so FORCE_HYPERLINK=1 forces detection on (xterm.js handles OSC 8 natively).
+      // Why: supports-hyperlinks allowlists TERM_PROGRAM and reports false for AIO-ADE, so FORCE_HYPERLINK=1 forces detection on (xterm.js handles OSC 8 natively).
       const env = await spawnAndGetEnv()
       expect(env.FORCE_HYPERLINK).toBe('1')
     })
 
-    it('surfaces ORCA_APP_VERSION as TERM_PROGRAM_VERSION for TUI feature gating', async () => {
-      const env = await spawnAndGetEnv(undefined, { ORCA_APP_VERSION: '1.2.3-test' })
+    it('surfaces AIO_ADE_APP_VERSION as TERM_PROGRAM_VERSION for TUI feature gating', async () => {
+      const env = await spawnAndGetEnv(undefined, { AIO_ADE_APP_VERSION: '1.2.3-test' })
       expect(env.TERM_PROGRAM_VERSION).toBe('1.2.3-test')
     })
 
-    it('falls back to a placeholder version when ORCA_APP_VERSION is unset', async () => {
-      const env = await spawnAndGetEnv(undefined, { ORCA_APP_VERSION: undefined })
+    it('falls back to a placeholder version when AIO_ADE_APP_VERSION is unset', async () => {
+      const env = await spawnAndGetEnv(undefined, { AIO_ADE_APP_VERSION: undefined })
       expect(env.TERM_PROGRAM_VERSION).toBe('0.0.0-dev')
     })
 
-    it('injects the selected Codex home into Orca terminal PTYs', async () => {
+    it('injects the selected Codex home into AIO-ADE terminal PTYs', async () => {
       const env = await spawnAndGetEnv(undefined, undefined, () => TEST_CODEX_HOME)
       expect(env.CODEX_HOME).toBe(TEST_CODEX_HOME)
-      expect(env.ORCA_CODEX_HOME).toBe(TEST_CODEX_HOME)
+      expect(env.AIO_ADE_CODEX_HOME).toBe(TEST_CODEX_HOME)
     })
 
     it('resumes an automatic Codex session from its prepared originating home', async () => {
@@ -1743,7 +1743,7 @@ describe('registerPtyHandlers', () => {
       )
       expect(selectedHome).not.toHaveBeenCalled()
       expect(env.CODEX_HOME).toBe('/managed/origin/home')
-      expect(env.ORCA_CODEX_HOME).toBe('/managed/origin/home')
+      expect(env.AIO_ADE_CODEX_HOME).toBe('/managed/origin/home')
     })
 
     it('overrides an unmarked custom home when the resumed session originated in real home', async () => {
@@ -1769,7 +1769,7 @@ describe('registerPtyHandlers', () => {
         rows: 24,
         command: 'codex resume session-a',
         env: { CODEX_HOME: '/custom/codex', REMOVE_ME: 'stale' },
-        envToDelete: ['CODEX_HOME', 'ORCA_CODEX_HOME', 'REMOVE_ME'],
+        envToDelete: ['CODEX_HOME', 'AIO_ADE_CODEX_HOME', 'REMOVE_ME'],
         launchAgent: 'codex',
         resumeProviderSession: {
           key: 'session_id',
@@ -1781,7 +1781,7 @@ describe('registerPtyHandlers', () => {
       const env = spawnMock.mock.calls.at(-1)![2].env as Record<string, string>
       expect(selectedHome).not.toHaveBeenCalled()
       expect(env.CODEX_HOME).toBe(systemHome)
-      expect(env.ORCA_CODEX_HOME).toBe(systemHome)
+      expect(env.AIO_ADE_CODEX_HOME).toBe(systemHome)
       expect(env.REMOVE_ME).toBeUndefined()
     })
 
@@ -1909,7 +1909,7 @@ describe('registerPtyHandlers', () => {
       }
 
       posixOnlyIt(
-        'launches plain codex when a REAL rollout sits under a home Orca no longer trusts',
+        'launches plain codex when a REAL rollout sits under a home AIO-ADE no longer trusts',
         async () => {
           // Why: the discriminating case — the rollout exists, so only the trust check can
           // reject it. Falling through would resume it under the selected account.
@@ -2054,11 +2054,11 @@ describe('registerPtyHandlers', () => {
         registerWithTrustedHomes([OTHER_HOME], OTHER_HOME)
 
         await spawnCodexResume(ORIGIN_ROLLOUT, {
-          env: { ORCA_SEQUENCED_STARTUP_COMMAND: `codex 'resume' '${RESUME_SESSION_ID}'` }
+          env: { AIO_ADE_SEQUENCED_STARTUP_COMMAND: `codex 'resume' '${RESUME_SESSION_ID}'` }
         })
 
         const spawnOptions = daemonSpawn.mock.calls.at(-1)![0]
-        expect(spawnOptions.env.ORCA_SEQUENCED_STARTUP_COMMAND).toBe('codex')
+        expect(spawnOptions.env.AIO_ADE_SEQUENCED_STARTUP_COMMAND).toBe('codex')
         expect(spawnOptions.command).toBe('codex')
       })
 
@@ -2068,10 +2068,12 @@ describe('registerPtyHandlers', () => {
         const sequenced = `codex 'resume' '${RESUME_SESSION_ID}'`
 
         await spawnCodexResume(ORIGIN_ROLLOUT, {
-          env: { ORCA_SEQUENCED_STARTUP_COMMAND: sequenced }
+          env: { AIO_ADE_SEQUENCED_STARTUP_COMMAND: sequenced }
         })
 
-        expect(daemonSpawn.mock.calls.at(-1)![0].env.ORCA_SEQUENCED_STARTUP_COMMAND).toBe(sequenced)
+        expect(daemonSpawn.mock.calls.at(-1)![0].env.AIO_ADE_SEQUENCED_STARTUP_COMMAND).toBe(
+          sequenced
+        )
       })
 
       posixOnlyIt(
@@ -2085,11 +2087,11 @@ describe('registerPtyHandlers', () => {
           registerWithTrustedHomes([OTHER_HOME], OTHER_HOME)
 
           await spawnCodexResume(ORIGIN_ROLLOUT, {
-            env: { ORCA_SEQUENCED_STARTUP_COMMAND: `codex 'resume' '${RESUME_SESSION_ID}'` }
+            env: { AIO_ADE_SEQUENCED_STARTUP_COMMAND: `codex 'resume' '${RESUME_SESSION_ID}'` }
           })
 
           const env = spawnMock.mock.calls.at(-1)![2].env as Record<string, string>
-          expect(env.ORCA_SEQUENCED_STARTUP_COMMAND).toBe('codex')
+          expect(env.AIO_ADE_SEQUENCED_STARTUP_COMMAND).toBe('codex')
         }
       )
 
@@ -2102,11 +2104,11 @@ describe('registerPtyHandlers', () => {
           const sequenced = `codex 'resume' '${RESUME_SESSION_ID}'`
 
           await spawnCodexResume(ORIGIN_ROLLOUT, {
-            env: { ORCA_SEQUENCED_STARTUP_COMMAND: sequenced }
+            env: { AIO_ADE_SEQUENCED_STARTUP_COMMAND: sequenced }
           })
 
           const env = spawnMock.mock.calls.at(-1)![2].env as Record<string, string>
-          expect(env.ORCA_SEQUENCED_STARTUP_COMMAND).toBe(sequenced)
+          expect(env.AIO_ADE_SEQUENCED_STARTUP_COMMAND).toBe(sequenced)
         }
       )
 
@@ -2149,7 +2151,7 @@ describe('registerPtyHandlers', () => {
           cols: 80,
           rows: 24,
           command: `codex 'resume' '${RESUME_SESSION_ID}'`,
-          env: { ORCA_SEQUENCED_STARTUP_COMMAND: `codex 'resume' '${RESUME_SESSION_ID}'` },
+          env: { AIO_ADE_SEQUENCED_STARTUP_COMMAND: `codex 'resume' '${RESUME_SESSION_ID}'` },
           launchAgent: 'codex',
           resumeProviderSession: {
             key: 'session_id',
@@ -2160,7 +2162,7 @@ describe('registerPtyHandlers', () => {
 
         const spawnOptions = daemonSpawn.mock.calls.at(-1)![0]
         expect(spawnOptions.command).toBe('codex')
-        expect(spawnOptions.env.ORCA_SEQUENCED_STARTUP_COMMAND).toBe('codex')
+        expect(spawnOptions.env.AIO_ADE_SEQUENCED_STARTUP_COMMAND).toBe('codex')
         expect(runtime.noteTerminalSpawnCommand).toHaveBeenCalledWith(expect.any(String), 'codex')
       })
     })
@@ -2193,50 +2195,52 @@ describe('registerPtyHandlers', () => {
       )
     })
 
-    it('injects the agent hook receiver env into Orca terminal PTYs', async () => {
+    it('injects the agent hook receiver env into AIO-ADE terminal PTYs', async () => {
       const env = await spawnAndGetEnv()
       // Why: buildAgentHookEnv must run exactly once per local spawn (inside shared buildPtyHostEnv); the old ad-hoc double-call is gone.
       expect(buildAgentHookEnvMock).toHaveBeenCalledTimes(1)
-      expect(env.ORCA_AGENT_HOOK_PORT).toBe('5678')
-      expect(env.ORCA_AGENT_HOOK_TOKEN).toBe('agent-token')
+      expect(env.AIO_ADE_AGENT_HOOK_PORT).toBe('5678')
+      expect(env.AIO_ADE_AGENT_HOOK_TOKEN).toBe('agent-token')
     })
 
     it('strips stale inherited hook receiver env before injecting this runtime', async () => {
       const env = await spawnAndGetEnv({
-        ORCA_AGENT_HOOK_PORT: '1111',
-        ORCA_AGENT_HOOK_TOKEN: 'stale-token',
-        ORCA_AGENT_HOOK_ENV: 'production',
-        ORCA_AGENT_HOOK_VERSION: 'stale-version',
-        ORCA_AGENT_HOOK_ENDPOINT: '/tmp/stale-endpoint.env',
-        ORCA_CLAUDE_AGENT_STATUS_SETTINGS: '/tmp/orca/agent-hooks/claude-agent-status-settings.json'
+        AIO_ADE_AGENT_HOOK_PORT: '1111',
+        AIO_ADE_AGENT_HOOK_TOKEN: 'stale-token',
+        AIO_ADE_AGENT_HOOK_ENV: 'production',
+        AIO_ADE_AGENT_HOOK_VERSION: 'stale-version',
+        AIO_ADE_AGENT_HOOK_ENDPOINT: '/tmp/stale-endpoint.env',
+        AIO_ADE_CLAUDE_AGENT_STATUS_SETTINGS:
+          '/tmp/aio-ade/agent-hooks/claude-agent-status-settings.json'
       })
 
-      expect(env.ORCA_AGENT_HOOK_PORT).toBe('5678')
-      expect(env.ORCA_AGENT_HOOK_TOKEN).toBe('agent-token')
-      expect(env.ORCA_AGENT_HOOK_ENV).toBeUndefined()
-      expect(env.ORCA_AGENT_HOOK_VERSION).toBeUndefined()
-      expect(env.ORCA_AGENT_HOOK_ENDPOINT).toBeUndefined()
-      expect(env.ORCA_CLAUDE_AGENT_STATUS_SETTINGS).toBeUndefined()
+      expect(env.AIO_ADE_AGENT_HOOK_PORT).toBe('5678')
+      expect(env.AIO_ADE_AGENT_HOOK_TOKEN).toBe('agent-token')
+      expect(env.AIO_ADE_AGENT_HOOK_ENV).toBeUndefined()
+      expect(env.AIO_ADE_AGENT_HOOK_VERSION).toBeUndefined()
+      expect(env.AIO_ADE_AGENT_HOOK_ENDPOINT).toBeUndefined()
+      expect(env.AIO_ADE_CLAUDE_AGENT_STATUS_SETTINGS).toBeUndefined()
     })
 
     it('does not leak inherited hook receiver env if the hook server is unavailable', async () => {
       buildAgentHookEnvMock.mockReturnValueOnce({})
 
       const env = await spawnAndGetEnv({
-        ORCA_AGENT_HOOK_PORT: '1111',
-        ORCA_AGENT_HOOK_TOKEN: 'stale-token',
-        ORCA_AGENT_HOOK_ENV: 'production',
-        ORCA_AGENT_HOOK_VERSION: 'stale-version',
-        ORCA_AGENT_HOOK_ENDPOINT: '/tmp/stale-endpoint.env',
-        ORCA_CLAUDE_AGENT_STATUS_SETTINGS: '/tmp/orca/agent-hooks/claude-agent-status-settings.json'
+        AIO_ADE_AGENT_HOOK_PORT: '1111',
+        AIO_ADE_AGENT_HOOK_TOKEN: 'stale-token',
+        AIO_ADE_AGENT_HOOK_ENV: 'production',
+        AIO_ADE_AGENT_HOOK_VERSION: 'stale-version',
+        AIO_ADE_AGENT_HOOK_ENDPOINT: '/tmp/stale-endpoint.env',
+        AIO_ADE_CLAUDE_AGENT_STATUS_SETTINGS:
+          '/tmp/aio-ade/agent-hooks/claude-agent-status-settings.json'
       })
 
-      expect(env.ORCA_AGENT_HOOK_PORT).toBeUndefined()
-      expect(env.ORCA_AGENT_HOOK_TOKEN).toBeUndefined()
-      expect(env.ORCA_AGENT_HOOK_ENV).toBeUndefined()
-      expect(env.ORCA_AGENT_HOOK_VERSION).toBeUndefined()
-      expect(env.ORCA_AGENT_HOOK_ENDPOINT).toBeUndefined()
-      expect(env.ORCA_CLAUDE_AGENT_STATUS_SETTINGS).toBeUndefined()
+      expect(env.AIO_ADE_AGENT_HOOK_PORT).toBeUndefined()
+      expect(env.AIO_ADE_AGENT_HOOK_TOKEN).toBeUndefined()
+      expect(env.AIO_ADE_AGENT_HOOK_ENV).toBeUndefined()
+      expect(env.AIO_ADE_AGENT_HOOK_VERSION).toBeUndefined()
+      expect(env.AIO_ADE_AGENT_HOOK_ENDPOINT).toBeUndefined()
+      expect(env.AIO_ADE_CLAUDE_AGENT_STATUS_SETTINGS).toBeUndefined()
     })
 
     it('prepends local git/gh attribution shims when attribution is enabled', async () => {
@@ -2244,10 +2248,14 @@ describe('registerPtyHandlers', () => {
         enableGitHubAttribution: true
       }))
 
-      expect(env.ORCA_ENABLE_GIT_ATTRIBUTION).toBe('1')
-      expect(env.ORCA_GIT_COMMIT_TRAILER).toBe('Co-authored-by: Orca <help@stably.ai>')
-      expect(env.ORCA_GH_PR_FOOTER).toBe('Made with [Orca](https://github.com/stablyai/orca) 🐋')
-      expect(env.ORCA_GH_ISSUE_FOOTER).toBe('Made with [Orca](https://github.com/stablyai/orca) 🐋')
+      expect(env.AIO_ADE_ENABLE_GIT_ATTRIBUTION).toBe('1')
+      expect(env.AIO_ADE_GIT_COMMIT_TRAILER).toBe('Co-authored-by: AIO-ADE <help@stably.ai>')
+      expect(env.AIO_ADE_GH_PR_FOOTER).toBe(
+        'Made with [AIO-ADE](https://github.com/keepmeside/aio-ade-platform) 🐋'
+      )
+      expect(env.AIO_ADE_GH_ISSUE_FOOTER).toBe(
+        'Made with [AIO-ADE](https://github.com/keepmeside/aio-ade-platform) 🐋'
+      )
       expect(env.PATH).toContain(expectedAttributionShimDir())
     })
 
@@ -2256,10 +2264,10 @@ describe('registerPtyHandlers', () => {
         enableGitHubAttribution: false
       }))
 
-      expect(env.ORCA_ENABLE_GIT_ATTRIBUTION).toBeUndefined()
-      expect(env.ORCA_GIT_COMMIT_TRAILER).toBeUndefined()
-      expect(env.ORCA_GH_PR_FOOTER).toBeUndefined()
-      expect(env.ORCA_GH_ISSUE_FOOTER).toBeUndefined()
+      expect(env.AIO_ADE_ENABLE_GIT_ATTRIBUTION).toBeUndefined()
+      expect(env.AIO_ADE_GIT_COMMIT_TRAILER).toBeUndefined()
+      expect(env.AIO_ADE_GH_PR_FOOTER).toBeUndefined()
+      expect(env.AIO_ADE_GH_ISSUE_FOOTER).toBeUndefined()
       expect(env.PATH ?? '').not.toContain(expectedAttributionShimDir())
     })
 
@@ -2288,18 +2296,18 @@ describe('registerPtyHandlers', () => {
       })
 
       const env = daemonSpawn.mock.calls.at(-1)![0].env
-      expect(env.ORCA_ENABLE_GIT_ATTRIBUTION).toBe('1')
+      expect(env.AIO_ADE_ENABLE_GIT_ATTRIBUTION).toBe('1')
       expect(env.PATH).toContain(expectedAttributionShimDir())
     })
 
-    it('overrides ambient CODEX_HOME with the Orca-managed home for system default', async () => {
+    it('overrides ambient CODEX_HOME with the AIO-ADE-managed home for system default', async () => {
       const env = await spawnAndGetEnv(
         undefined,
         { CODEX_HOME: '/tmp/system-codex-home' },
         () => TEST_CODEX_HOME
       )
       expect(env.CODEX_HOME).toBe(TEST_CODEX_HOME)
-      expect(env.ORCA_CODEX_HOME).toBe(TEST_CODEX_HOME)
+      expect(env.AIO_ADE_CODEX_HOME).toBe(TEST_CODEX_HOME)
     })
 
     it('leaves an inherited CODEX_HOME untouched for system default when the flag is OFF', async () => {
@@ -2314,26 +2322,26 @@ describe('registerPtyHandlers', () => {
       expect(env.CODEX_HOME).toBe('/tmp/system-codex-home')
     })
 
-    it('strips a nested-Orca override for system default when the real-home flag is ON', async () => {
+    it('strips a nested-AIO-ADE override for system default when the real-home flag is ON', async () => {
       const env = await spawnAndGetEnv(
-        { CODEX_HOME: '/managed/home', ORCA_CODEX_HOME: '/managed/home' },
+        { CODEX_HOME: '/managed/home', AIO_ADE_CODEX_HOME: '/managed/home' },
         undefined,
         () => null,
         () => ({ codexSystemDefaultRealHomeEnabled: true }) as never
       )
       expect(env.CODEX_HOME).toBeUndefined()
-      expect(env.ORCA_CODEX_HOME).toBeUndefined()
+      expect(env.AIO_ADE_CODEX_HOME).toBeUndefined()
     })
 
     it('preserves a user-owned CODEX_HOME for system default when the real-home flag is ON', async () => {
       const env = await spawnAndGetEnv(
         { CODEX_HOME: '/home/me/.config/codex' },
-        { ORCA_CODEX_HOME: undefined },
+        { AIO_ADE_CODEX_HOME: undefined },
         () => null,
         () => ({ codexSystemDefaultRealHomeEnabled: true }) as never
       )
       expect(env.CODEX_HOME).toBe('/home/me/.config/codex')
-      expect(env.ORCA_CODEX_HOME).toBeUndefined()
+      expect(env.AIO_ADE_CODEX_HOME).toBeUndefined()
     })
 
     it('lets the resolver keep a per-spawn custom CODEX_HOME on the managed lane', async () => {
@@ -2346,7 +2354,7 @@ describe('registerPtyHandlers', () => {
 
       const env = await spawnAndGetEnv(
         { CODEX_HOME: customHome },
-        { CODEX_HOME: undefined, ORCA_CODEX_HOME: undefined },
+        { CODEX_HOME: undefined, AIO_ADE_CODEX_HOME: undefined },
         resolveHome,
         () => ({ codexSystemDefaultRealHomeEnabled: true }) as never
       )
@@ -2355,7 +2363,7 @@ describe('registerPtyHandlers', () => {
       expect(resolveHome.mock.calls[0]?.[0]).toEqual({ runtime: 'host' })
       expect(resolvedCodexHome).toBe(customHome)
       expect(env.CODEX_HOME).toBe(TEST_CODEX_HOME)
-      expect(env.ORCA_CODEX_HOME).toBe(TEST_CODEX_HOME)
+      expect(env.AIO_ADE_CODEX_HOME).toBe(TEST_CODEX_HOME)
     })
 
     it('injects explicit proxy settings into local PTY env', async () => {
@@ -2553,7 +2561,7 @@ describe('registerPtyHandlers', () => {
       it('injects the selected Codex home on the daemon path', async () => {
         const env = await daemonSpawnAndGetEnv({}, () => TEST_CODEX_HOME)
         expect(env.CODEX_HOME).toBe(TEST_CODEX_HOME)
-        expect(env.ORCA_CODEX_HOME).toBe(TEST_CODEX_HOME)
+        expect(env.AIO_ADE_CODEX_HOME).toBe(TEST_CODEX_HOME)
       })
 
       it('overrides an unmarked custom home for an authoritative daemon resume', async () => {
@@ -2581,7 +2589,7 @@ describe('registerPtyHandlers', () => {
           rows: 24,
           command: 'codex resume session-a',
           env: { CODEX_HOME: '/custom/codex', REMOVE_ME: 'stale' },
-          envToDelete: ['CODEX_HOME', 'ORCA_CODEX_HOME', 'REMOVE_ME'],
+          envToDelete: ['CODEX_HOME', 'AIO_ADE_CODEX_HOME', 'REMOVE_ME'],
           launchAgent: 'codex',
           resumeProviderSession: {
             key: 'session_id',
@@ -2593,7 +2601,7 @@ describe('registerPtyHandlers', () => {
         const env = daemonSpawn.mock.calls.at(-1)![0].env
         expect(selectedHome).not.toHaveBeenCalled()
         expect(env.CODEX_HOME).toBe(systemHome)
-        expect(env.ORCA_CODEX_HOME).toBe(systemHome)
+        expect(env.AIO_ADE_CODEX_HOME).toBe(systemHome)
         expect(env.REMOVE_ME).toBeUndefined()
       })
 
@@ -2645,7 +2653,7 @@ describe('registerPtyHandlers', () => {
           rows: 24,
           command: 'codex resume session-a',
           env: { CODEX_HOME: '/custom/codex', REMOVE_ME: 'stale' },
-          envToDelete: ['CODEX_HOME', 'ORCA_CODEX_HOME', 'REMOVE_ME'],
+          envToDelete: ['CODEX_HOME', 'AIO_ADE_CODEX_HOME', 'REMOVE_ME'],
           launchAgent: 'codex',
           resumeProviderSession: {
             key: 'session_id',
@@ -2656,10 +2664,10 @@ describe('registerPtyHandlers', () => {
 
         const spawnOptions = daemonSpawn.mock.calls.at(-1)?.[0] as DaemonSpawnCall
         expect(spawnOptions.env.CODEX_HOME).toBe(systemHome)
-        expect(spawnOptions.env.ORCA_CODEX_HOME).toBe(systemHome)
+        expect(spawnOptions.env.AIO_ADE_CODEX_HOME).toBe(systemHome)
         expect(spawnOptions.env.REMOVE_ME).toBeUndefined()
         expect(spawnOptions.envToDelete ?? []).not.toContain('CODEX_HOME')
-        expect(spawnOptions.envToDelete ?? []).not.toContain('ORCA_CODEX_HOME')
+        expect(spawnOptions.envToDelete ?? []).not.toContain('AIO_ADE_CODEX_HOME')
         expect(spawnOptions.envToDelete).toContain('REMOVE_ME')
       })
 
@@ -2704,11 +2712,12 @@ describe('registerPtyHandlers', () => {
         try {
           const spawnOptions = await daemonSpawnAndGetOptions(
             {},
-            () => 'C:\\Users\\test\\AppData\\Roaming\\Orca\\codex-runtime-home\\home',
+            () => 'C:\\Users\\test\\AppData\\Roaming\\AIO-ADE\\codex-runtime-home\\home',
             undefined,
             {
-              CODEX_HOME: 'C:\\Users\\test\\AppData\\Roaming\\Orca\\codex-runtime-home\\home',
-              ORCA_CODEX_HOME: 'C:\\Users\\test\\AppData\\Roaming\\Orca\\codex-runtime-home\\home'
+              CODEX_HOME: 'C:\\Users\\test\\AppData\\Roaming\\AIO-ADE\\codex-runtime-home\\home',
+              AIO_ADE_CODEX_HOME:
+                'C:\\Users\\test\\AppData\\Roaming\\AIO-ADE\\codex-runtime-home\\home'
             },
             {
               cwd: '\\\\wsl.localhost\\Ubuntu\\home\\test\\repo',
@@ -2717,9 +2726,9 @@ describe('registerPtyHandlers', () => {
           )
           const { env } = spawnOptions
           expect(env.CODEX_HOME).toBeUndefined()
-          expect(env.ORCA_CODEX_HOME).toBeUndefined()
+          expect(env.AIO_ADE_CODEX_HOME).toBeUndefined()
           expect(spawnOptions.envToDelete).toEqual(
-            expect.arrayContaining(['CODEX_HOME', 'ORCA_CODEX_HOME'])
+            expect.arrayContaining(['CODEX_HOME', 'AIO_ADE_CODEX_HOME'])
           )
         } finally {
           Object.defineProperty(process, 'platform', {
@@ -2738,18 +2747,19 @@ describe('registerPtyHandlers', () => {
         try {
           const spawnOptions = await daemonSpawnAndGetOptions(
             {},
-            () => 'C:\\Users\\test\\AppData\\Roaming\\Orca\\codex-runtime-home\\home',
+            () => 'C:\\Users\\test\\AppData\\Roaming\\AIO-ADE\\codex-runtime-home\\home',
             undefined,
             {
               CODEX_HOME: 'C:\\Users\\test\\.codex',
-              ORCA_CODEX_HOME: 'C:\\Users\\test\\AppData\\Roaming\\Orca\\codex-runtime-home\\home'
+              AIO_ADE_CODEX_HOME:
+                'C:\\Users\\test\\AppData\\Roaming\\AIO-ADE\\codex-runtime-home\\home'
             },
             { shellOverride: 'wsl.exe' }
           )
           expect(spawnOptions.env.CODEX_HOME).toBeUndefined()
-          expect(spawnOptions.env.ORCA_CODEX_HOME).toBeUndefined()
+          expect(spawnOptions.env.AIO_ADE_CODEX_HOME).toBeUndefined()
           expect(spawnOptions.envToDelete).toEqual(
-            expect.arrayContaining(['CODEX_HOME', 'ORCA_CODEX_HOME'])
+            expect.arrayContaining(['CODEX_HOME', 'AIO_ADE_CODEX_HOME'])
           )
         } finally {
           Object.defineProperty(process, 'platform', {
@@ -2759,16 +2769,16 @@ describe('registerPtyHandlers', () => {
         }
       })
 
-      it('strips the daemon-inherited Orca-owned CODEX_HOME for real-home routing', async () => {
+      it('strips the daemon-inherited AIO-ADE-owned CODEX_HOME for real-home routing', async () => {
         const spawnOptions = await daemonSpawnAndGetOptions(
           {},
           () => null,
           () => ({ codexSystemDefaultRealHomeEnabled: true }) as never,
-          { CODEX_HOME: '/managed/home', ORCA_CODEX_HOME: '/managed/home' }
+          { CODEX_HOME: '/managed/home', AIO_ADE_CODEX_HOME: '/managed/home' }
         )
         expect(spawnOptions.env.CODEX_HOME).toBeUndefined()
-        expect(spawnOptions.env.ORCA_CODEX_HOME).toBeUndefined()
-        expect(spawnOptions.envToDelete).toEqual(expect.arrayContaining(['ORCA_CODEX_HOME']))
+        expect(spawnOptions.env.AIO_ADE_CODEX_HOME).toBeUndefined()
+        expect(spawnOptions.envToDelete).toEqual(expect.arrayContaining(['AIO_ADE_CODEX_HOME']))
         // The daemon compares its own merged values before deleting CODEX_HOME.
         expect(spawnOptions.envToDelete).not.toContain('CODEX_HOME')
       })
@@ -2778,16 +2788,16 @@ describe('registerPtyHandlers', () => {
           {},
           () => null,
           () => ({ codexSystemDefaultRealHomeEnabled: true }) as never,
-          { CODEX_HOME: '/home/me/.config/codex', ORCA_CODEX_HOME: undefined }
+          { CODEX_HOME: '/home/me/.config/codex', AIO_ADE_CODEX_HOME: undefined }
         )
-        expect(spawnOptions.envToDelete).toEqual(expect.arrayContaining(['ORCA_CODEX_HOME']))
+        expect(spawnOptions.envToDelete).toEqual(expect.arrayContaining(['AIO_ADE_CODEX_HOME']))
         expect(spawnOptions.envToDelete).not.toEqual(expect.arrayContaining(['CODEX_HOME']))
       })
 
       it('does not strip the daemon-inherited CODEX_HOME when the flag is OFF', async () => {
         const spawnOptions = await daemonSpawnAndGetOptions({}, () => null, undefined, {
           CODEX_HOME: '/managed/home',
-          ORCA_CODEX_HOME: '/managed/home'
+          AIO_ADE_CODEX_HOME: '/managed/home'
         })
         expect(spawnOptions.envToDelete ?? []).not.toEqual(expect.arrayContaining(['CODEX_HOME']))
       })
@@ -2825,7 +2835,7 @@ describe('registerPtyHandlers', () => {
         expect(spawnOptions.env.CLAUDE_CODE_CHILD_SESSION).toBe('1')
       })
 
-      it('prepends the bare-orca CLI shim dir to PATH for packaged Linux spawns', async () => {
+      it('prepends the bare-aio-ade CLI shim dir to PATH for packaged Linux spawns', async () => {
         const originalPlatform = process.platform
         Object.defineProperty(process, 'platform', {
           configurable: true,
@@ -2837,11 +2847,11 @@ describe('registerPtyHandlers', () => {
             PATH: ['/usr/local/bin', '/usr/bin'].join(delimiter)
           })
           const entries = env.PATH.split(delimiter)
-          const shimDir = join('/tmp/orca-user-data', 'linux-orca-cli-shim')
-          // Why: bare `orca` must resolve to the Orca CLI before /usr/bin/orca (the GNOME screen reader) in Orca terminals (#7904).
+          const shimDir = join('/tmp/aio-ade-user-data', 'linux-aio-ade-cli-shim')
+          // Why: bare `aio-ade` must resolve to the AIO-ADE CLI before /usr/bin/orca (the GNOME screen reader) in AIO-ADE terminals (#7904).
           expect(entries.indexOf(shimDir)).toBeGreaterThanOrEqual(0)
           expect(entries.indexOf(shimDir)).toBeLessThan(entries.indexOf('/usr/bin'))
-          expect(env.ORCA_CLI_COMMAND).toBeUndefined()
+          expect(env.AIO_ADE_CLI_COMMAND).toBeUndefined()
         } finally {
           Object.defineProperty(process, 'platform', {
             configurable: true,
@@ -2852,21 +2862,21 @@ describe('registerPtyHandlers', () => {
 
       it('injects the agent-hook receiver env on the daemon path', async () => {
         const env = await daemonSpawnAndGetEnv({})
-        expect(env.ORCA_AGENT_HOOK_PORT).toBe('5678')
-        expect(env.ORCA_AGENT_HOOK_TOKEN).toBe('agent-token')
+        expect(env.AIO_ADE_AGENT_HOOK_PORT).toBe('5678')
+        expect(env.AIO_ADE_AGENT_HOOK_TOKEN).toBe('agent-token')
       })
 
       it('deletes stale Claude scoped settings env from daemon-hosted PTYs', async () => {
         const spawnOptions = await daemonSpawnAndGetOptions({}, undefined, undefined, {
-          ORCA_CLAUDE_AGENT_STATUS_SETTINGS:
-            '/tmp/orca/agent-hooks/claude-agent-status-settings.json'
+          AIO_ADE_CLAUDE_AGENT_STATUS_SETTINGS:
+            '/tmp/aio-ade/agent-hooks/claude-agent-status-settings.json'
         })
-        expect(spawnOptions.env.ORCA_CLAUDE_AGENT_STATUS_SETTINGS).toBeUndefined()
+        expect(spawnOptions.env.AIO_ADE_CLAUDE_AGENT_STATUS_SETTINGS).toBeUndefined()
         expect(spawnOptions.envToDelete).toEqual(
-          expect.arrayContaining(['ORCA_CLAUDE_AGENT_STATUS_SETTINGS'])
+          expect.arrayContaining(['AIO_ADE_CLAUDE_AGENT_STATUS_SETTINGS'])
         )
-        expect(spawnOptions.env.ORCA_AGENT_HOOK_PORT).toBe('5678')
-        expect(spawnOptions.env.ORCA_AGENT_HOOK_TOKEN).toBe('agent-token')
+        expect(spawnOptions.env.AIO_ADE_AGENT_HOOK_PORT).toBe('5678')
+        expect(spawnOptions.env.AIO_ADE_AGENT_HOOK_TOKEN).toBe('agent-token')
       })
 
       it('deletes stale Claude scoped settings env from runtime-created daemon PTYs', async () => {
@@ -2889,8 +2899,8 @@ describe('registerPtyHandlers', () => {
           onPtyExit: vi.fn(),
           onPtyData: vi.fn()
         }
-        process.env.ORCA_CLAUDE_AGENT_STATUS_SETTINGS =
-          '/tmp/orca/agent-hooks/claude-agent-status-settings.json'
+        process.env.AIO_ADE_CLAUDE_AGENT_STATUS_SETTINGS =
+          '/tmp/aio-ade/agent-hooks/claude-agent-status-settings.json'
         handlers.clear()
         registerPtyHandlers(mainWindow as never, runtime as never)
         const controller = runtime.setPtyController.mock.calls[0]?.[0] as RuntimeSpawnController
@@ -2898,16 +2908,16 @@ describe('registerPtyHandlers', () => {
         await controller.spawn({ cols: 80, rows: 24, worktreeId: 'wt-runtime', env: {} })
 
         const spawnOptions = daemonSpawn.mock.calls.at(-1)?.[0] as DaemonSpawnCall
-        expect(spawnOptions.env.ORCA_CLAUDE_AGENT_STATUS_SETTINGS).toBeUndefined()
+        expect(spawnOptions.env.AIO_ADE_CLAUDE_AGENT_STATUS_SETTINGS).toBeUndefined()
         expect(spawnOptions.envToDelete).toEqual(
-          expect.arrayContaining(['ORCA_CLAUDE_AGENT_STATUS_SETTINGS'])
+          expect.arrayContaining(['AIO_ADE_CLAUDE_AGENT_STATUS_SETTINGS'])
         )
-        expect(spawnOptions.env.ORCA_AGENT_HOOK_PORT).toBe('5678')
-        expect(spawnOptions.env.ORCA_AGENT_HOOK_TOKEN).toBe('agent-token')
+        expect(spawnOptions.env.AIO_ADE_AGENT_HOOK_PORT).toBe('5678')
+        expect(spawnOptions.env.AIO_ADE_AGENT_HOOK_TOKEN).toBe('agent-token')
       })
 
       it('strips inherited Claude child-session stamps from runtime-created PTYs', async () => {
-        // Why: the runtime controller is the `orca` CLI / automation spawn path and
+        // Why: the runtime controller is the `aio-ade` CLI / automation spawn path and
         // assembles envToDelete separately from the renderer's pty:spawn handler;
         // without its own case the two paths can silently drift apart.
         type RuntimeSpawnController = {
@@ -3234,21 +3244,21 @@ describe('registerPtyHandlers', () => {
           worktreeId: 'wt-runtime',
           command: 'claude',
           env: {
-            PATH: `/tmp/orca-agent-teams-bin${delimiter}/usr/bin`,
-            ORCA_AGENT_TEAMS_TEAM_ID: 'team-test',
-            TERM_PROGRAM: 'Orca',
-            ORCA_ATTRIBUTION_SHIM_DIR: '/tmp/stale-attribution'
+            PATH: `/tmp/aio-ade-agent-teams-bin${delimiter}/usr/bin`,
+            AIO_ADE_AGENT_TEAMS_TEAM_ID: 'team-test',
+            TERM_PROGRAM: 'AIO-ADE',
+            AIO_ADE_ATTRIBUTION_SHIM_DIR: '/tmp/stale-attribution'
           },
-          envToDelete: ['TERM_PROGRAM', 'ORCA_ATTRIBUTION_SHIM_DIR']
+          envToDelete: ['TERM_PROGRAM', 'AIO_ADE_ATTRIBUTION_SHIM_DIR']
         })
 
         const spawnOptions = daemonSpawn.mock.calls.at(-1)?.[0] as DaemonSpawnCall
-        expect(spawnOptions.env.PATH.split(delimiter)[0]).toBe('/tmp/orca-agent-teams-bin')
+        expect(spawnOptions.env.PATH.split(delimiter)[0]).toBe('/tmp/aio-ade-agent-teams-bin')
         expect(spawnOptions.env.PATH).toContain(expectedAttributionShimDir())
         expect(spawnOptions.env.TERM_PROGRAM).toBeUndefined()
-        expect(spawnOptions.env.ORCA_ATTRIBUTION_SHIM_DIR).toBeUndefined()
+        expect(spawnOptions.env.AIO_ADE_ATTRIBUTION_SHIM_DIR).toBeUndefined()
         expect(spawnOptions.envToDelete).toEqual(
-          expect.arrayContaining(['TERM_PROGRAM', 'ORCA_ATTRIBUTION_SHIM_DIR'])
+          expect.arrayContaining(['TERM_PROGRAM', 'AIO_ADE_ATTRIBUTION_SHIM_DIR'])
         )
       })
 
@@ -3259,11 +3269,11 @@ describe('registerPtyHandlers', () => {
         mockedApp.isPackaged = false
         try {
           const env = await daemonSpawnAndGetEnv({}, undefined, undefined, {
-            ORCA_AGENT_HOOK_ENDPOINT: '/tmp/stale-endpoint.env'
+            AIO_ADE_AGENT_HOOK_ENDPOINT: '/tmp/stale-endpoint.env'
           })
-          expect(env.ORCA_AGENT_HOOK_ENDPOINT).toBeUndefined()
-          expect(env.ORCA_AGENT_HOOK_PORT).toBe('5678')
-          expect(env.ORCA_AGENT_HOOK_TOKEN).toBe('agent-token')
+          expect(env.AIO_ADE_AGENT_HOOK_ENDPOINT).toBeUndefined()
+          expect(env.AIO_ADE_AGENT_HOOK_PORT).toBe('5678')
+          expect(env.AIO_ADE_AGENT_HOOK_TOKEN).toBe('agent-token')
         } finally {
           mockedApp.isPackaged = prev
         }
@@ -3273,37 +3283,37 @@ describe('registerPtyHandlers', () => {
         const env = await daemonSpawnAndGetEnv({}, undefined, () => ({
           enableGitHubAttribution: true
         }))
-        expect(env.ORCA_ENABLE_GIT_ATTRIBUTION).toBe('1')
+        expect(env.AIO_ADE_ENABLE_GIT_ATTRIBUTION).toBe('1')
         expect(env.PATH).toContain(expectedAttributionShimDir())
       })
 
       it('keeps the Agent Teams tmux shim ahead of host PATH shims on daemon pty:spawn', async () => {
         const spawnOptions = await daemonSpawnAndGetOptions(
           {
-            PATH: `/tmp/orca-agent-teams-bin${delimiter}/usr/bin`,
-            ORCA_AGENT_TEAMS_TEAM_ID: 'team-test',
-            TERM_PROGRAM: 'Orca',
-            ORCA_ATTRIBUTION_SHIM_DIR: '/tmp/stale-attribution'
+            PATH: `/tmp/aio-ade-agent-teams-bin${delimiter}/usr/bin`,
+            AIO_ADE_AGENT_TEAMS_TEAM_ID: 'team-test',
+            TERM_PROGRAM: 'AIO-ADE',
+            AIO_ADE_ATTRIBUTION_SHIM_DIR: '/tmp/stale-attribution'
           },
           undefined,
           () => ({ enableGitHubAttribution: true }),
           undefined,
           {
             command: 'claude',
-            envToDelete: ['TERM_PROGRAM', 'ORCA_ATTRIBUTION_SHIM_DIR']
+            envToDelete: ['TERM_PROGRAM', 'AIO_ADE_ATTRIBUTION_SHIM_DIR']
           }
         )
 
-        expect(spawnOptions.env.PATH.split(delimiter)[0]).toBe('/tmp/orca-agent-teams-bin')
+        expect(spawnOptions.env.PATH.split(delimiter)[0]).toBe('/tmp/aio-ade-agent-teams-bin')
         expect(spawnOptions.env.PATH).toContain(expectedAttributionShimDir())
         expect(spawnOptions.env.TERM_PROGRAM).toBeUndefined()
-        expect(spawnOptions.env.ORCA_ATTRIBUTION_SHIM_DIR).toBeUndefined()
+        expect(spawnOptions.env.AIO_ADE_ATTRIBUTION_SHIM_DIR).toBeUndefined()
         expect(spawnOptions.envToDelete).toEqual(
-          expect.arrayContaining(['TERM_PROGRAM', 'ORCA_ATTRIBUTION_SHIM_DIR'])
+          expect.arrayContaining(['TERM_PROGRAM', 'AIO_ADE_ATTRIBUTION_SHIM_DIR'])
         )
       })
 
-      it('injects dev-mode ORCA_USER_DATA_PATH + dev CLI PATH on the daemon path', async () => {
+      it('injects dev-mode AIO_ADE_USER_DATA_PATH + dev CLI PATH on the daemon path', async () => {
         // Why: the mocked `app` is a plain object, so we can flip isPackaged for the test's scope.
         const { app } = await import('electron')
         const mockedApp = app as unknown as { isPackaged: boolean }
@@ -3311,8 +3321,8 @@ describe('registerPtyHandlers', () => {
         mockedApp.isPackaged = false
         try {
           const env = await daemonSpawnAndGetEnv({ PATH: '/usr/bin' })
-          expect(env.ORCA_USER_DATA_PATH).toBe('/tmp/orca-user-data')
-          expect(env.PATH).toContain(join('/tmp/orca-user-data', 'cli', 'bin'))
+          expect(env.AIO_ADE_USER_DATA_PATH).toBe('/tmp/aio-ade-user-data')
+          expect(env.PATH).toContain(join('/tmp/aio-ade-user-data', 'cli', 'bin'))
         } finally {
           mockedApp.isPackaged = prev
         }
@@ -3327,9 +3337,9 @@ describe('registerPtyHandlers', () => {
           const env = await daemonSpawnAndGetEnv({}, undefined, undefined, {
             PATH: '/system/bin'
           })
-          expect(env.ORCA_USER_DATA_PATH).toBe('/tmp/orca-user-data')
+          expect(env.AIO_ADE_USER_DATA_PATH).toBe('/tmp/aio-ade-user-data')
           expect(env.PATH).toContain(
-            `${join('/tmp/orca-user-data', 'cli', 'bin')}${delimiter}/system/bin`
+            `${join('/tmp/aio-ade-user-data', 'cli', 'bin')}${delimiter}/system/bin`
           )
         } finally {
           mockedApp.isPackaged = prev
@@ -3494,12 +3504,12 @@ describe('registerPtyHandlers', () => {
         const env = await daemonSpawnAndGetEnv({ PATH: '/usr/bin' }, undefined, () => ({
           enableGitHubAttribution: false
         }))
-        expect(env.ORCA_ENABLE_GIT_ATTRIBUTION).toBeUndefined()
+        expect(env.AIO_ADE_ENABLE_GIT_ATTRIBUTION).toBeUndefined()
         expect(env.PATH ?? '').not.toContain(expectedAttributionShimDir())
       })
 
       it('does not mutate the caller-provided args.env on the daemon path', async () => {
-        // Why: the handler clones baseEnv so IPC-provided env stays pristine; a regression would leak Orca host env back into the renderer's reused copy.
+        // Why: the handler clones baseEnv so IPC-provided env stays pristine; a regression would leak AIO-ADE host env back into the renderer's reused copy.
         const daemonSpawn = setupDaemonAdapter()
         const argsEnv: Record<string, string> = { FOO: 'bar' }
         handlers.clear()
@@ -3512,7 +3522,7 @@ describe('registerPtyHandlers', () => {
         expect(argsEnv).toEqual({ FOO: 'bar' })
         // Sanity: the spawn did receive the injected env, so the test isn't passing vacuously.
         const spawnEnv = daemonSpawn.mock.calls.at(-1)![0].env
-        expect(spawnEnv.ORCA_AGENT_HOOK_PORT).toBe('5678')
+        expect(spawnEnv.AIO_ADE_AGENT_HOOK_PORT).toBe('5678')
         expect(spawnEnv).not.toBe(argsEnv)
       })
 
@@ -3659,7 +3669,7 @@ describe('registerPtyHandlers', () => {
         await handlers.get('pty:spawn')!(null, {
           cols: 80,
           rows: 24,
-          env: { FOO: 'bar', ORCA_PANE_KEY: makePaneKey('tab-1', leafId) },
+          env: { FOO: 'bar', AIO_ADE_PANE_KEY: makePaneKey('tab-1', leafId) },
           connectionId: 'ssh-1',
           worktreeId: 'wt-1',
           tabId: 'tab-1',
@@ -3668,18 +3678,18 @@ describe('registerPtyHandlers', () => {
         const spawnOptions = sshSpawn.mock.calls.at(-1)![0]
         const env = spawnOptions.env
         // Why: host-local vars must be absent over SSH (they point at the local host/disk) — shipping them is useless or a credential leak.
-        expect(env.ORCA_AGENT_HOOK_PORT).toBeUndefined()
-        expect(env.ORCA_AGENT_HOOK_TOKEN).toBeUndefined()
-        expect(env.ORCA_ENABLE_GIT_ATTRIBUTION).toBeUndefined()
+        expect(env.AIO_ADE_AGENT_HOOK_PORT).toBeUndefined()
+        expect(env.AIO_ADE_AGENT_HOOK_TOKEN).toBeUndefined()
+        expect(env.AIO_ADE_ENABLE_GIT_ATTRIBUTION).toBeUndefined()
         expect(env.OPENCODE_CONFIG_DIR).toBeUndefined()
-        expect(env.ORCA_OPENCODE_CONFIG_DIR).toBeUndefined()
-        expect(env.ORCA_OPENCODE_SOURCE_CONFIG_DIR).toBeUndefined()
+        expect(env.AIO_ADE_OPENCODE_CONFIG_DIR).toBeUndefined()
+        expect(env.AIO_ADE_OPENCODE_SOURCE_CONFIG_DIR).toBeUndefined()
         expect(env.MIMOCODE_HOME).toBeUndefined()
-        expect(env.ORCA_MIMOCODE_HOME).toBeUndefined()
-        expect(env.ORCA_MIMOCODE_SOURCE_HOME).toBeUndefined()
+        expect(env.AIO_ADE_MIMOCODE_HOME).toBeUndefined()
+        expect(env.AIO_ADE_MIMOCODE_SOURCE_HOME).toBeUndefined()
         expect(env.PI_CODING_AGENT_DIR).toBeUndefined()
-        expect(env.ORCA_PI_CODING_AGENT_DIR).toBeUndefined()
-        expect(env.ORCA_PI_SOURCE_AGENT_DIR).toBeUndefined()
+        expect(env.AIO_ADE_PI_CODING_AGENT_DIR).toBeUndefined()
+        expect(env.AIO_ADE_PI_SOURCE_AGENT_DIR).toBeUndefined()
         expect(env.CODEX_HOME).toBeUndefined()
         expect(env.HTTP_PROXY).toBeUndefined()
         expect(env.HTTPS_PROXY).toBeUndefined()
@@ -3688,7 +3698,7 @@ describe('registerPtyHandlers', () => {
         // Why: real-home routing is host-only. A null local-home resolver on
         // SSH must not become a request to alter the remote Codex environment.
         expect(spawnOptions.envToDelete ?? []).not.toContain('CODEX_HOME')
-        expect(spawnOptions.envToDelete ?? []).not.toContain('ORCA_CODEX_HOME')
+        expect(spawnOptions.envToDelete ?? []).not.toContain('AIO_ADE_CODEX_HOME')
         expect(spawnOptions.paneKey).toBe(makePaneKey('tab-1', leafId))
         expect(spawnOptions.tabId).toBe('tab-1')
         expect(store.upsertSshRemotePtyLease).toHaveBeenCalledWith(
@@ -3716,7 +3726,7 @@ describe('registerPtyHandlers', () => {
         await handlers.get('pty:spawn')!(null, {
           cols: 80,
           rows: 24,
-          env: { ORCA_PANE_KEY: 'tab-1:pane:1' },
+          env: { AIO_ADE_PANE_KEY: 'tab-1:pane:1' },
           connectionId: 'ssh-1',
           worktreeId: 'wt-1',
           tabId: 'tab-1',
@@ -3724,7 +3734,7 @@ describe('registerPtyHandlers', () => {
         })
         expect(store.upsertSshRemotePtyLease).toHaveBeenCalledTimes(1)
         const legacySpawnOptions = sshSpawn.mock.calls.at(-1)?.[0]
-        expect(legacySpawnOptions?.env.ORCA_PANE_KEY).toBeUndefined()
+        expect(legacySpawnOptions?.env.AIO_ADE_PANE_KEY).toBeUndefined()
         expect(legacySpawnOptions?.paneKey).toBeUndefined()
         expect(legacySpawnOptions?.tabId).toBe('tab-1')
         expect(store.upsertSshRemotePtyLease.mock.calls[0]?.[0]).not.toHaveProperty('leafId')
@@ -4676,7 +4686,7 @@ describe('registerPtyHandlers', () => {
         expect(runtime.onPtyExit).toHaveBeenCalledWith('remote-pty', -1, undefined)
       })
 
-      it('strips ORCA_PANE_KEY/TAB_ID/WORKTREE_ID from SSH spawn env when remote agent hooks are disabled', async () => {
+      it('strips AIO_ADE_PANE_KEY/TAB_ID/WORKTREE_ID from SSH spawn env when remote agent hooks are disabled', async () => {
         const sshSpawn = vi.fn(async (_opts: { env: Record<string, string> }) => ({
           id: 'ssh-pty'
         }))
@@ -4704,38 +4714,38 @@ describe('registerPtyHandlers', () => {
         } as never)
         handlers.clear()
         registerPtyHandlers(mainWindow as never)
-        const prevFlag = process.env.ORCA_FEATURE_REMOTE_AGENT_HOOKS
-        process.env.ORCA_FEATURE_REMOTE_AGENT_HOOKS = '0'
+        const prevFlag = process.env.AIO_ADE_FEATURE_REMOTE_AGENT_HOOKS
+        process.env.AIO_ADE_FEATURE_REMOTE_AGENT_HOOKS = '0'
         try {
           await handlers.get('pty:spawn')!(null, {
             cols: 80,
             rows: 24,
             env: {
               FOO: 'bar',
-              ORCA_PANE_KEY: 'tab-1:0',
-              ORCA_TAB_ID: 'tab-1',
-              ORCA_WORKTREE_ID: 'wt-1'
+              AIO_ADE_PANE_KEY: 'tab-1:0',
+              AIO_ADE_TAB_ID: 'tab-1',
+              AIO_ADE_WORKTREE_ID: 'wt-1'
             },
             connectionId: 'ssh-1'
           })
           const env = sshSpawn.mock.calls.at(-1)![0].env
           expect(env.FOO).toBe('bar')
-          expect(env.ORCA_PANE_KEY).toBeUndefined()
-          expect(env.ORCA_TAB_ID).toBeUndefined()
-          expect(env.ORCA_WORKTREE_ID).toBeUndefined()
-          expect(env.ORCA_AGENT_HOOK_TOKEN).toBeUndefined()
+          expect(env.AIO_ADE_PANE_KEY).toBeUndefined()
+          expect(env.AIO_ADE_TAB_ID).toBeUndefined()
+          expect(env.AIO_ADE_WORKTREE_ID).toBeUndefined()
+          expect(env.AIO_ADE_AGENT_HOOK_TOKEN).toBeUndefined()
           // Why: the local hook server's userData-relative endpoint path is meaningless on the remote box; assert no leak.
-          expect(env.ORCA_AGENT_HOOK_ENDPOINT).toBeUndefined()
+          expect(env.AIO_ADE_AGENT_HOOK_ENDPOINT).toBeUndefined()
         } finally {
           if (prevFlag === undefined) {
-            delete process.env.ORCA_FEATURE_REMOTE_AGENT_HOOKS
+            delete process.env.AIO_ADE_FEATURE_REMOTE_AGENT_HOOKS
           } else {
-            process.env.ORCA_FEATURE_REMOTE_AGENT_HOOKS = prevFlag
+            process.env.AIO_ADE_FEATURE_REMOTE_AGENT_HOOKS = prevFlag
           }
         }
       })
 
-      it('forwards ORCA_PANE_KEY/TAB_ID/WORKTREE_ID over SSH by default', async () => {
+      it('forwards AIO_ADE_PANE_KEY/TAB_ID/WORKTREE_ID over SSH by default', async () => {
         const sshSpawn = vi.fn(async (_opts: { env: Record<string, string> }) => ({
           id: 'ssh-pty'
         }))
@@ -4763,8 +4773,8 @@ describe('registerPtyHandlers', () => {
         } as never)
         handlers.clear()
         registerPtyHandlers(mainWindow as never)
-        const prevFlag = process.env.ORCA_FEATURE_REMOTE_AGENT_HOOKS
-        delete process.env.ORCA_FEATURE_REMOTE_AGENT_HOOKS
+        const prevFlag = process.env.AIO_ADE_FEATURE_REMOTE_AGENT_HOOKS
+        delete process.env.AIO_ADE_FEATURE_REMOTE_AGENT_HOOKS
         try {
           const leafId = '22222222-2222-4222-8222-222222222222'
           const paneKey = makePaneKey('tab-2', leafId)
@@ -4773,27 +4783,27 @@ describe('registerPtyHandlers', () => {
             rows: 24,
             env: {
               FOO: 'bar',
-              ORCA_PANE_KEY: paneKey,
-              ORCA_TAB_ID: 'tab-2',
-              ORCA_WORKTREE_ID: 'wt-2'
+              AIO_ADE_PANE_KEY: paneKey,
+              AIO_ADE_TAB_ID: 'tab-2',
+              AIO_ADE_WORKTREE_ID: 'wt-2'
             },
             connectionId: 'ssh-1',
             tabId: 'tab-2',
             leafId
           })
           const env = sshSpawn.mock.calls.at(-1)![0].env
-          expect(env.ORCA_PANE_KEY).toBe(paneKey)
-          expect(env.ORCA_TAB_ID).toBe('tab-2')
-          expect(env.ORCA_WORKTREE_ID).toBe('wt-2')
+          expect(env.AIO_ADE_PANE_KEY).toBe(paneKey)
+          expect(env.AIO_ADE_TAB_ID).toBe('tab-2')
+          expect(env.AIO_ADE_WORKTREE_ID).toBe('wt-2')
           // Local hook server coords must NOT cross the wire — the relay is the source of truth.
-          expect(env.ORCA_AGENT_HOOK_TOKEN).toBeUndefined()
-          expect(env.ORCA_AGENT_HOOK_PORT).toBeUndefined()
-          expect(env.ORCA_AGENT_HOOK_ENDPOINT).toBeUndefined()
+          expect(env.AIO_ADE_AGENT_HOOK_TOKEN).toBeUndefined()
+          expect(env.AIO_ADE_AGENT_HOOK_PORT).toBeUndefined()
+          expect(env.AIO_ADE_AGENT_HOOK_ENDPOINT).toBeUndefined()
         } finally {
           if (prevFlag === undefined) {
-            delete process.env.ORCA_FEATURE_REMOTE_AGENT_HOOKS
+            delete process.env.AIO_ADE_FEATURE_REMOTE_AGENT_HOOKS
           } else {
-            process.env.ORCA_FEATURE_REMOTE_AGENT_HOOKS = prevFlag
+            process.env.AIO_ADE_FEATURE_REMOTE_AGENT_HOOKS = prevFlag
           }
         }
       })
@@ -6261,7 +6271,7 @@ describe('registerPtyHandlers', () => {
     })
   })
 
-  it('injects ORCA_TERMINAL_HANDLE for non-local PTY providers', async () => {
+  it('injects AIO_ADE_TERMINAL_HANDLE for non-local PTY providers', async () => {
     const spawn = vi.fn(async () => ({ id: 'remote-pty' }))
     registerSshPtyProvider('ssh-1', {
       spawn,
@@ -6303,7 +6313,7 @@ describe('registerPtyHandlers', () => {
       expect.objectContaining({
         env: expect.objectContaining({
           EXISTING: '1',
-          ORCA_TERMINAL_HANDLE: 'term_remote'
+          AIO_ADE_TERMINAL_HANDLE: 'term_remote'
         })
       })
     )
@@ -6322,10 +6332,10 @@ describe('registerPtyHandlers', () => {
         env: {
           CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: '1',
           PATH: `/tmp/fresh-agent-teams${delimiter}/usr/bin`,
-          TMUX: '/tmp/orca-claude-agent-teams/team-fresh,0,1',
+          TMUX: '/tmp/aio-ade-claude-agent-teams/team-fresh,0,1',
           TMUX_PANE: '%1',
-          ORCA_AGENT_TEAMS_TEAM_ID: 'team-fresh',
-          ORCA_AGENT_TEAMS_TOKEN: 'fresh-token'
+          AIO_ADE_AGENT_TEAMS_TEAM_ID: 'team-fresh',
+          AIO_ADE_AGENT_TEAMS_TOKEN: 'fresh-token'
         }
       })),
       registerPreAllocatedHandleForPty: vi.fn(),
@@ -6346,24 +6356,24 @@ describe('registerPtyHandlers', () => {
       leafId,
       worktreeId: 'wt-1',
       env: {
-        ORCA_PANE_KEY: `tab-1:${leafId}`,
-        ORCA_TAB_ID: 'tab-1',
-        ORCA_WORKTREE_ID: 'wt-1',
+        AIO_ADE_PANE_KEY: `tab-1:${leafId}`,
+        AIO_ADE_TAB_ID: 'tab-1',
+        AIO_ADE_WORKTREE_ID: 'wt-1',
         CLAUDE_PROFILE: 'captured',
         PATH: `/tmp/stale-agent-teams${delimiter}/usr/bin`,
-        TMUX: '/tmp/orca-claude-agent-teams/team-stale,0,1',
-        ORCA_AGENT_TEAMS_TEAM_ID: 'team-stale',
-        ORCA_AGENT_TEAMS_TOKEN: 'stale-token',
-        TERM_PROGRAM: 'Orca',
-        ORCA_ATTRIBUTION_SHIM_DIR: '/tmp/stale-attribution'
+        TMUX: '/tmp/aio-ade-claude-agent-teams/team-stale,0,1',
+        AIO_ADE_AGENT_TEAMS_TEAM_ID: 'team-stale',
+        AIO_ADE_AGENT_TEAMS_TOKEN: 'stale-token',
+        TERM_PROGRAM: 'AIO-ADE',
+        AIO_ADE_ATTRIBUTION_SHIM_DIR: '/tmp/stale-attribution'
       },
       launchConfig: {
         agentCommand: 'claude --teammate-mode auto',
         agentArgs: '',
         agentEnv: {
           CLAUDE_PROFILE: 'captured',
-          ORCA_AGENT_TEAMS_TEAM_ID: 'team-stale',
-          ORCA_AGENT_TEAMS_TOKEN: 'stale-token'
+          AIO_ADE_AGENT_TEAMS_TEAM_ID: 'team-stale',
+          AIO_ADE_AGENT_TEAMS_TOKEN: 'stale-token'
         }
       },
       launchAgent: 'claude'
@@ -6374,27 +6384,27 @@ describe('registerPtyHandlers', () => {
       handle: 'term_agent_teams',
       baseEnv: expect.objectContaining({
         CLAUDE_PROFILE: 'captured',
-        ORCA_AGENT_TEAMS_TEAM_ID: 'team-stale'
+        AIO_ADE_AGENT_TEAMS_TEAM_ID: 'team-stale'
       })
     })
     expect(spawnOptions.env).toMatchObject({
       CLAUDE_PROFILE: 'captured',
       CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: '1',
-      ORCA_TERMINAL_HANDLE: 'term_agent_teams',
-      ORCA_AGENT_TEAMS_TEAM_ID: 'team-fresh',
-      ORCA_AGENT_TEAMS_TOKEN: 'fresh-token',
-      TMUX: '/tmp/orca-claude-agent-teams/team-fresh,0,1',
+      AIO_ADE_TERMINAL_HANDLE: 'term_agent_teams',
+      AIO_ADE_AGENT_TEAMS_TEAM_ID: 'team-fresh',
+      AIO_ADE_AGENT_TEAMS_TOKEN: 'fresh-token',
+      TMUX: '/tmp/aio-ade-claude-agent-teams/team-fresh,0,1',
       TMUX_PANE: '%1'
     })
     expect(spawnOptions.env.PATH.split(delimiter)[0]).toBe('/tmp/fresh-agent-teams')
     expect(spawnOptions.env.TERM_PROGRAM).toBeUndefined()
-    expect(spawnOptions.env.ORCA_ATTRIBUTION_SHIM_DIR).toBeUndefined()
+    expect(spawnOptions.env.AIO_ADE_ATTRIBUTION_SHIM_DIR).toBeUndefined()
     expect(result.launchConfig?.agentEnv).toMatchObject({
       CLAUDE_PROFILE: 'captured',
       CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: '1',
-      ORCA_AGENT_TEAMS_TEAM_ID: 'team-fresh',
-      ORCA_AGENT_TEAMS_TOKEN: 'fresh-token',
-      TMUX: '/tmp/orca-claude-agent-teams/team-fresh,0,1'
+      AIO_ADE_AGENT_TEAMS_TEAM_ID: 'team-fresh',
+      AIO_ADE_AGENT_TEAMS_TOKEN: 'fresh-token',
+      TMUX: '/tmp/aio-ade-claude-agent-teams/team-fresh,0,1'
     })
     expect(runtime.registerPreAllocatedHandleForPty).toHaveBeenCalledWith(
       expect.any(String),
@@ -6477,8 +6487,8 @@ describe('registerPtyHandlers', () => {
       prepareClaudeAgentTeamsLeaderForHandle: vi.fn(async () => ({
         env: {
           CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: '1',
-          ORCA_AGENT_TEAMS_TEAM_ID: 'team-fresh',
-          ORCA_AGENT_TEAMS_TOKEN: 'fresh-token'
+          AIO_ADE_AGENT_TEAMS_TEAM_ID: 'team-fresh',
+          AIO_ADE_AGENT_TEAMS_TOKEN: 'fresh-token'
         }
       })),
       registerPreAllocatedHandleForPty: vi.fn(),
@@ -6499,9 +6509,9 @@ describe('registerPtyHandlers', () => {
       leafId,
       worktreeId: 'wt-1',
       env: {
-        ORCA_PANE_KEY: `tab-1:${leafId}`,
-        ORCA_TAB_ID: 'tab-1',
-        ORCA_WORKTREE_ID: 'wt-1'
+        AIO_ADE_PANE_KEY: `tab-1:${leafId}`,
+        AIO_ADE_TAB_ID: 'tab-1',
+        AIO_ADE_WORKTREE_ID: 'wt-1'
       },
       launchConfig: {
         agentCommand: 'claude',
@@ -6598,7 +6608,7 @@ describe('registerPtyHandlers', () => {
 
     const spawnCall = spawnMock.mock.calls.at(-1)!
     const env = spawnCall[2].env as Record<string, string>
-    expect(env.ORCA_TERMINAL_HANDLE).toBe('term_expected')
+    expect(env.AIO_ADE_TERMINAL_HANDLE).toBe('term_expected')
     expect(runtime.preAllocateHandleForPty).not.toHaveBeenCalled()
     expect(runtime.registerPreAllocatedHandleForPty).toHaveBeenCalledWith(
       expect.any(String),
@@ -6696,7 +6706,7 @@ describe('registerPtyHandlers', () => {
       worktreeId: 'wt-1',
       tabId: 'tab-headless',
       leafId,
-      env: { ORCA_PANE_KEY: makePaneKey('tab-headless', leafId) },
+      env: { AIO_ADE_PANE_KEY: makePaneKey('tab-headless', leafId) },
       persistHostSessionBinding: true
     })
 
@@ -6712,7 +6722,7 @@ describe('registerPtyHandlers', () => {
   it('reports lower-owner commit before rejecting an early-exited runtime incarnation', async () => {
     const persistPtyBinding = vi.fn()
     const onPtySpawnCommitted = vi.fn()
-    const runtime = new OrcaRuntimeService({
+    const runtime = new AioAdeRuntimeService({
       getRepo: () => undefined,
       getRepos: () => [],
       addRepo: () => {},
@@ -6792,7 +6802,7 @@ describe('registerPtyHandlers', () => {
   })
 
   it('does not retain a claimed owner when its PTY exits before controller admission', async () => {
-    const runtime = new OrcaRuntimeService({
+    const runtime = new AioAdeRuntimeService({
       getRepo: () => undefined,
       getRepos: () => [],
       addRepo: () => {},
@@ -6950,12 +6960,12 @@ describe('registerPtyHandlers', () => {
       worktreeId: 'repo-1::/tmp',
       tabId: 'tab-race',
       leafId,
-      env: { ORCA_PANE_KEY: paneKey },
+      env: { AIO_ADE_PANE_KEY: paneKey },
       persistHostSessionBinding: true
     })
     await Promise.resolve()
 
-    // Why: SSH can strip ORCA_PANE_KEY before spawn; tab/leaf metadata must still dedupe against runtime materialization.
+    // Why: SSH can strip AIO_ADE_PANE_KEY before spawn; tab/leaf metadata must still dedupe against runtime materialization.
     const rendererSpawn = handlers.get('pty:spawn')!(null, {
       cols: 80,
       rows: 24,
@@ -6964,8 +6974,8 @@ describe('registerPtyHandlers', () => {
       tabId: 'tab-race',
       leafId,
       env: {
-        ORCA_TAB_ID: 'tab-race',
-        ORCA_WORKTREE_ID: 'repo-1::/tmp'
+        AIO_ADE_TAB_ID: 'tab-race',
+        AIO_ADE_WORKTREE_ID: 'repo-1::/tmp'
       }
     }) as Promise<{ id: string }>
     await Promise.resolve()
@@ -7064,9 +7074,9 @@ describe('registerPtyHandlers', () => {
       tabId: 'tab-race',
       leafId,
       env: {
-        ORCA_PANE_KEY: paneKey,
-        ORCA_TAB_ID: 'tab-race',
-        ORCA_WORKTREE_ID: 'repo-1::/tmp'
+        AIO_ADE_PANE_KEY: paneKey,
+        AIO_ADE_TAB_ID: 'tab-race',
+        AIO_ADE_WORKTREE_ID: 'repo-1::/tmp'
       }
     }) as Promise<{ id: string }>
     await Promise.resolve()
@@ -7079,7 +7089,7 @@ describe('registerPtyHandlers', () => {
       worktreeId: 'repo-1::/tmp',
       tabId: 'tab-race',
       leafId,
-      env: { ORCA_PANE_KEY: paneKey },
+      env: { AIO_ADE_PANE_KEY: paneKey },
       persistHostSessionBinding: true
     })
     await Promise.resolve()
@@ -7205,7 +7215,7 @@ describe('registerPtyHandlers', () => {
       worktreeId: 'wt-1',
       tabId: 'tab-runtime-reservation',
       leafId,
-      env: { ORCA_PANE_KEY: paneKey },
+      env: { AIO_ADE_PANE_KEY: paneKey },
       persistHostSessionBinding: true
     }
 
@@ -7501,8 +7511,8 @@ describe('registerPtyHandlers', () => {
         persistHostSessionBinding?: boolean
       }): Promise<{ id: string }>
     }
-    const savedRemoteHooks = process.env.ORCA_FEATURE_REMOTE_AGENT_HOOKS
-    process.env.ORCA_FEATURE_REMOTE_AGENT_HOOKS = '0'
+    const savedRemoteHooks = process.env.AIO_ADE_FEATURE_REMOTE_AGENT_HOOKS
+    process.env.AIO_ADE_FEATURE_REMOTE_AGENT_HOOKS = '0'
     const remoteSpawn = vi.fn(
       async (_opts: { env?: Record<string, string>; envToDelete?: string[] }) => ({
         id: 'ssh:ssh-runtime-env@@relay-pty'
@@ -7567,9 +7577,9 @@ describe('registerPtyHandlers', () => {
         rows: 24,
         env: {
           FOO: 'bar',
-          ORCA_PANE_KEY: makePaneKey('tab-remote', leafId),
-          ORCA_TAB_ID: 'tab-remote',
-          ORCA_WORKTREE_ID: 'wt-remote'
+          AIO_ADE_PANE_KEY: makePaneKey('tab-remote', leafId),
+          AIO_ADE_TAB_ID: 'tab-remote',
+          AIO_ADE_WORKTREE_ID: 'wt-remote'
         },
         connectionId: 'ssh-runtime-env',
         worktreeId: 'wt-remote',
@@ -7581,11 +7591,11 @@ describe('registerPtyHandlers', () => {
       const spawnOptions = remoteSpawn.mock.calls[0]?.[0]
       const env = spawnOptions.env
       expect(env).toMatchObject({ FOO: 'bar' })
-      expect(env?.ORCA_PANE_KEY).toBeUndefined()
-      expect(env?.ORCA_TAB_ID).toBeUndefined()
-      expect(env?.ORCA_WORKTREE_ID).toBeUndefined()
+      expect(env?.AIO_ADE_PANE_KEY).toBeUndefined()
+      expect(env?.AIO_ADE_TAB_ID).toBeUndefined()
+      expect(env?.AIO_ADE_WORKTREE_ID).toBeUndefined()
       expect(spawnOptions.envToDelete ?? []).not.toContain('CODEX_HOME')
-      expect(spawnOptions.envToDelete ?? []).not.toContain('ORCA_CODEX_HOME')
+      expect(spawnOptions.envToDelete ?? []).not.toContain('AIO_ADE_CODEX_HOME')
       expect(store.upsertSshRemotePtyLease).toHaveBeenCalledWith(
         expect.objectContaining({
           targetId: 'ssh-runtime-env',
@@ -7596,9 +7606,9 @@ describe('registerPtyHandlers', () => {
       )
     } finally {
       if (savedRemoteHooks === undefined) {
-        delete process.env.ORCA_FEATURE_REMOTE_AGENT_HOOKS
+        delete process.env.AIO_ADE_FEATURE_REMOTE_AGENT_HOOKS
       } else {
-        process.env.ORCA_FEATURE_REMOTE_AGENT_HOOKS = savedRemoteHooks
+        process.env.AIO_ADE_FEATURE_REMOTE_AGENT_HOOKS = savedRemoteHooks
       }
       unregisterSshPtyProvider('ssh-runtime-env')
     }
@@ -7685,7 +7695,7 @@ describe('registerPtyHandlers', () => {
         sessionId: 'ssh:ssh-reattach-fail@@relay-pty',
         persistHostSessionBinding: true
       })
-    ).rejects.toThrow(/ORCA_TERMINAL_SESSION_STATE_SAVE_FAILED/)
+    ).rejects.toThrow(/AIO_ADE_TERMINAL_SESSION_STATE_SAVE_FAILED/)
 
     expect(store.upsertSshRemotePtyLease).not.toHaveBeenCalled()
     expect(store.removeSshRemotePtyLease).not.toHaveBeenCalled()
@@ -7915,7 +7925,7 @@ describe('registerPtyHandlers', () => {
     }
     const appPtyId = 'ssh:ssh-fresh-fail@@relay-pty'
     const incarnationId = 'incarnation-fresh-fail'
-    const runtime = new OrcaRuntimeService()
+    const runtime = new AioAdeRuntimeService()
     const remoteShutdown = vi.fn(async () => {
       // Model the relay's exit callback winning before shutdown resolves.
       runtime.onPtyExit(appPtyId, 0, incarnationId)
@@ -7974,7 +7984,7 @@ describe('registerPtyHandlers', () => {
           sessionId: appPtyId,
           persistHostSessionBinding: true
         })
-      ).rejects.toThrow(/ORCA_TERMINAL_SESSION_STATE_SAVE_FAILED/)
+      ).rejects.toThrow(/AIO_ADE_TERMINAL_SESSION_STATE_SAVE_FAILED/)
 
       expect(remoteShutdown).toHaveBeenCalledWith(appPtyId, { immediate: true })
       expect(store.upsertSshRemotePtyLease).not.toHaveBeenCalled()
@@ -8025,7 +8035,7 @@ describe('registerPtyHandlers', () => {
       cols: 80,
       rows: 24,
       worktreeId: 'wt-1',
-      env: { ORCA_PANE_KEY: ` ${paneKey} ` }
+      env: { AIO_ADE_PANE_KEY: ` ${paneKey} ` }
     })
     const replacementGen = (await handlers.get('pty:declarePendingPaneSerializer')!(null, {
       paneKey
@@ -8088,7 +8098,7 @@ describe('registerPtyHandlers', () => {
         cols: 80,
         rows: 24,
         worktreeId: 'wt-1',
-        env: { ORCA_PANE_KEY: paneKey }
+        env: { AIO_ADE_PANE_KEY: paneKey }
       })
     }
 
@@ -8157,7 +8167,7 @@ describe('registerPtyHandlers', () => {
     expect(hasPendingRendererSerializerForPaneKey(paneKey)).toBe(false)
   })
 
-  it('ignores renderer-provided ORCA_TERMINAL_HANDLE for local PTY spawns', async () => {
+  it('ignores renderer-provided AIO_ADE_TERMINAL_HANDLE for local PTY spawns', async () => {
     const runtime = {
       setPtyController: vi.fn(),
       noteTerminalSpawnCommand: vi.fn(),
@@ -8171,16 +8181,16 @@ describe('registerPtyHandlers', () => {
     await handlers.get('pty:spawn')!(null, {
       cols: 80,
       rows: 24,
-      env: { ORCA_TERMINAL_HANDLE: 'term_untrusted' }
+      env: { AIO_ADE_TERMINAL_HANDLE: 'term_untrusted' }
     })
 
     const spawnCall = spawnMock.mock.calls.at(-1)!
     const env = spawnCall[2].env as Record<string, string>
-    expect(env.ORCA_TERMINAL_HANDLE).toBe('term_trusted')
+    expect(env.AIO_ADE_TERMINAL_HANDLE).toBe('term_trusted')
     expect(runtime.preAllocateHandleForPty).toHaveBeenCalledWith(expect.any(String))
   })
 
-  it('forwards the trusted Orca terminal handle into managed WSL terminals', async () => {
+  it('forwards the trusted AIO-ADE terminal handle into managed WSL terminals', async () => {
     const platform = Object.getOwnPropertyDescriptor(process, 'platform')
     Object.defineProperty(process, 'platform', {
       configurable: true,
@@ -8211,22 +8221,22 @@ describe('registerPtyHandlers', () => {
     const spawnCall = spawnMock.mock.calls.at(-1)!
     const env = spawnCall[2].env as Record<string, string>
     expect(spawnCall[0]).toBe('wsl.exe')
-    expect(env.ORCA_TERMINAL_HANDLE).toBe('term_wsl')
-    expect(env.ORCA_USER_DATA_PATH).toBe('/tmp/orca-user-data')
-    expect(env.ORCA_CLI_COMMAND).toBe('orca-ide')
+    expect(env.AIO_ADE_TERMINAL_HANDLE).toBe('term_wsl')
+    expect(env.AIO_ADE_USER_DATA_PATH).toBe('/tmp/aio-ade-user-data')
+    expect(env.AIO_ADE_CLI_COMMAND).toBe('aio-ade')
     expect(env.WSLENV?.split(':')).toEqual(
       expect.arrayContaining([
-        'ORCA_TERMINAL_HANDLE/u',
-        'ORCA_USER_DATA_PATH/p',
-        'ORCA_CLI_COMMAND/u',
-        'ORCA_AGENT_HOOK_PORT/u',
-        'ORCA_AGENT_HOOK_TOKEN/u',
+        'AIO_ADE_TERMINAL_HANDLE/u',
+        'AIO_ADE_USER_DATA_PATH/p',
+        'AIO_ADE_CLI_COMMAND/u',
+        'AIO_ADE_AGENT_HOOK_PORT/u',
+        'AIO_ADE_AGENT_HOOK_TOKEN/u',
         'POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD'
       ])
     )
   })
 
-  it('forces managed ORCA_USER_DATA_PATH for WSL spawns even when the caller provides a stale root', async () => {
+  it('forces managed AIO_ADE_USER_DATA_PATH for WSL spawns even when the caller provides a stale root', async () => {
     const platform = Object.getOwnPropertyDescriptor(process, 'platform')
     Object.defineProperty(process, 'platform', {
       configurable: true,
@@ -8247,7 +8257,7 @@ describe('registerPtyHandlers', () => {
         rows: 24,
         shellOverride: 'wsl.exe',
         env: {
-          ORCA_USER_DATA_PATH: '/tmp/stale-orca-user-data'
+          AIO_ADE_USER_DATA_PATH: '/tmp/stale-aio-ade-user-data'
         }
       })
     } finally {
@@ -8259,7 +8269,7 @@ describe('registerPtyHandlers', () => {
     const spawnCall = spawnMock.mock.calls.at(-1)!
     const env = spawnCall[2].env as Record<string, string>
     expect(spawnCall[0]).toBe('wsl.exe')
-    expect(env.ORCA_USER_DATA_PATH).toBe('/tmp/orca-user-data')
+    expect(env.AIO_ADE_USER_DATA_PATH).toBe('/tmp/aio-ade-user-data')
   })
 
   describe('Windows UTF-8 code page', () => {
@@ -8640,7 +8650,7 @@ describe('registerPtyHandlers', () => {
       registerPtyHandlers(
         mainWindow as never,
         undefined,
-        () => 'C:\\Users\\test\\AppData\\Roaming\\Orca\\codex-runtime-home\\home',
+        () => 'C:\\Users\\test\\AppData\\Roaming\\AIO-ADE\\codex-runtime-home\\home',
         () =>
           ({
             terminalWindowsShell: 'wsl.exe',
@@ -8652,7 +8662,7 @@ describe('registerPtyHandlers', () => {
       const spawnOptions = spawnMock.mock.calls.at(-1)?.[2] as { env: Record<string, string> }
       expect(spawnMock).toHaveBeenCalledWith('wsl.exe', expect.any(Array), expect.any(Object))
       expect(spawnOptions.env.CODEX_HOME).toBeUndefined()
-      expect(spawnOptions.env.ORCA_CODEX_HOME).toBeUndefined()
+      expect(spawnOptions.env.AIO_ADE_CODEX_HOME).toBeUndefined()
     })
 
     it('keeps shellOverride priority for one-off tabs', async () => {
@@ -8662,7 +8672,7 @@ describe('registerPtyHandlers', () => {
       registerPtyHandlers(
         mainWindow as never,
         undefined,
-        () => 'C:\\Users\\test\\AppData\\Roaming\\Orca\\codex-runtime-home\\home',
+        () => 'C:\\Users\\test\\AppData\\Roaming\\AIO-ADE\\codex-runtime-home\\home',
         () =>
           ({
             terminalWindowsShell: 'powershell.exe',
@@ -8678,7 +8688,7 @@ describe('registerPtyHandlers', () => {
       const spawnOptions = spawnMock.mock.calls.at(-1)?.[2] as { env: Record<string, string> }
       expect(spawnMock).toHaveBeenCalledWith('wsl.exe', expect.any(Array), expect.any(Object))
       expect(spawnOptions.env.CODEX_HOME).toBeUndefined()
-      expect(spawnOptions.env.ORCA_CODEX_HOME).toBeUndefined()
+      expect(spawnOptions.env.AIO_ADE_CODEX_HOME).toBeUndefined()
     })
   })
 
@@ -8779,7 +8789,7 @@ describe('registerPtyHandlers', () => {
   it('falls back to the worktree root when a saved local cwd no longer exists', async () => {
     registerPtyHandlers(mainWindow as never)
     // Why: issue #7239 reproduced in a Japanese-named worktree; the fallback must return the selected worktree path verbatim.
-    const worktreePath = '/Users/motoki/orca/workspaces/nakamuramotoki/Fableと議論'
+    const worktreePath = '/Users/motoki/aio-ade/workspaces/nakamuramotoki/Fableと議論'
     const missingCwd = `${worktreePath}/deleted-folder`
     statSyncMock.mockImplementation((target: string) => {
       if (target === missingCwd) {
@@ -8913,7 +8923,7 @@ describe('registerPtyHandlers', () => {
   it('spawns a plain POSIX login shell and queues startup commands for the live session', async () => {
     const originalPlatform = process.platform
     const originalHome = process.env.HOME
-    const originalOrcaOrigZdotdir = process.env.ORCA_ORIG_ZDOTDIR
+    const originalAioAdeOrigZdotdir = process.env.AIO_ADE_ORIG_ZDOTDIR
     const originalShell = process.env.SHELL
     const originalZdotdir = process.env.ZDOTDIR
 
@@ -8923,7 +8933,7 @@ describe('registerPtyHandlers', () => {
     })
     // Why: this test simulates macOS even when Vitest runs on a Windows host.
     process.env.HOME = '/Users/test'
-    delete process.env.ORCA_ORIG_ZDOTDIR
+    delete process.env.AIO_ADE_ORIG_ZDOTDIR
     process.env.SHELL = '/bin/zsh'
     delete process.env.ZDOTDIR
 
@@ -8934,8 +8944,8 @@ describe('registerPtyHandlers', () => {
       })
       expect(shell).toBe('/bin/zsh')
       expect(args).toEqual(['-l'])
-      expect(options.env.ZDOTDIR).toBe('/tmp/orca-user-data/shell-ready/zsh')
-      expect(options.env.ORCA_ORIG_ZDOTDIR).toBe(process.env.HOME)
+      expect(options.env.ZDOTDIR).toBe('/tmp/aio-ade-user-data/shell-ready/zsh')
+      expect(options.env.AIO_ADE_ORIG_ZDOTDIR).toBe(process.env.HOME)
     } finally {
       Object.defineProperty(process, 'platform', {
         configurable: true,
@@ -8946,10 +8956,10 @@ describe('registerPtyHandlers', () => {
       } else {
         process.env.HOME = originalHome
       }
-      if (originalOrcaOrigZdotdir === undefined) {
-        delete process.env.ORCA_ORIG_ZDOTDIR
+      if (originalAioAdeOrigZdotdir === undefined) {
+        delete process.env.AIO_ADE_ORIG_ZDOTDIR
       } else {
-        process.env.ORCA_ORIG_ZDOTDIR = originalOrcaOrigZdotdir
+        process.env.AIO_ADE_ORIG_ZDOTDIR = originalAioAdeOrigZdotdir
       }
       if (originalShell === undefined) {
         delete process.env.SHELL
@@ -8967,7 +8977,7 @@ describe('registerPtyHandlers', () => {
   posixOnlyIt('wraps macOS spawns in login(1) with SHELL re-asserted via env(1)', async () => {
     const originalShell = process.env.SHELL
     // Re-enable the TCC login wrapper the suite-level beforeEach disables.
-    delete process.env.ORCA_DISABLE_MACOS_LOGIN_SHELL
+    delete process.env.AIO_ADE_DISABLE_MACOS_LOGIN_SHELL
     process.env.SHELL = '/bin/zsh'
     loginPreflightExecFileMock.mockImplementation(
       (
@@ -8976,7 +8986,7 @@ describe('registerPtyHandlers', () => {
         _options: unknown,
         callback: (error: Error | null, stdout: string, stderr: string) => void
       ) => {
-        callback(null, 'ORCA_LOGIN_PREFLIGHT_OK', '')
+        callback(null, 'AIO_ADE_LOGIN_PREFLIGHT_OK', '')
         return { stdin: { end: vi.fn() } }
       }
     )
@@ -8997,7 +9007,7 @@ describe('registerPtyHandlers', () => {
       expect(options.env.SHELL).toBe('/bin/zsh')
     } finally {
       resetMacosLoginShellPreflightForTests()
-      process.env.ORCA_DISABLE_MACOS_LOGIN_SHELL = '1'
+      process.env.AIO_ADE_DISABLE_MACOS_LOGIN_SHELL = '1'
       if (originalShell === undefined) {
         delete process.env.SHELL
       } else {
@@ -9085,7 +9095,7 @@ describe('registerPtyHandlers', () => {
         })
 
         const [, , options] = spawnMock.mock.calls[0]!
-        expect(options.env.ORCA_SHELL_READY_MARKER).toBe('0')
+        expect(options.env.AIO_ADE_SHELL_READY_MARKER).toBe('0')
 
         await Promise.resolve()
         vi.advanceTimersByTime(49)
@@ -9118,7 +9128,7 @@ describe('registerPtyHandlers', () => {
       })
 
       const [, , options] = spawnMock.mock.calls[0]!
-      expect(options.env.ORCA_SHELL_READY_MARKER).toBe('1')
+      expect(options.env.AIO_ADE_SHELL_READY_MARKER).toBe('1')
       expect(mockProc.proc.write).not.toHaveBeenCalled()
 
       mockProc.emitData('last login: today\r\n')
@@ -9126,7 +9136,7 @@ describe('registerPtyHandlers', () => {
       await Promise.resolve()
       expect(mockProc.proc.write).not.toHaveBeenCalled()
 
-      mockProc.emitData('\x1b]777;orca-shell-ready\x07')
+      mockProc.emitData('\x1b]777;aio-ade-shell-ready\x07')
       await Promise.resolve()
       vi.advanceTimersByTime(50)
       await Promise.resolve()
@@ -9157,7 +9167,7 @@ describe('registerPtyHandlers', () => {
           startupCommandDelivery: 'shell-ready'
         })
 
-        mockProc.emitData('\x1b]777;orca-shell-ready\x07\r\nuser@host % ')
+        mockProc.emitData('\x1b]777;aio-ade-shell-ready\x07\r\nuser@host % ')
         await Promise.resolve()
         vi.advanceTimersByTime(29)
         await Promise.resolve()
@@ -9187,10 +9197,10 @@ describe('registerPtyHandlers', () => {
       })
 
       const [, , options] = spawnMock.mock.calls[0]!
-      expect(options.env.ORCA_SHELL_READY_MARKER).toBe('1')
+      expect(options.env.AIO_ADE_SHELL_READY_MARKER).toBe('1')
       expect(mockProc.proc.write).not.toHaveBeenCalled()
 
-      mockProc.emitData('\x1b]777;orca-shell-ready\x07')
+      mockProc.emitData('\x1b]777;aio-ade-shell-ready\x07')
       await Promise.resolve()
       vi.runAllTimers()
       await Promise.resolve()
@@ -13080,7 +13090,7 @@ describe('registerPtyHandlers', () => {
     it('answers DA1 from the model on the first chunk of a hidden-at-spawn PTY', async () => {
       // End-to-end through a REAL runtime: spawn-marked → first chunk dropped → emulator parses query → replies; main answers, the renderer never saw the bytes.
       const daemon = installObservableDaemonTestProvider()
-      const runtime = new OrcaRuntimeService({
+      const runtime = new AioAdeRuntimeService({
         getRepo: () => undefined,
         getRepos: () => [],
         addRepo: () => {},
@@ -13286,7 +13296,7 @@ describe('registerPtyHandlers', () => {
     try {
       process.env.SHELL = '/opt/homebrew/bin/bash'
 
-      // Why: ORCA_CODEX_HOME is what arms the markerless shell-ready wrapper, so
+      // Why: AIO_ADE_CODEX_HOME is what arms the markerless shell-ready wrapper, so
       // the fallback shell's ZDOTDIR/marker env is observable here.
       registerPtyHandlers(mainWindow as never, undefined, () => TEST_CODEX_HOME)
       await handlers.get('pty:spawn')!(null, {
@@ -13303,9 +13313,9 @@ describe('registerPtyHandlers', () => {
         expect.objectContaining({
           cwd: '/tmp',
           env: expect.objectContaining({
-            ORCA_CODEX_HOME: TEST_CODEX_HOME,
-            ORCA_SHELL_READY_MARKER: '0',
-            ZDOTDIR: '/tmp/orca-user-data/shell-ready/zsh'
+            AIO_ADE_CODEX_HOME: TEST_CODEX_HOME,
+            AIO_ADE_SHELL_READY_MARKER: '0',
+            ZDOTDIR: '/tmp/aio-ade-user-data/shell-ready/zsh'
           })
         })
       )
@@ -13891,7 +13901,7 @@ describe('registerPtyHandlers', () => {
       worktreeId: 'wt-1',
       tabId: 'tab-1',
       leafId,
-      env: { ORCA_PANE_KEY: 'tab-1:0' }
+      env: { AIO_ADE_PANE_KEY: 'tab-1:0' }
     })
 
     expect(registerPtyMock).toHaveBeenLastCalledWith(
@@ -13915,7 +13925,7 @@ describe('registerPtyHandlers', () => {
       worktreeId: 'wt-1',
       tabId: 'tab-1',
       leafId,
-      env: { ORCA_PANE_KEY: stablePaneKey }
+      env: { AIO_ADE_PANE_KEY: stablePaneKey }
     })
 
     expect(registerPtyMock).toHaveBeenLastCalledWith(
@@ -13931,7 +13941,7 @@ describe('registerPtyHandlers', () => {
       worktreeId: 'wt-1',
       tabId: 'tab-1',
       leafId,
-      env: { ORCA_PANE_KEY: makePaneKey('tab-2', leafId) }
+      env: { AIO_ADE_PANE_KEY: makePaneKey('tab-2', leafId) }
     })
 
     expect(registerPtyMock).toHaveBeenLastCalledWith(
@@ -13952,7 +13962,7 @@ describe('registerPtyHandlers', () => {
       worktreeId: 'wt-1',
       tabId: 'tab-1',
       leafId,
-      env: { ORCA_PANE_KEY: stablePaneKey }
+      env: { AIO_ADE_PANE_KEY: stablePaneKey }
     })) as { id: string }
     const second = (await handlers.get('pty:spawn')!(null, {
       cols: 80,
@@ -13960,7 +13970,7 @@ describe('registerPtyHandlers', () => {
       worktreeId: 'wt-1',
       tabId: 'tab-1',
       leafId,
-      env: { ORCA_PANE_KEY: stablePaneKey }
+      env: { AIO_ADE_PANE_KEY: stablePaneKey }
     })) as { id: string }
 
     expect(getPtyIdForPaneKey(stablePaneKey)).toBe(second.id)
@@ -13986,7 +13996,7 @@ describe('registerPtyHandlers', () => {
       worktreeId: 'wt-1',
       tabId: 'tab-1',
       leafId,
-      env: { ORCA_PANE_KEY: stablePaneKey }
+      env: { AIO_ADE_PANE_KEY: stablePaneKey }
     })) as { id: string }
 
     expect(getPtyIdForPaneKey(stablePaneKey)).toBe(current.id)
@@ -14011,7 +14021,7 @@ describe('registerPtyHandlers', () => {
     try {
       process.env.SHELL = '/bin/bash'
 
-      // Why: ORCA_CODEX_HOME is what arms the markerless shell-ready wrapper, so
+      // Why: AIO_ADE_CODEX_HOME is what arms the markerless shell-ready wrapper, so
       // the fallback shell's ZDOTDIR/marker env is observable here.
       registerPtyHandlers(mainWindow as never, undefined, () => TEST_CODEX_HOME)
       await handlers.get('pty:spawn')!(null, {
@@ -14030,9 +14040,9 @@ describe('registerPtyHandlers', () => {
           cwd: '/tmp',
           env: expect.objectContaining({
             SHELL: '/bin/zsh',
-            ORCA_CODEX_HOME: TEST_CODEX_HOME,
-            ORCA_SHELL_READY_MARKER: '0',
-            ZDOTDIR: '/tmp/orca-user-data/shell-ready/zsh'
+            AIO_ADE_CODEX_HOME: TEST_CODEX_HOME,
+            AIO_ADE_SHELL_READY_MARKER: '0',
+            ZDOTDIR: '/tmp/aio-ade-user-data/shell-ready/zsh'
           })
         })
       )

@@ -8,9 +8,9 @@ import { createInterface } from 'node:readline'
 
 const scriptDir = import.meta.dirname
 const repoRoot = path.resolve(scriptDir, '..', '..')
-const orcaDevScript = path.join(scriptDir, 'orca-dev.mjs')
+const aioAdeDevScript = path.join(scriptDir, 'aio-ade-dev.mjs')
 const ensureNativeRuntimeScript = path.join(scriptDir, 'ensure-native-runtime.mjs')
-const fixedProfileDir = process.env.ORCA_HEADLESS_PAIRING_PROFILE_DIR
+const fixedProfileDir = process.env.AIO_ADE_HEADLESS_PAIRING_PROFILE_DIR
 const parsed = parseArgs(process.argv.slice(2))
 
 if (parsed.help) {
@@ -34,7 +34,7 @@ const serveArgs = withDefaultPairingAddress(parsed.serveArgs)
 ensureElectronRuntime()
 
 const profileDir =
-  fixedProfileDir ?? mkdtempSync(path.join(tmpdir(), 'orca-headless-pairing-profile-'))
+  fixedProfileDir ?? mkdtempSync(path.join(tmpdir(), 'aio-ade-headless-pairing-profile-'))
 const ownsProfileDir = !fixedProfileDir
 mkdirSync(profileDir, { recursive: true })
 const isolatedHome = path.join(profileDir, 'home')
@@ -48,23 +48,25 @@ let stopAttempts = 0
 // is only for local headless testing, not packaged production.
 const childEnv = { ...process.env }
 delete childEnv.CODEX_HOME
-delete childEnv.ORCA_CODEX_HOME
+delete childEnv.AIO_ADE_CODEX_HOME
 Object.assign(childEnv, {
-  // Why: a fresh temporary Orca profile must not make the default Codex lane
+  // Why: a fresh temporary AIO-ADE profile must not make the default Codex lane
   // read or mutate the developer profile during a pairing smoke test.
-  ORCA_DEV_USER_DATA_PATH: profileDir,
+  AIO_ADE_DEV_USER_DATA_PATH: profileDir,
   HOME: isolatedHome,
   USERPROFILE: isolatedHome,
-  ORCA_CODEX_SYSTEM_DEFAULT_REAL_HOME: '0',
+  AIO_ADE_CODEX_SYSTEM_DEFAULT_REAL_HOME: '0',
   ...(process.platform === 'linux'
     ? { ELECTRON_DISABLE_SANDBOX: process.env.ELECTRON_DISABLE_SANDBOX ?? '1' }
     : {})
 })
 
 console.error(`[headless-pairing] userData=${profileDir}`)
-console.error(`[headless-pairing] starting: orca-dev serve --json${formatForwardedArgs(serveArgs)}`)
+console.error(
+  `[headless-pairing] starting: aio-ade-dev serve --json${formatForwardedArgs(serveArgs)}`
+)
 
-child = spawn(process.execPath, [orcaDevScript, 'serve', '--json', ...serveArgs], {
+child = spawn(process.execPath, [aioAdeDevScript, 'serve', '--json', ...serveArgs], {
   cwd: repoRoot,
   detached: process.platform !== 'win32',
   env: childEnv,
@@ -101,7 +103,7 @@ process.on('SIGINT', () => stopChild('SIGINT'))
 process.on('SIGTERM', () => stopChild('SIGTERM'))
 
 /**
- * Parses wrapper flags and forwards everything else to `orca serve`.
+ * Parses wrapper flags and forwards everything else to `aio-ade serve`.
  */
 function parseArgs(args) {
   const serveArgs = []
@@ -125,9 +127,9 @@ function parseArgs(args) {
  * Prints script usage without touching the dev profile or starting the server.
  */
 function printHelp() {
-  console.log(`Usage: node config/scripts/serve-headless-fresh-profile-pairing.mjs [--keep] [orca serve flags]
+  console.log(`Usage: node config/scripts/serve-headless-fresh-profile-pairing.mjs [--keep] [aio-ade serve flags]
 
-Starts orca-dev serve --json with a fresh isolated userData profile, ensures Electron's dev runtime is usable, and prints the pairing URL.
+Starts aio-ade-dev serve --json with a fresh isolated userData profile, ensures Electron's dev runtime is usable, and prints the pairing URL.
 
 Wrapper flags:
   --keep        Keep the fresh profile after the server exits.
@@ -139,8 +141,8 @@ Forwarded examples:
   node config/scripts/serve-headless-fresh-profile-pairing.mjs --mobile-pairing
 
 Environment:
-  ORCA_HEADLESS_PAIRING_ADDRESS=<host|host:port|ws://...>  Override the auto pairing address.
-  ORCA_HEADLESS_PAIRING_PROFILE_DIR=/path/to/profile       Use a fixed profile directory.
+  AIO_ADE_HEADLESS_PAIRING_ADDRESS=<host|host:port|ws://...>  Override the auto pairing address.
+  AIO_ADE_HEADLESS_PAIRING_PROFILE_DIR=/path/to/profile       Use a fixed profile directory.
 `)
 }
 
@@ -178,7 +180,7 @@ function hasForwardedServeFlag(args, name) {
  * Prefers an override, then Tailscale, then the OS hostname over loopback.
  */
 function resolveDefaultPairingAddress() {
-  const configured = process.env.ORCA_HEADLESS_PAIRING_ADDRESS?.trim()
+  const configured = process.env.AIO_ADE_HEADLESS_PAIRING_ADDRESS?.trim()
   if (configured) {
     return configured
   }
@@ -257,10 +259,10 @@ function printReadyLine(line) {
   } catch {
     return false
   }
-  if (!payload || payload.type !== 'orca_server_ready') {
+  if (!payload || payload.type !== 'aio_ade_server_ready') {
     return false
   }
-  console.log(`Orca server ready: ${payload.boundEndpoint ?? 'websocket unavailable'}`)
+  console.log(`AIO-ADE server ready: ${payload.boundEndpoint ?? 'websocket unavailable'}`)
   if (payload.pairing?.endpoint) {
     console.log(`Pairing endpoint: ${payload.pairing.endpoint}`)
   }
@@ -287,7 +289,7 @@ function stopChild(signal) {
   stopAttempts += 1
   const targetSignal = stopAttempts > 1 ? 'SIGKILL' : signal
   if (process.platform === 'win32' && child.pid) {
-    // Why: child.kill() only targets orca-dev on Windows; taskkill walks the
+    // Why: child.kill() only targets aio-ade-dev on Windows; taskkill walks the
     // CLI/Electron descendants so the fresh profile is not left locked.
     const killer = spawn('taskkill', ['/pid', String(child.pid), '/t', '/f'], {
       stdio: 'ignore',
@@ -297,7 +299,7 @@ function stopChild(signal) {
     return
   }
   if (process.platform !== 'win32' && child.pid) {
-    // Why: orca-dev synchronously owns the CLI child, which owns Electron; kill
+    // Why: aio-ade-dev synchronously owns the CLI child, which owns Electron; kill
     // the spawned process group so programmatic shutdown does not orphan serve.
     try {
       process.kill(-child.pid, targetSignal)
@@ -321,7 +323,7 @@ function cleanupProfile() {
     console.error(`[headless-pairing] kept ${profileDir}`)
     return
   }
-  if (!existsSync(profileDir) || !profileDir.includes('orca-headless-pairing-profile-')) {
+  if (!existsSync(profileDir) || !profileDir.includes('aio-ade-headless-pairing-profile-')) {
     console.error(`[headless-pairing] skipped cleanup for unexpected profile path: ${profileDir}`)
     return
   }

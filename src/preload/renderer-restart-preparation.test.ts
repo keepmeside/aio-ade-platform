@@ -64,7 +64,7 @@ describe('preload restart wiring', () => {
     expect(source).toContain('updaterQuitAbortRelay.handleStatus(status)')
     expect(source).toContain("ipcRenderer.on('window:unload-prevented'")
     expect(source).toContain(
-      'window.dispatchEvent(new Event(ORCA_RENDERER_UNLOAD_PREVENTED_EVENT))'
+      'window.dispatchEvent(new Event(AIO_ADE_RENDERER_UNLOAD_PREVENTED_EVENT))'
     )
   })
 

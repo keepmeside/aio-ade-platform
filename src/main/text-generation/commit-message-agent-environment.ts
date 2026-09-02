@@ -25,16 +25,16 @@ function cloneProcessEnv(): Record<string, string> {
 }
 
 // Why: with system-default real-home routing, the headless Codex commit run
-// must use the user's own ~/.codex. If Orca itself was launched from a nested
-// Orca terminal it can inherit an Orca-owned CODEX_HOME override; strip only
-// that (CODEX_HOME matching the private ORCA_CODEX_HOME marker), preserving a
+// must use the user's own ~/.codex. If AIO-ADE itself was launched from a nested
+// AIO-ADE terminal it can inherit an AIO-ADE-owned CODEX_HOME override; strip only
+// that (CODEX_HOME matching the private AIO_ADE_CODEX_HOME marker), preserving a
 // user-set CODEX_HOME.
-function cloneProcessEnvWithoutOrcaCodexHomeOverride(): Record<string, string> {
+function cloneProcessEnvWithoutAioAdeCodexHomeOverride(): Record<string, string> {
   const env = cloneProcessEnv()
-  if (env.ORCA_CODEX_HOME && env.CODEX_HOME === env.ORCA_CODEX_HOME) {
+  if (env.AIO_ADE_CODEX_HOME && env.CODEX_HOME === env.AIO_ADE_CODEX_HOME) {
     delete env.CODEX_HOME
   }
-  delete env.ORCA_CODEX_HOME
+  delete env.AIO_ADE_CODEX_HOME
   return env
 }
 
@@ -53,13 +53,13 @@ export async function prepareLocalCommitMessageAgentEnv(
       const wslCodexHome = codexHomePath ? parseWslUncPath(codexHomePath) : null
       if (target?.runtime === 'wsl') {
         const codexHomeForTarget = wslCodexHome?.linuxPath ?? null
-        // Why: the fallback must still strip Orca-owned overrides, or a
+        // Why: the fallback must still strip AIO-ADE-owned overrides, or a
         // system-default WSL run inherits the managed CODEX_HOME.
         return {
           ok: true,
           env: codexHomeForTarget
-            ? { ...cloneProcessEnvWithoutOrcaCodexHomeOverride(), CODEX_HOME: codexHomeForTarget }
-            : cloneProcessEnvWithoutOrcaCodexHomeOverride()
+            ? { ...cloneProcessEnvWithoutAioAdeCodexHomeOverride(), CODEX_HOME: codexHomeForTarget }
+            : cloneProcessEnvWithoutAioAdeCodexHomeOverride()
         }
       }
       if (codexHomePath && wslCodexHome) {
@@ -71,7 +71,7 @@ export async function prepareLocalCommitMessageAgentEnv(
         ok: true,
         env: codexHomePath
           ? { ...cloneProcessEnv(), CODEX_HOME: codexHomePath }
-          : cloneProcessEnvWithoutOrcaCodexHomeOverride()
+          : cloneProcessEnvWithoutAioAdeCodexHomeOverride()
       }
     }
 

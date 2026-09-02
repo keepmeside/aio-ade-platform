@@ -16,8 +16,8 @@ describe('resolveAgentStatusTerminalTitle', () => {
 
   it('keeps descriptive completed titles that are already non-working', () => {
     expect(
-      resolveAgentStatusTerminalTitle({ agentType: 'codex', state: 'done' }, 'Orca Codex Done')
-    ).toBe('Orca Codex Done')
+      resolveAgentStatusTerminalTitle({ agentType: 'codex', state: 'done' }, 'AIO-ADE Codex Done')
+    ).toBe('AIO-ADE Codex Done')
   })
 
   it('uses permission titles for Codex when hook state waits on user input', () => {

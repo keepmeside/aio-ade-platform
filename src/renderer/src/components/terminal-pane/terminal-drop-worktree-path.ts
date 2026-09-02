@@ -1,4 +1,5 @@
 import { useAppStore } from '@/store'
+import { getRepoAppPath, REPO_APP_DIR_NAME } from '../../../../shared/repo-app-paths'
 import { isTerminalDropWindowsPathLike } from './terminal-drop-shell'
 
 export function resolveTerminalDropWorktreePath(
@@ -13,7 +14,7 @@ export function resolveTerminalDropWorktreePath(
 
 export function joinRuntimeTerminalDropDir(worktreePath: string): string {
   if (isTerminalDropWindowsPathLike(worktreePath)) {
-    return `${worktreePath.replace(/[\\/]+$/, '').replace(/\//g, '\\')}\\.orca\\drops`
+    return `${worktreePath.replace(/[\\/]+$/, '').replace(/\//g, '\\')}\\${REPO_APP_DIR_NAME}\\drops`
   }
-  return `${worktreePath.replace(/[\\/]+$/, '')}/.orca/drops`
+  return getRepoAppPath(worktreePath, 'drops')
 }

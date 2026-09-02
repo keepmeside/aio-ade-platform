@@ -12,9 +12,14 @@ import {
   migrateMobilePairingDataToCanonicalUserDataPath
 } from './persistence'
 import { initSessionParseCachePersistence } from './ai-vault/session-parse-cache-persistence'
-import { ensureActiveOrcaProfile, initOrcaProfilePaths } from './orca-profiles/profile-index-store'
-import { getOrcaCloudAuthConfig } from './orca-profiles/profile-cloud-auth-config'
-import { getProfileUserDataPath } from './orca-profiles/profile-storage-paths'
+import {
+  ensureActiveAioAdeProfile,
+  initAioAdeProfilePaths
+} from './aio-ade-profiles/profile-index-store'
+import { adoptLegacyAppHome, reportLegacyAppHomeAdoption } from './legacy-app-home-adoption'
+import { adoptLegacyUserData, reportLegacyUserDataAdoption } from './legacy-user-data-adoption'
+import { getAioAdeCloudAuthConfig } from './aio-ade-profiles/profile-cloud-auth-config'
+import { getProfileUserDataPath } from './aio-ade-profiles/profile-storage-paths'
 import { applyAppIcon } from './app-icon'
 import { relaunchApp } from './app-relaunch'
 import { StatsCollector, initStatsPath } from './stats/collector'
@@ -47,7 +52,7 @@ import { initCohortClassifier } from './telemetry/cohort-classifier'
 import { initOnboardingCohortClassifier } from './telemetry/onboarding-cohort-classifier'
 import { resolveConsent } from './telemetry/consent'
 import { triggerStartupNotificationRegistration } from './ipc/notifications'
-import { OrcaRuntimeService, type RuntimeWorktreeLifecycleEvent } from './runtime/orca-runtime'
+import { AioAdeRuntimeService, type RuntimeWorktreeLifecycleEvent } from './runtime/aio-ade-runtime'
 import { loadAgentSessionClaimSigner } from './runtime/agent-session-claim-identity'
 import {
   fingerprintOrchestrationPeer,
@@ -56,7 +61,7 @@ import {
 import { callRuntimeEnvironment } from './ipc/runtime-environment-transport-routing'
 import { resolveEnvironment } from '../shared/runtime-environment-store'
 import { getPreferredPairingOffer } from '../shared/runtime-environments'
-import { OrcaRuntimeRpcServer } from './runtime/runtime-rpc'
+import { AioAdeRuntimeRpcServer } from './runtime/runtime-rpc'
 import {
   recordRuntimeRpcStartFailure,
   showRuntimeRpcStartupFailureDialog
@@ -66,7 +71,7 @@ import { ServeReadinessPublisher } from './server/serve-readiness'
 import { reserveServeStdoutForReadiness } from './server/serve-stdout-boundary'
 import { DesktopRelayService } from './runtime/relay/desktop-relay-service'
 import type { RelayBrokerStatus } from './runtime/relay/relay-session-broker'
-import { awaitRuntimeFileWatcherUnsubscribes } from './runtime/orca-runtime-files'
+import { awaitRuntimeFileWatcherUnsubscribes } from './runtime/aio-ade-runtime-files'
 import { clearRuntimeMetadataIfOwned } from './runtime/runtime-metadata'
 import { ensureMainI18n, setMainPluginLanguagePacks, setMainUiLanguage } from './i18n/main-i18n'
 import {
@@ -93,7 +98,7 @@ import {
 import {
   configureElectronNetworkCompatibility,
   configureDevUserDataPath,
-  configureOrcaUserDataPathEnv,
+  configureAioAdeUserDataPathEnv,
   enableMainProcessGpuFeatures,
   installDevParentDisconnectQuit,
   installDevParentSignalQuit,
@@ -193,7 +198,7 @@ import { prepareLegacySharedCodexSessionResume } from './codex/codex-legacy-sess
 import { resolveHostCodexSessionSourceHome } from './codex/codex-session-source-home'
 import type { CodexSessionResumePreparation } from './codex/codex-session-resume-home'
 import { prepareCodexSessionResume } from './codex/codex-session-resume-preparation'
-import { getOrcaManagedCodexHomePath, getSystemCodexHomePath } from './codex/codex-home-paths'
+import { getAioAdeManagedCodexHomePath, getSystemCodexHomePath } from './codex/codex-home-paths'
 import { normalizeRuntimePathForComparison } from '../shared/cross-platform-path'
 import type { AgentProviderSessionMetadata } from '../shared/agent-session-resume'
 import { getDefaultWslDistro } from './wsl'
@@ -282,7 +287,7 @@ import { KeybindingService } from './keybindings/keybinding-service'
 import { applyElectronProxySettings } from './network/proxy-settings'
 import { preserveAgentAuthBeforeRestart } from './agent-auth-restart-preservation'
 import { CliInstaller } from './cli/cli-installer'
-import { installLinuxBareOrcaDispatcher } from './cli/linux-bare-orca-dispatcher'
+import { installLinuxBareAioAdeDispatcher } from './cli/linux-bare-aio-ade-dispatcher'
 import { reconcileManagedWslCliRegistrations } from './cli/wsl-cli-registration-reconciliation'
 
 let mainWindow: BrowserWindow | null = null
@@ -296,9 +301,9 @@ let codexAccounts: CodexAccountService | null = null
 let codexRuntimeHome: CodexRuntimeHomeService | null = null
 let claudeAccounts: ClaudeAccountService | null = null
 let claudeRuntimeAuth: ClaudeRuntimeAuthService | null = null
-let runtime: OrcaRuntimeService | null = null
+let runtime: AioAdeRuntimeService | null = null
 let rateLimits: RateLimitService | null = null
-let runtimeRpc: OrcaRuntimeRpcServer | null = null
+let runtimeRpc: AioAdeRuntimeRpcServer | null = null
 const serveReadinessPublisher = new ServeReadinessPublisher()
 let desktopRelayService: DesktopRelayService | null = null
 let desktopRelayStatus: RelayBrokerStatus = 'offline'
@@ -431,10 +436,10 @@ function maybeAutoRenameBranchOnFirstWorkFromHook(event: {
         }
         return currentStore.getWorktreeMeta(worktreeId)?.pendingFirstAgentMessageRename === true
       },
-      canRenameOrcaCreatedBranch: (worktreeId) => {
+      canRenameAioAdeCreatedBranch: (worktreeId) => {
         const meta = currentStore.getWorktreeMeta(worktreeId)
-        // Why: a user branch could coincidentally match a creature name; only Orca-stamped worktrees are safe to auto-rename.
-        return !!meta?.orcaCreationSource && meta.preserveBranchOnDelete !== true
+        // Why: a user branch could coincidentally match a creature name; only AIO-ADE-stamped worktrees are safe to auto-rename.
+        return !!meta?.aioAdeCreationSource && meta.preserveBranchOnDelete !== true
       },
       setDisplayName: (worktreeId, displayName) => {
         rememberBranchRenameFailureOutput(worktreeId, null)
@@ -515,7 +520,7 @@ installUncaughtPipeErrorGuard()
 // Why (issue #9441): without this, one rejected background promise during startup restore kills main silently (exit 1, no crash report).
 installUnhandledRejectionLogging()
 // Why: expose the app version via process.env so main and the forked daemon can set TERM_PROGRAM_VERSION without importing electron.
-process.env.ORCA_APP_VERSION = app.getVersion()
+process.env.AIO_ADE_APP_VERSION = app.getVersion()
 configureRemoteServerUpdater({
   getSnapshot: getRemoteServerUpdaterSnapshot,
   check: checkForRemoteServerUpdate,
@@ -532,7 +537,7 @@ if (app.isPackaged && process.platform !== 'win32') {
   })
 }
 configureDevUserDataPath(is.dev)
-configureOrcaUserDataPathEnv()
+configureAioAdeUserDataPathEnv()
 installServeSupervisorDisconnectQuit(isServeMode)
 
 // Why: just past createMainWindow's 10s ready-to-show fallback, so a window revealed that way still gets its tray icon.
@@ -546,11 +551,11 @@ if (startupDiagnosticsEnabled) {
     platform: process.platform,
     osRelease: os.release(),
     userData: app.getPath('userData'),
-    e2eUserData: Boolean(process.env.ORCA_E2E_USER_DATA_DIR)
+    e2eUserData: Boolean(process.env.AIO_ADE_E2E_USER_DATA_DIR)
   })
   startEventLoopStallProbe()
 }
-// Self-gated on ORCA_MAIN_THREAD_DIAGNOSTICS; runs the whole session to catch steady-state churn (issue #7576).
+// Self-gated on AIO_ADE_MAIN_THREAD_DIAGNOSTICS; runs the whole session to catch steady-state churn (issue #7576).
 startMainThreadChurnProbe()
 
 function focusExistingWindow(): void {
@@ -687,19 +692,25 @@ if (!hasSingleInstanceLock) {
 
 // Why: when another process holds the lock we've already quit; skip file-writing side effects so this transient process never touches userData.
 if (hasSingleInstanceLock) {
-  // Why: couple to dev-parent only for electron-vite desktop runs; `orca serve`'s parent (CLI shim/background shell) isn't the intended server lifetime.
+  // Why: couple to dev-parent only for electron-vite desktop runs; `aio-ade serve`'s parent (CLI shim/background shell) isn't the intended server lifetime.
   const shouldCoupleToDevParent = is.dev && !isServeMode
   installDevParentDisconnectQuit(shouldCoupleToDevParent)
   installDevParentWatchdog(shouldCoupleToDevParent)
   installDevParentSignalQuit(shouldCoupleToDevParent)
-  // Why: run after configureDevUserDataPath but before app.setName('Orca') (whenReady), which changes the resolved path on case-sensitive filesystems.
+  // Why: before any lazy credential/settings read, so an install upgrading from the previous
+  // brand finds its Jira/Linear tokens, speech key and keybindings under the canonical root.
+  reportLegacyAppHomeAdoption(adoptLegacyAppHome())
+  // Why: Electron resolves userData from `package.json` name, so the rebrand moved the whole
+  // directory. Adopt before the first store read, or an existing install presents as brand new.
+  reportLegacyUserDataAdoption(adoptLegacyUserData(app.getPath('userData')))
+  // Why: run after configureDevUserDataPath but before app.setName (whenReady), which changes the resolved path on case-sensitive filesystems.
   initDataPath()
   // Why: use the canonical userData path — late app.getPath('userData') can resolve differently across restarts, defeating persistence.
   initSessionParseCachePersistence({
     filePath: join(getCanonicalUserDataPath(), 'ai-vault', 'session-parse-cache.json'),
     appVersion: app.getVersion()
   })
-  initOrcaProfilePaths()
+  initAioAdeProfilePaths()
   // Why: same timing as initDataPath — capture userData before app.setName changes it. See persistence.ts:20-28.
   initStatsPath()
   initClaudeUsagePath()
@@ -753,7 +764,7 @@ function startTerminalRuntimeStartupServices(): Promise<void> {
       })
       logStartupMilestone('startup-service-done', { service: 'daemon-pty-provider' })
     },
-    // Why: PTY spawn env reads ORCA_AGENT_HOOK_* from live server state, so the renderer awaits this before restored terminals reconnect.
+    // Why: PTY spawn env reads AIO_ADE_AGENT_HOOK_* from live server state, so the renderer awaits this before restored terminals reconnect.
     startAgentHookServer: async () => {
       if (!isAgentStatusHooksEnabled(store?.getSettings())) {
         return
@@ -761,7 +772,7 @@ function startTerminalRuntimeStartupServices(): Promise<void> {
       logStartupMilestone('startup-service-start', { service: 'agent-hook-server' })
       await agentHookServer.start({
         env: app.isPackaged ? 'production' : 'development',
-        // Why: hooks source this endpoint file at invocation time so old PTY env reaches the current process after restart; dev namespaces it (worktrees share `orca-dev`).
+        // Why: hooks source this endpoint file at invocation time so old PTY env reaches the current process after restart; dev namespaces it (worktrees share `aio-ade-dev`).
         userDataPath: app.getPath('userData'),
         endpointNamespace: devAgentHookEndpointNamespace
       })
@@ -776,7 +787,7 @@ function startTerminalRuntimeStartupServices(): Promise<void> {
       track('daemon_start_failed', classifyError(error))
     },
     onAgentHookServerError: (error) => {
-      // Why: hook callbacks are sidebar enrichment only; Orca must still boot if the loopback receiver fails.
+      // Why: hook callbacks are sidebar enrichment only; AIO-ADE must still boot if the loopback receiver fails.
       console.error('[agent-hooks] Failed to start local hook server:', error)
     }
   })
@@ -908,7 +919,7 @@ async function prepareCodexSessionResumeForLaunch(args: {
     systemCodexHomePath: systemHomePath,
     // Why: the mirror winning is what triggers the migration into ~/.codex below, so it must
     // outrank the path-sorted account homes or a system-default selection resumes as an account.
-    sharedRuntimeCodexHomePath: getOrcaManagedCodexHomePath(),
+    sharedRuntimeCodexHomePath: getAioAdeManagedCodexHomePath(),
     resolveVerifiedResumeHome: async (sessionSource) => {
       let migrated = { useRealCodexHome: false }
       try {
@@ -1212,8 +1223,8 @@ function openMainWindow(): BrowserWindow {
         desktopRelayService?.fenceAndCloseNow()
         await preserveAgentAuthBeforeRestart({ codexRuntimeHome, claudeRuntimeAuth, store })
       },
-      onOrcaProfileAuthMutation: () => desktopRelayService?.authMutated(),
-      onBeforeOrcaProfileSignOut: () => desktopRelayService?.fenceAndCloseNow()
+      onAioAdeProfileAuthMutation: () => desktopRelayService?.authMutated(),
+      onBeforeAioAdeProfileSignOut: () => desktopRelayService?.fenceAndCloseNow()
     },
     pluginService ?? undefined,
     pluginMarketplaceService && pluginMarketplaceInstaller
@@ -1399,9 +1410,9 @@ async function presentRendererRecoveryPrompt(recentRecoveryCount: number): Promi
     buttons: ['Reload', 'Quit'],
     defaultId: 0,
     cancelId: 1,
-    title: 'Orca keeps failing to load',
+    title: 'AIO-ADE keeps failing to load',
     message: 'The app window crashed repeatedly and stopped reloading automatically.',
-    detail: `Orca tried to recover ${recentRecoveryCount} times in a row without success. This is often a graphics-driver or installation problem. Reload to try again, or quit and relaunch Orca.`
+    detail: `AIO-ADE tried to recover ${recentRecoveryCount} times in a row without success. This is often a graphics-driver or installation problem. Reload to try again, or quit and relaunch AIO-ADE.`
   }
   const { response } = window
     ? await dialog.showMessageBox(window, options)
@@ -1918,8 +1929,8 @@ void app.whenReady().then(async () => {
     managedWslCliReconciliationReady
   )
 
-  const activeOrcaProfile = ensureActiveOrcaProfile()
-  store = new Store({ dataFile: activeOrcaProfile.dataFile })
+  const activeAioAdeProfile = ensureActiveAioAdeProfile()
+  store = new Store({ dataFile: activeAioAdeProfile.dataFile })
   logStartupMilestone('store-loaded')
   // Why: apply initial fallback WSL distro from store settings for global git/CLI calls.
   setDefaultWslDistroOverride(store.getSettings().terminalWindowsWslDistro ?? null)
@@ -1960,8 +1971,8 @@ void app.whenReady().then(async () => {
   }
   // Why: browser sessions serve desktop webviews and runtime profile commands, so init at app startup rather than via a renderer IPC path.
   initializeBrowserSessionsForApp({
-    orcaProfileId: activeOrcaProfile.profile.id,
-    profileDirectory: activeOrcaProfile.profileDirectory
+    aioAdeProfileId: activeAioAdeProfile.profile.id,
+    profileDirectory: activeAioAdeProfile.profileDirectory
   })
   unsubscribeSystemResumeBroadcast = registerSystemResumeBroadcast()
   agentAwakeService = new AgentAwakeService()
@@ -2023,7 +2034,7 @@ void app.whenReady().then(async () => {
   // composition root — independent of product telemetry — and must
   // initialize before any IPC handler / runtime span is created so the
   // tracer's active sink is populated at the moment the first span fires.
-  // Honors DO_NOT_TRACK / ORCA_TELEMETRY_DISABLED / ORCA_DIAGNOSTICS_DISABLED
+  // Honors DO_NOT_TRACK / AIO_ADE_TELEMETRY_DISABLED / AIO_ADE_DIAGNOSTICS_DISABLED
   // / CI internally; those gates do not need to be re-checked here.
   initObservability()
   recordDurableCrashBreadcrumb('main_process_lifecycle_started', {
@@ -2062,7 +2073,7 @@ void app.whenReady().then(async () => {
   codexAccounts = new CodexAccountService(store, rateLimits, codexRuntimeHome, {
     onHostSystemDefaultSelected: codexSessionMigration.requestRun
   })
-  // Why: one-time per-host backfill makes historical Orca-managed Codex
+  // Why: one-time per-host backfill makes historical AIO-ADE-managed Codex
   // sessions visible to the user's own resume picker and app history (#4444,
   // #8612). Deferred so startup and first PTY spawns never compete with the
   // sessions tree walk.
@@ -2154,7 +2165,7 @@ void app.whenReady().then(async () => {
         envelope
       )
   }
-  const runtimeService = new OrcaRuntimeService(store, stats, {
+  const runtimeService = new AioAdeRuntimeService(store, stats, {
     agentSessionClaimSigner: loadAgentSessionClaimSigner(
       getProfileUserDataPath(),
       getProfileUserDataPath()
@@ -2297,7 +2308,7 @@ void app.whenReady().then(async () => {
   runtimeService.setAutomationService(automations)
   runtimeService.setAccountServices({ claudeAccounts, codexAccounts, rateLimits })
   runtimeService.setCommitMessageAgentEnvironmentResolvers({
-    // Why: Codex hooks/auth live in Orca's managed runtime home even for the default path, so every launch must resolve CODEX_HOME via runtime-home.
+    // Why: Codex hooks/auth live in AIO-ADE's managed runtime home even for the default path, so every launch must resolve CODEX_HOME via runtime-home.
     prepareForCodexLaunch: prepareCodexRuntimeHomeForLaunch,
     prepareForClaudeLaunch: (target) => claudeRuntimeAuth!.prepareForClaudeLaunch(target)
   })
@@ -2377,7 +2388,7 @@ void app.whenReady().then(async () => {
       })
     }
   })
-  // Why: headless `orca serve` clients reach plugins through the runtime RPC
+  // Why: headless `aio-ade serve` clients reach plugins through the runtime RPC
   // methods, which resolve the service via this module-level setter. Consent
   // over RPC uses the same hash-keyed write path as the desktop dialog.
   setPluginServiceForRpc(pluginService, {
@@ -2442,7 +2453,7 @@ void app.whenReady().then(async () => {
   )
 
   // Emulator bridge (serve-sim). macOS-only feature (gated in CLI/runtime); always ship like agent-browser.
-  // Why: externally started serve-sim processes must stay independent — only Orca-managed/attached helpers belong to a workspace.
+  // Why: externally started serve-sim processes must stay independent — only AIO-ADE-managed/attached helpers belong to a workspace.
   const emulatorBridge = new EmulatorBridge()
   runtimeService.setEmulatorBridge(emulatorBridge)
   nativeTheme.themeSource = store.getSettings().theme ?? 'system'
@@ -2562,13 +2573,13 @@ void app.whenReady().then(async () => {
     getKeybindings: () => keybindings?.getOverrides()
   })
   // Why: parallel E2E Electron instances would race the fixed port (EADDRINUSE); port 0 gives each a random OS-assigned port.
-  const isE2E = Boolean(process.env.ORCA_E2E_USER_DATA_DIR)
-  const requestedE2EWsPort = process.env.ORCA_E2E_RUNTIME_WS_PORT
+  const isE2E = Boolean(process.env.AIO_ADE_E2E_USER_DATA_DIR)
+  const requestedE2EWsPort = process.env.AIO_ADE_E2E_RUNTIME_WS_PORT
   const e2eWsPort = requestedE2EWsPort === undefined ? 0 : Number(requestedE2EWsPort)
   if (isE2E && (!Number.isInteger(e2eWsPort) || e2eWsPort < 0 || e2eWsPort > 65_535)) {
-    throw new Error(`Invalid ORCA_E2E_RUNTIME_WS_PORT value: ${requestedE2EWsPort}`)
+    throw new Error(`Invalid AIO_ADE_E2E_RUNTIME_WS_PORT value: ${requestedE2EWsPort}`)
   }
-  // Why: pin dev to 6769 so `pnpm dev` doesn't race packaged Orca on 6768 and fall back to a random port, breaking deterministic mobile pairing/repro (STA-1511).
+  // Why: pin dev to 6769 so `pnpm dev` doesn't race packaged AIO-ADE on 6768 and fall back to a random port, breaking deterministic mobile pairing/repro (STA-1511).
   const devWsPort = is.dev && !isE2E ? 6769 : undefined
   let serveOptions: ServeOptions | null = null
   try {
@@ -2580,7 +2591,7 @@ void app.whenReady().then(async () => {
   }
   // Why: existing installs may have pairing creds under the late app.getPath('userData'); copy them forward before switching to the canonical path.
   migrateMobilePairingDataToCanonicalUserDataPath(app.getPath('userData'))
-  runtimeRpc = new OrcaRuntimeRpcServer({
+  runtimeRpc = new AioAdeRuntimeRpcServer({
     runtime,
     // Why: mobile pairing needs the stable pre-setName() path (getCanonicalUserDataPath), not a late app.getPath('userData') that drops paired devices across restarts.
     userDataPath: getCanonicalUserDataPath(),
@@ -2590,7 +2601,7 @@ void app.whenReady().then(async () => {
     ...(serveOptions?.wsPort !== undefined
       ? {
           wsPort: serveOptions.wsPort,
-          // Why: only explicit `orca serve --port` overrides a stale STA-1511 fallback (issue #8535); default/dev stay fallback-first for pairing stability.
+          // Why: only explicit `aio-ade serve --port` overrides a stale STA-1511 fallback (issue #8535); default/dev stay fallback-first for pairing stability.
           preferPinnedWsPort: true
         }
       : {}),
@@ -2662,28 +2673,28 @@ void app.whenReady().then(async () => {
           }
         }).install()
         console.log(
-          `[serve] orca CLI install: ${cliStatus.state}${cliStatus.commandPath ? ` (${cliStatus.commandPath})` : ''}`
+          `[serve] aio-ade CLI install: ${cliStatus.state}${cliStatus.commandPath ? ` (${cliStatus.commandPath})` : ''}`
         )
       } catch (error) {
         console.warn(
-          '[serve] orca CLI install skipped:',
+          '[serve] aio-ade CLI install skipped:',
           error instanceof Error ? error.message : String(error)
         )
       }
     }
-    // Why: Linux CLI installs as `orca-ide`, but the Claude Team launcher invokes bare `orca`; drop a ~/.local/bin dispatcher (ahead of /usr/bin) so it resolves. Best-effort.
+    // Why: Linux CLI installs as `aio-ade`, but the Claude Team launcher invokes bare `aio-ade`; drop a ~/.local/bin dispatcher (ahead of /usr/bin) so it resolves. Best-effort.
     if (process.platform === 'linux' && app.isPackaged && process.resourcesPath) {
       try {
-        const dispatcher = await installLinuxBareOrcaDispatcher({
+        const dispatcher = await installLinuxBareAioAdeDispatcher({
           resourcesPath: process.resourcesPath
         })
         console.log(
-          `[serve] bare orca dispatcher ${dispatcher.state}: ${dispatcher.dispatcherPath}` +
+          `[serve] bare aio-ade dispatcher ${dispatcher.state}: ${dispatcher.dispatcherPath}` +
             `${dispatcher.target ? ` -> ${dispatcher.target}` : ''}`
         )
       } catch (error) {
         console.warn(
-          '[serve] bare orca dispatcher install skipped:',
+          '[serve] bare aio-ade dispatcher install skipped:',
           error instanceof Error ? error.message : String(error)
         )
       }
@@ -2709,7 +2720,7 @@ void app.whenReady().then(async () => {
     void showRuntimeRpcStartupFailureDialog(win, runtimeRpcStartResult.error)
   }
 
-  const cloudAuth = getOrcaCloudAuthConfig()
+  const cloudAuth = getAioAdeCloudAuthConfig()
   if (cloudAuth.configured) {
     try {
       const relayService = new DesktopRelayService({

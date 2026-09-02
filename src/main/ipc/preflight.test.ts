@@ -587,13 +587,13 @@ describe('preflight', () => {
     await expect(detectInstalledAgents()).resolves.toEqual(['claude'])
   })
 
-  it('does not report Claude Agent Teams when only the Orca shim is present', async () => {
+  it('does not report Claude Agent Teams when only the AIO-ADE shim is present', async () => {
     execFileAsyncMock.mockImplementation(async (command, args) => {
       if (command !== 'which') {
         throw new Error(`unexpected command ${String(command)}`)
       }
-      if (String(args[0]) === 'orca') {
-        return { stdout: '/Applications/Orca.app/Contents/MacOS/orca\n' }
+      if (String(args[0]) === 'aio-ade') {
+        return { stdout: '/Applications/AIO-ADE.app/Contents/MacOS/aio-ade\n' }
       }
       throw new Error('not found')
     })
@@ -601,7 +601,7 @@ describe('preflight', () => {
     await expect(detectInstalledAgents()).resolves.toEqual([])
   })
 
-  it('reports Claude Agent Teams when both Orca and Claude are present', async () => {
+  it('reports Claude Agent Teams when both AIO-ADE and Claude are present', async () => {
     execFileAsyncMock.mockImplementation(async (command, args) => {
       if (command !== 'which') {
         throw new Error(`unexpected command ${String(command)}`)
@@ -609,8 +609,8 @@ describe('preflight', () => {
       if (String(args[0]) === 'claude') {
         return { stdout: '/Users/test/.local/bin/claude\n' }
       }
-      if (String(args[0]) === 'orca') {
-        return { stdout: '/Applications/Orca.app/Contents/MacOS/orca\n' }
+      if (String(args[0]) === 'aio-ade') {
+        return { stdout: '/Applications/AIO-ADE.app/Contents/MacOS/aio-ade\n' }
       }
       throw new Error('not found')
     })
@@ -630,8 +630,8 @@ describe('preflight', () => {
       if (String(args[0]) === 'claude') {
         return { stdout: '/mock/windows/npm/claude.cmd\n' }
       }
-      if (String(args[0]) === 'orca') {
-        return { stdout: '/mock/windows/programs/orca.cmd\n' }
+      if (String(args[0]) === 'aio-ade') {
+        return { stdout: '/mock/windows/programs/aio-ade.cmd\n' }
       }
       throw new Error('not found')
     })
@@ -767,7 +767,7 @@ describe('preflight', () => {
       }
       const script = String(args[5])
       if (script.includes("'claude'")) {
-        return { stdout: '__ORCA_AGENT_PATH__claude\t/home/test/.local/bin/claude\n' }
+        return { stdout: '__AIO_ADE_AGENT_PATH__claude\t/home/test/.local/bin/claude\n' }
       }
       throw new Error('not found')
     })
@@ -788,11 +788,11 @@ describe('preflight', () => {
         throw new Error(`unexpected command ${String(command)}`)
       }
       const script = String(args[5])
-      expect(script).not.toContain("'orca'")
-      expect(script).not.toContain("'orca-dev'")
-      expect(script).not.toContain("'orca-ide'")
+      expect(script).not.toContain("'aio-ade'")
+      expect(script).not.toContain("'aio-ade-dev'")
+      expect(script).not.toContain("'aio-ade'")
       if (script.includes("'claude'")) {
-        return { stdout: '__ORCA_AGENT_PATH__claude\t/home/test/.local/bin/claude\n' }
+        return { stdout: '__AIO_ADE_AGENT_PATH__claude\t/home/test/.local/bin/claude\n' }
       }
       throw new Error('not found')
     })
@@ -806,7 +806,7 @@ describe('preflight', () => {
         throw new Error(`unexpected command ${String(command)}`)
       }
       const target = String(args[0])
-      if (target === 'claude' || target === 'orca' || target === 'orca-dev') {
+      if (target === 'claude' || target === 'aio-ade' || target === 'aio-ade-dev') {
         return { stdout: `/home/test/.local/bin/${target}\n` }
       }
       throw new Error('not found')
@@ -830,9 +830,9 @@ describe('preflight', () => {
     expect(request).toHaveBeenCalledWith('preflight.detectAgents', {
       commands: expect.arrayContaining([
         { id: 'claude', cmd: 'claude' },
-        expect.objectContaining({ id: 'claude-agent-teams', cmd: 'orca' }),
-        expect.objectContaining({ id: 'claude-agent-teams', cmd: 'orca-dev' }),
-        expect.objectContaining({ id: 'claude-agent-teams', cmd: 'orca-ide' }),
+        expect.objectContaining({ id: 'claude-agent-teams', cmd: 'aio-ade' }),
+        expect.objectContaining({ id: 'claude-agent-teams', cmd: 'aio-ade-dev' }),
+        expect.objectContaining({ id: 'claude-agent-teams', cmd: 'aio-ade' }),
         { id: 'codex', cmd: 'codex' }
       ])
     })
@@ -903,7 +903,7 @@ describe('preflight', () => {
       }
       const script = String(args[5])
       if (script.includes("'claude'")) {
-        return { stdout: '__ORCA_AGENT_PATH__claude\t/home/test/.local/bin/claude\n' }
+        return { stdout: '__AIO_ADE_AGENT_PATH__claude\t/home/test/.local/bin/claude\n' }
       }
       throw new Error('not found')
     })
@@ -937,7 +937,7 @@ describe('preflight', () => {
       }
       const script = String(args[3])
       if (script.includes("'codex'")) {
-        return { stdout: '__ORCA_AGENT_PATH__codex\t/home/test/.local/bin/codex\n' }
+        return { stdout: '__AIO_ADE_AGENT_PATH__codex\t/home/test/.local/bin/codex\n' }
       }
       throw new Error('not found')
     })
@@ -995,7 +995,7 @@ describe('preflight', () => {
       }
       const script = String(args[5])
       if (script.includes("'claude'")) {
-        return { stdout: '__ORCA_AGENT_PATH__claude\t/home/test/.local/bin/claude\n' }
+        return { stdout: '__AIO_ADE_AGENT_PATH__claude\t/home/test/.local/bin/claude\n' }
       }
       throw new Error('not found')
     })

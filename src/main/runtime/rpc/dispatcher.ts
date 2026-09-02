@@ -28,7 +28,7 @@ import {
 } from './errors'
 import { ALL_RPC_METHODS } from './methods'
 import { emulatorProbe, emulatorProbeError } from '../../emulator/emulator-probe'
-import type { OrcaRuntimeService } from '../orca-runtime'
+import type { AioAdeRuntimeService } from '../aio-ade-runtime'
 import type { RuntimeCapability } from '../../../shared/protocol-version'
 import {
   OrchestrationMutationExecutor,
@@ -39,12 +39,12 @@ import { orchestrationMigrationFence } from './orchestration-contract-fence'
 import { getRuntimeFeatureInteractionId } from './runtime-feature-interaction'
 
 export type DispatcherOptions = {
-  runtime: OrcaRuntimeService
+  runtime: AioAdeRuntimeService
   methods?: readonly RpcAnyMethod[]
 }
 
 export class RpcDispatcher {
-  private readonly runtime: OrcaRuntimeService
+  private readonly runtime: AioAdeRuntimeService
   private readonly registry: RpcRegistry
   private readonly orchestrationMutations: OrchestrationMutationExecutor
 

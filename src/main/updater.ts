@@ -1,6 +1,5 @@
 /* eslint-disable max-lines */
 import { app, BrowserWindow, powerMonitor } from 'electron'
-import { is } from '@electron-toolkit/utils'
 import type { UpdateCheckOptions, UpdateStatus } from '../shared/types'
 import type {
   RemoteServerUpdateInstallResult,
@@ -8,6 +7,7 @@ import type {
   RemoteServerUpdateSupport
 } from '../shared/remote-server-update'
 import { isWindowsSignatureCheckUnavailableFailure } from '../shared/updater-windows-signature-check'
+import { getUpdaterDisabledReason, isUpdaterDisabled } from './updater-distribution-gate'
 import { killAllPty } from './ipc/pty'
 import { withUpdaterSpan } from './observability/instrumentation'
 import { loadElectronAutoUpdater, type ElectronAutoUpdater } from './electron-updater-loader'
@@ -599,12 +599,12 @@ function deferHeadlessServeInstall(phase: 'download' | 'install', version: strin
       { phase, version: version || null },
       {
         level: 'warn',
-        message: 'Update install deferred while hosting orca serve'
+        message: 'Update install deferred while hosting aio-ade serve'
       }
     )
   }
   sendErrorStatus(
-    'This orca serve process was not started by an update-capable supervisor. Keep it running and update Orca through its service manager.',
+    'This aio-ade serve process was not started by an update-capable supervisor. Keep it running and update AIO-ADE through its service manager.',
     true
   )
   return true
@@ -684,7 +684,7 @@ async function performQuitAndInstall(): Promise<void> {
           }
         )
         sendErrorStatus(
-          'Could not prepare the supervised server restart. Orca remains running.',
+          'Could not prepare the supervised server restart. AIO-ADE remains running.',
           true
         )
         resetQuitForUpdateState()
@@ -739,7 +739,7 @@ async function performQuitAndInstall(): Promise<void> {
       }
     )
     sendErrorStatus(
-      'Could not restart to install the update. Quit and reopen Orca, then try again.'
+      'Could not restart to install the update. Quit and reopen AIO-ADE, then try again.'
     )
   }
 }
@@ -764,7 +764,9 @@ function handleQuitAndInstallFailure(): boolean {
     level: 'warn',
     message: 'Update install could not start; recovered app state'
   })
-  sendErrorStatus('Could not restart to install the update. Quit and reopen Orca, then try again.')
+  sendErrorStatus(
+    'Could not restart to install the update. Quit and reopen AIO-ADE, then try again.'
+  )
   return true
 }
 
@@ -919,11 +921,12 @@ export function getUpdateStatus(): UpdateStatus {
 }
 
 export function getRemoteServerUpdateSupport(): RemoteServerUpdateSupport {
-  if (!app.isPackaged || is.dev) {
+  const disabledReason = getUpdaterDisabledReason()
+  if (disabledReason) {
     return {
       installMode: updateInstallMode,
       automatic: false,
-      reason: 'unpackaged-build'
+      reason: disabledReason
     }
   }
   if (!autoUpdaterInitialized) {
@@ -1008,7 +1011,7 @@ function scheduleAutomaticUpdateCheck(delayMs: number): void {
     clearTimeout(autoUpdateCheckTimer)
   }
   autoUpdateCheckTimer = setTimeout(() => {
-    // Why: Orca runs for days, so keep the next background check scheduled in the main process rather than tying it to relaunches or renderer lifetime.
+    // Why: AIO-ADE runs for days, so keep the next background check scheduled in the main process rather than tying it to relaunches or renderer lifetime.
     if (!runBackgroundUpdateCheck()) {
       // Why: a deferred check reaches no outcome handler, so re-arm here or one deferral ends automatic checks for the process lifetime.
       scheduleAutomaticUpdateCheck(AUTO_UPDATE_CHECK_INTERVAL_MS)
@@ -1195,7 +1198,7 @@ async function pinDefaultReleaseFeed(
   } else {
     clearPrereleaseFallbackContext()
     clearPublishingWindowLastGoodCheck()
-    const url = 'https://github.com/stablyai/orca/releases/latest/download'
+    const url = 'https://github.com/keepmeside/aio-ade-platform/releases/latest/download'
     console.info(
       `[updater] release feed fallback: current=${currentVersion} includePrerelease=${includePrerelease} → ${url}`
     )
@@ -1272,7 +1275,7 @@ function runBackgroundUpdateCheck(
   if (backgroundCheckLaunchPending || currentStatus.state === 'checking') {
     return false
   }
-  if (!app.isPackaged || is.dev) {
+  if (isUpdaterDisabled()) {
     sendStatus({ state: 'not-available' })
     return false
   }
@@ -1332,7 +1335,7 @@ function enableIncludePrerelease(): void {
 
 /** Menu-triggered check — delegates feedback to renderer toasts via userInitiated flag */
 export function checkForUpdatesFromMenu(options?: UpdateCheckOptions): void {
-  if (!app.isPackaged || is.dev) {
+  if (isUpdaterDisabled()) {
     sendStatus({ state: 'not-available', userInitiated: true })
     return
   }
@@ -1497,7 +1500,7 @@ export function quitAndInstall(): void {
 }
 
 async function checkForUpdateNudge(): Promise<void> {
-  if (!app.isPackaged || is.dev) {
+  if (isUpdaterDisabled()) {
     return
   }
   if (nudgeCheckInFlight) {
@@ -1613,10 +1616,11 @@ export function setupAutoUpdater(
     sendErrorStatus(`The server update did not complete: ${serveHandoffFailure}`, true)
   }
 
-  if (!app.isPackaged && !is.dev) {
-    return
-  }
-  if (is.dev) {
+  /* Why here: this is the point that requires electron-updater and registers its handlers, so
+   * returning first leaves the updater entirely unarmed rather than armed against a channel it must
+   * not use. The serve-handoff diagnostic above still reports, since it describes an install that
+   * already happened. */
+  if (isUpdaterDisabled()) {
     return
   }
 
@@ -1645,7 +1649,7 @@ export function setupAutoUpdater(
   if (activeUpdateSource === 'release') {
     autoUpdater.setFeedURL({
       provider: 'generic',
-      url: 'https://github.com/stablyai/orca/releases/latest/download'
+      url: 'https://github.com/keepmeside/aio-ade-platform/releases/latest/download'
     })
   }
 

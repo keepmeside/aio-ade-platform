@@ -1,59 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import { resolveTerminalOrchestrationCliCommand } from './cli-command'
+import { CLI_COMMAND_NAME } from '../../../shared/cli-command-name'
+
+/* This resolver used to choose between two installed names per host. The rebrand ships one name
+ * everywhere, so the only property left worth pinning is that the preamble is fed the same command
+ * this app actually installs on PATH — a mismatch here teaches agents a command that does not
+ * exist, and fails at agent runtime rather than at build time. */
 
 describe('resolveTerminalOrchestrationCliCommand', () => {
-  it('uses orca-ide for a pane recorded as WSL', () => {
-    expect(
-      resolveTerminalOrchestrationCliCommand({
-        connectionId: null,
-        isWsl: true,
-        worktreeId: 'repo::C:\\repo'
-      })
-    ).toBe('orca-ide')
+  it('returns the command this app installs on PATH', () => {
+    expect(resolveTerminalOrchestrationCliCommand()).toBe(CLI_COMMAND_NAME)
   })
 
-  it('uses project runtime and WSL paths when restored pane metadata is unavailable', () => {
-    expect(
-      resolveTerminalOrchestrationCliCommand({
-        connectionId: null,
-        isWsl: null,
-        worktreeId: 'repo::C:\\repo',
-        projectRuntime: {
-          status: 'resolved',
-          runtime: {
-            kind: 'wsl',
-            hostPlatform: 'wsl',
-            projectId: 'project',
-            distro: 'Ubuntu',
-            reason: 'project-override',
-            cacheKey: 'project:wsl:Ubuntu'
-          }
-        }
-      })
-    ).toBe('orca-ide')
-    expect(
-      resolveTerminalOrchestrationCliCommand({
-        connectionId: null,
-        isWsl: null,
-        worktreeId: 'repo::\\\\wsl.localhost\\Ubuntu\\home\\alice\\repo'
-      })
-    ).toBe('orca-ide')
-  })
-
-  it('preserves native and SSH bare-orca commands', () => {
-    expect(
-      resolveTerminalOrchestrationCliCommand({
-        connectionId: null,
-        isWsl: false,
-        worktreeId: 'repo::/home/alice/repo'
-      })
-    ).toBe('orca')
-    expect(
-      resolveTerminalOrchestrationCliCommand({
-        connectionId: 'ssh-1',
-        isWsl: null,
-        worktreeId: 'repo::\\\\wsl.localhost\\Ubuntu\\home\\alice\\repo'
-      })
-    ).toBe('orca')
+  it('is host-independent, so no caller has to resolve WSL or SSH context for it', () => {
+    // Guards the seam against regrowing per-host branching without a decision to do so.
+    expect(resolveTerminalOrchestrationCliCommand.length).toBe(0)
   })
 })

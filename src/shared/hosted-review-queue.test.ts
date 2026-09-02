@@ -9,9 +9,15 @@ import {
 
 function baseSummary(overrides: Partial<HostedReviewQueueSummary> = {}): HostedReviewQueueSummary {
   return {
-    identity: { provider: 'github', host: 'github.com', owner: 'acme', repo: 'orca', number: 42 },
+    identity: {
+      provider: 'github',
+      host: 'github.com',
+      owner: 'acme',
+      repo: 'aio-ade',
+      number: 42
+    },
     title: 'Improve checks panel',
-    url: 'https://github.com/acme/orca/pull/42',
+    url: 'https://github.com/acme/aio-ade/pull/42',
     state: 'open',
     author: { login: 'teammate' },
     updatedAt: '2026-05-10T00:00:00.000Z',
@@ -28,14 +34,14 @@ describe('hostedReviewIdentityKey', () => {
       provider: 'github',
       host: 'github.com',
       owner: 'acme',
-      repo: 'orca',
+      repo: 'aio-ade',
       number: 7
     })
     const ghe = hostedReviewIdentityKey({
       provider: 'github',
       host: 'github.acme.internal',
       owner: 'acme',
-      repo: 'orca',
+      repo: 'aio-ade',
       number: 7
     })
     expect(dotcom).not.toBe(ghe)
@@ -57,8 +63,8 @@ describe('classifyHostedReview', () => {
     ).toBe('requested')
 
     expect(
-      classifyHostedReview(baseSummary({ author: { login: 'orca-ci' } }), {
-        agentAuthorLogins: ['orca-ci']
+      classifyHostedReview(baseSummary({ author: { login: 'aio-ade-ci' } }), {
+        agentAuthorLogins: ['aio-ade-ci']
       }).state
     ).toBe('agent')
 
@@ -113,7 +119,7 @@ describe('reviewReadyToMerge', () => {
             provider: 'gitlab',
             host: 'gitlab.com',
             owner: 'acme',
-            repo: 'orca',
+            repo: 'aio-ade',
             number: 42
           },
           mergeStateStatus: 'BLOCKED'

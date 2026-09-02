@@ -120,7 +120,7 @@ import {
 type GhExecOptions = GitHubRepoExecOptions
 type HostedReviewLocalGitOptions = ReturnType<typeof getHostedReviewLocalGitOptions>
 
-const ORCA_REPO = 'stablyai/orca'
+const AIO_ADE_REPO = 'keepmeside/aio-ade-platform'
 const PR_CHECK_LOG_TAIL_JOB_LIMIT = 5
 // Why: each entry holds up to 16KB of log text; bound the cache so a long session can't grow it unbounded.
 const PR_CHECK_LOG_TAIL_CACHE_MAX_ENTRIES = 128
@@ -222,15 +222,15 @@ function isNoPullRequestError(err: unknown): boolean {
 }
 
 /**
- * Check if the authenticated user has starred the Orca repo.
+ * Check if the authenticated user has starred the AIO-ADE repo.
  * Returns true if starred, false if not, null if unable to determine (gh unavailable).
  */
-export async function checkOrcaStarred(): Promise<boolean | null> {
+export async function checkAioAdeStarred(): Promise<boolean | null> {
   await acquire()
   try {
     const { stdout, stderr } = await execFileAsync(
       'gh',
-      ['api', '--include', `user/starred/${ORCA_REPO}`],
+      ['api', '--include', `user/starred/${AIO_ADE_REPO}`],
       { encoding: 'utf-8' }
     )
     const response = `${stdout ?? ''}\n${stderr ?? ''}`
@@ -404,12 +404,12 @@ export async function getPullRequestPushTarget(
 }
 
 /**
- * Star the Orca repo for the authenticated user.
+ * Star the AIO-ADE repo for the authenticated user.
  */
-export async function starOrca(): Promise<boolean> {
+export async function starAioAde(): Promise<boolean> {
   await acquire()
   try {
-    await execFileAsync('gh', ['api', '-X', 'PUT', `user/starred/${ORCA_REPO}`], {
+    await execFileAsync('gh', ['api', '-X', 'PUT', `user/starred/${AIO_ADE_REPO}`], {
       encoding: 'utf-8'
     })
     return true
@@ -1881,7 +1881,7 @@ export async function createGitHubPullRequest(
     }
   }
 
-  const tempDir = await mkdtemp(join(tmpdir(), 'orca-pr-body-'))
+  const tempDir = await mkdtemp(join(tmpdir(), 'aio-ade-pr-body-'))
   await acquire()
   const bodyPath = join(tempDir, 'body.md')
   try {
@@ -3151,7 +3151,7 @@ export async function getPRForBranchOutcome(
     const shouldPreserveMergedFallback =
       !explicitHeadHidesMergedImplicitPR &&
       (fallbackConfirmedMergedBranch || options.acceptMergedFallbackPR === true)
-    // Why: a visible PR can be merged outside Orca; keep a caller-marked fallback fresh even when GitHub no longer reports it by branch (e.g. deleted heads).
+    // Why: a visible PR can be merged outside AIO-ADE; keep a caller-marked fallback fresh even when GitHub no longer reports it by branch (e.g. deleted heads).
     if ((await hideMergedImplicitPR(data, dataRepo)) && !shouldPreserveMergedFallback) {
       return { kind: 'no-pr', fetchedAt: Date.now() }
     }

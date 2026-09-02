@@ -17,7 +17,7 @@ import {
   buildHostCliEnv,
   resolveHostCliEntryPath,
   resolveHostCliKillTimeoutMs,
-  runHostOrcaCliPassthrough
+  runHostAioAdeCliPassthrough
 } from './ssh-remote-cli-host-passthrough'
 import { resolveOrchestrationAskClientTimeoutMs } from '../../shared/orchestration-ask-timeout'
 import { remoteCliRequestTimeoutMs } from '../../relay/remote-cli-timeout'
@@ -58,34 +58,34 @@ describe('resolveHostCliEntryPath', () => {
 })
 
 describe('buildHostCliEnv', () => {
-  it('forwards only Orca terminal-context vars from the remote env', () => {
+  it('forwards only AIO-ADE terminal-context vars from the remote env', () => {
     const env = buildHostCliEnv({
       hostEnv: { PATH: '/host/bin', NODE_OPTIONS: '--inspect' },
       remoteEnv: {
-        ORCA_TERMINAL_HANDLE: 'term_remote',
-        ORCA_WORKTREE_ID: 'repo::/home/alice/wt',
-        ORCA_PANE_KEY: 'pane-9',
-        ORCA_WORKSPACE_ID: 'ws-1',
+        AIO_ADE_TERMINAL_HANDLE: 'term_remote',
+        AIO_ADE_WORKTREE_ID: 'repo::/home/alice/wt',
+        AIO_ADE_PANE_KEY: 'pane-9',
+        AIO_ADE_WORKSPACE_ID: 'ws-1',
         // Why: these are remote-machine paths and must not leak into the host
         // subprocess (PATH would break host binary lookup; user-data would
         // retarget the CLI at a different local instance).
         PATH: '/remote/bin',
-        ORCA_USER_DATA_PATH: '/remote/user-data'
+        AIO_ADE_USER_DATA_PATH: '/remote/user-data'
       },
       userDataPath: '/host/user-data',
       remoteCwd: '/home/alice/wt/sub'
     })
 
-    expect(env.ORCA_TERMINAL_HANDLE).toBe('term_remote')
-    expect(env.ORCA_WORKTREE_ID).toBe('repo::/home/alice/wt')
-    expect(env.ORCA_PANE_KEY).toBe('pane-9')
-    expect(env.ORCA_WORKSPACE_ID).toBe('ws-1')
+    expect(env.AIO_ADE_TERMINAL_HANDLE).toBe('term_remote')
+    expect(env.AIO_ADE_WORKTREE_ID).toBe('repo::/home/alice/wt')
+    expect(env.AIO_ADE_PANE_KEY).toBe('pane-9')
+    expect(env.AIO_ADE_WORKSPACE_ID).toBe('ws-1')
     expect(env.PATH).toBe('/host/bin')
-    expect(env.ORCA_USER_DATA_PATH).toBe('/host/user-data')
-    expect(env.ORCA_CLI_CWD).toBe('/home/alice/wt/sub')
+    expect(env.AIO_ADE_USER_DATA_PATH).toBe('/host/user-data')
+    expect(env.AIO_ADE_CLI_CWD).toBe('/home/alice/wt/sub')
     expect(env.ELECTRON_RUN_AS_NODE).toBe('1')
     expect(env.NODE_OPTIONS).toBeUndefined()
-    expect(env.ORCA_NODE_OPTIONS).toBe('--inspect')
+    expect(env.AIO_ADE_NODE_OPTIONS).toBe('--inspect')
   })
 })
 
@@ -169,16 +169,16 @@ describe('resolveHostCliKillTimeoutMs', () => {
   })
 })
 
-describe('runHostOrcaCliPassthrough', () => {
+describe('runHostAioAdeCliPassthrough', () => {
   it('spawns the bundled CLI entry with the remote argv and returns captured output', async () => {
     const child = createFakeChild()
     const spawn = vi.fn(() => child)
 
-    const resultPromise = runHostOrcaCliPassthrough(
+    const resultPromise = runHostAioAdeCliPassthrough(
       {
         argv: ['orchestration', 'task-create', '--spec', 'do the thing', '--json'],
         cwd: '/home/alice/wt',
-        env: { ORCA_TERMINAL_HANDLE: 'term_remote' }
+        env: { AIO_ADE_TERMINAL_HANDLE: 'term_remote' }
       },
       { ...BASE_OPTIONS, spawn: spawn as never }
     )
@@ -207,8 +207,8 @@ describe('runHostOrcaCliPassthrough', () => {
       '--json'
     ])
     expect(options.env.ELECTRON_RUN_AS_NODE).toBe('1')
-    expect(options.env.ORCA_CLI_CWD).toBe('/home/alice/wt')
-    expect(options.env.ORCA_TERMINAL_HANDLE).toBe('term_remote')
+    expect(options.env.AIO_ADE_CLI_CWD).toBe('/home/alice/wt')
+    expect(options.env.AIO_ADE_TERMINAL_HANDLE).toBe('term_remote')
     // Why: stdin must be closed even without a payload so CLI handlers that
     // stream stdin see EOF instead of hanging forever.
     expect(child.stdin.end).toHaveBeenCalledWith()
@@ -218,7 +218,7 @@ describe('runHostOrcaCliPassthrough', () => {
     const child = createFakeChild()
     const spawn = vi.fn(() => child)
 
-    const resultPromise = runHostOrcaCliPassthrough(
+    const resultPromise = runHostAioAdeCliPassthrough(
       {
         argv: ['linear', 'comment', 'add', 'ENG-1', '--body-file', '-'],
         cwd: '/home/alice/wt',
@@ -239,7 +239,7 @@ describe('runHostOrcaCliPassthrough', () => {
     const child = createFakeChild()
     const spawn = vi.fn(() => child)
 
-    const resultPromise = runHostOrcaCliPassthrough(
+    const resultPromise = runHostAioAdeCliPassthrough(
       { argv: ['worktree', 'show'], cwd: '/', env: {} },
       { ...BASE_OPTIONS, spawn: spawn as never }
     )
@@ -254,7 +254,7 @@ describe('runHostOrcaCliPassthrough', () => {
   it('throws HostCliUnavailableError when the CLI entry is missing', async () => {
     const spawn = vi.fn()
     await expect(
-      runHostOrcaCliPassthrough(
+      runHostAioAdeCliPassthrough(
         { argv: ['status'], cwd: '/', env: {} },
         { ...BASE_OPTIONS, entryExists: () => false, spawn: spawn as never }
       )
@@ -265,7 +265,7 @@ describe('runHostOrcaCliPassthrough', () => {
   it('rejects an invalid injected kill timeout before spawning', async () => {
     const spawn = vi.fn()
     await expect(
-      runHostOrcaCliPassthrough(
+      runHostAioAdeCliPassthrough(
         { argv: ['status'], cwd: '/', env: {} },
         { ...BASE_OPTIONS, spawn: spawn as never, killTimeoutMs: 2_147_483_648 }
       )
@@ -277,7 +277,7 @@ describe('runHostOrcaCliPassthrough', () => {
     const child = createFakeChild()
     const spawn = vi.fn(() => child)
 
-    const resultPromise = runHostOrcaCliPassthrough(
+    const resultPromise = runHostAioAdeCliPassthrough(
       { argv: ['status'], cwd: '/', env: {} },
       { ...BASE_OPTIONS, spawn: spawn as never }
     )
@@ -294,7 +294,7 @@ describe('runHostOrcaCliPassthrough', () => {
       const child = createFakeChild()
       const spawn = vi.fn(() => child)
 
-      const resultPromise = runHostOrcaCliPassthrough(
+      const resultPromise = runHostAioAdeCliPassthrough(
         { argv: ['terminal', 'wait', '--for', 'exit'], cwd: '/', env: {} },
         { ...BASE_OPTIONS, spawn: spawn as never, killTimeoutMs: 1000 }
       )
@@ -313,7 +313,7 @@ describe('runHostOrcaCliPassthrough', () => {
     const child = createFakeChild()
     const spawn = vi.fn(() => child)
 
-    const resultPromise = runHostOrcaCliPassthrough(
+    const resultPromise = runHostAioAdeCliPassthrough(
       { argv: ['terminal', 'read'], cwd: '/', env: {} },
       { ...BASE_OPTIONS, spawn: spawn as never }
     )

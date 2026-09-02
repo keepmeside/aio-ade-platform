@@ -43,19 +43,19 @@ async function makeFixture(): Promise<{
   userDataPath: string
   appPath: string
 }> {
-  const root = await mkdtemp(join(tmpdir(), 'orca-cli-installer-'))
+  const root = await mkdtemp(join(tmpdir(), 'aio-ade-cli-installer-'))
   const userDataPath = join(root, 'userData')
   const appPath = join(root, 'app')
   const cliEntryPath = join(appPath, 'out', 'cli', 'index.js')
   await mkdir(join(appPath, 'out', 'cli'), { recursive: true })
-  await writeFile(cliEntryPath, 'console.log("orca")\n', 'utf8')
+  await writeFile(cliEntryPath, 'console.log("aio-ade")\n', 'utf8')
   return { root, userDataPath, appPath }
 }
 
 async function createPackagedMacLauncher(root: string): Promise<string> {
   const resourcesPath = join(root, 'resources')
   await mkdir(join(resourcesPath, 'bin'), { recursive: true })
-  await writeFile(join(resourcesPath, 'bin', 'orca'), '#!/usr/bin/env bash\necho orca\n', {
+  await writeFile(join(resourcesPath, 'bin', 'aio-ade'), '#!/usr/bin/env bash\necho aio-ade\n', {
     encoding: 'utf8',
     mode: 0o755
   })
@@ -77,12 +77,12 @@ describe('CliInstaller', () => {
     'creates a dev launcher and installs a macOS symlink in the requested path',
     async () => {
       const fixture = await makeFixture()
-      const installPath = join(fixture.root, 'bin', 'orca')
+      const installPath = join(fixture.root, 'bin', 'aio-ade')
       const installer = new CliInstaller({
         platform: 'darwin',
         isPackaged: false,
         userDataPath: fixture.userDataPath,
-        execPath: '/Applications/Orca.app/Contents/MacOS/Orca',
+        execPath: '/Applications/AIO-ADE.app/Contents/MacOS/AIO-ADE',
         appPath: fixture.appPath,
         commandPathOverride: installPath,
         processPathEnv: join(fixture.root, 'bin')
@@ -90,7 +90,7 @@ describe('CliInstaller', () => {
 
       const initial = await installer.getStatus()
       expect(initial.state).toBe('not_installed')
-      expect(initial.launcherPath).toContain(join('userData', 'cli', 'bin', 'orca'))
+      expect(initial.launcherPath).toContain(join('userData', 'cli', 'bin', 'aio-ade'))
 
       const installed = await installer.install()
       expect(installed.state).toBe('installed')
@@ -98,8 +98,8 @@ describe('CliInstaller', () => {
 
       const launcherContent = await readFile(installed.launcherPath as string, 'utf8')
       expect(launcherContent).toContain('ELECTRON_RUN_AS_NODE=1')
-      expect(launcherContent).toContain(`export ORCA_USER_DATA_PATH='${fixture.userDataPath}'`)
-      expect(launcherContent).toContain('export ORCA_APP_EXECUTABLE="$ELECTRON"')
+      expect(launcherContent).toContain(`export AIO_ADE_USER_DATA_PATH='${fixture.userDataPath}'`)
+      expect(launcherContent).toContain('export AIO_ADE_APP_EXECUTABLE="$ELECTRON"')
       expect(launcherContent).toContain(join(fixture.appPath, 'out', 'cli', 'index.js'))
 
       const removed = await installer.remove()
@@ -112,12 +112,12 @@ describe('CliInstaller', () => {
     'creates a linux symlink under the requested path and warns when PATH is missing',
     async () => {
       const fixture = await makeFixture()
-      const installPath = join(fixture.root, '.local', 'bin', 'orca-ide')
+      const installPath = join(fixture.root, '.local', 'bin', 'aio-ade')
       const installer = new CliInstaller({
         platform: 'linux',
         isPackaged: false,
         userDataPath: fixture.userDataPath,
-        execPath: '/opt/Orca/orca-ide',
+        execPath: '/opt/AIO-ADE/aio-ade',
         appPath: fixture.appPath,
         commandPathOverride: installPath,
         processPathEnv: '/usr/bin'
@@ -125,13 +125,13 @@ describe('CliInstaller', () => {
 
       const installed = await installer.install()
       expect(installed.state).toBe('installed')
-      expect(installed.commandName).toBe('orca-ide')
+      expect(installed.commandName).toBe('aio-ade')
       expect(installed.pathConfigured).toBe(false)
       expect(installed.detail).toContain('.local')
 
       const launcherContent = await readFile(installed.launcherPath as string, 'utf8')
       expect(launcherContent).toContain('ELECTRON_RUN_AS_NODE=1')
-      expect(launcherContent).toContain(`export ORCA_USER_DATA_PATH='${fixture.userDataPath}'`)
+      expect(launcherContent).toContain(`export AIO_ADE_USER_DATA_PATH='${fixture.userDataPath}'`)
 
       const removed = await installer.remove()
       expect(removed.state).toBe('not_installed')
@@ -139,9 +139,9 @@ describe('CliInstaller', () => {
   )
 
   // Why: dev installs are useful for validation, but they must not replace the
-  // packaged `orca` / `orca-ide` commands developers rely on day to day.
+  // packaged `aio-ade` / `aio-ade` commands developers rely on day to day.
   it.skipIf(process.platform === 'win32')(
-    'uses a separate orca-dev command for default development installs',
+    'uses a separate aio-ade-dev command for default development installs',
     async () => {
       const fixture = await makeFixture()
       const homePath = join(fixture.root, 'home')
@@ -150,7 +150,7 @@ describe('CliInstaller', () => {
         platform: 'linux',
         isPackaged: false,
         userDataPath: fixture.userDataPath,
-        execPath: '/opt/Orca/orca-ide',
+        execPath: '/opt/AIO-ADE/aio-ade',
         appPath: fixture.appPath,
         homePath,
         processPathEnv: commandDir
@@ -158,12 +158,12 @@ describe('CliInstaller', () => {
 
       const installed = await installer.install()
       expect(installed.state).toBe('installed')
-      expect(installed.commandName).toBe('orca-dev')
-      expect(installed.commandPath).toBe(join(commandDir, 'orca-dev'))
-      expect(installed.launcherPath).toBe(join(fixture.userDataPath, 'cli', 'bin', 'orca-dev'))
+      expect(installed.commandName).toBe('aio-ade-dev')
+      expect(installed.commandPath).toBe(join(commandDir, 'aio-ade-dev'))
+      expect(installed.launcherPath).toBe(join(fixture.userDataPath, 'cli', 'bin', 'aio-ade-dev'))
       await expect(readlink(installed.commandPath as string)).resolves.toBe(installed.launcherPath)
       await expect(
-        readFile(join(fixture.userDataPath, 'cli', 'bin', 'orca'), 'utf8')
+        readFile(join(fixture.userDataPath, 'cli', 'bin', 'aio-ade'), 'utf8')
       ).resolves.toBe(await readFile(installed.launcherPath as string, 'utf8'))
     }
   )
@@ -175,8 +175,8 @@ describe('CliInstaller', () => {
     async () => {
       const fixture = await makeFixture()
       const commandDir = join(fixture.root, '.local', 'bin')
-      const installPath = join(commandDir, 'orca-ide')
-      const appImagePath = join(fixture.root, 'Orca.AppImage')
+      const installPath = join(commandDir, 'aio-ade')
+      const appImagePath = join(fixture.root, 'AIO-ADE.AppImage')
       await writeFile(appImagePath, '#!/usr/bin/env bash\n', {
         encoding: 'utf8',
         mode: 0o755
@@ -200,7 +200,7 @@ describe('CliInstaller', () => {
       const installed = await installer.install()
       expect(installed).toMatchObject({
         state: 'installed',
-        commandName: 'orca-ide',
+        commandName: 'aio-ade',
         installMethod: 'wrapper',
         launcherPath: appImagePath,
         currentTarget: appImagePath,
@@ -225,9 +225,9 @@ describe('CliInstaller', () => {
     async () => {
       const fixture = await makeFixture()
       const commandDir = join(fixture.root, '.local', 'bin')
-      const installPath = join(commandDir, 'orca-ide')
-      const oldAppImagePath = join(fixture.root, 'Old-Orca.AppImage')
-      const newAppImagePath = join(fixture.root, 'Orca.AppImage')
+      const installPath = join(commandDir, 'aio-ade')
+      const oldAppImagePath = join(fixture.root, 'Old-AIO-ADE.AppImage')
+      const newAppImagePath = join(fixture.root, 'AIO-ADE.AppImage')
       await mkdir(commandDir, { recursive: true })
       await writeFile(installPath, buildAppImageCliWrapper(oldAppImagePath), {
         encoding: 'utf8',
@@ -259,23 +259,30 @@ describe('CliInstaller', () => {
     }
   )
 
-  // Why: Linux renamed the public command to avoid shadowing GNOME Orca, so
-  // upgrading must clean up only the old symlink owned by prior Orca installs.
+  /* Pre-rebrand installs put one of two names on PATH: `orca` on macOS/Windows, and `orca-ide` on
+   * Linux where a bare `orca` would shadow GNOME Orca. Both are now dangling symlinks into a
+   * launcher this app no longer ships, so an upgrade has to reclaim either one — and only when this
+   * app is the symlink's owner. */
   it.skipIf(process.platform === 'win32')(
-    'removes the old managed linux orca symlink when installing orca-ide',
+    'reclaims both pre-rebrand linux symlinks when installing the canonical command',
     async () => {
       const fixture = await makeFixture()
       const homePath = join(fixture.root, 'home')
       const commandDir = join(homePath, '.local', 'bin')
       const resourcesPath = join(fixture.root, 'resources')
-      const launcherPath = join(resourcesPath, 'bin', 'orca-ide')
-      const oldLauncherPath = join(resourcesPath, 'bin', 'orca')
-      const legacyCommandPath = join(commandDir, 'orca')
+      const launcherPath = join(resourcesPath, 'bin', 'aio-ade')
       await mkdir(commandDir, { recursive: true })
       await mkdir(join(resourcesPath, 'bin'), { recursive: true })
       await writeFile(launcherPath, '#!/usr/bin/env bash\n', 'utf8')
-      await writeFile(oldLauncherPath, '#!/usr/bin/env bash\n', 'utf8')
-      await symlink(oldLauncherPath, legacyCommandPath)
+
+      const legacyPaths: string[] = []
+      for (const legacyName of ['orca', 'orca-ide']) {
+        const oldLauncherPath = join(resourcesPath, 'bin', legacyName)
+        const legacyCommandPath = join(commandDir, legacyName)
+        await writeFile(oldLauncherPath, '#!/usr/bin/env bash\n', 'utf8')
+        await symlink(oldLauncherPath, legacyCommandPath)
+        legacyPaths.push(legacyCommandPath)
+      }
 
       const installer = new CliInstaller({
         platform: 'linux',
@@ -286,25 +293,36 @@ describe('CliInstaller', () => {
       })
 
       const installed = await installer.install()
-      expect(installed.commandPath).toBe(join(commandDir, 'orca-ide'))
-      await expect(lstat(legacyCommandPath)).rejects.toMatchObject({ code: 'ENOENT' })
+
+      expect(installed.commandPath).toBe(join(commandDir, 'aio-ade'))
+      for (const legacyCommandPath of legacyPaths) {
+        await expect(lstat(legacyCommandPath)).rejects.toMatchObject({ code: 'ENOENT' })
+      }
+      // The canonical name is what survives, not a casualty of the sweep.
+      await expect(lstat(join(commandDir, 'aio-ade'))).resolves.toBeDefined()
     }
   )
 
   it.skipIf(process.platform === 'win32')(
-    'removes a legacy linux orca symlink when installing an AppImage wrapper',
+    'reclaims a pre-rebrand symlink stranded in a gone AppImage mount',
     async () => {
       const fixture = await makeFixture()
       const homePath = join(fixture.root, 'home')
       const commandDir = join(homePath, '.local', 'bin')
-      const legacyCommandPath = join(commandDir, 'orca')
-      const appImagePath = join(fixture.root, 'Orca.AppImage')
+      // Why this shape: an AppImage upgrade leaves the old symlink pointing into a FUSE mount that
+      // no longer exists, so the target is not a sibling of the current launcher and only the
+      // resources/bin suffix identifies it as ours. The name in it is the one the old build shipped.
+      const legacyCommandPath = join(commandDir, 'orca-ide')
+      const appImagePath = join(fixture.root, 'AIO-ADE.AppImage')
       await mkdir(commandDir, { recursive: true })
       await writeFile(appImagePath, '#!/usr/bin/env bash\n', {
         encoding: 'utf8',
         mode: 0o755
       })
-      await symlink(join('/tmp', '.mount_Orca1234', 'resources', 'bin', 'orca'), legacyCommandPath)
+      await symlink(
+        join('/tmp', '.mount_aio-ade1234', 'resources', 'bin', 'orca-ide'),
+        legacyCommandPath
+      )
 
       const installer = new CliInstaller({
         platform: 'linux',
@@ -315,20 +333,20 @@ describe('CliInstaller', () => {
       })
 
       const installed = await installer.install()
-      expect(installed.commandPath).toBe(join(commandDir, 'orca-ide'))
+      expect(installed.commandPath).toBe(join(commandDir, 'aio-ade'))
       await expect(lstat(legacyCommandPath)).rejects.toMatchObject({ code: 'ENOENT' })
     }
   )
 
   it('creates a windows wrapper and updates the user PATH', async () => {
     const fixture = await makeFixture()
-    const installPath = join(fixture.root, 'Programs', 'Orca', 'bin', 'orca.cmd')
+    const installPath = join(fixture.root, 'Programs', 'AIO-ADE', 'bin', 'aio-ade.cmd')
     let userPath = 'C:\\Windows\\System32'
     const installer = new CliInstaller({
       platform: 'win32',
       isPackaged: false,
       userDataPath: fixture.userDataPath,
-      execPath: 'C:\\Users\\me\\AppData\\Local\\Orca\\Orca.exe',
+      execPath: 'C:\\Users\\me\\AppData\\Local\\AIO-ADE\\AIO-ADE.exe',
       appPath: fixture.appPath,
       commandPathOverride: installPath,
       userPathReader: async () => userPathRead(userPath),
@@ -340,30 +358,30 @@ describe('CliInstaller', () => {
     const installed = await installer.install()
     expect(installed.state).toBe('installed')
     expect(installed.pathConfigured).toBe(true)
-    expect(userPath).toContain(join(fixture.root, 'Programs', 'Orca', 'bin'))
+    expect(userPath).toContain(join(fixture.root, 'Programs', 'AIO-ADE', 'bin'))
 
     const wrapperContent = await readFile(installPath, 'utf8')
-    expect(wrapperContent).toContain('ORCA_LAUNCHER=')
-    expect(wrapperContent).toContain('orca.cmd')
+    expect(wrapperContent).toContain('AIO_ADE_LAUNCHER=')
+    expect(wrapperContent).toContain('aio-ade.cmd')
     const launcherContent = await readFile(installed.launcherPath as string, 'utf8')
-    expect(launcherContent).toContain(`set "ORCA_USER_DATA_PATH=${fixture.userDataPath}"`)
-    expect(launcherContent).toContain('set "ORCA_APP_EXECUTABLE=%ELECTRON%"')
+    expect(launcherContent).toContain(`set "AIO_ADE_USER_DATA_PATH=${fixture.userDataPath}"`)
+    expect(launcherContent).toContain('set "AIO_ADE_APP_EXECUTABLE=%ELECTRON%"')
 
     const removed = await installer.remove()
     expect(removed.state).toBe('not_installed')
-    expect(userPath).not.toContain(join(fixture.root, 'Programs', 'Orca', 'bin'))
+    expect(userPath).not.toContain(join(fixture.root, 'Programs', 'AIO-ADE', 'bin'))
   })
 
   it.each(['UnauthorizedAccessException', 'SecurityException'])(
     'rejects with a friendly message for Windows PATH denial: %s',
     async (permissionMarker) => {
       const fixture = await makeFixture()
-      const installPath = join(fixture.root, 'Programs', 'Orca', 'bin', 'orca.cmd')
+      const installPath = join(fixture.root, 'Programs', 'AIO-ADE', 'bin', 'aio-ade.cmd')
       const installer = new CliInstaller({
         platform: 'win32',
         isPackaged: false,
         userDataPath: fixture.userDataPath,
-        execPath: 'C:\\Users\\me\\AppData\\Local\\Orca\\Orca.exe',
+        execPath: 'C:\\Users\\me\\AppData\\Local\\AIO-ADE\\AIO-ADE.exe',
         appPath: fixture.appPath,
         commandPathOverride: installPath,
         userPathReader: async () => userPathRead('C:\\Windows\\System32'),
@@ -395,9 +413,9 @@ describe('CliInstaller', () => {
       platform: 'win32',
       isPackaged: false,
       userDataPath: fixture.userDataPath,
-      execPath: 'C:\\Users\\me\\AppData\\Local\\Orca\\Orca.exe',
+      execPath: 'C:\\Users\\me\\AppData\\Local\\AIO-ADE\\AIO-ADE.exe',
       appPath: fixture.appPath,
-      commandPathOverride: join(fixture.root, 'Programs', 'Orca', 'bin', 'orca.cmd'),
+      commandPathOverride: join(fixture.root, 'Programs', 'AIO-ADE', 'bin', 'aio-ade.cmd'),
       userPathReader: async () => userPathRead('C:\\Windows\\System32'),
       userPathWriter
     })
@@ -416,12 +434,12 @@ describe('CliInstaller', () => {
     'propagates a non-permission Windows PATH write error unchanged: %s',
     async (_name, message) => {
       const fixture = await makeFixture()
-      const installPath = join(fixture.root, 'Programs', 'Orca', 'bin', 'orca.cmd')
+      const installPath = join(fixture.root, 'Programs', 'AIO-ADE', 'bin', 'aio-ade.cmd')
       const installer = new CliInstaller({
         platform: 'win32',
         isPackaged: false,
         userDataPath: fixture.userDataPath,
-        execPath: 'C:\\Users\\me\\AppData\\Local\\Orca\\Orca.exe',
+        execPath: 'C:\\Users\\me\\AppData\\Local\\AIO-ADE\\AIO-ADE.exe',
         appPath: fixture.appPath,
         commandPathOverride: installPath,
         userPathReader: async () => userPathRead('C:\\Windows\\System32'),
@@ -438,17 +456,17 @@ describe('CliInstaller', () => {
 
   it('reports an unknown Windows PATH without spawning PowerShell', async () => {
     const fixture = await makeFixture()
-    const installPath = join(fixture.root, 'Programs', 'Orca', 'bin', 'orca.cmd')
+    const installPath = join(fixture.root, 'Programs', 'AIO-ADE', 'bin', 'aio-ade.cmd')
     const installer = new CliInstaller({
       platform: 'win32',
       isPackaged: false,
       userDataPath: fixture.userDataPath,
-      execPath: 'C:\\Users\\me\\AppData\\Local\\Orca\\Orca.exe',
+      execPath: 'C:\\Users\\me\\AppData\\Local\\AIO-ADE\\AIO-ADE.exe',
       appPath: fixture.appPath,
       commandPathOverride: installPath,
       userPathReader: async () => ({
         state: 'unknown',
-        detail: 'Orca could not read the Windows user PATH registry value.'
+        detail: 'AIO-ADE could not read the Windows user PATH registry value.'
       })
     })
 
@@ -467,12 +485,12 @@ describe('CliInstaller', () => {
       platform: 'win32',
       isPackaged: false,
       userDataPath: fixture.userDataPath,
-      execPath: 'C:\\Users\\me\\AppData\\Local\\Orca\\Orca.exe',
+      execPath: 'C:\\Users\\me\\AppData\\Local\\AIO-ADE\\AIO-ADE.exe',
       appPath: fixture.appPath,
-      commandPathOverride: join(fixture.root, 'Programs', 'Orca', 'bin', 'orca.cmd'),
+      commandPathOverride: join(fixture.root, 'Programs', 'AIO-ADE', 'bin', 'aio-ade.cmd'),
       userPathReader: async () => ({
         state: 'unknown',
-        detail: 'Orca could not read the Windows user PATH registry value.'
+        detail: 'AIO-ADE could not read the Windows user PATH registry value.'
       }),
       userPathWriter
     })
@@ -483,7 +501,7 @@ describe('CliInstaller', () => {
 
   it('bypasses cached status data before a Windows PATH mutation', async () => {
     const fixture = await makeFixture()
-    const installPath = join(fixture.root, 'Programs', 'Orca', 'bin', 'orca.cmd')
+    const installPath = join(fixture.root, 'Programs', 'AIO-ADE', 'bin', 'aio-ade.cmd')
     const pathDirectory = dirname(installPath)
     let registryPath = 'C:\\Tools'
     const registryReader = new WindowsUserPathRegistryReader({
@@ -502,7 +520,7 @@ describe('CliInstaller', () => {
       platform: 'win32',
       isPackaged: false,
       userDataPath: fixture.userDataPath,
-      execPath: 'C:\\Users\\me\\AppData\\Local\\Orca\\Orca.exe',
+      execPath: 'C:\\Users\\me\\AppData\\Local\\AIO-ADE\\AIO-ADE.exe',
       appPath: fixture.appPath,
       commandPathOverride: installPath,
       userPathReader: () => registryReader.read(),
@@ -522,17 +540,17 @@ describe('CliInstaller', () => {
 
   it('matches expandable Windows PATH entries case-insensitively without rewriting them', async () => {
     const fixture = await makeFixture()
-    const installPath = join(fixture.root, 'Local App Data', 'Orca', 'bin', 'orca.cmd')
+    const installPath = join(fixture.root, 'Local App Data', 'AIO-ADE', 'bin', 'aio-ade.cmd')
     const userPathWriter = vi.fn()
     const installer = new CliInstaller({
       platform: 'win32',
       isPackaged: false,
       userDataPath: fixture.userDataPath,
-      execPath: 'C:\\Users\\me\\AppData\\Local\\Orca\\Orca.exe',
+      execPath: 'C:\\Users\\me\\AppData\\Local\\AIO-ADE\\AIO-ADE.exe',
       appPath: fixture.appPath,
       commandPathOverride: installPath,
       windowsEnvironment: { LOCALAPPDATA: join(fixture.root, 'Local App Data') },
-      userPathReader: async () => userPathRead('%localappdata%\\Orca\\bin\\', true),
+      userPathReader: async () => userPathRead('%localappdata%\\AIO-ADE\\bin\\', true),
       userPathWriter
     })
 
@@ -545,33 +563,33 @@ describe('CliInstaller', () => {
 
   it('does not expand environment variables stored in a REG_SZ Windows PATH', async () => {
     const fixture = await makeFixture()
-    const installPath = join(fixture.root, 'Local App Data', 'Orca', 'bin', 'orca.cmd')
+    const installPath = join(fixture.root, 'Local App Data', 'AIO-ADE', 'bin', 'aio-ade.cmd')
     const pathDirectory = dirname(installPath)
     const userPathWriter = vi.fn()
     const installer = new CliInstaller({
       platform: 'win32',
       isPackaged: false,
       userDataPath: fixture.userDataPath,
-      execPath: 'C:\\Users\\me\\AppData\\Local\\Orca\\Orca.exe',
+      execPath: 'C:\\Users\\me\\AppData\\Local\\AIO-ADE\\AIO-ADE.exe',
       appPath: fixture.appPath,
       commandPathOverride: installPath,
       windowsEnvironment: { LOCALAPPDATA: join(fixture.root, 'Local App Data') },
-      userPathReader: async () => userPathRead('%LOCALAPPDATA%\\Orca\\bin'),
+      userPathReader: async () => userPathRead('%LOCALAPPDATA%\\AIO-ADE\\bin'),
       userPathWriter
     })
 
     await installer.install()
 
-    expect(userPathWriter).toHaveBeenCalledWith(`%LOCALAPPDATA%\\Orca\\bin;${pathDirectory}`)
+    expect(userPathWriter).toHaveBeenCalledWith(`%LOCALAPPDATA%\\AIO-ADE\\bin;${pathDirectory}`)
   })
 
-  // Why: this test creates a Unix symlink to /tmp/not-orca, which only applies on macOS/Linux.
+  // Why: this test creates a Unix symlink to /tmp/not-aio-ade, which only applies on macOS/Linux.
   it.skipIf(process.platform === 'win32')(
     'refuses to replace an unknown symlink at the command path',
     async () => {
       const fixture = await makeFixture()
-      const installPath = join(fixture.root, 'bin', 'orca')
-      const existingTarget = '/tmp/not-orca'
+      const installPath = join(fixture.root, 'bin', 'aio-ade')
+      const existingTarget = '/tmp/not-aio-ade'
       await mkdir(join(fixture.root, 'bin'), { recursive: true })
       await symlink(existingTarget, installPath)
 
@@ -579,7 +597,7 @@ describe('CliInstaller', () => {
         platform: 'darwin',
         isPackaged: false,
         userDataPath: fixture.userDataPath,
-        execPath: '/Applications/Orca.app/Contents/MacOS/Orca',
+        execPath: '/Applications/AIO-ADE.app/Contents/MacOS/AIO-ADE',
         appPath: fixture.appPath,
         commandPathOverride: installPath
       })
@@ -588,22 +606,29 @@ describe('CliInstaller', () => {
         state: 'conflict',
         supported: true
       })
-      await expect(installer.install()).rejects.toThrow('Refusing to replace non-Orca command')
+      await expect(installer.install()).rejects.toThrow('Refusing to replace non-AIO-ADE command')
       await expect(readlink(installPath)).resolves.toBe(existingTarget)
     }
   )
 
-  // Why: packaged app moves can leave a symlink to an older Orca-owned launcher;
+  // Why: packaged app moves can leave a symlink to an older AIO-ADE-owned launcher;
   // those are safe to refresh, unlike arbitrary user symlinks.
   it.skipIf(process.platform === 'win32')(
-    'replaces stale packaged Orca launcher symlinks',
+    'replaces stale packaged AIO-ADE launcher symlinks',
     async () => {
       const fixture = await makeFixture()
       const commandDir = join(fixture.root, 'bin')
-      const installPath = join(commandDir, 'orca')
+      const installPath = join(commandDir, 'aio-ade')
       const resourcesPath = join(fixture.root, 'Current.app', 'Contents', 'Resources')
-      const launcherPath = join(resourcesPath, 'bin', 'orca')
-      const oldLauncherPath = join(fixture.root, 'Old.app', 'Contents', 'Resources', 'bin', 'orca')
+      const launcherPath = join(resourcesPath, 'bin', 'aio-ade')
+      const oldLauncherPath = join(
+        fixture.root,
+        'Old.app',
+        'Contents',
+        'Resources',
+        'bin',
+        'aio-ade'
+      )
       await mkdir(commandDir, { recursive: true })
       await mkdir(join(resourcesPath, 'bin'), { recursive: true })
       await writeFile(launcherPath, '#!/usr/bin/env bash\n', 'utf8')
@@ -626,17 +651,17 @@ describe('CliInstaller', () => {
     }
   )
 
-  // Why: old dev/package experiments wrote a generated Orca launcher file
-  // directly into /usr/local/bin/orca. That broke profiling because Settings
+  // Why: old dev/package experiments wrote a generated AIO-ADE launcher file
+  // directly into /usr/local/bin/aio-ade. That broke profiling because Settings
   // treated the regular file as a hard conflict and would not self-heal it.
   it.skipIf(process.platform === 'win32')(
     'replaces stale generated Unix launcher files',
     async () => {
       const fixture = await makeFixture()
       const commandDir = join(fixture.root, 'bin')
-      const installPath = join(commandDir, 'orca')
+      const installPath = join(commandDir, 'aio-ade')
       const resourcesPath = join(fixture.root, 'Current.app', 'Contents', 'Resources')
-      const launcherPath = join(resourcesPath, 'bin', 'orca')
+      const launcherPath = join(resourcesPath, 'bin', 'aio-ade')
       const oldCliPath = join(fixture.root, 'OldWorktree', 'out', 'cli', 'index.js')
       await mkdir(commandDir, { recursive: true })
       await mkdir(join(resourcesPath, 'bin'), { recursive: true })
@@ -648,8 +673,8 @@ describe('CliInstaller', () => {
           'set -euo pipefail',
           "ELECTRON='/tmp/Old.app/Contents/MacOS/Electron'",
           `CLI='${oldCliPath}'`,
-          'export ORCA_NODE_OPTIONS="${NODE_OPTIONS-}"',
-          'export ORCA_NODE_REPL_EXTERNAL_MODULE="${NODE_REPL_EXTERNAL_MODULE-}"',
+          'export AIO_ADE_NODE_OPTIONS="${NODE_OPTIONS-}"',
+          'export AIO_ADE_NODE_REPL_EXTERNAL_MODULE="${NODE_REPL_EXTERNAL_MODULE-}"',
           'unset NODE_OPTIONS',
           'unset NODE_REPL_EXTERNAL_MODULE',
           'ELECTRON_RUN_AS_NODE=1 "$ELECTRON" "$CLI" "$@"',
@@ -680,12 +705,12 @@ describe('CliInstaller', () => {
     async () => {
       const fixture = await makeFixture()
       const commandDir = join(fixture.root, 'bin')
-      const installPath = join(commandDir, 'orca')
+      const installPath = join(commandDir, 'aio-ade')
       const resourcesPath = await createPackagedMacLauncher(fixture.root)
       await mkdir(commandDir, { recursive: true })
       await writeFile(
         installPath,
-        '#!/usr/bin/env bash\nELECTRON_RUN_AS_NODE=1 /tmp/not-orca "$@"\n',
+        '#!/usr/bin/env bash\nELECTRON_RUN_AS_NODE=1 /tmp/not-aio-ade "$@"\n',
         'utf8'
       )
 
@@ -701,24 +726,24 @@ describe('CliInstaller', () => {
         state: 'conflict',
         currentTarget: null
       })
-      await expect(installer.install()).rejects.toThrow('Refusing to replace non-Orca command')
-      await expect(readFile(installPath, 'utf8')).resolves.toContain('/tmp/not-orca')
+      await expect(installer.install()).rejects.toThrow('Refusing to replace non-AIO-ADE command')
+      await expect(readFile(installPath, 'utf8')).resolves.toContain('/tmp/not-aio-ade')
     }
   )
 
   // Why: a dev build can temporarily own the public command on developer
-  // machines; packaged Orca should treat that as stale, not a hard conflict.
+  // machines; packaged AIO-ADE should treat that as stale, not a hard conflict.
   it.skipIf(process.platform === 'win32')(
     'replaces stale sibling dev launcher symlinks from packaged installs',
     async () => {
       const fixture = await makeFixture()
-      for (const devLauncherName of ['orca', 'orca-dev']) {
+      for (const devLauncherName of ['aio-ade', 'aio-ade-dev']) {
         const caseRoot = join(fixture.root, devLauncherName)
         const commandDir = join(caseRoot, 'bin')
-        const installPath = join(commandDir, 'orca')
-        const userDataPath = join(caseRoot, 'orca')
+        const installPath = join(commandDir, 'aio-ade')
+        const userDataPath = join(caseRoot, 'aio-ade')
         const resourcesPath = join(caseRoot, 'Current.app', 'Contents', 'Resources')
-        const launcherPath = join(resourcesPath, 'bin', 'orca')
+        const launcherPath = join(resourcesPath, 'bin', 'aio-ade')
         const devLauncherPath = join(`${userDataPath}-dev`, 'cli', 'bin', devLauncherName)
         await mkdir(commandDir, { recursive: true })
         await mkdir(join(resourcesPath, 'bin'), { recursive: true })
@@ -750,20 +775,20 @@ describe('CliInstaller', () => {
   // must fall back to ~/.local/bin (user-writable, no sudo) rather than failing
   // silently when the parent directory is absent.
   it.skipIf(process.platform === 'win32')(
-    'falls back to ~/.local/bin/orca on macOS when /usr/local/bin does not exist',
+    'falls back to ~/.local/bin/aio-ade on macOS when /usr/local/bin does not exist',
     async () => {
       const fixture = await makeFixture()
       const homePath = join(fixture.root, 'home')
       const resourcesPath = await createPackagedMacLauncher(fixture.root)
       // Simulate arm64: point defaultMacCommandPath at a dir that does not exist
       // in the fixture so existsSync(dirname(...)) returns false.
-      const absentUsrLocalBin = join(fixture.root, 'usr', 'local', 'bin', 'orca')
+      const absentUsrLocalBin = join(fixture.root, 'usr', 'local', 'bin', 'aio-ade')
       const installer = new CliInstaller({
         platform: 'darwin',
         isPackaged: true,
         resourcesPath,
         userDataPath: fixture.userDataPath,
-        execPath: '/Applications/Orca.app/Contents/MacOS/Orca',
+        execPath: '/Applications/AIO-ADE.app/Contents/MacOS/AIO-ADE',
         appPath: fixture.appPath,
         homePath,
         defaultMacCommandPath: absentUsrLocalBin,
@@ -771,13 +796,13 @@ describe('CliInstaller', () => {
       })
 
       const status = await installer.getStatus()
-      expect(status.commandPath).toBe(join(homePath, '.local', 'bin', 'orca'))
+      expect(status.commandPath).toBe(join(homePath, '.local', 'bin', 'aio-ade'))
       expect(status.state).toBe('not_installed')
       expect(status.supported).toBe(true)
 
       const installed = await installer.install()
       expect(installed.state).toBe('installed')
-      expect(installed.commandPath).toBe(join(homePath, '.local', 'bin', 'orca'))
+      expect(installed.commandPath).toBe(join(homePath, '.local', 'bin', 'aio-ade'))
       expect(installed.pathConfigured).toBe(true)
     }
   )
@@ -785,20 +810,20 @@ describe('CliInstaller', () => {
   // Why: on Intel Macs /usr/local/bin exists, so the installer must keep using
   // it as the canonical path and not regress to ~/.local/bin.
   it.skipIf(process.platform === 'win32')(
-    'uses /usr/local/bin/orca on macOS when /usr/local/bin exists',
+    'uses /usr/local/bin/aio-ade on macOS when /usr/local/bin exists',
     async () => {
       const fixture = await makeFixture()
       const resourcesPath = await createPackagedMacLauncher(fixture.root)
       const usrLocalBin = join(fixture.root, 'usr', 'local', 'bin')
       await mkdir(usrLocalBin, { recursive: true })
 
-      const installPath = join(usrLocalBin, 'orca')
+      const installPath = join(usrLocalBin, 'aio-ade')
       const installer = new CliInstaller({
         platform: 'darwin',
         isPackaged: true,
         resourcesPath,
         userDataPath: fixture.userDataPath,
-        execPath: '/Applications/Orca.app/Contents/MacOS/Orca',
+        execPath: '/Applications/AIO-ADE.app/Contents/MacOS/AIO-ADE',
         appPath: fixture.appPath,
         defaultMacCommandPath: installPath,
         processPathEnv: usrLocalBin
@@ -811,19 +836,19 @@ describe('CliInstaller', () => {
     }
   )
 
-  // Why: users can have a managed Orca command in ~/.local/bin even when
+  // Why: users can have a managed AIO-ADE command in ~/.local/bin even when
   // /usr/local/bin exists; Settings must follow the shell-visible command.
   it.skipIf(process.platform === 'win32')(
-    'uses an existing managed macOS orca command from the shell PATH before /usr/local/bin',
+    'uses an existing managed macOS aio-ade command from the shell PATH before /usr/local/bin',
     async () => {
       const fixture = await makeFixture()
       const homePath = join(fixture.root, 'home')
       const resourcesPath = await createPackagedMacLauncher(fixture.root)
       const usrLocalBin = join(fixture.root, 'usr', 'local', 'bin')
       const userLocalBin = join(homePath, '.local', 'bin')
-      const defaultInstallPath = join(usrLocalBin, 'orca')
-      const userInstallPath = join(userLocalBin, 'orca')
-      const launcherPath = join(resourcesPath, 'bin', 'orca')
+      const defaultInstallPath = join(usrLocalBin, 'aio-ade')
+      const userInstallPath = join(userLocalBin, 'aio-ade')
+      const launcherPath = join(resourcesPath, 'bin', 'aio-ade')
       await mkdir(usrLocalBin, { recursive: true })
       await mkdir(userLocalBin, { recursive: true })
       await symlink(launcherPath, userInstallPath)
@@ -833,7 +858,7 @@ describe('CliInstaller', () => {
         isPackaged: true,
         resourcesPath,
         userDataPath: fixture.userDataPath,
-        execPath: '/Applications/Orca.app/Contents/MacOS/Orca',
+        execPath: '/Applications/AIO-ADE.app/Contents/MacOS/AIO-ADE',
         appPath: fixture.appPath,
         homePath,
         defaultMacCommandPath: defaultInstallPath,
@@ -855,17 +880,24 @@ describe('CliInstaller', () => {
   // Why: POSIX command lookup skips broken symlinks and keeps searching PATH,
   // so a stale earlier artifact must not steal status from the install path.
   it.skipIf(process.platform === 'win32')(
-    'skips a broken managed macOS orca symlink before /usr/local/bin',
+    'skips a broken managed macOS aio-ade symlink before /usr/local/bin',
     async () => {
       const fixture = await makeFixture()
       const homePath = join(fixture.root, 'home')
       const resourcesPath = await createPackagedMacLauncher(fixture.root)
       const usrLocalBin = join(fixture.root, 'usr', 'local', 'bin')
       const userLocalBin = join(homePath, '.local', 'bin')
-      const defaultInstallPath = join(usrLocalBin, 'orca')
-      const userInstallPath = join(userLocalBin, 'orca')
-      const launcherPath = join(resourcesPath, 'bin', 'orca')
-      const oldLauncherPath = join(fixture.root, 'Old.app', 'Contents', 'Resources', 'bin', 'orca')
+      const defaultInstallPath = join(usrLocalBin, 'aio-ade')
+      const userInstallPath = join(userLocalBin, 'aio-ade')
+      const launcherPath = join(resourcesPath, 'bin', 'aio-ade')
+      const oldLauncherPath = join(
+        fixture.root,
+        'Old.app',
+        'Contents',
+        'Resources',
+        'bin',
+        'aio-ade'
+      )
       await mkdir(usrLocalBin, { recursive: true })
       await mkdir(userLocalBin, { recursive: true })
       await symlink(oldLauncherPath, userInstallPath)
@@ -875,7 +907,7 @@ describe('CliInstaller', () => {
         isPackaged: true,
         resourcesPath,
         userDataPath: fixture.userDataPath,
-        execPath: '/Applications/Orca.app/Contents/MacOS/Orca',
+        execPath: '/Applications/AIO-ADE.app/Contents/MacOS/AIO-ADE',
         appPath: fixture.appPath,
         homePath,
         defaultMacCommandPath: defaultInstallPath,
@@ -898,18 +930,18 @@ describe('CliInstaller', () => {
   )
 
   // Why: PATH lookup stops at the first existing command; a later managed
-  // ~/.local/bin/orca must not steal status from /usr/local/bin/orca.
+  // ~/.local/bin/aio-ade must not steal status from /usr/local/bin/aio-ade.
   it.skipIf(process.platform === 'win32')(
-    'keeps the default macOS command when a managed orca appears later on PATH',
+    'keeps the default macOS command when a managed aio-ade appears later on PATH',
     async () => {
       const fixture = await makeFixture()
       const homePath = join(fixture.root, 'home')
       const resourcesPath = await createPackagedMacLauncher(fixture.root)
       const usrLocalBin = join(fixture.root, 'usr', 'local', 'bin')
       const userLocalBin = join(homePath, '.local', 'bin')
-      const defaultInstallPath = join(usrLocalBin, 'orca')
-      const userInstallPath = join(userLocalBin, 'orca')
-      const launcherPath = join(resourcesPath, 'bin', 'orca')
+      const defaultInstallPath = join(usrLocalBin, 'aio-ade')
+      const userInstallPath = join(userLocalBin, 'aio-ade')
+      const launcherPath = join(resourcesPath, 'bin', 'aio-ade')
       await mkdir(usrLocalBin, { recursive: true })
       await mkdir(userLocalBin, { recursive: true })
       await symlink(launcherPath, defaultInstallPath)
@@ -920,7 +952,7 @@ describe('CliInstaller', () => {
         isPackaged: true,
         resourcesPath,
         userDataPath: fixture.userDataPath,
-        execPath: '/Applications/Orca.app/Contents/MacOS/Orca',
+        execPath: '/Applications/AIO-ADE.app/Contents/MacOS/AIO-ADE',
         appPath: fixture.appPath,
         homePath,
         defaultMacCommandPath: defaultInstallPath,
@@ -934,18 +966,18 @@ describe('CliInstaller', () => {
   )
 
   // Why: shells skip missing PATH entries, so a managed command later in PATH
-  // is still the shell-visible Orca command until the default path is installed.
+  // is still the shell-visible AIO-ADE command until the default path is installed.
   it.skipIf(process.platform === 'win32')(
-    'uses a later managed macOS orca command when the default command is missing',
+    'uses a later managed macOS aio-ade command when the default command is missing',
     async () => {
       const fixture = await makeFixture()
       const homePath = join(fixture.root, 'home')
       const resourcesPath = await createPackagedMacLauncher(fixture.root)
       const usrLocalBin = join(fixture.root, 'usr', 'local', 'bin')
       const userLocalBin = join(homePath, '.local', 'bin')
-      const defaultInstallPath = join(usrLocalBin, 'orca')
-      const userInstallPath = join(userLocalBin, 'orca')
-      const launcherPath = join(resourcesPath, 'bin', 'orca')
+      const defaultInstallPath = join(usrLocalBin, 'aio-ade')
+      const userInstallPath = join(userLocalBin, 'aio-ade')
+      const launcherPath = join(resourcesPath, 'bin', 'aio-ade')
       await mkdir(usrLocalBin, { recursive: true })
       await mkdir(userLocalBin, { recursive: true })
       await symlink(launcherPath, userInstallPath)
@@ -955,7 +987,7 @@ describe('CliInstaller', () => {
         isPackaged: true,
         resourcesPath,
         userDataPath: fixture.userDataPath,
-        execPath: '/Applications/Orca.app/Contents/MacOS/Orca',
+        execPath: '/Applications/AIO-ADE.app/Contents/MacOS/AIO-ADE',
         appPath: fixture.appPath,
         homePath,
         defaultMacCommandPath: defaultInstallPath,
@@ -972,22 +1004,22 @@ describe('CliInstaller', () => {
     }
   )
 
-  // Why: bash/zsh skip non-executable PATH entries even at Orca's configured
+  // Why: bash/zsh skip non-executable PATH entries even at AIO-ADE's configured
   // install slot, then keep looking for a runnable command later in PATH.
   it.skipIf(process.platform === 'win32')(
-    'uses a later managed macOS orca command when the default command is not executable',
+    'uses a later managed macOS aio-ade command when the default command is not executable',
     async () => {
       const fixture = await makeFixture()
       const homePath = join(fixture.root, 'home')
       const resourcesPath = await createPackagedMacLauncher(fixture.root)
       const usrLocalBin = join(fixture.root, 'usr', 'local', 'bin')
       const userLocalBin = join(homePath, '.local', 'bin')
-      const defaultInstallPath = join(usrLocalBin, 'orca')
-      const userInstallPath = join(userLocalBin, 'orca')
-      const launcherPath = join(resourcesPath, 'bin', 'orca')
+      const defaultInstallPath = join(usrLocalBin, 'aio-ade')
+      const userInstallPath = join(userLocalBin, 'aio-ade')
+      const launcherPath = join(resourcesPath, 'bin', 'aio-ade')
       await mkdir(usrLocalBin, { recursive: true })
       await mkdir(userLocalBin, { recursive: true })
-      await writeFile(defaultInstallPath, '#!/usr/bin/env bash\necho other-orca\n', 'utf8')
+      await writeFile(defaultInstallPath, '#!/usr/bin/env bash\necho other-aio-ade\n', 'utf8')
       await symlink(launcherPath, userInstallPath)
 
       const installer = new CliInstaller({
@@ -995,7 +1027,7 @@ describe('CliInstaller', () => {
         isPackaged: true,
         resourcesPath,
         userDataPath: fixture.userDataPath,
-        execPath: '/Applications/Orca.app/Contents/MacOS/Orca',
+        execPath: '/Applications/AIO-ADE.app/Contents/MacOS/AIO-ADE',
         appPath: fixture.appPath,
         homePath,
         defaultMacCommandPath: defaultInstallPath,
@@ -1008,11 +1040,11 @@ describe('CliInstaller', () => {
 
       const installed = await installer.install()
       expect(installed.commandPath).toBe(userInstallPath)
-      await expect(readFile(defaultInstallPath, 'utf8')).resolves.toContain('other-orca')
+      await expect(readFile(defaultInstallPath, 'utf8')).resolves.toContain('other-aio-ade')
     }
   )
 
-  // Why: a non-Orca command after an empty default install slot can be shadowed
+  // Why: a non-AIO-ADE command after an empty default install slot can be shadowed
   // by installing the default path without replacing the user's command.
   it.skipIf(process.platform === 'win32')(
     'installs the default macOS command instead of replacing an unmanaged later command',
@@ -1022,12 +1054,12 @@ describe('CliInstaller', () => {
       const resourcesPath = await createPackagedMacLauncher(fixture.root)
       const usrLocalBin = join(fixture.root, 'usr', 'local', 'bin')
       const userLocalBin = join(homePath, '.local', 'bin')
-      const defaultInstallPath = join(usrLocalBin, 'orca')
-      const userInstallPath = join(userLocalBin, 'orca')
-      const launcherPath = join(resourcesPath, 'bin', 'orca')
+      const defaultInstallPath = join(usrLocalBin, 'aio-ade')
+      const userInstallPath = join(userLocalBin, 'aio-ade')
+      const launcherPath = join(resourcesPath, 'bin', 'aio-ade')
       await mkdir(usrLocalBin, { recursive: true })
       await mkdir(userLocalBin, { recursive: true })
-      await writeFile(userInstallPath, '#!/usr/bin/env bash\necho other-orca\n', {
+      await writeFile(userInstallPath, '#!/usr/bin/env bash\necho other-aio-ade\n', {
         encoding: 'utf8',
         mode: 0o755
       })
@@ -1037,7 +1069,7 @@ describe('CliInstaller', () => {
         isPackaged: true,
         resourcesPath,
         userDataPath: fixture.userDataPath,
-        execPath: '/Applications/Orca.app/Contents/MacOS/Orca',
+        execPath: '/Applications/AIO-ADE.app/Contents/MacOS/AIO-ADE',
         appPath: fixture.appPath,
         homePath,
         defaultMacCommandPath: defaultInstallPath,
@@ -1052,23 +1084,23 @@ describe('CliInstaller', () => {
       expect(installed.commandPath).toBe(defaultInstallPath)
       expect(installed.state).toBe('installed')
       await expect(readlink(defaultInstallPath)).resolves.toBe(launcherPath)
-      await expect(readFile(userInstallPath, 'utf8')).resolves.toContain('other-orca')
+      await expect(readFile(userInstallPath, 'utf8')).resolves.toContain('other-aio-ade')
     }
   )
 
-  // Why: an off-PATH ~/.local/bin/orca must not hijack CLI registration and
+  // Why: an off-PATH ~/.local/bin/aio-ade must not hijack CLI registration and
   // leave the shell-visible /usr/local/bin command missing.
   it.skipIf(process.platform === 'win32')(
-    'ignores managed macOS orca commands that are not visible on the shell PATH',
+    'ignores managed macOS aio-ade commands that are not visible on the shell PATH',
     async () => {
       const fixture = await makeFixture()
       const homePath = join(fixture.root, 'home')
       const resourcesPath = await createPackagedMacLauncher(fixture.root)
       const usrLocalBin = join(fixture.root, 'usr', 'local', 'bin')
       const userLocalBin = join(homePath, '.local', 'bin')
-      const defaultInstallPath = join(usrLocalBin, 'orca')
-      const userInstallPath = join(userLocalBin, 'orca')
-      const launcherPath = join(resourcesPath, 'bin', 'orca')
+      const defaultInstallPath = join(usrLocalBin, 'aio-ade')
+      const userInstallPath = join(userLocalBin, 'aio-ade')
+      const launcherPath = join(resourcesPath, 'bin', 'aio-ade')
       await mkdir(usrLocalBin, { recursive: true })
       await mkdir(userLocalBin, { recursive: true })
       await symlink(launcherPath, userInstallPath)
@@ -1078,7 +1110,7 @@ describe('CliInstaller', () => {
         isPackaged: true,
         resourcesPath,
         userDataPath: fixture.userDataPath,
-        execPath: '/Applications/Orca.app/Contents/MacOS/Orca',
+        execPath: '/Applications/AIO-ADE.app/Contents/MacOS/AIO-ADE',
         appPath: fixture.appPath,
         homePath,
         defaultMacCommandPath: defaultInstallPath,
@@ -1099,18 +1131,18 @@ describe('CliInstaller', () => {
   )
 
   it.skipIf(process.platform === 'win32')(
-    'reports a conflict for an unmanaged macOS orca that shadows the install path',
+    'reports a conflict for an unmanaged macOS aio-ade that shadows the install path',
     async () => {
       const fixture = await makeFixture()
       const homePath = join(fixture.root, 'home')
       const resourcesPath = await createPackagedMacLauncher(fixture.root)
       const usrLocalBin = join(fixture.root, 'usr', 'local', 'bin')
       const userLocalBin = join(homePath, '.local', 'bin')
-      const defaultInstallPath = join(usrLocalBin, 'orca')
-      const userInstallPath = join(userLocalBin, 'orca')
+      const defaultInstallPath = join(usrLocalBin, 'aio-ade')
+      const userInstallPath = join(userLocalBin, 'aio-ade')
       await mkdir(usrLocalBin, { recursive: true })
       await mkdir(userLocalBin, { recursive: true })
-      await writeFile(userInstallPath, '#!/usr/bin/env bash\necho other-orca\n', {
+      await writeFile(userInstallPath, '#!/usr/bin/env bash\necho other-aio-ade\n', {
         encoding: 'utf8',
         mode: 0o755
       })
@@ -1120,7 +1152,7 @@ describe('CliInstaller', () => {
         isPackaged: true,
         resourcesPath,
         userDataPath: fixture.userDataPath,
-        execPath: '/Applications/Orca.app/Contents/MacOS/Orca',
+        execPath: '/Applications/AIO-ADE.app/Contents/MacOS/AIO-ADE',
         appPath: fixture.appPath,
         homePath,
         defaultMacCommandPath: defaultInstallPath,
@@ -1130,35 +1162,35 @@ describe('CliInstaller', () => {
       const status = await installer.getStatus()
       expect(status.commandPath).toBe(userInstallPath)
       expect(status.state).toBe('conflict')
-      await expect(installer.install()).rejects.toThrow('Refusing to replace non-Orca command')
+      await expect(installer.install()).rejects.toThrow('Refusing to replace non-AIO-ADE command')
       await expect(lstat(defaultInstallPath)).rejects.toMatchObject({ code: 'ENOENT' })
-      await expect(readFile(userInstallPath, 'utf8')).resolves.toContain('other-orca')
+      await expect(readFile(userInstallPath, 'utf8')).resolves.toContain('other-aio-ade')
     }
   )
 
   // Why: bash/zsh skip non-executable PATH entries, so reporting them as a
   // conflict would block a valid later install path the shell would use.
   it.skipIf(process.platform === 'win32')(
-    'skips a non-executable unmanaged macOS orca before the install path',
+    'skips a non-executable unmanaged macOS aio-ade before the install path',
     async () => {
       const fixture = await makeFixture()
       const homePath = join(fixture.root, 'home')
       const resourcesPath = await createPackagedMacLauncher(fixture.root)
       const usrLocalBin = join(fixture.root, 'usr', 'local', 'bin')
       const userLocalBin = join(homePath, '.local', 'bin')
-      const defaultInstallPath = join(usrLocalBin, 'orca')
-      const userInstallPath = join(userLocalBin, 'orca')
-      const launcherPath = join(resourcesPath, 'bin', 'orca')
+      const defaultInstallPath = join(usrLocalBin, 'aio-ade')
+      const userInstallPath = join(userLocalBin, 'aio-ade')
+      const launcherPath = join(resourcesPath, 'bin', 'aio-ade')
       await mkdir(usrLocalBin, { recursive: true })
       await mkdir(userLocalBin, { recursive: true })
-      await writeFile(userInstallPath, '#!/usr/bin/env bash\necho other-orca\n', 'utf8')
+      await writeFile(userInstallPath, '#!/usr/bin/env bash\necho other-aio-ade\n', 'utf8')
 
       const installer = new CliInstaller({
         platform: 'darwin',
         isPackaged: true,
         resourcesPath,
         userDataPath: fixture.userDataPath,
-        execPath: '/Applications/Orca.app/Contents/MacOS/Orca',
+        execPath: '/Applications/AIO-ADE.app/Contents/MacOS/AIO-ADE',
         appPath: fixture.appPath,
         homePath,
         defaultMacCommandPath: defaultInstallPath,
@@ -1173,25 +1205,25 @@ describe('CliInstaller', () => {
       expect(installed.commandPath).toBe(defaultInstallPath)
       expect(installed.state).toBe('installed')
       await expect(readlink(defaultInstallPath)).resolves.toBe(launcherPath)
-      await expect(readFile(userInstallPath, 'utf8')).resolves.toContain('other-orca')
+      await expect(readFile(userInstallPath, 'utf8')).resolves.toContain('other-aio-ade')
     }
   )
 
-  // Why: when macCommandPath falls back to ~/.local/bin/orca on arm64, commandName
-  // must still be 'orca' (not 'orca-ide' which is Linux-only).
+  // Why: when macCommandPath falls back to ~/.local/bin/aio-ade on arm64, commandName
+  // must still be 'aio-ade' (not 'aio-ade' which is Linux-only).
   it.skipIf(process.platform === 'win32')(
-    'reports commandName as orca (not orca-ide) when falling back to ~/.local/bin on macOS',
+    'reports commandName as aio-ade (not aio-ade) when falling back to ~/.local/bin on macOS',
     async () => {
       const fixture = await makeFixture()
       const homePath = join(fixture.root, 'home')
       const resourcesPath = await createPackagedMacLauncher(fixture.root)
-      const absentUsrLocalBin = join(fixture.root, 'usr', 'local', 'bin', 'orca')
+      const absentUsrLocalBin = join(fixture.root, 'usr', 'local', 'bin', 'aio-ade')
       const installer = new CliInstaller({
         platform: 'darwin',
         isPackaged: true,
         resourcesPath,
         userDataPath: fixture.userDataPath,
-        execPath: '/Applications/Orca.app/Contents/MacOS/Orca',
+        execPath: '/Applications/AIO-ADE.app/Contents/MacOS/AIO-ADE',
         appPath: fixture.appPath,
         homePath,
         defaultMacCommandPath: absentUsrLocalBin,
@@ -1199,7 +1231,7 @@ describe('CliInstaller', () => {
       })
 
       const status = await installer.getStatus()
-      expect(status.commandName).toBe('orca')
+      expect(status.commandName).toBe('aio-ade')
     }
   )
 
@@ -1213,13 +1245,13 @@ describe('CliInstaller', () => {
       await mkdir(protectedDir)
       await chmod(protectedDir, 0o500)
 
-      const installPath = join(protectedDir, 'bin', 'orca')
+      const installPath = join(protectedDir, 'bin', 'aio-ade')
       const privilegedCommands: string[] = []
       const installer = new CliInstaller({
         platform: 'darwin',
         isPackaged: false,
         userDataPath: fixture.userDataPath,
-        execPath: '/Applications/Orca.app/Contents/MacOS/Orca',
+        execPath: '/Applications/AIO-ADE.app/Contents/MacOS/AIO-ADE',
         appPath: fixture.appPath,
         commandPathOverride: installPath,
         privilegedRunner: async (command: string) => {
@@ -1255,13 +1287,13 @@ describe('CliInstaller', () => {
       const fixture = await makeFixture()
       const homePath = join(fixture.root, 'home')
       const resourcesPath = await createPackagedMacLauncher(fixture.root)
-      const absentUsrLocalBin = join(fixture.root, 'usr', 'local', 'bin', 'orca')
+      const absentUsrLocalBin = join(fixture.root, 'usr', 'local', 'bin', 'aio-ade')
       const installer = new CliInstaller({
         platform: 'darwin',
         isPackaged: true,
         resourcesPath,
         userDataPath: fixture.userDataPath,
-        execPath: '/Applications/Orca.app/Contents/MacOS/Orca',
+        execPath: '/Applications/AIO-ADE.app/Contents/MacOS/AIO-ADE',
         appPath: fixture.appPath,
         homePath,
         defaultMacCommandPath: absentUsrLocalBin,
@@ -1275,16 +1307,16 @@ describe('CliInstaller', () => {
 
       expect(s1.commandPath).toBe(s2.commandPath)
       expect(s2.commandPath).toBe(s3.commandPath)
-      expect(s1.commandPath).toBe(join(homePath, '.local', 'bin', 'orca'))
+      expect(s1.commandPath).toBe(join(homePath, '.local', 'bin', 'aio-ade'))
     }
   )
 
   it('resolves custom-install packaged Windows command path from resourcesPath', async () => {
     const fixture = await makeFixture()
     const localAppDataPath = join(fixture.root, 'AppData', 'Local')
-    const resourcesPath = join(fixture.root, 'D Custom Orca', 'resources')
+    const resourcesPath = join(fixture.root, 'D Custom AIO-ADE', 'resources')
     await mkdir(join(resourcesPath, 'bin'), { recursive: true })
-    await writeFile(join(resourcesPath, 'bin', 'orca.exe'), 'native launcher', 'utf8')
+    await writeFile(join(resourcesPath, 'bin', 'aio-ade.exe'), 'native launcher', 'utf8')
 
     const installer = new CliInstaller({
       platform: 'win32',
@@ -1292,20 +1324,20 @@ describe('CliInstaller', () => {
       resourcesPath,
       localAppDataPath,
       userDataPath: fixture.userDataPath,
-      execPath: join(fixture.root, 'D Custom Orca', 'Orca.exe'),
+      execPath: join(fixture.root, 'D Custom AIO-ADE', 'AIO-ADE.exe'),
       appPath: fixture.appPath,
       userPathReader: async () => userPathRead(null),
       userPathWriter: async () => {}
     })
 
     const status = await installer.getStatus()
-    expect(status.commandPath).toBe(join(resourcesPath, 'bin', 'orca.exe'))
+    expect(status.commandPath).toBe(join(resourcesPath, 'bin', 'aio-ade.exe'))
   })
 
   it('keeps a bundled Windows launcher installed when the user PATH read is unknown', async () => {
     const fixture = await makeFixture()
     const resourcesPath = join(fixture.root, 'resources')
-    const bundledLauncher = join(resourcesPath, 'bin', 'orca.exe')
+    const bundledLauncher = join(resourcesPath, 'bin', 'aio-ade.exe')
     await mkdir(dirname(bundledLauncher), { recursive: true })
     await writeFile(bundledLauncher, 'native launcher', 'utf8')
 
@@ -1314,11 +1346,11 @@ describe('CliInstaller', () => {
       isPackaged: true,
       resourcesPath,
       userDataPath: fixture.userDataPath,
-      execPath: join(fixture.root, 'Orca.exe'),
+      execPath: join(fixture.root, 'AIO-ADE.exe'),
       appPath: fixture.appPath,
       userPathReader: async () => ({
         state: 'unknown',
-        detail: 'Orca could not read the Windows user PATH registry value.'
+        detail: 'AIO-ADE could not read the Windows user PATH registry value.'
       })
     })
 
@@ -1332,8 +1364,8 @@ describe('CliInstaller', () => {
   it('does not overwrite the packaged Windows launcher while registering PATH', async () => {
     const fixture = await makeFixture()
     const localAppDataPath = join(fixture.root, 'AppData', 'Local')
-    const resourcesPath = join(fixture.root, 'D Custom Orca', 'resources')
-    const bundledLauncher = join(resourcesPath, 'bin', 'orca.exe')
+    const resourcesPath = join(fixture.root, 'D Custom AIO-ADE', 'resources')
+    const bundledLauncher = join(resourcesPath, 'bin', 'aio-ade.exe')
     const bundledContent = 'native launcher'
     await mkdir(dirname(bundledLauncher), { recursive: true })
     await writeFile(bundledLauncher, bundledContent, 'utf8')
@@ -1345,7 +1377,7 @@ describe('CliInstaller', () => {
       resourcesPath,
       localAppDataPath,
       userDataPath: fixture.userDataPath,
-      execPath: join(fixture.root, 'D Custom Orca', 'Orca.exe'),
+      execPath: join(fixture.root, 'D Custom AIO-ADE', 'AIO-ADE.exe'),
       appPath: fixture.appPath,
       userPathReader: async () => userPathRead(userPath),
       userPathWriter: async (value) => {
@@ -1371,15 +1403,15 @@ describe('CliInstaller', () => {
 
   // Why: the arm64 fallback must apply for packaged builds, not just dev launchers.
   it.skipIf(process.platform === 'win32')(
-    'resolves to ~/.local/bin/orca on arm64 even when isPackaged is true',
+    'resolves to ~/.local/bin/aio-ade on arm64 even when isPackaged is true',
     async () => {
       const fixture = await makeFixture()
       const homePath = join(fixture.root, 'home')
-      const absentUsrLocalBin = join(fixture.root, 'usr', 'local', 'bin', 'orca')
+      const absentUsrLocalBin = join(fixture.root, 'usr', 'local', 'bin', 'aio-ade')
       const resourcesPath = join(fixture.root, 'resources')
-      const bundledLauncher = join(resourcesPath, 'bin', 'orca')
+      const bundledLauncher = join(resourcesPath, 'bin', 'aio-ade')
       await mkdir(join(resourcesPath, 'bin'), { recursive: true })
-      await writeFile(bundledLauncher, '#!/usr/bin/env bash\necho orca\n', {
+      await writeFile(bundledLauncher, '#!/usr/bin/env bash\necho aio-ade\n', {
         encoding: 'utf8',
         mode: 0o755
       })
@@ -1389,7 +1421,7 @@ describe('CliInstaller', () => {
         isPackaged: true,
         resourcesPath,
         userDataPath: fixture.userDataPath,
-        execPath: '/Applications/Orca.app/Contents/MacOS/Orca',
+        execPath: '/Applications/AIO-ADE.app/Contents/MacOS/AIO-ADE',
         appPath: fixture.appPath,
         homePath,
         defaultMacCommandPath: absentUsrLocalBin,
@@ -1397,7 +1429,7 @@ describe('CliInstaller', () => {
       })
 
       const status = await installer.getStatus()
-      expect(status.commandPath).toBe(join(homePath, '.local', 'bin', 'orca'))
+      expect(status.commandPath).toBe(join(homePath, '.local', 'bin', 'aio-ade'))
       expect(status.supported).toBe(true)
     }
   )

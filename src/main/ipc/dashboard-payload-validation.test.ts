@@ -38,7 +38,7 @@ const SNAPSHOT = {
       worktreeId: 'worktree-1',
       tabId: 'tab-1',
       leafId: 'leaf-1',
-      repoName: 'Orca',
+      repoName: 'AIO-ADE',
       worktreeName: 'Dashboard',
       workspaceStatusId: 'in-review',
       workspaceStatusLabel: 'In review',
@@ -55,7 +55,7 @@ const SNAPSHOT = {
   ],
   showIdle: false,
   filterOptions: {
-    projects: [{ id: 'repo-1', label: 'Orca' }],
+    projects: [{ id: 'repo-1', label: 'AIO-ADE' }],
     workspaceStatuses: [{ id: 'in-review', label: 'In review', color: 'emerald' }]
   }
 } satisfies DashboardSnapshot

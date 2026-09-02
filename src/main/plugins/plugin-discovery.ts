@@ -3,11 +3,12 @@ import type { Dirent } from 'node:fs'
 import { join } from 'node:path'
 import { PLUGIN_CONTENT_HASH_PATTERN } from '../../shared/plugins/plugin-install-lockfile'
 import {
+  getPluginHostVersionRange,
   PLUGIN_MANIFEST_FILENAME,
   isQualifiedPluginKey,
   parsePluginManifest,
   qualifiedPluginKey,
-  satisfiesOrcaEngineRange,
+  satisfiesHostEngineRange,
   type PluginManifest
 } from '../../shared/plugins/plugin-manifest'
 import {
@@ -107,11 +108,12 @@ async function readManifestDir(
   }
   const manifest = parsed.manifest
   const pluginKey = qualifiedPluginKey(manifest)
-  if (!satisfiesOrcaEngineRange(hostVersion, manifest.engines.orca)) {
+  const hostVersionRange = getPluginHostVersionRange(manifest)
+  if (!satisfiesHostEngineRange(hostVersion, hostVersionRange)) {
     return {
       pluginKey,
       rootDir,
-      error: `requires Orca ${manifest.engines.orca} (this is ${hostVersion})`,
+      error: `requires host ${hostVersionRange} (this is ${hostVersion})`,
       isDev
     }
   }

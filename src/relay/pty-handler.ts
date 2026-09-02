@@ -93,7 +93,7 @@ type ManagedPty = {
   disposed?: boolean
   /** True once external cleanup observers have been notified. */
   exitListenerNotified?: boolean
-  /** Renderer-supplied paneKey (ORCA_PANE_KEY); captured so exit observers can evict per-pane cache state. */
+  /** Renderer-supplied paneKey (AIO_ADE_PANE_KEY); captured so exit observers can evict per-pane cache state. */
   paneKey?: string
   tabId?: string
   /** Attach-only identity metadata (RPC). Separate from paneKey/tabId, which also drive shell env/revive hooks. */
@@ -418,7 +418,7 @@ export class PtyHandler {
   }
 
   /** Register an env augmenter merged into every spawn env *after* process.env and renderer env.
-   *  Used by the relay-hook server to inject ORCA_AGENT_HOOK_* coords. See docs/design/agent-status-over-ssh.md §3. */
+   *  Used by the relay-hook server to inject AIO_ADE_AGENT_HOOK_* coords. See docs/design/agent-status-over-ssh.md §3. */
   addEnvAugmenter(augmenter: PtyEnvAugmenter): () => void {
     this.envAugmenters.push(augmenter)
     return () => {
@@ -440,9 +440,9 @@ export class PtyHandler {
         ...stripInheritedBuildModeEnv(process.env),
         TERM: 'xterm-256color',
         COLORTERM: 'truecolor',
-        TERM_PROGRAM: 'Orca',
+        TERM_PROGRAM: 'AIO-ADE',
         TERM_PROGRAM_VERSION:
-          rendererEnv?.ORCA_APP_VERSION || process.env.ORCA_APP_VERSION || '0.0.0-dev',
+          rendererEnv?.AIO_ADE_APP_VERSION || process.env.AIO_ADE_APP_VERSION || '0.0.0-dev',
         FORCE_HYPERLINK: '1'
       },
       rendererEnv
@@ -918,7 +918,7 @@ export class PtyHandler {
     context?: RequestContext
   ): Promise<RelayAgentSessionCreateResult> {
     const env = params.env as Record<string, string> | undefined
-    const worktreeId = env?.ORCA_WORKTREE_ID
+    const worktreeId = env?.AIO_ADE_WORKTREE_ID
     const worktreePath = worktreeId ? splitWorktreeId(worktreeId)?.worktreePath : undefined
     const cwd = typeof params.cwd === 'string' ? params.cwd : resolveDefaultCwd()
     const finishCreation = this.beginPtyCreation([worktreePath, cwd])
@@ -1033,10 +1033,10 @@ export class PtyHandler {
     } while (this.ptys.has(id) || this.pendingReviveIds.has(id))
 
     // Why: augmenter values override renderer env so remote paths and hook coords win over local userData.
-    const paneKey = typeof env?.ORCA_PANE_KEY === 'string' ? env.ORCA_PANE_KEY : undefined
+    const paneKey = typeof env?.AIO_ADE_PANE_KEY === 'string' ? env.AIO_ADE_PANE_KEY : undefined
     // Why: kept so a restarted runtime can re-adopt this PTY under its original handle (survives revive).
     const terminalHandle =
-      typeof env?.ORCA_TERMINAL_HANDLE === 'string' ? env.ORCA_TERMINAL_HANDLE : undefined
+      typeof env?.AIO_ADE_TERMINAL_HANDLE === 'string' ? env.AIO_ADE_TERMINAL_HANDLE : undefined
     const command = typeof params.command === 'string' ? params.command : undefined
     const terminalWindowsWslDistro =
       typeof params.terminalWindowsWslDistro === 'string' ? params.terminalWindowsWslDistro : null
@@ -1081,8 +1081,8 @@ export class PtyHandler {
         cols,
         rows,
         cwd,
-        // Why: relay shells inherit process.env; don't let an ambient Orca marker enable shell-ready unless requested.
-        env: { ...spawnEnv, ORCA_SHELL_READY_MARKER: '0', ...shellLaunch.env }
+        // Why: relay shells inherit process.env; don't let an ambient AIO-ADE marker enable shell-ready unless requested.
+        env: { ...spawnEnv, AIO_ADE_SHELL_READY_MARKER: '0', ...shellLaunch.env }
       })
     } catch (error) {
       // Why: Windows loads conpty.node only on first spawn, so handle that late binding failure here.
@@ -1095,12 +1095,13 @@ export class PtyHandler {
     onPhysicalSpawnCommitted?.()
 
     // Why: capture paneKey so the exit listener can evict per-pane caches without a separate ptyId→paneKey map.
-    const tabId = typeof env?.ORCA_TAB_ID === 'string' ? env.ORCA_TAB_ID : undefined
+    const tabId = typeof env?.AIO_ADE_TAB_ID === 'string' ? env.AIO_ADE_TAB_ID : undefined
     const attachIdentity = {
       paneKey: typeof params.paneKey === 'string' ? params.paneKey : paneKey,
       tabId: typeof params.tabId === 'string' ? params.tabId : tabId
     }
-    const worktreeId = typeof env?.ORCA_WORKTREE_ID === 'string' ? env.ORCA_WORKTREE_ID : undefined
+    const worktreeId =
+      typeof env?.AIO_ADE_WORKTREE_ID === 'string' ? env.AIO_ADE_WORKTREE_ID : undefined
     const startupIngressIntent =
       params.startupIngressVersion === PTY_STARTUP_INGRESS_VERSION
         ? parsePtyStartupIngressIntent(params.startupIngress)
@@ -1133,9 +1134,9 @@ export class PtyHandler {
             startupCommand: {
               command,
               delivered: false,
-              waitForShellReady: shellLaunch.env.ORCA_SHELL_READY_MARKER === '1',
+              waitForShellReady: shellLaunch.env.AIO_ADE_SHELL_READY_MARKER === '1',
               scanState:
-                shellLaunch.env.ORCA_SHELL_READY_MARKER === '1'
+                shellLaunch.env.AIO_ADE_SHELL_READY_MARKER === '1'
                   ? createShellReadyScanState()
                   : null,
               timer: null
@@ -1507,19 +1508,19 @@ export class PtyHandler {
     if (!ptyMod) {
       return
     }
-    // Why: pane identity comes from the serialized entry (not env) since hook scripts exit without ORCA_PANE_KEY.
+    // Why: pane identity comes from the serialized entry (not env) since hook scripts exit without AIO_ADE_PANE_KEY.
     const revivedEnv: Record<string, string> = {}
     if (entry.paneKey) {
-      revivedEnv.ORCA_PANE_KEY = entry.paneKey
+      revivedEnv.AIO_ADE_PANE_KEY = entry.paneKey
     }
     if (entry.tabId) {
-      revivedEnv.ORCA_TAB_ID = entry.tabId
+      revivedEnv.AIO_ADE_TAB_ID = entry.tabId
     }
     if (entry.worktreeId) {
-      revivedEnv.ORCA_WORKTREE_ID = entry.worktreeId
+      revivedEnv.AIO_ADE_WORKTREE_ID = entry.worktreeId
     }
     if (entry.terminalHandle) {
-      revivedEnv.ORCA_TERMINAL_HANDLE = entry.terminalHandle
+      revivedEnv.AIO_ADE_TERMINAL_HANDLE = entry.terminalHandle
     }
     const explicitTerm =
       typeof entry.explicitTerm === 'string' && entry.explicitTerm.length > 0
@@ -1548,7 +1549,7 @@ export class PtyHandler {
       rows: entry.rows,
       cwd: entry.cwd,
       // Why: no provider-delivered command is waiting for a ready marker.
-      env: { ...spawnEnv, ORCA_SHELL_READY_MARKER: '0', ...shellLaunch.env }
+      env: { ...spawnEnv, AIO_ADE_SHELL_READY_MARKER: '0', ...shellLaunch.env }
     })
     this.wireAndStore({
       id: entry.id,

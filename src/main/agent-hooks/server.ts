@@ -8,7 +8,7 @@ import { join } from 'node:path'
 import { track } from '../telemetry/client'
 import { getCohortAtEmit } from '../telemetry/cohort-classifier'
 import { AGENT_KIND_VALUES, type AgentKind } from '../../shared/telemetry-events'
-import { ORCA_HOOK_PROTOCOL_VERSION } from '../../shared/agent-hook-types'
+import { AIO_ADE_HOOK_PROTOCOL_VERSION } from '../../shared/agent-hook-types'
 import {
   clearAllListenerCaches,
   clearPaneCacheState,
@@ -444,7 +444,7 @@ export class AgentHookServer {
   private server: ReturnType<typeof createServer> | null = null
   private port = 0
   private token = ''
-  // Why: identifies this Orca instance so the server can detect dev vs. prod cross-talk; set at start() from packaged-build knowledge.
+  // Why: identifies this AIO-ADE instance so the server can detect dev vs. prod cross-talk; set at start() from packaged-build knowledge.
   private env = 'production'
   private onAgentStatus: ((payload: EnrichedAgentHookEventPayload) => void) | null = null
   private onClaudeStatusLine: ((event: ClaudeStatusLineRateLimits) => void) | null = null
@@ -1024,7 +1024,7 @@ export class AgentHookServer {
     body: unknown,
     original: EnrichedAgentHookEventPayload
   ): void {
-    // Why: a nested non-codex CLI inherits ORCA_PANE_KEY, so clearing here would silently end a live codex poll.
+    // Why: a nested non-codex CLI inherits AIO_ADE_PANE_KEY, so clearing here would silently end a live codex poll.
     if (source !== 'codex') {
       return
     }
@@ -1527,7 +1527,7 @@ export class AgentHookServer {
         return
       }
 
-      if (req.headers['x-orca-agent-hook-token'] !== this.token) {
+      if (req.headers['x-aio-ade-agent-hook-token'] !== this.token) {
         res.writeHead(403)
         res.end()
         return
@@ -1615,7 +1615,7 @@ export class AgentHookServer {
       clearTimeout(timer)
     }
     this.codexSubagentPollTimers.clear()
-    // Why: don't unlink the endpoint file — a stale file matches fail-open and avoids a TOCTOU race with a concurrent Orca.
+    // Why: don't unlink the endpoint file — a stale file matches fail-open and avoids a TOCTOU race with a concurrent AIO-ADE.
     this.endpointDir = null
     this.endpointFilePathCache = null
     this.endpointFileWritten = false
@@ -1802,14 +1802,14 @@ export class AgentHookServer {
     }
 
     const env: Record<string, string> = {
-      ORCA_AGENT_HOOK_PORT: String(this.port),
-      ORCA_AGENT_HOOK_TOKEN: this.token,
-      ORCA_AGENT_HOOK_ENV: this.env,
-      ORCA_AGENT_HOOK_VERSION: ORCA_HOOK_PROTOCOL_VERSION
+      AIO_ADE_AGENT_HOOK_PORT: String(this.port),
+      AIO_ADE_AGENT_HOOK_TOKEN: this.token,
+      AIO_ADE_AGENT_HOOK_ENV: this.env,
+      AIO_ADE_AGENT_HOOK_VERSION: AIO_ADE_HOOK_PROTOCOL_VERSION
     }
     // Why: hooks source this file at invocation; dev namespaces it so parallel `pnpm dev` runs don't steal each other's hooks.
     if (this.endpointFileWritten && this.endpointFilePathCache) {
-      env.ORCA_AGENT_HOOK_ENDPOINT = this.endpointFilePathCache
+      env.AIO_ADE_AGENT_HOOK_ENDPOINT = this.endpointFilePathCache
     }
     return env
   }
@@ -1832,7 +1832,7 @@ export class AgentHookServer {
       port: this.port,
       token: this.token,
       env: this.env,
-      version: ORCA_HOOK_PROTOCOL_VERSION
+      version: AIO_ADE_HOOK_PROTOCOL_VERSION
     })
     this.endpointFileWritten = ok
   }

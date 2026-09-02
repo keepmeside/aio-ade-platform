@@ -1,4 +1,4 @@
-import { ORCA_RENDERER_UNLOAD_PREVENTED_EVENT } from '../../../shared/renderer-shutdown-events'
+import { AIO_ADE_RENDERER_UNLOAD_PREVENTED_EVENT } from '../../../shared/renderer-shutdown-events'
 
 export type ShutdownCheckpointGuard = {
   persistOnce: () => boolean
@@ -46,6 +46,6 @@ export function preventUnloadAndScheduleShutdownCheckpointReset(
   // Why: paired web has no Electron will-prevent-unload callback. Defer until
   // all beforeunload listeners finish so their successful checkpoint is reset.
   queueMicrotask(() => {
-    eventTarget.dispatchEvent(new Event(ORCA_RENDERER_UNLOAD_PREVENTED_EVENT))
+    eventTarget.dispatchEvent(new Event(AIO_ADE_RENDERER_UNLOAD_PREVENTED_EVENT))
   })
 }

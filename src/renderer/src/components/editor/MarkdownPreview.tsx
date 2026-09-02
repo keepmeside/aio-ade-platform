@@ -312,8 +312,8 @@ const markdownPreviewSanitizeSchema = {
     details: [
       ...(defaultSchema.attributes?.details ?? []),
       'open',
-      ['className', 'orca-details'],
-      ['dataOrcaToggle', 'heading-1', 'heading-2', 'heading-3', 'heading-4', 'heading-5']
+      ['className', 'aio-ade-details'],
+      ['dataAioAdeToggle', 'heading-1', 'heading-2', 'heading-3', 'heading-4', 'heading-5']
     ],
     h1: [...(defaultSchema.attributes?.h1 ?? []), 'id'],
     h2: [...(defaultSchema.attributes?.h2 ?? []), 'id'],
@@ -1227,7 +1227,7 @@ export default function MarkdownPreview({
                     <>
                       <button
                         type="button"
-                        className="orca-diff-comment-pill-btn"
+                        className="aio-ade-diff-comment-pill-btn"
                         title={
                           copiedReviewNoteId === comment.id
                             ? translate(
@@ -1457,7 +1457,7 @@ export default function MarkdownPreview({
           }
 
           if (target.protocol === 'http:' || target.protocol === 'https:') {
-            // Why: route through openHttpLink (not shell.openUrl) so a plain click honors "open links in Orca"; remote runtimes stay on the system browser.
+            // Why: route through openHttpLink (not shell.openUrl) so a plain click honors "open links in AIO-ADE"; remote runtimes stay on the system browser.
             openHttpLink(
               target.toString(),
               resolveMarkdownPreviewHttpOpenOptions(
@@ -1504,7 +1504,7 @@ export default function MarkdownPreview({
           )
           if (!targetWorktree) {
             if (sourceRoutingWorktreeId && worktreeRoot) {
-              // Why: floating markdown lives in a synthetic workspace with no repo worktree, though Orca can still open links relative to the source root.
+              // Why: floating markdown lives in a synthetic workspace with no repo worktree, though AIO-ADE can still open links relative to the source root.
               void activateMarkdownLink(href, {
                 sourceFilePath: filePath,
                 worktreeId: sourceRoutingWorktreeId,
@@ -2034,7 +2034,7 @@ function MarkdownSingleNoteSendMenu({
         }
       ]}
       targetModeLabel="This note"
-      triggerClassName="orca-diff-comment-pill-btn"
+      triggerClassName="aio-ade-diff-comment-pill-btn"
       disabledTooltip="Note already sent"
       onDelivered={onDelivered}
     />
@@ -2097,12 +2097,12 @@ function MarkdownAnnotationComposer({
       className="markdown-annotation-composer"
       onClick={(event) => event.stopPropagation()}
     >
-      <div className="orca-diff-comment-popover-label">
+      <div className="aio-ade-diff-comment-popover-label">
         {translate('auto.components.editor.MarkdownPreview.b1bfc04034', 'Selected text')}
       </div>
       <textarea
         ref={focusTextareaRef}
-        className="orca-diff-comment-popover-textarea"
+        className="aio-ade-diff-comment-popover-textarea"
         placeholder={translate(
           'auto.components.editor.MarkdownPreview.d737791433',
           'Add note for the AI'
@@ -2127,7 +2127,7 @@ function MarkdownAnnotationComposer({
         }}
         rows={3}
       />
-      <div className="orca-diff-comment-popover-footer">
+      <div className="aio-ade-diff-comment-popover-footer">
         <Button variant="ghost" size="sm" onClick={onCancel} disabled={submitting}>
           {translate('auto.components.editor.MarkdownPreview.e4683f70c4', 'Cancel')}
         </Button>

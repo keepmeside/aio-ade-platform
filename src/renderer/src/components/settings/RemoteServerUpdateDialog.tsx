@@ -152,13 +152,13 @@ export function RemoteServerUpdateDialog(): React.JSX.Element {
           <DialogTitle>
             {translate(
               'auto.components.settings.RemoteServerUpdateDialog.title',
-              'Update Remote Orca Servers'
+              'Update Remote AIO-ADE Servers'
             )}
           </DialogTitle>
           <DialogDescription>
             {translate(
               'auto.components.settings.RemoteServerUpdateDialog.description',
-              'Review paired servers and update supported installs from this Orca client.'
+              'Review paired servers and update supported installs from this AIO-ADE client.'
             )}
           </DialogDescription>
         </DialogHeader>
@@ -190,7 +190,7 @@ export function RemoteServerUpdateDialog(): React.JSX.Element {
               ) : (
                 translate(
                   'auto.components.settings.RemoteServerUpdateDialog.empty',
-                  'No paired Remote Orca Servers.'
+                  'No paired Remote AIO-ADE Servers.'
                 )
               )}
             </div>

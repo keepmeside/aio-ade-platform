@@ -411,7 +411,7 @@ describe('DaemonClient', () => {
       await client.ensureConnected()
 
       await expect(client.request('listSessions', undefined)).rejects.toThrow(
-        "Daemon's node-pty install is gone (worktree deleted?). Restart Orca. node-pty: posix_spawn failed: ENOENT"
+        "Daemon's node-pty install is gone (worktree deleted?). Restart AIO-ADE. node-pty: posix_spawn failed: ENOENT"
       )
     })
   })

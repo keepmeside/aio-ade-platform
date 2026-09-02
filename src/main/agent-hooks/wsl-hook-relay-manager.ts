@@ -123,8 +123,8 @@ export class WslHookRelayManager {
       }
     }
     const coords = this.deps.hookCoordsEnv()
-    const port = Number(coords.ORCA_AGENT_HOOK_PORT ?? '')
-    if (!Number.isInteger(port) || port <= 0 || !coords.ORCA_AGENT_HOOK_TOKEN) {
+    const port = Number(coords.AIO_ADE_AGENT_HOOK_PORT ?? '')
+    if (!Number.isInteger(port) || port <= 0 || !coords.AIO_ADE_AGENT_HOOK_TOKEN) {
       return
     }
     const bundle = this.deps.resolveBundle()
@@ -286,7 +286,7 @@ export class WslHookRelayManager {
       return
     }
     try {
-      // Why: runInstallers also re-ships the plugin source so a mid-session Orca upgrade refreshes it.
+      // Why: runInstallers also re-ships the plugin source so a mid-session AIO-ADE upgrade refreshes it.
       await this.runInstallers(state, mux, guestHome)
     } catch (err) {
       this.deps.warn(

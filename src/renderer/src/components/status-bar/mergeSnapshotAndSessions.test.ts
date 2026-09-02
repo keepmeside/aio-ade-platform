@@ -71,15 +71,15 @@ describe('mergeSnapshotAndSessions', () => {
 
   it('includes browser-only workspaces in their repo', () => {
     const worktree = {
-      id: 'orca::/Users/me/browser-only',
-      repoId: 'orca',
+      id: 'aio-ade::/Users/me/browser-only',
+      repoId: 'aio-ade',
       displayName: 'browser-only'
     } as Worktree
     const browser = {
       id: 'browser-1',
       worktreeId: worktree.id,
-      title: 'Orca docs',
-      url: 'https://docs.orca.dev',
+      title: 'AIO-ADE docs',
+      url: 'https://docs.aio-ade.dev',
       loading: false,
       faviconUrl: null,
       canGoBack: false,
@@ -91,15 +91,15 @@ describe('mergeSnapshotAndSessions', () => {
       null,
       [],
       baseCtx({
-        repoDisplayNameById: new Map([['orca', 'ORCA']]),
+        repoDisplayNameById: new Map([['aio-ade', 'AIO-ADE']]),
         worktreeById: new Map([[worktree.id, worktree]]),
         browserTabsByWorktree: { [worktree.id]: [browser] }
       })
     )
 
     expect(out[0]).toMatchObject({
-      repoId: 'orca',
-      repoName: 'ORCA',
+      repoId: 'aio-ade',
+      repoName: 'AIO-ADE',
       worktrees: [
         {
           worktreeId: worktree.id,
@@ -113,10 +113,10 @@ describe('mergeSnapshotAndSessions', () => {
 
   it('passes through snapshot worktrees with numeric metrics and hasLocalSamples', () => {
     const wt: WorktreeMemory = {
-      worktreeId: 'orca::/Users/me/Triton',
+      worktreeId: 'aio-ade::/Users/me/Triton',
       worktreeName: 'Triton',
-      repoId: 'orca',
-      repoName: 'ORCA',
+      repoId: 'aio-ade',
+      repoName: 'AIO-ADE',
       cpu: 1.5,
       memory: 100_000_000,
       history: [1, 2, 3],
@@ -125,8 +125,8 @@ describe('mergeSnapshotAndSessions', () => {
     const out = mergeSnapshotAndSessions(makeSnapshot([wt]), [], baseCtx())
     expect(out).toHaveLength(1)
     expect(out[0]).toMatchObject({
-      repoId: 'orca',
-      repoName: 'ORCA',
+      repoId: 'aio-ade',
+      repoName: 'AIO-ADE',
       cpu: 1.5,
       memory: 100_000_000,
       hasRemoteChildren: false
@@ -147,10 +147,10 @@ describe('mergeSnapshotAndSessions', () => {
 
   it('dedups: a session present in both snapshot and daemon list renders once with numeric metrics', () => {
     const wt: WorktreeMemory = {
-      worktreeId: 'orca::/Users/me/Triton',
+      worktreeId: 'aio-ade::/Users/me/Triton',
       worktreeName: 'Triton',
-      repoId: 'orca',
-      repoName: 'ORCA',
+      repoId: 'aio-ade',
+      repoName: 'AIO-ADE',
       cpu: 0.1,
       memory: 50_000_000,
       history: [],
@@ -173,10 +173,10 @@ describe('mergeSnapshotAndSessions', () => {
     // Why: only the daemon list reports ownership. A snapshot row describing the same session must
     // not report `false` — that row is the one whose kill skips confirmation (#8459).
     const wt: WorktreeMemory = {
-      worktreeId: 'orca::/Users/me/Triton',
+      worktreeId: 'aio-ade::/Users/me/Triton',
       worktreeName: 'Triton',
-      repoId: 'orca',
-      repoName: 'ORCA',
+      repoId: 'aio-ade',
+      repoName: 'AIO-ADE',
       cpu: 0.1,
       memory: 50_000_000,
       history: [],
@@ -202,14 +202,14 @@ describe('mergeSnapshotAndSessions', () => {
   it('binds a deferred SSH row so its single-row kill cannot skip confirmation', () => {
     // Why: the bulk selector already excluded these, but the rendered row took its own path.
     // An unbound row with no agent skips the dialog entirely — the same #8459 defect, one click over.
-    const sessionId = 'orca::/remote/Stingray@@deferred1'
+    const sessionId = 'aio-ade::/remote/Stingray@@deferred1'
     const out = mergeSnapshotAndSessions(
       null,
-      [{ id: sessionId, cwd: '', title: 'orca/Stingray', agentOwnership: 'absent' as const }],
+      [{ id: sessionId, cwd: '', title: 'aio-ade/Stingray', agentOwnership: 'absent' as const }],
       baseCtx({
-        tabsByWorktree: { 'orca::/remote/Stingray': [makeTab('tab-ssh')] },
+        tabsByWorktree: { 'aio-ade::/remote/Stingray': [makeTab('tab-ssh')] },
         deferredSshSessionIdsByTabId: { 'tab-ssh': sessionId },
-        repoConnectionIdById: new Map([['orca', 'ssh-conn-1']])
+        repoConnectionIdById: new Map([['aio-ade', 'ssh-conn-1']])
       })
     )
 
@@ -220,10 +220,10 @@ describe('mergeSnapshotAndSessions', () => {
 
   it('treats a snapshot row the daemon never listed as unknown ownership, not absent', () => {
     const wt: WorktreeMemory = {
-      worktreeId: 'orca::/Users/me/Triton',
+      worktreeId: 'aio-ade::/Users/me/Triton',
       worktreeName: 'Triton',
-      repoId: 'orca',
-      repoName: 'ORCA',
+      repoId: 'aio-ade',
+      repoName: 'AIO-ADE',
       cpu: 0.1,
       memory: 50_000_000,
       history: [],
@@ -239,25 +239,25 @@ describe('mergeSnapshotAndSessions', () => {
   it('@@ parse: an SSH-style session id resolves to its worktree group', () => {
     const ds: DaemonSession[] = [
       {
-        id: 'orca::/remote/Stingray@@abcd1234',
+        id: 'aio-ade::/remote/Stingray@@abcd1234',
         cwd: '',
-        title: 'orca/Stingray',
+        title: 'aio-ade/Stingray',
         agentOwnership: 'absent' as const
       }
     ]
     const ctx = baseCtx({
-      repoConnectionIdById: new Map([['orca', 'ssh-conn-1']])
+      repoConnectionIdById: new Map([['aio-ade', 'ssh-conn-1']])
     })
     const out = mergeSnapshotAndSessions(null, ds, ctx)
     expect(out).toHaveLength(1)
     expect(out[0]).toMatchObject({
-      repoId: 'orca',
+      repoId: 'aio-ade',
       hasRemoteChildren: true,
       cpu: null,
       memory: null
     })
     expect(out[0].worktrees[0]).toMatchObject({
-      worktreeId: 'orca::/remote/Stingray',
+      worktreeId: 'aio-ade::/remote/Stingray',
       worktreeName: 'Stingray',
       hasLocalSamples: false,
       isRemote: true,
@@ -265,7 +265,7 @@ describe('mergeSnapshotAndSessions', () => {
       memory: null
     })
     expect(out[0].worktrees[0].sessions[0]).toMatchObject({
-      sessionId: 'orca::/remote/Stingray@@abcd1234',
+      sessionId: 'aio-ade::/remote/Stingray@@abcd1234',
       hasLocalSamples: false,
       cpu: null,
       memory: null,
@@ -280,18 +280,18 @@ describe('mergeSnapshotAndSessions', () => {
     // predicate (`!hasLocalSamples`) it was — that was the bug.
     const ds: DaemonSession[] = [
       {
-        id: 'orca::/local/Triton@@deadbeef',
+        id: 'aio-ade::/local/Triton@@deadbeef',
         cwd: '/local/Triton',
-        title: 'orca/Triton',
+        title: 'aio-ade/Triton',
         agentOwnership: 'absent' as const
       }
     ]
     const ctx = baseCtx({
-      repoConnectionIdById: new Map([['orca', null]])
+      repoConnectionIdById: new Map([['aio-ade', null]])
     })
     const out = mergeSnapshotAndSessions(null, ds, ctx)
     expect(out[0]).toMatchObject({
-      repoId: 'orca',
+      repoId: 'aio-ade',
       hasRemoteChildren: false
     })
     expect(out[0].worktrees[0]).toMatchObject({
@@ -304,39 +304,39 @@ describe('mergeSnapshotAndSessions', () => {
     const tabId = 'tab-xyz'
     const ds: DaemonSession[] = [
       {
-        id: 'orca::/wrong/path@@feedface',
+        id: 'aio-ade::/wrong/path@@feedface',
         cwd: '',
-        title: 'orca',
+        title: 'aio-ade',
         agentOwnership: 'absent' as const
       }
     ]
     const ctx = baseCtx({
       tabsByWorktree: {
-        'orca::/correct/path': [makeTab(tabId, 'My Tab')]
+        'aio-ade::/correct/path': [makeTab(tabId, 'My Tab')]
       },
-      ptyIdsByTabId: { [tabId]: ['orca::/wrong/path@@feedface'] }
+      ptyIdsByTabId: { [tabId]: ['aio-ade::/wrong/path@@feedface'] }
     })
     const out = mergeSnapshotAndSessions(null, ds, ctx)
-    expect(out[0].worktrees[0].worktreeId).toBe('orca::/correct/path')
+    expect(out[0].worktrees[0].worktreeId).toBe('aio-ade::/correct/path')
     expect(out[0].worktrees[0].sessions[0].tabId).toBe(tabId)
     expect(out[0].worktrees[0].sessions[0].bound).toBe(true)
   })
 
   it('treats startup deferred reattach tab ptyId wake hints as bound sessions', () => {
     const tabId = 'tab-restored'
-    const sessionId = 'orca::/Users/me/Triton@@deferred'
+    const sessionId = 'aio-ade::/Users/me/Triton@@deferred'
     const ds: DaemonSession[] = [
       {
         id: sessionId,
         cwd: '/Users/me/Triton',
-        title: 'orca/Triton',
+        title: 'aio-ade/Triton',
         agentOwnership: 'absent' as const
       }
     ]
     const restoredTab = { ...makeTab(tabId, 'Restored'), ptyId: sessionId }
     const ctx = baseCtx({
       tabsByWorktree: {
-        'orca::/Users/me/Triton': [restoredTab]
+        'aio-ade::/Users/me/Triton': [restoredTab]
       },
       ptyIdsByTabId: { [tabId]: [] }
     })
@@ -484,17 +484,17 @@ describe('mergeSnapshotAndSessions', () => {
   it('local-bound interaction state: numeric metrics + bound=true + tabId set', () => {
     const tabId = 'tab-1'
     const wt: WorktreeMemory = {
-      worktreeId: 'orca::/Users/me/Triton',
+      worktreeId: 'aio-ade::/Users/me/Triton',
       worktreeName: 'Triton',
-      repoId: 'orca',
-      repoName: 'ORCA',
+      repoId: 'aio-ade',
+      repoName: 'AIO-ADE',
       cpu: 0.1,
       memory: 1_000,
       history: [],
       sessions: [{ sessionId: 'pty-bound', paneKey: null, pid: 1, cpu: 0.1, memory: 1_000 }]
     }
     const ctx = baseCtx({
-      tabsByWorktree: { 'orca::/Users/me/Triton': [makeTab(tabId)] },
+      tabsByWorktree: { 'aio-ade::/Users/me/Triton': [makeTab(tabId)] },
       ptyIdsByTabId: { [tabId]: ['pty-bound'] }
     })
     const out = mergeSnapshotAndSessions(makeSnapshot([wt]), [], ctx)
@@ -508,10 +508,10 @@ describe('mergeSnapshotAndSessions', () => {
 
   it('local-orphan interaction state: numeric metrics + bound=false + tabId null', () => {
     const wt: WorktreeMemory = {
-      worktreeId: 'orca::/Users/me/Triton',
+      worktreeId: 'aio-ade::/Users/me/Triton',
       worktreeName: 'Triton',
-      repoId: 'orca',
-      repoName: 'ORCA',
+      repoId: 'aio-ade',
+      repoName: 'AIO-ADE',
       cpu: 0,
       memory: 0,
       history: [],
@@ -527,9 +527,9 @@ describe('mergeSnapshotAndSessions', () => {
   it('remote-orphan interaction state: null metrics + bound=false', () => {
     const ds: DaemonSession[] = [
       {
-        id: 'orca::/remote/Wt@@deadbeef',
+        id: 'aio-ade::/remote/Wt@@deadbeef',
         cwd: '',
-        title: 'orca/Wt',
+        title: 'aio-ade/Wt',
         agentOwnership: 'absent' as const
       }
     ]
@@ -546,22 +546,27 @@ describe('mergeSnapshotAndSessions', () => {
 
   it('uses repoDisplayNameById to humanize new project groups when available', () => {
     const ds: DaemonSession[] = [
-      { id: 'stably-ai/orca::/remote/Wt@@1', cwd: '', title: '', agentOwnership: 'absent' as const }
+      {
+        id: 'stably-ai/aio-ade::/remote/Wt@@1',
+        cwd: '',
+        title: '',
+        agentOwnership: 'absent' as const
+      }
     ]
     const ctx = baseCtx({
-      repoDisplayNameById: new Map([['stably-ai/orca', 'ORCA']])
+      repoDisplayNameById: new Map([['stably-ai/aio-ade', 'AIO-ADE']])
     })
     const out = mergeSnapshotAndSessions(null, ds, ctx)
-    expect(out[0].repoName).toBe('ORCA')
+    expect(out[0].repoName).toBe('AIO-ADE')
   })
 
   it('workspaceSessionReady=false suppresses bound flags so nothing looks bound prematurely', () => {
     const tabId = 'tab-1'
     const wt: WorktreeMemory = {
-      worktreeId: 'orca::/Users/me/Triton',
+      worktreeId: 'aio-ade::/Users/me/Triton',
       worktreeName: 'Triton',
-      repoId: 'orca',
-      repoName: 'ORCA',
+      repoId: 'aio-ade',
+      repoName: 'AIO-ADE',
       cpu: 0,
       memory: 0,
       history: [],
@@ -569,7 +574,7 @@ describe('mergeSnapshotAndSessions', () => {
     }
     const ctx = baseCtx({
       workspaceSessionReady: false,
-      tabsByWorktree: { 'orca::/Users/me/Triton': [makeTab(tabId)] },
+      tabsByWorktree: { 'aio-ade::/Users/me/Triton': [makeTab(tabId)] },
       ptyIdsByTabId: { [tabId]: ['pty-1'] }
     })
     const out = mergeSnapshotAndSessions(makeSnapshot([wt]), [], ctx)

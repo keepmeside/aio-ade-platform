@@ -344,7 +344,7 @@ describe('browser-palette-search', () => {
         page: makePage(),
         workspace: makeWorkspace(),
         worktree: cleared,
-        repoName: 'orca',
+        repoName: 'aio-ade',
         worktreeSortIndex: 0,
         isCurrentPage: false,
         isCurrentWorktree: false
@@ -369,7 +369,7 @@ describe('browser-palette-search', () => {
         page: makePage(),
         workspace: makeWorkspace(),
         worktree: cleared,
-        repoName: 'orca',
+        repoName: 'aio-ade',
         worktreeSortIndex: 0,
         isCurrentPage: false,
         isCurrentWorktree: false

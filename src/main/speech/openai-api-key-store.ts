@@ -2,6 +2,7 @@ import { safeStorage } from 'electron'
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
+import { getAppHomeDir } from '../../shared/app-home-paths'
 
 type StoredOpenAiKey = {
   encryptedKeyBase64: string
@@ -10,19 +11,19 @@ type StoredOpenAiKey = {
 const OPENAI_SPEECH_TOKEN_FILE = 'openai-speech-token.enc'
 let cachedOpenAiSpeechApiKey: string | null = null
 
-function getOrcaDir(): string {
-  return join(homedir(), '.orca')
+function getAppDataDir(): string {
+  return getAppHomeDir(homedir())
 }
 
-function ensureOrcaDir(): void {
-  const dir = getOrcaDir()
+function ensureAppDataDir(): void {
+  const dir = getAppDataDir()
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true })
   }
 }
 
 function getOpenAiKeyPath(): string {
-  return join(getOrcaDir(), OPENAI_SPEECH_TOKEN_FILE)
+  return join(getAppDataDir(), OPENAI_SPEECH_TOKEN_FILE)
 }
 
 function readLegacyJsonStoredOpenAiKey(): StoredOpenAiKey | null {
@@ -52,7 +53,7 @@ export function saveOpenAiSpeechApiKey(apiKey: string): void {
   if (!trimmed) {
     throw new Error('OpenAI API key is required')
   }
-  ensureOrcaDir()
+  ensureAppDataDir()
   if (safeStorage.isEncryptionAvailable()) {
     writeFileSync(getOpenAiKeyPath(), safeStorage.encryptString(trimmed), { mode: 0o600 })
     cachedOpenAiSpeechApiKey = trimmed

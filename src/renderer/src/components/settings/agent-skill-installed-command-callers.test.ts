@@ -35,11 +35,11 @@ const updateCapableCallers = new Map<string, readonly string[]>([
   ],
   [
     'src/renderer/src/components/settings/CliSection.tsx',
-    ['ORCA_CLI_SKILL_UPDATE_COMMAND', 'installedCommand={cliSkillUpdateCommand}']
+    ['AIO_ADE_CLI_SKILL_UPDATE_COMMAND', 'installedCommand={cliSkillUpdateCommand}']
   ],
   [
     'src/renderer/src/components/settings/BrowserUsePane.tsx',
-    ['ORCA_CLI_SKILL_UPDATE_COMMAND', 'installedCommand={browserUseUpdateCommand}']
+    ['AIO_ADE_CLI_SKILL_UPDATE_COMMAND', 'installedCommand={browserUseUpdateCommand}']
   ],
   [
     'src/renderer/src/components/settings/BrowserUseSkillStep.tsx',
@@ -47,7 +47,7 @@ const updateCapableCallers = new Map<string, readonly string[]>([
   ],
   [
     'src/renderer/src/components/feature-wall/BrowserUseSkillSetupCard.tsx',
-    ['ORCA_CLI_SKILL_UPDATE_COMMAND', 'installedCommand={updateCommand}']
+    ['AIO_ADE_CLI_SKILL_UPDATE_COMMAND', 'installedCommand={updateCommand}']
   ],
   [
     // Why: the single-skill update command selection moved into
@@ -61,7 +61,7 @@ const updateCapableCallers = new Map<string, readonly string[]>([
   ],
   [
     'src/renderer/src/components/settings/MobileEmulatorAgentControlRow.tsx',
-    ['ORCA_CLI_SKILL_UPDATE_COMMAND', 'installedCommand={cliSkillUpdateCommand}']
+    ['AIO_ADE_CLI_SKILL_UPDATE_COMMAND', 'installedCommand={cliSkillUpdateCommand}']
   ]
 ])
 

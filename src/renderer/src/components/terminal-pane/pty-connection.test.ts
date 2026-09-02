@@ -894,7 +894,7 @@ describe('connectPanePty', () => {
       worktreesByRepo: {
         repo1: [{ id: 'wt-1', repoId: 'repo1', path: '/tmp/wt-1', displayName: 'feat/notis' }]
       },
-      repos: [{ id: 'repo1', connectionId: null, displayName: 'orca' }],
+      repos: [{ id: 'repo1', connectionId: null, displayName: 'aio-ade' }],
       projects: [],
       sshConnectionStates: new Map(),
       transientClearedAgentStatusConnectionIds: {},
@@ -1104,7 +1104,7 @@ describe('connectPanePty', () => {
         ...mockStoreState,
         tabsByWorktree: { 'wt-1': [{ id: 'tab-1', ptyId: null, generation: 7 }] },
         ptyIdsByTabId: { 'tab-1': [] },
-        repos: [{ id: 'repo1', connectionId: 'target-a', displayName: 'orca' }],
+        repos: [{ id: 'repo1', connectionId: 'target-a', displayName: 'aio-ade' }],
         sshConnectionStates: new Map([
           [
             'target-a',
@@ -1158,7 +1158,7 @@ describe('connectPanePty', () => {
       ...mockStoreState,
       tabsByWorktree: { 'wt-1': [{ id: 'tab-1', ptyId: null, generation: 7 }] },
       ptyIdsByTabId: { 'tab-1': [] },
-      repos: [{ id: 'repo1', connectionId: 'target-a', displayName: 'orca' }],
+      repos: [{ id: 'repo1', connectionId: 'target-a', displayName: 'aio-ade' }],
       sshConnectionStates: new Map([
         [
           'target-a',
@@ -1225,7 +1225,7 @@ describe('connectPanePty', () => {
       ...mockStoreState,
       tabsByWorktree: { 'wt-1': [{ id: 'tab-1', ptyId: null, generation: 7 }] },
       ptyIdsByTabId: { 'tab-1': [] },
-      repos: [{ id: 'repo1', connectionId: 'target-a', displayName: 'orca' }],
+      repos: [{ id: 'repo1', connectionId: 'target-a', displayName: 'aio-ade' }],
       sshConnectionStates: new Map([
         [
           'target-a',
@@ -1278,7 +1278,7 @@ describe('connectPanePty', () => {
       ...mockStoreState,
       tabsByWorktree: { 'wt-1': [{ id: 'tab-1', ptyId: null, generation: 7 }] },
       ptyIdsByTabId: { 'tab-1': [] },
-      repos: [{ id: 'repo1', connectionId: 'target-a', displayName: 'orca' }],
+      repos: [{ id: 'repo1', connectionId: 'target-a', displayName: 'aio-ade' }],
       sshConnectionStates: new Map([
         [
           'target-a',
@@ -1347,7 +1347,7 @@ describe('connectPanePty', () => {
       ...mockStoreState,
       tabsByWorktree: { 'wt-1': [{ id: 'tab-1', ptyId: null, generation: 7 }] },
       ptyIdsByTabId: { 'tab-1': [] },
-      repos: [{ id: 'repo1', connectionId: 'target-a', displayName: 'orca' }],
+      repos: [{ id: 'repo1', connectionId: 'target-a', displayName: 'aio-ade' }],
       sshConnectionStates: new Map([
         [
           'target-a',
@@ -1429,7 +1429,7 @@ describe('connectPanePty', () => {
       ...mockStoreState,
       tabsByWorktree: { 'wt-1': [{ id: 'tab-1', ptyId: livePtyId, generation: 7 }] },
       ptyIdsByTabId: { 'tab-1': [livePtyId] },
-      repos: [{ id: 'repo1', connectionId: 'target-a', displayName: 'orca' }],
+      repos: [{ id: 'repo1', connectionId: 'target-a', displayName: 'aio-ade' }],
       sshConnectionStates: new Map([
         [
           'target-a',
@@ -1492,7 +1492,7 @@ describe('connectPanePty', () => {
       ...mockStoreState,
       tabsByWorktree: { 'wt-1': [{ id: 'tab-1', ptyId: livePtyId, generation: 7 }] },
       ptyIdsByTabId: { 'tab-1': [livePtyId] },
-      repos: [{ id: 'repo1', connectionId: 'target-a', displayName: 'orca' }],
+      repos: [{ id: 'repo1', connectionId: 'target-a', displayName: 'aio-ade' }],
       sshConnectionStates: new Map([
         [
           'target-a',
@@ -1578,7 +1578,7 @@ describe('connectPanePty', () => {
       ...mockStoreState,
       tabsByWorktree: { 'wt-1': [{ id: 'tab-1', ptyId: null, generation: 7 }] },
       ptyIdsByTabId: { 'tab-1': [] },
-      repos: [{ id: 'repo1', connectionId: 'target-a', displayName: 'orca' }],
+      repos: [{ id: 'repo1', connectionId: 'target-a', displayName: 'aio-ade' }],
       sshConnectionStates: new Map([
         [
           'target-a',
@@ -1682,7 +1682,7 @@ describe('connectPanePty', () => {
         'wt-1': [{ id: 'tab-1', ptyId: restoredPtyId, generation: 7 }]
       },
       ptyIdsByTabId: { 'tab-1': [restoredPtyId] },
-      repos: [{ id: 'repo1', connectionId: 'target-a', displayName: 'orca' }],
+      repos: [{ id: 'repo1', connectionId: 'target-a', displayName: 'aio-ade' }],
       sshConnectionStates: new Map([
         [
           'target-a',
@@ -1746,7 +1746,7 @@ describe('connectPanePty', () => {
         'wt-1': [{ id: 'tab-1', ptyId: restoredPtyId, generation: 7 }]
       },
       ptyIdsByTabId: { 'tab-1': [restoredPtyId] },
-      repos: [{ id: 'repo1', connectionId: 'target-a', displayName: 'orca' }],
+      repos: [{ id: 'repo1', connectionId: 'target-a', displayName: 'aio-ade' }],
       sshConnectionStates: new Map([
         [
           'target-a',
@@ -1812,7 +1812,7 @@ describe('connectPanePty', () => {
         'wt-1': [{ id: 'tab-1', ptyId: restoredPtyId, generation: 7 }]
       },
       ptyIdsByTabId: { 'tab-1': [restoredPtyId] },
-      repos: [{ id: 'repo1', connectionId: 'target-a', displayName: 'orca' }],
+      repos: [{ id: 'repo1', connectionId: 'target-a', displayName: 'aio-ade' }],
       sshConnectionStates: new Map([
         [
           'target-a',
@@ -1911,7 +1911,7 @@ describe('connectPanePty', () => {
         'wt-1': [{ id: 'tab-1', ptyId: restoredPtyId, generation: 7 }]
       },
       ptyIdsByTabId: { 'tab-1': [restoredPtyId] },
-      repos: [{ id: 'repo1', connectionId: 'target-a', displayName: 'orca' }],
+      repos: [{ id: 'repo1', connectionId: 'target-a', displayName: 'aio-ade' }],
       sshConnectionStates: new Map([
         [
           'target-a',
@@ -1990,7 +1990,7 @@ describe('connectPanePty', () => {
         'wt-1': [{ id: 'tab-1', ptyId: restoredPtyId, generation: 7 }]
       },
       ptyIdsByTabId: { 'tab-1': [restoredPtyId] },
-      repos: [{ id: 'repo1', connectionId: 'target-a', displayName: 'orca' }],
+      repos: [{ id: 'repo1', connectionId: 'target-a', displayName: 'aio-ade' }],
       sshConnectionStates: new Map([
         [
           'target-a',
@@ -2058,7 +2058,7 @@ describe('connectPanePty', () => {
         'wt-1': [{ id: 'tab-1', ptyId: firstPtyId, generation: 7 }]
       },
       ptyIdsByTabId: { 'tab-1': [firstPtyId, siblingPtyId] },
-      repos: [{ id: 'repo1', connectionId: 'target-a', displayName: 'orca' }],
+      repos: [{ id: 'repo1', connectionId: 'target-a', displayName: 'aio-ade' }],
       sshConnectionStates: new Map([
         [
           'target-a',
@@ -2294,13 +2294,13 @@ describe('connectPanePty', () => {
     connectPanePty(createPane(1) as never, createManager(1) as never, createDeps() as never)
     await flushAsyncTicks()
 
-    capturedDataCallback.current?.('Created https://github.com/acme/orca/pull/42\r\n')
+    capturedDataCallback.current?.('Created https://github.com/acme/aio-ade/pull/42\r\n')
 
     expect(mockStoreState.observeTerminalGitHubPullRequestLink).toHaveBeenCalledWith(
       'wt-1',
       expect.objectContaining({
-        url: 'https://github.com/acme/orca/pull/42',
-        slug: { owner: 'acme', repo: 'orca', host: 'github.com' },
+        url: 'https://github.com/acme/aio-ade/pull/42',
+        slug: { owner: 'acme', repo: 'aio-ade', host: 'github.com' },
         number: 42
       })
     )
@@ -6235,7 +6235,7 @@ describe('connectPanePty', () => {
       }
       expect(transport.sendInput).not.toHaveBeenCalled()
 
-      capturedDataCallback.current?.('\x1b]777;orca-shell-ready\x07user@remote $ ')
+      capturedDataCallback.current?.('\x1b]777;aio-ade-shell-ready\x07user@remote $ ')
       for (const fn of pendingTimeouts.splice(0)) {
         fn()
       }
@@ -6271,7 +6271,7 @@ describe('connectPanePty', () => {
         launchAgent: 'codex',
         launchConfig: { agentArgs: '', agentEnv: {} },
         launchToken: 'launch-token-1',
-        draftPrompt: 'https://github.com/stablyai/orca/issues/42'
+        draftPrompt: 'https://github.com/keepmeside/aio-ade-platform/issues/42'
       }
     })
 
@@ -6290,11 +6290,11 @@ describe('connectPanePty', () => {
     await flushAsyncTicks()
 
     expect(transport.sendInputAccepted).toHaveBeenCalledWith(
-      '\x1b[200~https://github.com/stablyai/orca/issues/42\x1b[201~'
+      '\x1b[200~https://github.com/keepmeside/aio-ade-platform/issues/42\x1b[201~'
     )
     expect(transport.sendInput.mock.calls.map(([data]) => data)).toEqual([
       '\x1b[I',
-      '\x1b[200~https://github.com/stablyai/orca/issues/42\x1b[201~'
+      '\x1b[200~https://github.com/keepmeside/aio-ade-platform/issues/42\x1b[201~'
     ])
     expect(window.api.pty.writeAccepted).not.toHaveBeenCalled()
     expect(mockStoreState.recordTerminalInput).toHaveBeenCalledOnce()
@@ -6322,7 +6322,7 @@ describe('connectPanePty', () => {
           launchAgent: 'codex',
           launchConfig: { agentArgs: '', agentEnv: {} },
           launchToken: 'launch-token-1',
-          draftPrompt: 'https://github.com/stablyai/orca/issues/42'
+          draftPrompt: 'https://github.com/keepmeside/aio-ade-platform/issues/42'
         }
       }) as never
     )
@@ -6497,7 +6497,7 @@ describe('connectPanePty', () => {
       }
       expect(transport.sendInput).not.toHaveBeenCalled()
 
-      capturedDataCallback.current?.('\x1b]777;orca-shell-ready\x07user@remote $ ')
+      capturedDataCallback.current?.('\x1b]777;aio-ade-shell-ready\x07user@remote $ ')
       for (const fn of pendingTimeouts.splice(0)) {
         fn()
       }
@@ -6557,7 +6557,7 @@ describe('connectPanePty', () => {
       }
       expect(transport.sendInput).not.toHaveBeenCalled()
 
-      capturedDataCallback.current?.('\x1b]777;orca-shell-ready\x07user@remote $ ')
+      capturedDataCallback.current?.('\x1b]777;aio-ade-shell-ready\x07user@remote $ ')
       for (const fn of pendingTimeouts.splice(0)) {
         fn()
       }
@@ -6610,7 +6610,7 @@ describe('connectPanePty', () => {
     expect(mockStoreState.removeAgentStatus).not.toHaveBeenCalled()
   })
 
-  it('clears pre-hook launch config when an Orca-started command exits', async () => {
+  it('clears pre-hook launch config when an AIO-ADE-started command exits', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout'] })
     const { connectPanePty } = await import('./pty-connection')
     vi.mocked(window.api.pty.confirmForegroundProcess).mockResolvedValue('zsh')
@@ -6738,7 +6738,7 @@ describe('connectPanePty', () => {
     })
   })
 
-  it('confirms an Orca-launched agent fresh spawn in a no-OSC shell (Git Bash)', async () => {
+  it('confirms an AIO-ADE-launched agent fresh spawn in a no-OSC shell (Git Bash)', async () => {
     // Why: no-OSC shells (Git Bash/cmd) emit no command boundary, so without a fresh-spawn sample the pane never earns routing trust (#7620).
     vi.useFakeTimers()
     const { connectPanePty } = await import('./pty-connection')
@@ -7684,11 +7684,11 @@ describe('connectPanePty', () => {
         expect.objectContaining({
           command: "codex '--dangerously-bypass-approvals-and-sandbox' 'resume' 'codex-session-1'",
           env: expect.objectContaining({
-            ORCA_PANE_KEY: paneKey,
-            ORCA_TAB_ID: 'tab-1',
-            ORCA_WORKTREE_ID: 'wt-1',
-            ORCA_WORKSPACE_ID: 'wt-1',
-            ORCA_AGENT_LAUNCH_TOKEN: expect.stringMatching(new RegExp(`^${UUID_RE}$`))
+            AIO_ADE_PANE_KEY: paneKey,
+            AIO_ADE_TAB_ID: 'tab-1',
+            AIO_ADE_WORKTREE_ID: 'wt-1',
+            AIO_ADE_WORKSPACE_ID: 'wt-1',
+            AIO_ADE_AGENT_LAUNCH_TOKEN: expect.stringMatching(new RegExp(`^${UUID_RE}$`))
           })
         })
       )
@@ -7784,8 +7784,8 @@ describe('connectPanePty', () => {
         expect.objectContaining({
           command: "codex '--dangerously-bypass-approvals-and-sandbox' 'resume' 'codex-session-1'",
           env: expect.objectContaining({
-            ORCA_PANE_KEY: paneKey,
-            ORCA_AGENT_LAUNCH_TOKEN: expect.stringMatching(new RegExp(`^${UUID_RE}$`))
+            AIO_ADE_PANE_KEY: paneKey,
+            AIO_ADE_AGENT_LAUNCH_TOKEN: expect.stringMatching(new RegExp(`^${UUID_RE}$`))
           })
         })
       )
@@ -9148,11 +9148,11 @@ describe('connectPanePty', () => {
           transcriptPath: '/Users/example/.codex/sessions/2026/07/20/rollout-session.jsonl'
         },
         env: expect.objectContaining({
-          ORCA_PANE_KEY: paneKey,
-          ORCA_TAB_ID: 'tab-1',
-          ORCA_WORKTREE_ID: 'wt-1',
-          ORCA_WORKSPACE_ID: 'wt-1',
-          ORCA_AGENT_LAUNCH_TOKEN: expect.stringMatching(new RegExp(`^${UUID_RE}$`))
+          AIO_ADE_PANE_KEY: paneKey,
+          AIO_ADE_TAB_ID: 'tab-1',
+          AIO_ADE_WORKTREE_ID: 'wt-1',
+          AIO_ADE_WORKSPACE_ID: 'wt-1',
+          AIO_ADE_AGENT_LAUNCH_TOKEN: expect.stringMatching(new RegExp(`^${UUID_RE}$`))
         })
       })
     )
@@ -9231,11 +9231,11 @@ describe('connectPanePty', () => {
         command:
           "codex '--dangerously-bypass-approvals-and-sandbox' 'resume' 'codex-session-1'\\''s'",
         env: expect.objectContaining({
-          ORCA_PANE_KEY: paneKey,
-          ORCA_TAB_ID: 'tab-1',
-          ORCA_WORKTREE_ID: 'wt-1',
-          ORCA_WORKSPACE_ID: 'wt-1',
-          ORCA_AGENT_LAUNCH_TOKEN: expect.stringMatching(new RegExp(`^${UUID_RE}$`))
+          AIO_ADE_PANE_KEY: paneKey,
+          AIO_ADE_TAB_ID: 'tab-1',
+          AIO_ADE_WORKTREE_ID: 'wt-1',
+          AIO_ADE_WORKSPACE_ID: 'wt-1',
+          AIO_ADE_AGENT_LAUNCH_TOKEN: expect.stringMatching(new RegExp(`^${UUID_RE}$`))
         })
       })
     )
@@ -9307,11 +9307,11 @@ describe('connectPanePty', () => {
         sessionId: 'lost-pty',
         command: "codex '--dangerously-bypass-approvals-and-sandbox' 'resume' 'codex-session-1'",
         env: expect.objectContaining({
-          ORCA_PANE_KEY: paneKey,
-          ORCA_TAB_ID: 'tab-1',
-          ORCA_WORKTREE_ID: 'wt-1',
-          ORCA_WORKSPACE_ID: 'wt-1',
-          ORCA_AGENT_LAUNCH_TOKEN: expect.stringMatching(new RegExp(`^${UUID_RE}$`))
+          AIO_ADE_PANE_KEY: paneKey,
+          AIO_ADE_TAB_ID: 'tab-1',
+          AIO_ADE_WORKTREE_ID: 'wt-1',
+          AIO_ADE_WORKSPACE_ID: 'wt-1',
+          AIO_ADE_AGENT_LAUNCH_TOKEN: expect.stringMatching(new RegExp(`^${UUID_RE}$`))
         })
       })
     )
@@ -9542,10 +9542,10 @@ describe('connectPanePty', () => {
       agentArgs: '--model gpt-5 --reasoning-effort high',
       agentEnv: {
         CODEX_PROFILE: 'captured',
-        ORCA_PANE_KEY: 'wrong-pane',
-        ORCA_TAB_ID: 'wrong-tab',
-        ORCA_WORKTREE_ID: 'wrong-worktree',
-        ORCA_WORKSPACE_ID: 'wrong-workspace'
+        AIO_ADE_PANE_KEY: 'wrong-pane',
+        AIO_ADE_TAB_ID: 'wrong-tab',
+        AIO_ADE_WORKTREE_ID: 'wrong-worktree',
+        AIO_ADE_WORKSPACE_ID: 'wrong-workspace'
       }
     }
     mockStoreState = {
@@ -9594,11 +9594,11 @@ describe('connectPanePty', () => {
         command: "codex '--model' 'gpt-5' '--reasoning-effort' 'high' 'resume' 'codex-session-1'",
         env: expect.objectContaining({
           CODEX_PROFILE: 'captured',
-          ORCA_PANE_KEY: paneKey,
-          ORCA_TAB_ID: 'tab-1',
-          ORCA_WORKTREE_ID: 'wt-1',
-          ORCA_WORKSPACE_ID: 'wt-1',
-          ORCA_AGENT_LAUNCH_TOKEN: expect.stringMatching(new RegExp(`^${UUID_RE}$`))
+          AIO_ADE_PANE_KEY: paneKey,
+          AIO_ADE_TAB_ID: 'tab-1',
+          AIO_ADE_WORKTREE_ID: 'wt-1',
+          AIO_ADE_WORKSPACE_ID: 'wt-1',
+          AIO_ADE_AGENT_LAUNCH_TOKEN: expect.stringMatching(new RegExp(`^${UUID_RE}$`))
         })
       })
     )
@@ -9763,7 +9763,7 @@ describe('connectPanePty', () => {
         sessionId: 'lost-pty',
         command: "codex '--model' 'gpt-5-mini' 'resume' 'codex-session-1'",
         env: expect.objectContaining({
-          ORCA_AGENT_LAUNCH_TOKEN: expect.stringMatching(new RegExp(`^${UUID_RE}$`))
+          AIO_ADE_AGENT_LAUNCH_TOKEN: expect.stringMatching(new RegExp(`^${UUID_RE}$`))
         })
       })
     )
@@ -10012,11 +10012,11 @@ describe('connectPanePty', () => {
         command: "codex '--dangerously-bypass-approvals-and-sandbox' 'resume' 'codex-session-1'",
         launchAgent: 'codex',
         env: expect.objectContaining({
-          ORCA_PANE_KEY: paneKey,
-          ORCA_TAB_ID: 'tab-1',
-          ORCA_WORKTREE_ID: 'wt-1',
-          ORCA_WORKSPACE_ID: 'wt-1',
-          ORCA_AGENT_LAUNCH_TOKEN: expect.stringMatching(new RegExp(`^${UUID_RE}$`))
+          AIO_ADE_PANE_KEY: paneKey,
+          AIO_ADE_TAB_ID: 'tab-1',
+          AIO_ADE_WORKTREE_ID: 'wt-1',
+          AIO_ADE_WORKSPACE_ID: 'wt-1',
+          AIO_ADE_AGENT_LAUNCH_TOKEN: expect.stringMatching(new RegExp(`^${UUID_RE}$`))
         })
       })
     )
@@ -12228,7 +12228,7 @@ describe('connectPanePty', () => {
     })
 
     // One fish prompt cycle, exactly as fish's tty_handoff.rs emits it.
-    const FISH_PROMPT_HANDOFF = '\x1b[?2031h\x1b[0m~/orca \x1b[32m❯\x1b[0m \x1b[?2031l'
+    const FISH_PROMPT_HANDOFF = '\x1b[?2031h\x1b[0m~/aio-ade \x1b[32m❯\x1b[0m \x1b[?2031l'
 
     it('stays silent across three fish prompts', async () => {
       const { transport, emit, dispose } = await connectVisiblePane()
@@ -13699,7 +13699,7 @@ describe('connectPanePty', () => {
 
     expect(transport.serializeBuffer).toHaveBeenCalledTimes(1)
     expect(pane.terminal.write).not.toHaveBeenCalledWith(
-      expect.stringContaining('Orca skipped hidden terminal output'),
+      expect.stringContaining('AIO-ADE skipped hidden terminal output'),
       expect.any(Function)
     )
     expect(pane.terminal.write).not.toHaveBeenCalledWith(
@@ -14311,7 +14311,7 @@ describe('connectPanePty', () => {
       expect(getMainBufferSnapshot).toHaveBeenCalledTimes(4)
       expect(pane.terminal.write).toHaveBeenCalledWith(
         expect.stringContaining(
-          'Orca skipped hidden terminal output because main recovery was unavailable.'
+          'AIO-ADE skipped hidden terminal output because main recovery was unavailable.'
         ),
         expect.any(Function)
       )
@@ -16068,7 +16068,7 @@ describe('connectPanePty', () => {
       connectPanePty(pane as never, createManager(1) as never, createDeps() as never)
       await flushAsyncTicks(6)
 
-      capturedDataCallback.current?.('\r\x1b[Korca % npm test')
+      capturedDataCallback.current?.('\r\x1b[Kaio-ade % npm test')
 
       parseCallback?.()
       expect(refresh).toHaveBeenCalledWith(0, 39, true)
@@ -16345,7 +16345,7 @@ describe('connectPanePty', () => {
       // Why: missing-glyph workaround is renderer-scoped, not PTY-scoped — SSH moves byte origin but Windows still paints locally.
       mockStoreState = {
         ...mockStoreState,
-        repos: [{ id: 'repo1', connectionId: 'conn-1', displayName: 'orca' }]
+        repos: [{ id: 'repo1', connectionId: 'conn-1', displayName: 'aio-ade' }]
       }
 
       const pane = createPane(1)
@@ -16944,11 +16944,11 @@ describe('connectPanePty', () => {
         },
         launchToken: expect.stringMatching(new RegExp(`^${UUID_RE}$`)),
         env: expect.objectContaining({
-          ORCA_PANE_KEY: paneKey,
-          ORCA_TAB_ID: 'tab-1',
-          ORCA_WORKTREE_ID: 'wt-1',
-          ORCA_WORKSPACE_ID: 'wt-1',
-          ORCA_AGENT_LAUNCH_TOKEN: expect.stringMatching(new RegExp(`^${UUID_RE}$`))
+          AIO_ADE_PANE_KEY: paneKey,
+          AIO_ADE_TAB_ID: 'tab-1',
+          AIO_ADE_WORKTREE_ID: 'wt-1',
+          AIO_ADE_WORKSPACE_ID: 'wt-1',
+          AIO_ADE_AGENT_LAUNCH_TOKEN: expect.stringMatching(new RegExp(`^${UUID_RE}$`))
         })
       })
     )
@@ -17135,7 +17135,7 @@ describe('connectPanePty', () => {
     const transport = createMockTransport()
     transportFactoryQueue.push(transport)
     const setupWorktreeId =
-      'ephemeral-setup-terminal:settings-mobile-emulator-orca-cli-skill-terminal'
+      'ephemeral-setup-terminal:settings-mobile-emulator-aio-ade-cli-skill-terminal'
     mockStoreState = {
       ...mockStoreState,
       tabsByWorktree: { [setupWorktreeId]: [{ id: 'tab-1', ptyId: null }] },
@@ -17161,7 +17161,7 @@ describe('connectPanePty', () => {
     const transport = createMockTransport()
     transportFactoryQueue.push(transport)
     const setupWorktreeId =
-      'ephemeral-setup-terminal:settings-mobile-emulator-orca-cli-skill-terminal'
+      'ephemeral-setup-terminal:settings-mobile-emulator-aio-ade-cli-skill-terminal'
     mockStoreState = {
       ...mockStoreState,
       tabsByWorktree: { [setupWorktreeId]: [{ id: 'tab-1', ptyId: null }] },
@@ -17222,14 +17222,14 @@ describe('connectPanePty', () => {
       // Why: the worktree row exists (so the owner is not "ambiguous") but its repo has
       // not landed yet — exactly the window that used to fail open to local.
       worktreesByRepo: {
-        repo1: [{ id: 'wt-remote', repoId: 'repo1', path: '/tmp/orca-docker-relay-perf-repo' }]
+        repo1: [{ id: 'wt-remote', repoId: 'repo1', path: '/tmp/aio-ade-docker-relay-perf-repo' }]
       },
       repos: []
     } as StoreState
 
     const deps = createDeps({
       worktreeId: 'wt-remote',
-      cwd: '/tmp/orca-docker-relay-perf-repo'
+      cwd: '/tmp/aio-ade-docker-relay-perf-repo'
     })
     connectPanePty(createPane(1) as never, createManager(1) as never, deps as never)
 
@@ -17406,7 +17406,7 @@ describe('connectPanePty', () => {
         {
           id: 'repo1',
           connectionId: null,
-          displayName: 'orca',
+          displayName: 'aio-ade',
           executionHostId: 'runtime:owner-runtime'
         }
       ],
@@ -17454,7 +17454,7 @@ describe('connectPanePty', () => {
         {
           id: 'repo1',
           connectionId: null,
-          displayName: 'orca',
+          displayName: 'aio-ade',
           executionHostId: 'local'
         }
       ],
@@ -17897,8 +17897,8 @@ describe('connectPanePty', () => {
       onPtySpawn('pty-fact-pr')
 
       const link = {
-        url: 'https://github.com/acme/orca/pull/42',
-        slug: { owner: 'acme', repo: 'orca' },
+        url: 'https://github.com/acme/aio-ade/pull/42',
+        slug: { owner: 'acme', repo: 'aio-ade' },
         number: 42
       }
       handler._dispatchTerminalSideEffectBatchForTest({
@@ -17939,7 +17939,7 @@ describe('connectPanePty', () => {
       await flushAsyncTicks()
       expect(capturedDataCallback.current).not.toBeNull()
 
-      capturedDataCallback.current?.('Created https://github.com/acme/orca/pull/42\r\n')
+      capturedDataCallback.current?.('Created https://github.com/acme/aio-ade/pull/42\r\n')
       capturedDataCallback.current?.('\x1b]133;D;130\x07prompt $ ')
 
       expect(mockStoreState.observeTerminalGitHubPullRequestLink).not.toHaveBeenCalled()
@@ -19890,7 +19890,7 @@ describe('connectPanePty', () => {
       expect.objectContaining({
         source: 'agent-task-complete',
         worktreeId: 'wt-1',
-        repoLabel: 'orca',
+        repoLabel: 'aio-ade',
         worktreeLabel: 'feat/notis',
         hasMultipleActiveRepos: true,
         terminalTitle: '* Claude done',
@@ -20688,7 +20688,7 @@ describe('connectPanePty', () => {
           {
             id: 'repo1',
             connectionId: null,
-            displayName: 'orca',
+            displayName: 'aio-ade',
             executionHostId: 'runtime:owner-runtime'
           }
         ]

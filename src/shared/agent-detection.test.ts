@@ -72,7 +72,7 @@ describe('OSC title extraction', () => {
 })
 
 describe('Cursor agent title identity', () => {
-  // Why: the accepted vocabulary is the set of labels Orca actually synthesizes for Cursor.
+  // Why: the accepted vocabulary is the set of labels AIO-ADE actually synthesizes for Cursor.
   // Pin it to that profile so renaming a label there cannot silently drop @cursor to zero
   // recipients (and desync the auto-Enter suppression that shares this predicate).
   it.each([
@@ -82,7 +82,7 @@ describe('Cursor agent title identity', () => {
     '⣿ Cursor Agent',
     'Cursor ready',
     'Cursor - action required'
-  ])('accepts the native or Orca-synthesized Cursor title %j', (title) => {
+  ])('accepts the native or AIO-ADE-synthesized Cursor title %j', (title) => {
     expect(isCursorAgentTitle(title)).toBe(true)
   })
 
@@ -93,7 +93,7 @@ describe('Cursor agent title identity', () => {
     '✳ Fix the text cursor blink',
     '. fix cursor position',
     '* cursor rendering done',
-    'Terminal Cursor and Orca slows down',
+    'Terminal Cursor and AIO-ADE slows down',
     'cursor-agent',
     'cursor.exe',
     '~/cursor-rules',

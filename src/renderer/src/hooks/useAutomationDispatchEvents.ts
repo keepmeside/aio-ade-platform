@@ -33,7 +33,7 @@ import {
 import { parseWorkspaceKey } from '../../../shared/workspace-scope'
 import { getFolderWorkspaceConnectionId } from '@/lib/folder-workspace-connection'
 
-const AUTOMATIONS_CHANGED_EVENT = 'orca:automations-changed'
+const AUTOMATIONS_CHANGED_EVENT = 'aio-ade:automations-changed'
 const activeReuseDispatchTabIds = new Set<string>()
 
 function acquireReuseDispatchTab(tabId: string): (() => void) | null {

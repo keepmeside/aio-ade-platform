@@ -413,8 +413,8 @@ describe('areWorktreePathsEqual', () => {
   it('treats macOS /private/tmp git paths as matching /tmp workspace paths', () => {
     expect(
       areWorktreePathsEqual(
-        '/private/tmp/orca-proof/worktrees/repo/feature',
-        '/tmp/orca-proof/worktrees/repo/feature',
+        '/private/tmp/aio-ade-proof/worktrees/repo/feature',
+        '/tmp/aio-ade-proof/worktrees/repo/feature',
         'darwin'
       )
     ).toBe(true)
@@ -451,7 +451,7 @@ describe('mergeWorktree', () => {
       linkedIssue: 42,
       linkedPR: 10,
       linkedLinearIssue: null,
-      projectId: 'github:stablyai/orca',
+      projectId: 'github:keepmeside/aio-ade-platform',
       hostId: 'ssh:openclaw-2' as const,
       projectHostSetupId: 'remote-repo',
       linkedGitLabMR: null,
@@ -473,7 +473,7 @@ describe('mergeWorktree', () => {
         createdAt: 123,
         executionTargetType: 'ssh' as const,
         executionTargetId: 'openclaw-2',
-        projectId: 'github:stablyai/orca',
+        projectId: 'github:keepmeside/aio-ade-platform',
         repoId: 'repo1',
         hostId: 'ssh:openclaw-2' as const
       }
@@ -500,7 +500,7 @@ describe('mergeWorktree', () => {
       linkedAzureDevOpsPR: null,
       linkedGiteaPR: null,
       mobileDiffReview: undefined,
-      projectId: 'github:stablyai/orca',
+      projectId: 'github:keepmeside/aio-ade-platform',
       hostId: 'ssh:openclaw-2',
       projectHostSetupId: 'remote-repo',
       isArchived: true,
@@ -520,7 +520,7 @@ describe('mergeWorktree', () => {
         createdAt: 123,
         executionTargetType: 'ssh',
         executionTargetId: 'openclaw-2',
-        projectId: 'github:stablyai/orca',
+        projectId: 'github:keepmeside/aio-ade-platform',
         repoId: 'repo1',
         hostId: 'ssh:openclaw-2'
       }

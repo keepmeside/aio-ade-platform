@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { z } from 'zod'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ORCHESTRATION_CONTRACT_VERSION } from '../../../shared/protocol-version'
-import { OrcaRuntimeService } from '../orca-runtime'
+import { AioAdeRuntimeService } from '../aio-ade-runtime'
 import { OrchestrationDb } from '../orchestration/db'
 import { defineMethod, type RpcRequest } from './core'
 import { RpcDispatcher } from './dispatcher'
@@ -40,7 +40,7 @@ describe('durable orchestration mutation ledger', () => {
 
   function createHarness(dbPath: string | ':memory:' = ':memory:') {
     const db = new OrchestrationDb(dbPath)
-    const runtime = new OrcaRuntimeService()
+    const runtime = new AioAdeRuntimeService()
     runtime.setOrchestrationDb(db)
     const effect = vi.fn((subject: string) =>
       db.insertMessage({ from: 'caller', to: 'recipient', subject })
@@ -121,7 +121,7 @@ describe('durable orchestration mutation ledger', () => {
 
   it('joins concurrent identical mutations', async () => {
     const db = new OrchestrationDb(':memory:')
-    const runtime = new OrcaRuntimeService()
+    const runtime = new AioAdeRuntimeService()
     runtime.setOrchestrationDb(db)
     let release: (() => void) | undefined
     const gate = new Promise<void>((resolve) => {
@@ -157,7 +157,7 @@ describe('durable orchestration mutation ledger', () => {
   })
 
   it('replays a completed receipt after database and dispatcher restart', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'orca-mutation-ledger-'))
+    const dir = mkdtempSync(join(tmpdir(), 'aio-ade-mutation-ledger-'))
     paths.push(dir)
     const dbPath = join(dir, 'orchestration.db')
     const first = createHarness(dbPath)
@@ -198,7 +198,7 @@ describe('durable orchestration mutation ledger', () => {
 
   it('returns the accepted Dispatch when worker-start was interrupted by restart', async () => {
     const db = new OrchestrationDb(':memory:')
-    const runtime = new OrcaRuntimeService()
+    const runtime = new AioAdeRuntimeService()
     runtime.setOrchestrationDb(db)
     const params = { from: 'term_coord', task: db.createTask({ spec: 'restart' }).id }
     const callerFingerprint = createHash('sha256').update('caller-token').digest('hex')
@@ -243,7 +243,7 @@ describe('durable orchestration mutation ledger', () => {
         data: {
           requestId: 'mutation_worker_start',
           dispatchId: started.dispatch.id,
-          recoveryCommand: `orca orchestration worker-show --dispatch ${started.dispatch.id} --json`
+          recoveryCommand: `aio-ade orchestration worker-show --dispatch ${started.dispatch.id} --json`
         }
       }
     })
@@ -253,7 +253,7 @@ describe('durable orchestration mutation ledger', () => {
 
   it('recovers a lost ask acceptance without creating a second question', async () => {
     const db = new OrchestrationDb(':memory:')
-    const runtime = new OrcaRuntimeService()
+    const runtime = new AioAdeRuntimeService()
     runtime.setOrchestrationDb(db)
     vi.spyOn(runtime, 'getTerminalPaneKey').mockReturnValue('tab_worker:leaf_worker')
     vi.spyOn(runtime, 'getTerminalProcessIncarnation').mockReturnValue('runtime:pty:1')

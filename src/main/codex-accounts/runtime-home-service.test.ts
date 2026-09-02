@@ -46,15 +46,15 @@ type TestSettingsOverrides = Partial<GlobalSettings> & {
 }
 
 function setRealHomeLaneForTest(enabled: boolean): void {
-  process.env.ORCA_CODEX_SYSTEM_DEFAULT_REAL_HOME = enabled ? '1' : '0'
+  process.env.AIO_ADE_CODEX_SYSTEM_DEFAULT_REAL_HOME = enabled ? '1' : '0'
 }
 
-const initialRealHomeLaneEnv = process.env.ORCA_CODEX_SYSTEM_DEFAULT_REAL_HOME
+const initialRealHomeLaneEnv = process.env.AIO_ADE_CODEX_SYSTEM_DEFAULT_REAL_HOME
 afterEach(() => {
   if (initialRealHomeLaneEnv === undefined) {
-    delete process.env.ORCA_CODEX_SYSTEM_DEFAULT_REAL_HOME
+    delete process.env.AIO_ADE_CODEX_SYSTEM_DEFAULT_REAL_HOME
   } else {
-    process.env.ORCA_CODEX_SYSTEM_DEFAULT_REAL_HOME = initialRealHomeLaneEnv
+    process.env.AIO_ADE_CODEX_SYSTEM_DEFAULT_REAL_HOME = initialRealHomeLaneEnv
   }
 })
 
@@ -91,10 +91,10 @@ function createSettings(overrides: TestSettingsOverrides = {}): GlobalSettings {
     terminalLigatures: 'auto',
     terminalCursorStyle: 'block',
     terminalCursorBlink: false,
-    terminalThemeDark: 'orca-dark',
+    terminalThemeDark: 'aio-ade-dark',
     terminalDividerColorDark: '#000000',
     terminalUseSeparateLightTheme: false,
-    terminalThemeLight: 'orca-light',
+    terminalThemeLight: 'aio-ade-light',
     terminalDividerColorLight: '#ffffff',
     terminalInactivePaneOpacity: 0.5,
     terminalActivePaneOpacity: 1,
@@ -238,7 +238,7 @@ function createStore(settings: GlobalSettings) {
 function createManagedAuth(rootDir: string, accountId: string, auth: string): string {
   const managedHomePath = join(rootDir, 'codex-accounts', accountId, 'home')
   mkdirSync(managedHomePath, { recursive: true })
-  writeFileSync(join(managedHomePath, '.orca-managed-home'), `${accountId}\n`, 'utf-8')
+  writeFileSync(join(managedHomePath, '.aio-ade-managed-home'), `${accountId}\n`, 'utf-8')
   writeFileSync(join(managedHomePath, 'auth.json'), auth, 'utf-8')
   return managedHomePath
 }
@@ -280,10 +280,10 @@ describe('CodexRuntimeHomeService', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
-    testState.userDataDir = mkdtempSync(join(tmpdir(), 'orca-runtime-home-'))
-    testState.fakeHomeDir = mkdtempSync(join(tmpdir(), 'orca-codex-home-'))
-    testState.previousUserDataPath = process.env.ORCA_USER_DATA_PATH
-    process.env.ORCA_USER_DATA_PATH = testState.userDataDir
+    testState.userDataDir = mkdtempSync(join(tmpdir(), 'aio-ade-runtime-home-'))
+    testState.fakeHomeDir = mkdtempSync(join(tmpdir(), 'aio-ade-codex-home-'))
+    testState.previousUserDataPath = process.env.AIO_ADE_USER_DATA_PATH
+    process.env.AIO_ADE_USER_DATA_PATH = testState.userDataDir
     mkdirSync(getSystemCodexHomePath(), { recursive: true })
     mkdirSync(getRuntimeCodexHomePath(), { recursive: true })
   })
@@ -292,9 +292,9 @@ describe('CodexRuntimeHomeService', () => {
     rmSync(testState.userDataDir, { recursive: true, force: true })
     rmSync(testState.fakeHomeDir, { recursive: true, force: true })
     if (testState.previousUserDataPath === undefined) {
-      delete process.env.ORCA_USER_DATA_PATH
+      delete process.env.AIO_ADE_USER_DATA_PATH
     } else {
-      process.env.ORCA_USER_DATA_PATH = testState.previousUserDataPath
+      process.env.AIO_ADE_USER_DATA_PATH = testState.previousUserDataPath
     }
   })
 
@@ -406,11 +406,11 @@ describe('CodexRuntimeHomeService', () => {
   })
 
   it('uses the canonical Electron userData for legacy active host migration', async () => {
-    const staleUserDataDir = mkdtempSync(join(tmpdir(), 'orca-stale-runtime-home-'))
+    const staleUserDataDir = mkdtempSync(join(tmpdir(), 'aio-ade-stale-runtime-home-'))
     const staleRuntimeHomePath = join(staleUserDataDir, 'codex-runtime-home', 'home')
     try {
       mkdirSync(staleRuntimeHomePath, { recursive: true })
-      process.env.ORCA_USER_DATA_PATH = staleUserDataDir
+      process.env.AIO_ADE_USER_DATA_PATH = staleUserDataDir
       const legacyLaunchHomePath = join(
         testState.userDataDir,
         'codex-runtime-home',
@@ -430,12 +430,12 @@ describe('CodexRuntimeHomeService', () => {
       writeFileSync(getSystemCodexAuthPath(), '{"account":"system"}\n', 'utf-8')
       const store = createStore(createSettings())
 
-      const { configureOrcaUserDataPathEnv } = await import('../startup/configure-process')
-      configureOrcaUserDataPathEnv()
+      const { configureAioAdeUserDataPathEnv } = await import('../startup/configure-process')
+      configureAioAdeUserDataPathEnv()
       const { CodexRuntimeHomeService } = await import('./runtime-home-service')
       new CodexRuntimeHomeService(store as never)
 
-      expect(process.env.ORCA_USER_DATA_PATH).toBe(testState.userDataDir)
+      expect(process.env.AIO_ADE_USER_DATA_PATH).toBe(testState.userDataDir)
       expect(normalizeLinkTarget(readlinkSync(legacyActiveHomePath))).toBe(
         normalizeLinkTarget(getRuntimeCodexHomePath())
       )
@@ -471,7 +471,7 @@ describe('CodexRuntimeHomeService', () => {
 
       service.migrateLegacyWslActiveHomePointer(
         'Ubuntu',
-        '\\\\wsl.localhost\\Ubuntu\\home\\alice\\.local\\share\\orca\\codex-runtime-home\\home'
+        '\\\\wsl.localhost\\Ubuntu\\home\\alice\\.local\\share\\aio-ade\\codex-runtime-home\\home'
       )
 
       expect(execFileSyncMock).toHaveBeenCalledTimes(1)
@@ -484,22 +484,22 @@ describe('CodexRuntimeHomeService', () => {
 
       const shellCommand = args[5]
       expect(shellCommand).toContain(
-        "if [ ! -e '/home/alice/.local/share/orca/codex-runtime-home/active/wsl/home' ] && [ ! -L '/home/alice/.local/share/orca/codex-runtime-home/active/wsl/home' ]; then :"
+        "if [ ! -e '/home/alice/.local/share/aio-ade/codex-runtime-home/active/wsl/home' ] && [ ! -L '/home/alice/.local/share/aio-ade/codex-runtime-home/active/wsl/home' ]; then :"
       )
       expect(shellCommand).toContain(
-        "elif [ -e '/home/alice/.local/share/orca/codex-runtime-home/active/wsl/home' ] && [ ! -L '/home/alice/.local/share/orca/codex-runtime-home/active/wsl/home' ]; then :"
+        "elif [ -e '/home/alice/.local/share/aio-ade/codex-runtime-home/active/wsl/home' ] && [ ! -L '/home/alice/.local/share/aio-ade/codex-runtime-home/active/wsl/home' ]; then :"
       )
       expect(shellCommand).toContain(
-        "mkdir -p '/home/alice/.local/share/orca/codex-runtime-home/active/wsl'"
+        "mkdir -p '/home/alice/.local/share/aio-ade/codex-runtime-home/active/wsl'"
       )
       expect(shellCommand).toContain(
-        "ln -s -- '/home/alice/.local/share/orca/codex-runtime-home/home' '/home/alice/.local/share/orca/codex-runtime-home/active/wsl/home.next-"
+        "ln -s -- '/home/alice/.local/share/aio-ade/codex-runtime-home/home' '/home/alice/.local/share/aio-ade/codex-runtime-home/active/wsl/home.next-"
       )
       expect(shellCommand).toContain(
-        "mv -Tf -- '/home/alice/.local/share/orca/codex-runtime-home/active/wsl/home.next-"
+        "mv -Tf -- '/home/alice/.local/share/aio-ade/codex-runtime-home/active/wsl/home.next-"
       )
       expect(shellCommand).toContain(
-        "' '/home/alice/.local/share/orca/codex-runtime-home/active/wsl/home'"
+        "' '/home/alice/.local/share/aio-ade/codex-runtime-home/active/wsl/home'"
       )
       expect(shellCommand).not.toContain('[! -L')
       expect(shellCommand).not.toContain('mv -Tf--')
@@ -541,7 +541,7 @@ describe('CodexRuntimeHomeService', () => {
         wslHome,
         '.local',
         'share',
-        'orca',
+        'aio-ade',
         'codex-runtime-home',
         'home'
       )
@@ -595,7 +595,7 @@ describe('CodexRuntimeHomeService', () => {
         wslHome,
         '.local',
         'share',
-        'orca',
+        'aio-ade',
         'codex-runtime-home',
         'home'
       )
@@ -604,18 +604,18 @@ describe('CodexRuntimeHomeService', () => {
       expect(service.prepareForCodexLaunch({ runtime: 'wsl', wslDistro: 'Ubuntu' })).toBe(
         wslRuntimeHomePath
       )
-      const baselinePath = join(wslRuntimeHomePath, '.orca-config-settings-baseline.json')
+      const baselinePath = join(wslRuntimeHomePath, '.aio-ade-config-settings-baseline.json')
       expect(existsSync(baselinePath)).toBe(true)
 
-      // A direct WSL Codex edit wins and is mirrored into Orca's runtime before
-      // the baseline advances, so later in-Orca changes remain promotable.
+      // A direct WSL Codex edit wins and is mirrored into AIO-ADE's runtime before
+      // the baseline advances, so later in-AIO-ADE changes remain promotable.
       const runtimeConfigPath = join(wslRuntimeHomePath, 'config.toml')
       writeFileSync(wslSystemConfigPath, 'model = "outside-edit"\n', 'utf-8')
       service.prepareForCodexLaunch({ runtime: 'wsl', wslDistro: 'Ubuntu' })
       expect(readFileSync(runtimeConfigPath, 'utf-8')).toBe('model = "outside-edit"\n')
       expect(readFileSync(baselinePath, 'utf-8')).toContain('"model": "\\"outside-edit\\""')
 
-      // Codex now persists a /model change inside Orca's reconciled runtime.
+      // Codex now persists a /model change inside AIO-ADE's reconciled runtime.
       writeFileSync(
         runtimeConfigPath,
         readFileSync(runtimeConfigPath, 'utf-8').replace('model = "outside-edit"', 'model = "o4"'),
@@ -663,7 +663,7 @@ describe('CodexRuntimeHomeService', () => {
         wslHome,
         '.local',
         'share',
-        'orca',
+        'aio-ade',
         'codex-runtime-home',
         'home'
       )
@@ -697,7 +697,7 @@ describe('CodexRuntimeHomeService', () => {
       wslHome,
       '.local',
       'share',
-      'orca',
+      'aio-ade',
       'codex-runtime-home',
       'home'
     )
@@ -710,7 +710,7 @@ describe('CodexRuntimeHomeService', () => {
         candidate === wslRuntimeHomePath
           ? {
               distro: 'Debian',
-              linuxPath: '/home/alice/.local/share/orca/codex-runtime-home/home'
+              linuxPath: '/home/alice/.local/share/aio-ade/codex-runtime-home/home'
             }
           : null
     }))
@@ -728,7 +728,7 @@ describe('CodexRuntimeHomeService', () => {
             managedHomePath,
             managedHomeRuntime: 'wsl',
             wslDistro: 'Debian',
-            wslLinuxHomePath: '/home/alice/.local/share/orca/codex-accounts/debian/home',
+            wslLinuxHomePath: '/home/alice/.local/share/aio-ade/codex-accounts/debian/home',
             providerAccountId: null,
             workspaceLabel: null,
             workspaceAccountId: null,
@@ -1009,7 +1009,7 @@ describe('CodexRuntimeHomeService', () => {
     expect(existsSync(runtimeAuthPath)).toBe(false)
   })
 
-  it('returns the Orca-managed runtime home for Codex launch and rate-limit preparation', async () => {
+  it('returns the AIO-ADE-managed runtime home for Codex launch and rate-limit preparation', async () => {
     const markerPath = join(
       testState.userDataDir,
       'codex-session-backfill',
@@ -1073,15 +1073,15 @@ describe('CodexRuntimeHomeService', () => {
       )
     }
     const previousCodexHome = process.env.CODEX_HOME
-    const previousOrcaCodexHome = process.env.ORCA_CODEX_HOME
+    const previousAioAdeCodexHome = process.env.AIO_ADE_CODEX_HOME
     process.env.CODEX_HOME = getRuntimeCodexHomePath()
-    process.env.ORCA_CODEX_HOME = getRuntimeCodexHomePath()
+    process.env.AIO_ADE_CODEX_HOME = getRuntimeCodexHomePath()
     try {
       // Background fetchers prefer ambient CODEX_HOME when passed null, so an
-      // explicit path proves nested Orca launches cannot poll the managed home.
+      // explicit path proves nested AIO-ADE launches cannot poll the managed home.
       expect(service.prepareForRateLimitFetch()).toBe(getSystemCodexHomePath())
       process.env.CODEX_HOME = getSystemCodexHomePath()
-      delete process.env.ORCA_CODEX_HOME
+      delete process.env.AIO_ADE_CODEX_HOME
       expect(service.isHostSystemDefaultRealHome()).toBe(true)
       process.env.CODEX_HOME = join(testState.fakeHomeDir, 'user-owned-codex-home')
       expect(service.isHostSystemDefaultRealHome()).toBe(false)
@@ -1092,10 +1092,10 @@ describe('CodexRuntimeHomeService', () => {
       } else {
         process.env.CODEX_HOME = previousCodexHome
       }
-      if (previousOrcaCodexHome === undefined) {
-        delete process.env.ORCA_CODEX_HOME
+      if (previousAioAdeCodexHome === undefined) {
+        delete process.env.AIO_ADE_CODEX_HOME
       } else {
-        process.env.ORCA_CODEX_HOME = previousOrcaCodexHome
+        process.env.AIO_ADE_CODEX_HOME = previousAioAdeCodexHome
       }
     }
   })
@@ -1280,7 +1280,7 @@ describe('CodexRuntimeHomeService', () => {
     // A managed home that has lost its auth.json (only the marker remains).
     const brokenHome = join(testState.userDataDir, 'codex-accounts', 'account-1', 'home')
     mkdirSync(brokenHome, { recursive: true })
-    writeFileSync(join(brokenHome, '.orca-managed-home'), 'account-1\n', 'utf-8')
+    writeFileSync(join(brokenHome, '.aio-ade-managed-home'), 'account-1\n', 'utf-8')
     const settings = createSettings({
       codexSystemDefaultRealHomeEnabled: true,
       codexManagedAccounts: [
@@ -2276,7 +2276,7 @@ describe('CodexRuntimeHomeService', () => {
           managedHomePath: wslManagedHomePath,
           managedHomeRuntime: 'wsl',
           wslDistro: 'Ubuntu',
-          wslLinuxHomePath: '/home/alice/.local/share/orca/codex-accounts/account-1/home',
+          wslLinuxHomePath: '/home/alice/.local/share/aio-ade/codex-accounts/account-1/home',
           providerAccountId: null,
           workspaceLabel: null,
           workspaceAccountId: null,
@@ -2297,7 +2297,7 @@ describe('CodexRuntimeHomeService', () => {
         wslHome,
         '.local',
         'share',
-        'orca',
+        'aio-ade',
         'codex-runtime-home',
         'home'
       )
@@ -2348,7 +2348,7 @@ describe('CodexRuntimeHomeService', () => {
             managedHomePath,
             managedHomeRuntime: 'wsl',
             wslDistro: 'Ubuntu',
-            wslLinuxHomePath: '/home/alice/.local/share/orca/codex-accounts/account-1/home',
+            wslLinuxHomePath: '/home/alice/.local/share/aio-ade/codex-accounts/account-1/home',
             providerAccountId: 'acct-wsl',
             workspaceLabel: null,
             workspaceAccountId: 'acct-wsl',
@@ -2369,7 +2369,7 @@ describe('CodexRuntimeHomeService', () => {
         wslHome,
         '.local',
         'share',
-        'orca',
+        'aio-ade',
         'codex-runtime-home',
         'home'
       )
@@ -2422,7 +2422,7 @@ describe('CodexRuntimeHomeService', () => {
         wslHome,
         '.local',
         'share',
-        'orca',
+        'aio-ade',
         'codex-runtime-home',
         'home'
       )
@@ -2490,7 +2490,7 @@ describe('CodexRuntimeHomeService', () => {
             managedHomePath: firstManagedHomePath,
             managedHomeRuntime: 'wsl',
             wslDistro: 'Ubuntu',
-            wslLinuxHomePath: '/home/alice/.local/share/orca/codex-accounts/account-1/home',
+            wslLinuxHomePath: '/home/alice/.local/share/aio-ade/codex-accounts/account-1/home',
             providerAccountId: 'acct-first',
             workspaceLabel: null,
             workspaceAccountId: 'acct-first',
@@ -2504,7 +2504,7 @@ describe('CodexRuntimeHomeService', () => {
             managedHomePath: secondManagedHomePath,
             managedHomeRuntime: 'wsl',
             wslDistro: 'Ubuntu',
-            wslLinuxHomePath: '/home/alice/.local/share/orca/codex-accounts/account-2/home',
+            wslLinuxHomePath: '/home/alice/.local/share/aio-ade/codex-accounts/account-2/home',
             providerAccountId: 'acct-second',
             workspaceLabel: null,
             workspaceAccountId: 'acct-second',
@@ -2526,7 +2526,7 @@ describe('CodexRuntimeHomeService', () => {
         wslHome,
         '.local',
         'share',
-        'orca',
+        'aio-ade',
         'codex-runtime-home',
         'home'
       )
@@ -2579,7 +2579,7 @@ describe('CodexRuntimeHomeService', () => {
       wslHome,
       '.local',
       'share',
-      'orca',
+      'aio-ade',
       'codex-runtime-home',
       'home'
     )
@@ -2605,7 +2605,7 @@ describe('CodexRuntimeHomeService', () => {
             managedHomePath: wslManagedHomePath,
             managedHomeRuntime: 'wsl',
             wslDistro: 'Ubuntu',
-            wslLinuxHomePath: '/home/alice/.local/share/orca/codex-accounts/wsl-account/home',
+            wslLinuxHomePath: '/home/alice/.local/share/aio-ade/codex-accounts/wsl-account/home',
             providerAccountId: 'acct-wsl',
             workspaceLabel: null,
             workspaceAccountId: 'acct-wsl',
@@ -2657,7 +2657,7 @@ describe('CodexRuntimeHomeService', () => {
       wslHome,
       '.local',
       'share',
-      'orca',
+      'aio-ade',
       'codex-runtime-home',
       'home'
     )
@@ -2671,7 +2671,7 @@ describe('CodexRuntimeHomeService', () => {
             managedHomePath,
             managedHomeRuntime: 'wsl',
             wslDistro: 'Ubuntu',
-            wslLinuxHomePath: '/home/alice/.local/share/orca/codex-accounts/account-1/home',
+            wslLinuxHomePath: '/home/alice/.local/share/aio-ade/codex-accounts/account-1/home',
             providerAccountId: 'acct-wsl',
             workspaceLabel: null,
             workspaceAccountId: 'acct-wsl',
@@ -2733,7 +2733,7 @@ describe('CodexRuntimeHomeService', () => {
             managedHomePath,
             managedHomeRuntime: 'wsl',
             wslDistro: null,
-            wslLinuxHomePath: '/home/alice/.local/share/orca/codex-accounts/account-1/home',
+            wslLinuxHomePath: '/home/alice/.local/share/aio-ade/codex-accounts/account-1/home',
             providerAccountId: 'acct-wsl',
             workspaceLabel: null,
             workspaceAccountId: 'acct-wsl',
@@ -2757,7 +2757,7 @@ describe('CodexRuntimeHomeService', () => {
         wslHome,
         '.local',
         'share',
-        'orca',
+        'aio-ade',
         'codex-runtime-home',
         'home'
       )
@@ -2833,7 +2833,7 @@ describe('CodexRuntimeHomeService', () => {
       wslHome,
       '.local',
       'share',
-      'orca',
+      'aio-ade',
       'codex-runtime-home',
       'home',
       'auth.json'
@@ -2847,7 +2847,7 @@ describe('CodexRuntimeHomeService', () => {
             managedHomePath: ubuntuHomePath,
             managedHomeRuntime: 'wsl',
             wslDistro: 'Ubuntu',
-            wslLinuxHomePath: '/home/alice/.local/share/orca/codex-accounts/ubuntu/home',
+            wslLinuxHomePath: '/home/alice/.local/share/aio-ade/codex-accounts/ubuntu/home',
             providerAccountId: 'acct-ubuntu',
             workspaceLabel: null,
             workspaceAccountId: 'acct-ubuntu',
@@ -2861,7 +2861,7 @@ describe('CodexRuntimeHomeService', () => {
             managedHomePath: debianHomePath,
             managedHomeRuntime: 'wsl',
             wslDistro: 'Debian',
-            wslLinuxHomePath: '/home/alice/.local/share/orca/codex-accounts/debian/home',
+            wslLinuxHomePath: '/home/alice/.local/share/aio-ade/codex-accounts/debian/home',
             providerAccountId: 'acct-debian',
             workspaceLabel: null,
             workspaceAccountId: 'acct-debian',
@@ -2882,7 +2882,7 @@ describe('CodexRuntimeHomeService', () => {
       const service = new CodexRuntimeHomeService(store as never)
 
       expect(service.prepareForRateLimitFetch({ runtime: 'wsl', wslDistro: null })).toBe(
-        join(wslHome, '.local', 'share', 'orca', 'codex-runtime-home', 'home')
+        join(wslHome, '.local', 'share', 'aio-ade', 'codex-runtime-home', 'home')
       )
       expect(readFileSync(runtimeAuthPath, 'utf-8')).toBe(ubuntuAuth)
     } finally {
@@ -2920,7 +2920,7 @@ describe('CodexRuntimeHomeService', () => {
             managedHomePath,
             managedHomeRuntime: 'wsl',
             wslDistro: 'Ubuntu',
-            wslLinuxHomePath: '/home/alice/.local/share/orca/codex-accounts/wsl-account/home',
+            wslLinuxHomePath: '/home/alice/.local/share/aio-ade/codex-accounts/wsl-account/home',
             providerAccountId: 'acct-wsl',
             workspaceLabel: null,
             workspaceAccountId: 'acct-wsl',
@@ -2994,7 +2994,7 @@ describe('CodexRuntimeHomeService', () => {
         wslHome,
         '.local',
         'share',
-        'orca',
+        'aio-ade',
         'codex-runtime-home',
         'home'
       )
@@ -3032,7 +3032,7 @@ describe('CodexRuntimeHomeService', () => {
       wslHome,
       '.local',
       'share',
-      'orca',
+      'aio-ade',
       'codex-runtime-home',
       'home'
     )
@@ -3311,7 +3311,7 @@ describe('CodexRuntimeHomeService', () => {
     service.syncForCurrentSelection()
     expect(readFileSync(runtimeAuthPath, 'utf-8')).toBe(systemAuth)
 
-    // Codex used to refresh tokens directly in ~/.codex. With an Orca-owned
+    // Codex used to refresh tokens directly in ~/.codex. With an AIO-ADE-owned
     // runtime home, the same refresh must be read back to the system default.
     writeFileSync(runtimeAuthPath, refreshedAuth, 'utf-8')
     service.syncForCurrentSelection()
@@ -3637,7 +3637,7 @@ describe('CodexRuntimeHomeService', () => {
     const service = new CodexRuntimeHomeService(store as never)
 
     // Simulate an old live Codex PTY from another account refreshing the
-    // shared runtime auth after Orca has already selected account-1.
+    // shared runtime auth after AIO-ADE has already selected account-1.
     writeFileSync(runtimeAuthPath, staleLivePtyAuth, 'utf-8')
     service.syncForCurrentSelection()
 
@@ -3692,7 +3692,7 @@ describe('CodexRuntimeHomeService', () => {
     const service = new CodexRuntimeHomeService(store as never)
 
     // An older account-1 Codex process refreshed the shared runtime file after
-    // Orca selected account-2. Persist the refresh to account-1, then restore
+    // AIO-ADE selected account-2. Persist the refresh to account-1, then restore
     // the selected account in runtime CODEX_HOME.
     writeFileSync(runtimeAuthPath, account1RefreshedAuth, 'utf-8')
     service.syncForCurrentSelection()
@@ -4208,7 +4208,7 @@ describe('CodexRuntimeHomeService', () => {
     settings.activeCodexManagedAccountId = 'account-1'
     service.syncForCurrentSelection()
 
-    // A stale or external process overwrites runtime with auth Orca cannot
+    // A stale or external process overwrites runtime with auth AIO-ADE cannot
     // verify against the outgoing managed account.
     writeFileSync(runtimeAuthPath, '{"account":"external-login"}\n', 'utf-8')
 
@@ -4524,11 +4524,11 @@ describe('CodexRuntimeHomeService', () => {
 
     expect(readFileSync(join(runtimeSessionsDir, 'session.json'), 'utf-8')).toBe('{"turns":[1]}')
     expect(
-      readFileSync(join(runtimeSessionsDir, 'session.orca-legacy-account-1.json'), 'utf-8')
+      readFileSync(join(runtimeSessionsDir, 'session.aio-ade-legacy-account-1.json'), 'utf-8')
     ).toBe('{"turns":[1,2]}')
     expect(
       readFileSync(
-        join(runtimeSessionsDir, 'nested', 'session.orca-legacy-account-1.json'),
+        join(runtimeSessionsDir, 'nested', 'session.aio-ade-legacy-account-1.json'),
         'utf-8'
       )
     ).toBe('{"turns":[2,3]}')

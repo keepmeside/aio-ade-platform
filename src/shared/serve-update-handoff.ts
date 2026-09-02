@@ -1,7 +1,7 @@
 import { join } from 'node:path'
 import { assertJsonTextStructureWithinLimits } from './json-text-structure-limit'
 
-export const SERVE_UPDATE_HANDOFF_PATH_ENV = 'ORCA_SERVE_UPDATE_HANDOFF_PATH'
+export const SERVE_UPDATE_HANDOFF_PATH_ENV = 'AIO_ADE_SERVE_UPDATE_HANDOFF_PATH'
 export const SERVE_UPDATE_HANDOFF_FILE = 'serve-update-handoff.json'
 export const MAX_SERVE_UPDATE_HANDOFF_FILE_BYTES = 64 * 1024
 export const MAX_SERVE_UPDATE_HANDOFF_JSON_STRUCTURAL_TOKENS = 16 * 1024
@@ -33,7 +33,7 @@ export type ServeUpdateHandoffState =
     }
 
 export type ServeSupervisorMessage = {
-  type: 'orca:serve-ready'
+  type: 'aio-ade:serve-ready'
   version: string
   runtimeId: string
 }
@@ -79,7 +79,7 @@ export function parseServeSupervisorMessage(value: unknown): ServeSupervisorMess
   }
   const message = value as Record<string, unknown>
   if (
-    message.type !== 'orca:serve-ready' ||
+    message.type !== 'aio-ade:serve-ready' ||
     typeof message.version !== 'string' ||
     message.version.length === 0 ||
     typeof message.runtimeId !== 'string' ||

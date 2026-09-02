@@ -188,7 +188,7 @@ describe('launchAgentBackgroundSession remote runtime and SSH startup delivery',
       vi.advanceTimersByTime(50)
       expect(mockWrite).not.toHaveBeenCalled()
 
-      dataSidecar('\x1b]777;orca-shell-ready\x07user@remote repo % ')
+      dataSidecar('\x1b]777;aio-ade-shell-ready\x07user@remote repo % ')
       vi.advanceTimersByTime(50)
 
       expect(mockWrite).toHaveBeenCalledWith(
@@ -279,7 +279,7 @@ describe('launchAgentBackgroundSession remote runtime and SSH startup delivery',
       vi.advanceTimersByTime(50)
       expect(mockWrite).not.toHaveBeenCalled()
 
-      dataSidecar('\x1b]777;orca-shell-ready\x07user@remote repo % ')
+      dataSidecar('\x1b]777;aio-ade-shell-ready\x07user@remote repo % ')
       vi.advanceTimersByTime(50)
 
       expect(mockWrite).toHaveBeenCalledWith(
@@ -308,7 +308,7 @@ describe('launchAgentBackgroundSession remote runtime and SSH startup delivery',
       const exitSidecar = mockSubscribeToPtyExit.mock.calls[0]?.[1] as (code: number) => void
       exitSidecar(0)
 
-      dataSidecar('\x1b]777;orca-shell-ready\x07user@remote repo % ')
+      dataSidecar('\x1b]777;aio-ade-shell-ready\x07user@remote repo % ')
       vi.advanceTimersByTime(50)
 
       expect(mockWrite).not.toHaveBeenCalled()

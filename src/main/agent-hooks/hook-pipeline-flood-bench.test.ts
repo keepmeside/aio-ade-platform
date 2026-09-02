@@ -54,7 +54,7 @@ describe('agent hook payload flood benchmark', () => {
 
   beforeEach(async () => {
     getCohortAtEmitMock.mockReturnValue({ nth_repo_added: 2 })
-    tempDir = mkdtempSync(join(tmpdir(), 'orca-hook-bench-'))
+    tempDir = mkdtempSync(join(tmpdir(), 'aio-ade-hook-bench-'))
     server = new AgentHookServer()
     listenerEvents = 0
     server.setListener(() => {
@@ -69,11 +69,11 @@ describe('agent hook payload flood benchmark', () => {
   })
 
   async function postPrompt(env: Record<string, string>, text: string): Promise<void> {
-    const response = await fetch(`http://127.0.0.1:${env.ORCA_AGENT_HOOK_PORT}/hook/claude`, {
+    const response = await fetch(`http://127.0.0.1:${env.AIO_ADE_AGENT_HOOK_PORT}/hook/claude`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Orca-Agent-Hook-Token': env.ORCA_AGENT_HOOK_TOKEN
+        'X-AIO-ADE-Agent-Hook-Token': env.AIO_ADE_AGENT_HOOK_TOKEN
       },
       body: JSON.stringify({
         paneKey: PANE,
@@ -92,7 +92,7 @@ describe('agent hook payload flood benchmark', () => {
 
   it('throttled client behavior cuts per-turn hook-pipeline bytes by >40x', async () => {
     const env = server.buildPtyEnv()
-    expect(env.ORCA_AGENT_HOOK_PORT).toBeTruthy()
+    expect(env.AIO_ADE_AGENT_HOOK_PORT).toBeTruthy()
 
     // Unbounded: full accumulated text per update.
     let unboundedBytes = 0

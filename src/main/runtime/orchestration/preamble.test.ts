@@ -160,37 +160,41 @@ describe('buildDispatchPreamble', () => {
     expect(result).toContain('refactor the auth module')
   })
 
-  it('uses orca CLI by default when devMode is not set', () => {
+  it('uses aio-ade CLI by default when devMode is not set', () => {
     const result = buildDispatchPreamble(baseParams())
-    expect(result).toContain('orca orchestration send')
-    expect(result).toContain('orca orchestration check')
-    expect(result).toContain('orca orchestration ask')
+    expect(result).toContain('aio-ade orchestration send')
+    expect(result).toContain('aio-ade orchestration check')
+    expect(result).toContain('aio-ade orchestration ask')
   })
 
-  it('uses orca-dev CLI when devMode is true', () => {
-    const result = buildDispatchPreamble(baseParams({ devMode: true, cliCommand: 'orca-ide' }))
-    expect(result).toContain('orca-dev orchestration send')
-    expect(result).toContain('orca-dev orchestration check')
-    expect(result).toContain('orca-dev orchestration ask')
-    const fragments = result.split('orca-dev')
+  it('uses aio-ade-dev CLI when devMode is true', () => {
+    const result = buildDispatchPreamble(baseParams({ devMode: true, cliCommand: 'aio-ade' }))
+    expect(result).toContain('aio-ade-dev orchestration send')
+    expect(result).toContain('aio-ade-dev orchestration check')
+    expect(result).toContain('aio-ade-dev orchestration ask')
+    const fragments = result.split('aio-ade-dev')
     for (const fragment of fragments) {
-      expect(fragment).not.toMatch(/orca orchestration/)
+      expect(fragment).not.toMatch(/aio-ade orchestration/)
     }
   })
 
-  it('uses orca CLI when devMode is false', () => {
+  it('uses aio-ade CLI when devMode is false', () => {
     const result = buildDispatchPreamble(baseParams({ devMode: false }))
-    expect(result).toContain('orca orchestration send')
-    expect(result).toContain('orca orchestration check')
+    expect(result).toContain('aio-ade orchestration send')
+    expect(result).toContain('aio-ade orchestration check')
   })
 
-  it('uses the exact orca-ide command for packaged WSL workers', () => {
-    const result = buildDispatchPreamble(baseParams({ cliCommand: 'orca-ide' }))
+  /* This case existed to prove the WSL-specific command name did not leak the macOS/Windows one:
+   * `cliCommand: 'orca-ide'` had to produce no bare `orca orchestration`. One name is installed on
+   * every host now, so there is no second spelling to leak — what is still worth pinning is that an
+   * explicit `cliCommand` is used verbatim and neither pre-rebrand name reappears. */
+  it('uses the passed command verbatim and never emits a pre-rebrand command name', () => {
+    const result = buildDispatchPreamble(baseParams({ cliCommand: 'aio-ade' }))
 
-    expect(result).toContain('orca-ide orchestration send')
-    expect(result).toContain('orca-ide orchestration check')
-    expect(result).toContain('orca-ide orchestration ask')
-    expect(result).not.toMatch(/(^|\s)orca orchestration/m)
+    expect(result).toContain('aio-ade orchestration send')
+    expect(result).toContain('aio-ade orchestration check')
+    expect(result).toContain('aio-ade orchestration ask')
+    expect(result).not.toMatch(/(^|\s)orca(-ide)? orchestration/m)
   })
 
   it('appends a BASE DRIFT section when baseDrift.behind > 0', () => {

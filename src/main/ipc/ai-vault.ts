@@ -203,7 +203,7 @@ async function scanRuntimeAiVaultSessions(
   } catch (error) {
     return runtimeScanIssueResult(
       hostInfo,
-      error instanceof Error ? error.message : 'Remote Orca server is unavailable.'
+      error instanceof Error ? error.message : 'Remote AIO-ADE server is unavailable.'
     )
   }
 }

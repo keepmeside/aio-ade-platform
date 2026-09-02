@@ -426,7 +426,7 @@ export default function MonacoEditor({
         return true
       })
       const searchInFilesAction = editorInstance.addAction({
-        id: 'orca.searchInFiles',
+        id: 'aio-ade.searchInFiles',
         label: translate('auto.components.editor.MonacoEditor.fd68ae03b3', 'Search in Files'),
         contextMenuGroupId: 'navigation',
         contextMenuOrder: 2,
@@ -806,7 +806,7 @@ export default function MonacoEditor({
       {selectionAnnotationTarget && shouldShowMarkdownAnnotations && !commentPopover ? (
         <button
           type="button"
-          className="orca-diff-comment-add-btn"
+          className="aio-ade-diff-comment-add-btn"
           style={{
             display: 'flex',
             top: Math.max(4, selectionAnnotationTarget.top - 22),
@@ -837,7 +837,7 @@ export default function MonacoEditor({
       <Editor
         height={renderedEditorHeight === null ? '100%' : `${renderedEditorHeight}px`}
         language={language}
-        // Why: defaultValue, not controlled value — Orca owns post-mount content sync; a controlled path would double setValue.
+        // Why: defaultValue, not controlled value — AIO-ADE owns post-mount content sync; a controlled path would double setValue.
         defaultValue={content}
         theme={isDark ? 'vs-dark' : 'vs'}
         onChange={handleChange}
@@ -868,7 +868,7 @@ export default function MonacoEditor({
           selectionClipboard: settings?.primarySelectionMiddleClickPaste ?? isLinuxUserAgent()
         }}
         path={filePath}
-        // Why: Orca owns cursor/scroll restoration, so disable @monaco-editor/react's competing view-state Map.
+        // Why: AIO-ADE owns cursor/scroll restoration, so disable @monaco-editor/react's competing view-state Map.
         saveViewState={false}
         keepCurrentModel
       />

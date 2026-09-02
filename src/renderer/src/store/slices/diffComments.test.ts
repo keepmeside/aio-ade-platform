@@ -125,7 +125,7 @@ import { createPullRequestGenerationSlice } from './pull-request-generation'
 import { createCommitMessageGenerationSlice } from './commit-message-generation'
 import { createPinnedTabCloseConfirmSlice } from './pinned-tab-close-confirm'
 import { createRecentlyClosedTabsSlice } from './recently-closed-tabs'
-import { createOrcaProfilesSlice } from './orca-profiles'
+import { createAioAdeProfilesSlice } from './aio-ade-profiles'
 import { createNewIssueDraftSlice } from './new-issue-draft'
 import { createRemoteServerUpdatesSlice } from './remote-server-updates'
 
@@ -167,7 +167,7 @@ function createTestStore() {
     ...createCommitMessageGenerationSlice(...a),
     ...createPinnedTabCloseConfirmSlice(...a),
     ...createRecentlyClosedTabsSlice(...a),
-    ...createOrcaProfilesSlice(...a),
+    ...createAioAdeProfilesSlice(...a),
     ...createNewIssueDraftSlice(...a),
     ...createRemoteServerUpdatesSlice(...a)
   }))

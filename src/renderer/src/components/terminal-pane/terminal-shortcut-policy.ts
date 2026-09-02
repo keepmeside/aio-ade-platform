@@ -87,7 +87,7 @@ function resolveUnshiftedCharacterForCode(code: string | undefined): string | un
 
 /**
  * Resolves terminal keyboard events before xterm receives them, centralizing
- * Orca shortcuts and terminal byte fallbacks in one platform-aware policy.
+ * AIO-ADE shortcuts and terminal byte fallbacks in one platform-aware policy.
  */
 export function resolveTerminalShortcutAction(
   event: TerminalShortcutEvent,
@@ -107,7 +107,7 @@ export function resolveTerminalShortcutAction(
   // Why: keybindings follow the client OS, but byte protocols follow the PTY host — they differ for macOS clients on Windows runtimes.
   isWindowsTerminalHost: () => boolean = () => isWindows,
   // Why: gates the tab.close pane-close alias — under terminal-first a remapped tab.close yields to the shell (terminal.closePane, scope terminal, still closes).
-  terminalShortcutPolicy: TerminalShortcutPolicy = 'orca-first'
+  terminalShortcutPolicy: TerminalShortcutPolicy = 'aio-ade-first'
 ): TerminalShortcutAction | null {
   const platform: NodeJS.Platform = isMac ? 'darwin' : isWindows ? 'win32' : 'linux'
 

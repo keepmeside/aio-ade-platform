@@ -49,9 +49,9 @@ import {
   ONBOARDING_FLOW_VERSION
 } from '../../../shared/constants'
 import {
-  createDefaultLocalOrcaProfile,
-  DEFAULT_LOCAL_ORCA_PROFILE_ID
-} from '../../../shared/orca-profiles'
+  createDefaultLocalAioAdeProfile,
+  DEFAULT_LOCAL_AIO_ADE_PROFILE_ID
+} from '../../../shared/aio-ade-profiles'
 import { legacyBaseRefSearchResult } from '../../../shared/base-ref-search-result'
 import { EMPTY_PTY_MAIN_DELIVERY_DIAGNOSTICS } from '../../../shared/pty-delivery-diagnostics'
 import { createE2EConfig } from '../../../shared/e2e-config'
@@ -146,12 +146,12 @@ import {
 } from '@/components/native-chat/native-chat-runtime-contract'
 import { createWebFileMutationMethods } from './web-file-mutation-methods'
 
-const SETTINGS_STORAGE_KEY = 'orca.web.settings.v1'
-const UI_STORAGE_KEY = 'orca.web.ui.v1'
-const SESSION_STORAGE_KEY = 'orca.web.workspaceSession.v1'
-const ONBOARDING_STORAGE_KEY = 'orca.web.onboarding.v1'
-const GITHUB_CACHE_STORAGE_KEY = 'orca.web.githubCache.v1'
-const KEYBINDINGS_STORAGE_KEY = 'orca.web.keybindings.v1'
+const SETTINGS_STORAGE_KEY = 'aio-ade.web.settings.v1'
+const UI_STORAGE_KEY = 'aio-ade.web.ui.v1'
+const SESSION_STORAGE_KEY = 'aio-ade.web.workspaceSession.v1'
+const ONBOARDING_STORAGE_KEY = 'aio-ade.web.onboarding.v1'
+const GITHUB_CACHE_STORAGE_KEY = 'aio-ade.web.githubCache.v1'
+const KEYBINDINGS_STORAGE_KEY = 'aio-ade.web.keybindings.v1'
 // Why: paired clients need parity for large dev sessions; the runtime default stays capped for lower-level RPC callers.
 const WEB_RUNTIME_WORKTREE_LIST_LIMIT = 10_000
 const MAX_CLIPBOARD_IMAGE_BASE64_CHARS = CLIPBOARD_IMAGE_MAX_BASE64_CHARS
@@ -487,8 +487,8 @@ const webKeybindingListeners = new Set<(snapshot: KeybindingFileSnapshot) => voi
 
 export function installWebPreloadApi(): void {
   activeEnvironment = readStoredWebRuntimeEnvironment()
-  const webWindow = window as unknown as { __ORCA_WEB_CLIENT__?: boolean }
-  webWindow.__ORCA_WEB_CLIENT__ = true
+  const webWindow = window as unknown as { __AIO_ADE_WEB_CLIENT__?: boolean }
+  webWindow.__AIO_ADE_WEB_CLIENT__ = true
   window.electron = createFallbackProxy(['electron']) as Window['electron']
   window.api = withFallback(createWebPreloadApi(), []) as PreloadApi
 }
@@ -514,20 +514,20 @@ async function writeWebClipboardText(text: string): Promise<void> {
 }
 
 function createWebPreloadApi(): Partial<PreloadApi> {
-  const webOrcaProfileAuthStatus = () =>
+  const webAioAdeProfileAuthStatus = () =>
     Promise.resolve({
-      activeProfileId: DEFAULT_LOCAL_ORCA_PROFILE_ID,
+      activeProfileId: DEFAULT_LOCAL_AIO_ADE_PROFILE_ID,
       configured: false,
       state: 'unconfigured' as const,
       persistence: 'none' as const,
-      setupMessage: 'Orca Cloud sign-in is not available in the browser fallback.'
+      setupMessage: 'AIO-ADE Cloud sign-in is not available in the browser fallback.'
     })
 
   return {
     app: {
       getIdentity: () =>
         Promise.resolve({
-          name: 'Orca',
+          name: 'AIO-ADE',
           isDev: false,
           devLabel: null,
           devBranch: null,
@@ -569,7 +569,7 @@ function createWebPreloadApi(): Partial<PreloadApi> {
       complete: () => Promise.resolve(),
       disable: () => Promise.resolve(),
       openWeb: () => Promise.resolve(),
-      starOrca: () => Promise.resolve(false),
+      starAioAde: () => Promise.resolve(false),
       forceShow: () => Promise.resolve(),
       agentValueMoment: () => Promise.resolve({ status: 'skipped' }),
       showAgentValueMoment: () => Promise.resolve(),
@@ -598,23 +598,23 @@ function createWebPreloadApi(): Partial<PreloadApi> {
         }),
       onAdvertisedUrlChanged: () => noopUnsubscribe
     },
-    orcaProfiles: {
+    aioAdeProfiles: {
       list: () =>
         Promise.resolve({
-          activeProfileId: DEFAULT_LOCAL_ORCA_PROFILE_ID,
-          profiles: [createDefaultLocalOrcaProfile(0)],
+          activeProfileId: DEFAULT_LOCAL_AIO_ADE_PROFILE_ID,
+          profiles: [createDefaultLocalAioAdeProfile(0)],
           multiProfileUi: false
         }),
-      authStatus: webOrcaProfileAuthStatus,
+      authStatus: webAioAdeProfileAuthStatus,
       createLocal: () =>
         Promise.resolve({
-          activeProfileId: DEFAULT_LOCAL_ORCA_PROFILE_ID,
-          profiles: [createDefaultLocalOrcaProfile(0)],
-          profile: createDefaultLocalOrcaProfile(0)
+          activeProfileId: DEFAULT_LOCAL_AIO_ADE_PROFILE_ID,
+          profiles: [createDefaultLocalAioAdeProfile(0)],
+          profile: createDefaultLocalAioAdeProfile(0)
         }),
       createCloudLinked: async () => ({
         status: 'unconfigured',
-        auth: await webOrcaProfileAuthStatus()
+        auth: await webAioAdeProfileAuthStatus()
       }),
       switchProfile: () => Promise.resolve({ status: 'already-active' }),
       transferProject: (args) =>
@@ -628,21 +628,21 @@ function createWebPreloadApi(): Partial<PreloadApi> {
       findProjectProfiles: async () => ({ projects: [] }),
       connectCurrent: async () => ({
         status: 'unconfigured',
-        auth: await webOrcaProfileAuthStatus()
+        auth: await webAioAdeProfileAuthStatus()
       }),
       refreshAuth: async () => ({
         status: 'unconfigured',
-        auth: await webOrcaProfileAuthStatus()
+        auth: await webAioAdeProfileAuthStatus()
       }),
       signOutCurrent: async () => ({
         status: 'signed-out',
-        auth: await webOrcaProfileAuthStatus(),
-        activeProfileId: DEFAULT_LOCAL_ORCA_PROFILE_ID,
-        profiles: [createDefaultLocalOrcaProfile(0)]
+        auth: await webAioAdeProfileAuthStatus(),
+        activeProfileId: DEFAULT_LOCAL_AIO_ADE_PROFILE_ID,
+        profiles: [createDefaultLocalAioAdeProfile(0)]
       }),
       selectOrg: async () => ({
         status: 'unconfigured',
-        auth: await webOrcaProfileAuthStatus()
+        auth: await webAioAdeProfileAuthStatus()
       }),
       orgMembersList: async () => ({ status: 'unconfigured' }),
       orgMemberInvite: async () => ({ status: 'unconfigured' }),
@@ -1343,7 +1343,7 @@ function createRuntimeEnvironmentsApi(): NonNullable<Partial<PreloadApi>['runtim
     addFromPairingCode: async ({ name, pairingCode }) => {
       const offer = parseWebPairingInput(pairingCode)
       if (!offer) {
-        throw new Error('Invalid Orca pairing code.')
+        throw new Error('Invalid AIO-ADE pairing code.')
       }
       const previousEnvironment = activeEnvironment
       closeActiveRuntimeClients()
@@ -2076,7 +2076,7 @@ function createBrowserApi(): NonNullable<Partial<PreloadApi>['browser']> {
     onNavigationUpdate: () => noopUnsubscribe,
     onActivateView: () => noopUnsubscribe,
     onPaneFocus: () => noopUnsubscribe,
-    onOpenLinkInOrcaTab: () => noopUnsubscribe,
+    onOpenLinkInAioAdeTab: () => noopUnsubscribe,
     cancelDownload: () => Promise.resolve(false),
     setGrabMode: () =>
       Promise.resolve({
@@ -2247,8 +2247,8 @@ function createGitHubApi(): WebGitHubApi {
         args
       ),
     onWorkItemMutated: () => noopUnsubscribe,
-    checkOrcaStarred: () => Promise.resolve(null),
-    starOrca: () => Promise.resolve(false),
+    checkAioAdeStarred: () => Promise.resolve(null),
+    starAioAde: () => Promise.resolve(false),
     rateLimit: (args) =>
       route<WebGitHubResult<'rateLimit'>>(GITHUB_WEB_RPC_METHODS.rateLimit, args),
     diagnoseAuth: () =>
@@ -2699,7 +2699,7 @@ function createPreflightApi(): NonNullable<Partial<PreloadApi>['preflight']> {
 function createCliApi(): NonNullable<Partial<PreloadApi>['cli']> {
   const status = {
     platform: getBrowserPlatform(),
-    commandName: getBrowserPlatform() === 'linux' ? 'orca-ide' : 'orca',
+    commandName: getBrowserPlatform() === 'linux' ? 'aio-ade' : 'aio-ade',
     commandPath: null,
     pathDirectory: null,
     pathConfigured: false,
@@ -2709,7 +2709,7 @@ function createCliApi(): NonNullable<Partial<PreloadApi>['cli']> {
     state: 'unsupported',
     currentTarget: null,
     unsupportedReason: 'launch_mode_unavailable',
-    detail: 'CLI registration is managed on the Orca server, not in the web browser.'
+    detail: 'CLI registration is managed on the AIO-ADE server, not in the web browser.'
   } as const
   return {
     getInstallStatus: () => Promise.resolve(status),
@@ -2728,7 +2728,7 @@ function createAgentHooksApi(): NonNullable<Partial<PreloadApi>['agentHooks']> {
       state: 'not_installed',
       configPath: '',
       managedHooksPresent: false,
-      detail: 'Agent hook status is only available on the Orca server.'
+      detail: 'Agent hook status is only available on the AIO-ADE server.'
     } as const)
   return {
     claudeStatus: () => status('claude'),
@@ -2776,7 +2776,7 @@ function createComputerUsePermissionsApi(): NonNullable<
         helperAppPath: null,
         openedSettings: false,
         launchedHelper: false,
-        nextStep: 'Computer-use permissions are managed on the Orca server.'
+        nextStep: 'Computer-use permissions are managed on the AIO-ADE server.'
       })),
     reset: () =>
       Promise.resolve({
@@ -3302,13 +3302,13 @@ function resolveEnvironment(selector: string): StoredWebRuntimeEnvironment {
   if (environment.compatibleEnvironmentIds?.includes(selector)) {
     return environment
   }
-  throw new Error(`Unknown Orca runtime environment: ${selector}`)
+  throw new Error(`Unknown AIO-ADE runtime environment: ${selector}`)
 }
 
 function requireActiveEnvironment(): StoredWebRuntimeEnvironment {
   activeEnvironment = activeEnvironment ?? readStoredWebRuntimeEnvironment()
   if (!activeEnvironment) {
-    throw new Error('Pair this web client with an Orca server first.')
+    throw new Error('Pair this web client with an AIO-ADE server first.')
   }
   return activeEnvironment
 }
@@ -3320,7 +3320,7 @@ function requireActiveEnvironmentOrNull(): StoredWebRuntimeEnvironment | null {
 
 function assertActiveEnvironment(environmentId: string): void {
   if (requireActiveEnvironment().id !== environmentId) {
-    throw new Error('The paired Orca server changed while the request was in progress.')
+    throw new Error('The paired AIO-ADE server changed while the request was in progress.')
   }
 }
 
@@ -3535,7 +3535,7 @@ function getStoredOnboarding(): OnboardingState {
     return closed
   }
   const closed = closeWebOnboarding(getDefaultOnboardingState())
-  // Why: paired clients already have an Orca server; skip desktop first-run onboarding that would probe browser-local tools.
+  // Why: paired clients already have an AIO-ADE server; skip desktop first-run onboarding that would probe browser-local tools.
   writeJson(ONBOARDING_STORAGE_KEY, closed)
   return closed
 }
@@ -3830,7 +3830,7 @@ function toLegacyDetectedWorktreeResult(
     source: 'session-fallback',
     worktrees: worktrees.map((worktree) => ({
       ...worktree,
-      ownership: 'orca-managed',
+      ownership: 'aio-ade-managed',
       selectedCheckout: false,
       visible: true
     }))

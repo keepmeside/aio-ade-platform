@@ -19,7 +19,7 @@ import { ORCHESTRATION_RUN_METHODS } from './orchestration-runs'
 import { ORCHESTRATION_WORKER_METHODS } from './orchestration-worker-methods'
 import { ORCHESTRATION_FEDERATION_METHODS } from './orchestration-federation-methods'
 import { OrchestrationError } from '../../orchestration/orchestration-error'
-import type { OrcaRuntimeService } from '../../orca-runtime'
+import type { AioAdeRuntimeService } from '../../aio-ade-runtime'
 import type { RunRow } from '../../orchestration/types'
 import { encodeFederatedControlMessage } from '../../orchestration/federation-control-message'
 import { ORCHESTRATION_FEDERATION_CONTROL_MAIL_PROTOCOL_VERSION } from '../../../../shared/protocol-version'
@@ -235,7 +235,7 @@ const ResetParams = z
   })
 
 function resolveRunScope(
-  runtime: OrcaRuntimeService,
+  runtime: AioAdeRuntimeService,
   params: {
     runId?: string
     callerTerminalHandle?: string
@@ -302,7 +302,7 @@ function parseMessageTypes(rawTypes: string | undefined): MessageType[] | undefi
 }
 
 function resolveMessageRun(
-  runtime: OrcaRuntimeService,
+  runtime: AioAdeRuntimeService,
   params: {
     from?: string
     senderPaneKey?: string
@@ -499,7 +499,7 @@ export const ORCHESTRATION_METHODS: RpcMethod[] = [
           ) {
             throw new OrchestrationError(
               'capability_unsupported',
-              `Federated Dispatch ${dispatchId} does not support coordinator control mail; start a fresh worker after updating its Orca server.`
+              `Federated Dispatch ${dispatchId} does not support coordinator control mail; start a fresh worker after updating its AIO-ADE server.`
             )
           }
           if (db.getWorkerDispatch(dispatchId)?.state !== 'ready') {
@@ -1115,9 +1115,7 @@ export const ORCHESTRATION_METHODS: RpcMethod[] = [
           coordinatorHandle: params.from ?? 'coordinator',
           workerHandle: params.to ?? 'worker',
           devMode: params.devMode,
-          ...(params.to
-            ? { cliCommand: runtime.getTerminalOrchestrationCliCommand(params.to) }
-            : {})
+          ...(params.to ? { cliCommand: runtime.getTerminalOrchestrationCliCommand() } : {})
         })
         return { dispatch: null, injected: false, dryRun: true, preamble }
       }
@@ -1170,7 +1168,7 @@ export const ORCHESTRATION_METHODS: RpcMethod[] = [
         workerHandle: to,
         dispatchCapability,
         devMode: params.devMode,
-        cliCommand: runtime.getTerminalOrchestrationCliCommand(to)
+        cliCommand: runtime.getTerminalOrchestrationCliCommand()
       })
 
       let injected = false
@@ -1217,7 +1215,7 @@ export const ORCHESTRATION_METHODS: RpcMethod[] = [
           coordinatorHandle: params.from ?? 'coordinator',
           workerHandle,
           devMode: params.devMode,
-          ...(ctx ? { cliCommand: runtime.getTerminalOrchestrationCliCommand(workerHandle) } : {})
+          ...(ctx ? { cliCommand: runtime.getTerminalOrchestrationCliCommand() } : {})
         })
         return { dispatch: ctx ?? null, preamble }
       }
@@ -1411,7 +1409,7 @@ export const ORCHESTRATION_METHODS: RpcMethod[] = [
 
 async function askRemoteRunHome(args: {
   params: z.infer<typeof AskParams>
-  runtime: OrcaRuntimeService
+  runtime: AioAdeRuntimeService
   signal?: AbortSignal
   orchestrationCapability?: string
   recordMutationReceipt?: (receipt: unknown) => void

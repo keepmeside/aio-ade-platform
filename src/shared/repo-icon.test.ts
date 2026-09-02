@@ -28,28 +28,28 @@ describe('sanitizeRepoIcon', () => {
     expect(
       sanitizeRepoIcon({
         type: 'image',
-        src: 'https://github.com/stablyai.png?size=64',
+        src: 'https://github.com/keepmeside.png?size=64',
         source: 'github',
-        label: 'stablyai/orca'
+        label: 'keepmeside/aio-ade-platform'
       })
     ).toEqual({
       type: 'image',
-      src: 'https://github.com/stablyai.png?size=64',
+      src: 'https://github.com/keepmeside.png?size=64',
       source: 'github',
-      label: 'stablyai/orca'
+      label: 'keepmeside/aio-ade-platform'
     })
     expect(
       sanitizeRepoIcon({
         type: 'image',
-        src: 'https://github.acme.test/stablyai.png?size=64',
+        src: 'https://github.acme.test/keepmeside.png?size=64',
         source: 'github',
-        label: 'stablyai/orca'
+        label: 'keepmeside/aio-ade-platform'
       })
     ).toEqual({
       type: 'image',
-      src: 'https://github.acme.test/stablyai.png?size=64',
+      src: 'https://github.acme.test/keepmeside.png?size=64',
       source: 'github',
-      label: 'stablyai/orca'
+      label: 'keepmeside/aio-ade-platform'
     })
     expect(
       sanitizeRepoIcon({

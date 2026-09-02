@@ -24,6 +24,11 @@ vi.mock('@/runtime/runtime-rpc-client', () => ({
 
 const roots: Root[] = []
 
+/* One source for both the hook arguments and the asserted RPC payload: the hook passes owner and
+ * repo through untouched, and holding them as separate literals let the two sides disagree. */
+const OWNER = 'keepmeside'
+const REPO = 'aio-ade-platform'
+
 function installWindowApi(): void {
   Object.defineProperty(window, 'api', {
     configurable: true,
@@ -76,7 +81,7 @@ describe('useGitHubSlugMetadata', () => {
 
     function LabelsProbe(): null {
       renders += 1
-      const metadata = useRepoLabelsBySlug('stablyai', 'orca', {
+      const metadata = useRepoLabelsBySlug(OWNER, REPO, {
         activeRuntimeEnvironmentId: null
       })
       labels = metadata.data
@@ -88,8 +93,8 @@ describe('useGitHubSlugMetadata', () => {
 
     expect(labels).toEqual(['bug'])
     expect(apiMocks.listLabelsBySlug).toHaveBeenCalledExactlyOnceWith({
-      owner: 'stablyai',
-      repo: 'orca',
+      owner: OWNER,
+      repo: REPO,
       host: 'github.com'
     })
     expect(renders).toBeLessThanOrEqual(4)
@@ -105,7 +110,7 @@ describe('useGitHubSlugMetadata', () => {
 
     function AssigneesProbe(): null {
       renders += 1
-      const metadata = useRepoAssigneesBySlug('stablyai', 'orca', ['jinwoo'], {
+      const metadata = useRepoAssigneesBySlug(OWNER, REPO, ['jinwoo'], {
         activeRuntimeEnvironmentId: null
       })
       assigneeLogins = metadata.data.map((user) => user.login)
@@ -117,8 +122,8 @@ describe('useGitHubSlugMetadata', () => {
 
     expect(assigneeLogins).toEqual(['jinwoo'])
     expect(apiMocks.listAssignableUsersBySlug).toHaveBeenCalledExactlyOnceWith({
-      owner: 'stablyai',
-      repo: 'orca',
+      owner: OWNER,
+      repo: REPO,
       host: 'github.com',
       seedLogins: ['jinwoo']
     })
@@ -135,7 +140,7 @@ describe('useGitHubSlugMetadata', () => {
 
     function FailingLabelsProbe(): null {
       renders += 1
-      const metadata = useRepoLabelsBySlug('stablyai', 'orca', {
+      const metadata = useRepoLabelsBySlug(OWNER, REPO, {
         activeRuntimeEnvironmentId: null
       })
       error = metadata.error
@@ -157,12 +162,7 @@ describe('useGitHubSlugMetadata', () => {
     apiMocks.listLabelsBySlug.mockResolvedValue({ ok: true, labels: ['enterprise'] })
 
     function LabelsProbe(): null {
-      useRepoLabelsBySlug(
-        'stablyai',
-        'orca',
-        { activeRuntimeEnvironmentId: null },
-        'ghe.example.com'
-      )
+      useRepoLabelsBySlug(OWNER, REPO, { activeRuntimeEnvironmentId: null }, 'ghe.example.com')
       return null
     }
 
@@ -170,8 +170,8 @@ describe('useGitHubSlugMetadata', () => {
     await flushEffects()
 
     expect(apiMocks.listLabelsBySlug).toHaveBeenCalledExactlyOnceWith({
-      owner: 'stablyai',
-      repo: 'orca',
+      owner: OWNER,
+      repo: REPO,
       host: 'ghe.example.com'
     })
   })
@@ -183,7 +183,7 @@ describe('useGitHubSlugMetadata', () => {
 
     function FailingAssigneesProbe(): null {
       renders += 1
-      const metadata = useRepoAssigneesBySlug('stablyai', 'orca', ['jinwoo'], {
+      const metadata = useRepoAssigneesBySlug(OWNER, REPO, ['jinwoo'], {
         activeRuntimeEnvironmentId: null
       })
       error = metadata.error

@@ -1,25 +1,13 @@
-import type { ProjectExecutionRuntimeResolution } from '../../../shared/project-execution-runtime'
-import { isWslUncPath } from '../../../shared/wsl-paths'
-import { splitWorktreeIdForFilesystem } from '../../../shared/worktree-id'
+import { CLI_COMMAND_NAME } from '../../../shared/cli-command-name'
 
-export type OrchestrationCliCommand = 'orca' | 'orca-ide'
+/* The command name the dispatch preamble teaches an agent to run.
+ *
+ * This used to be a two-member union resolved per host: the pre-rebrand CLI installed `orca` on
+ * macOS/Windows and `orca-ide` on Linux, where a bare `orca` collided with the GNOME Orca screen
+ * reader. `aio-ade` has no such collision, so one name is installed on every host and there is
+ * nothing left to resolve from connection, WSL or project-runtime context. */
+export type OrchestrationCliCommand = typeof CLI_COMMAND_NAME
 
-export function resolveTerminalOrchestrationCliCommand(args: {
-  connectionId: string | null
-  isWsl: boolean | null | undefined
-  worktreeId: string
-  projectRuntime?: ProjectExecutionRuntimeResolution
-}): OrchestrationCliCommand {
-  if (args.connectionId) {
-    return 'orca'
-  }
-  if (args.isWsl !== null && args.isWsl !== undefined) {
-    return args.isWsl ? 'orca-ide' : 'orca'
-  }
-  if (args.projectRuntime?.status === 'resolved' && args.projectRuntime.runtime.kind === 'wsl') {
-    return 'orca-ide'
-  }
-
-  const worktreePath = splitWorktreeIdForFilesystem(args.worktreeId)?.worktreePath
-  return worktreePath && isWslUncPath(worktreePath) ? 'orca-ide' : 'orca'
+export function resolveTerminalOrchestrationCliCommand(): OrchestrationCliCommand {
+  return CLI_COMMAND_NAME
 }

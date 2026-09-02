@@ -16,13 +16,13 @@ import { WslCliInstaller, _internals } from './wsl-cli-installer'
 import { reconcileManagedWslCliRegistrations } from './wsl-cli-registration-reconciliation'
 
 function makeHostStatus(
-  launcherPath = 'C:\\Users\\me\\AppData\\Local\\Programs\\Orca\\resources\\bin\\orca.exe'
+  launcherPath = 'C:\\Users\\me\\AppData\\Local\\Programs\\AIO-ADE\\resources\\bin\\aio-ade.exe'
 ) {
   return {
     platform: 'win32',
-    commandName: 'orca',
+    commandName: 'aio-ade',
     commandPath: launcherPath,
-    pathDirectory: 'C:\\Users\\me\\AppData\\Local\\Programs\\Orca\\resources\\bin',
+    pathDirectory: 'C:\\Users\\me\\AppData\\Local\\Programs\\AIO-ADE\\resources\\bin',
     pathConfigured: true,
     launcherPath,
     installMethod: 'wrapper',
@@ -34,8 +34,14 @@ function makeHostStatus(
   } satisfies CliInstallStatus
 }
 
-// Frozen from v1.4.138-rc.2: the upgrade regression only reproduces when the
-// persisted managed script still names the pre-native Windows batch launcher.
+/* Frozen from v1.4.138-rc.2, byte-for-byte including the pre-rebrand tokens.
+ *
+ * This is not prose that should follow the rename: it is a copy of a script that exists on disk in
+ * an already-installed WSL distro. Rewriting its markers and variable names would make it a script
+ * no released build ever wrote, and the upgrade path it exercises would stop being tested.
+ *
+ * The regression it reproduces needs the persisted script to still name the pre-native Windows
+ * batch launcher. */
 const PRE_RC4_MANAGED_WSL_LAUNCHER = `#!/usr/bin/env bash
 set -euo pipefail
 # Orca managed WSL CLI launcher
@@ -54,6 +60,16 @@ ORCA_BRIDGE_PS1_WIN=$(wslpath -w "$ORCA_BRIDGE_PS1")
 exec "$ORCA_POWERSHELL" -NoProfile -ExecutionPolicy Bypass -File "$ORCA_BRIDGE_PS1_WIN" "$ORCA_WIN_LAUNCHER" "$@"
 `
 
+/* Mirrors the shell guard in `buildManagedLegacyRemoveCommand`: a legacy registration on disk was
+ * written by a pre-rename build, so it carries that build's marker. Recognising only the current
+ * marker would make the fixture claim the file is user-owned and never clean it up. */
+function isManagedLauncherContent(content: string | undefined): boolean {
+  return (
+    content?.includes('# AIO-ADE managed WSL CLI launcher') === true ||
+    content?.includes('# Orca managed WSL CLI launcher') === true
+  )
+}
+
 function createWslRunner(
   initialFile: string | null = null,
   pathIncludesLocalBin = true,
@@ -64,9 +80,12 @@ function createWslRunner(
     interopReady?: boolean
   } = {}
 ) {
-  const commandPath = '/home/alice/.local/bin/orca-ide'
+  const commandPath = '/home/alice/.local/bin/aio-ade'
+  /* Deliberately the pre-rebrand name. This fixture models a WSL distro that still has the old
+   * registration on disk, which is the whole point of the legacy-adoption paths under test; making
+   * both paths the same string would make every one of those assertions vacuous. */
   const legacyCommandPath = '/home/alice/.local/bin/orca'
-  const bridgePath = '/home/alice/.local/share/orca/orca-wsl-bridge.ps1'
+  const bridgePath = '/home/alice/.local/share/aio-ade/aio-ade-wsl-bridge.ps1'
   const files = new Map<string, string>()
   if (initialFile !== null) {
     files.set(commandPath, initialFile)
@@ -95,19 +114,21 @@ function createWslRunner(
       }
       if (
         files.has(bridgePath) &&
-        !files.get(bridgePath)?.includes('# Orca managed WSL CLI PowerShell bridge')
+        !files.get(bridgePath)?.includes('# AIO-ADE managed WSL CLI PowerShell bridge')
       ) {
-        throw new Error('__ORCA_CONFLICT__')
+        throw new Error('__AIO_ADE_CONFLICT__')
       }
       const launcher =
-        command.match(/cat > "\$command_tmp" <<'ORCA_WSL_CLI'\n([\s\S]*)\nORCA_WSL_CLI/)?.[1] ?? ''
+        command.match(
+          /cat > "\$command_tmp" <<'AIO_ADE_WSL_CLI'\n([\s\S]*)\nAIO_ADE_WSL_CLI/
+        )?.[1] ?? ''
       const bridge =
         command.match(
-          /cat > "\$bridge_tmp" <<'ORCA_WSL_BRIDGE'\n([\s\S]*)\nORCA_WSL_BRIDGE/
+          /cat > "\$bridge_tmp" <<'AIO_ADE_WSL_BRIDGE'\n([\s\S]*)\nAIO_ADE_WSL_BRIDGE/
         )?.[1] ?? ''
       files.set(commandPath, launcher)
       files.set(bridgePath, bridge)
-      if (files.get(legacyCommandPath)?.includes('# Orca managed WSL CLI launcher')) {
+      if (isManagedLauncherContent(files.get(legacyCommandPath))) {
         files.delete(legacyCommandPath)
       }
       return ''
@@ -119,16 +140,16 @@ function createWslRunner(
       if (command.includes(`rm -f '${commandPath}'`)) {
         if (
           files.has(bridgePath) &&
-          !files.get(bridgePath)?.includes('# Orca managed WSL CLI PowerShell bridge')
+          !files.get(bridgePath)?.includes('# AIO-ADE managed WSL CLI PowerShell bridge')
         ) {
-          throw new Error('__ORCA_CONFLICT__')
+          throw new Error('__AIO_ADE_CONFLICT__')
         }
         files.delete(commandPath)
         files.delete(bridgePath)
       }
       if (
         command.includes(legacyCommandPath) &&
-        files.get(legacyCommandPath)?.includes('# Orca managed WSL CLI launcher')
+        isManagedLauncherContent(files.get(legacyCommandPath))
       ) {
         files.delete(legacyCommandPath)
       }
@@ -136,13 +157,13 @@ function createWslRunner(
     }
     if (command.includes('cat ')) {
       if (command.includes(commandPath)) {
-        return files.get(commandPath) ?? '__ORCA_MISSING__'
+        return files.get(commandPath) ?? '__AIO_ADE_MISSING__'
       }
       if (command.includes(bridgePath)) {
-        return files.get(bridgePath) ?? '__ORCA_MISSING__'
+        return files.get(bridgePath) ?? '__AIO_ADE_MISSING__'
       }
       if (command.includes(legacyCommandPath)) {
-        return files.get(legacyCommandPath) ?? '__ORCA_MISSING__'
+        return files.get(legacyCommandPath) ?? '__AIO_ADE_MISSING__'
       }
     }
     throw new Error(`Unexpected WSL command: ${command}`)
@@ -165,7 +186,7 @@ describe('WslCliInstaller', () => {
     vi.useRealTimers()
   })
 
-  it('installs a WSL launcher that forwards to the Windows Orca launcher', async () => {
+  it('installs a WSL launcher that forwards to the Windows AIO-ADE launcher', async () => {
     const wsl = createWslRunner()
     const installer = new WslCliInstaller({
       platform: 'win32',
@@ -176,7 +197,7 @@ describe('WslCliInstaller', () => {
 
     await expect(installer.getStatus()).resolves.toMatchObject({
       state: 'not_installed',
-      commandPath: '/home/alice/.local/bin/orca-ide'
+      commandPath: '/home/alice/.local/bin/aio-ade'
     })
 
     const installed = await installer.install()
@@ -184,12 +205,12 @@ describe('WslCliInstaller', () => {
     expect(installed).toMatchObject({
       state: 'installed',
       pathConfigured: true,
-      launcherPath: 'C:\\Users\\me\\AppData\\Local\\Programs\\Orca\\resources\\bin\\orca.exe'
+      launcherPath: 'C:\\Users\\me\\AppData\\Local\\Programs\\AIO-ADE\\resources\\bin\\aio-ade.exe'
     })
     expect(wsl.getFile()).toBe(
       _internals.buildWslLauncher(
-        'C:\\Users\\me\\AppData\\Local\\Programs\\Orca\\resources\\bin\\orca.exe',
-        '/home/alice/.local/share/orca/orca-wsl-bridge.ps1'
+        'C:\\Users\\me\\AppData\\Local\\Programs\\AIO-ADE\\resources\\bin\\aio-ade.exe',
+        '/home/alice/.local/share/aio-ade/aio-ade-wsl-bridge.ps1'
       )
     )
     expect(wsl.getBridge()).toBe(_internals.buildWslBridgeScript())
@@ -211,7 +232,7 @@ describe('WslCliInstaller', () => {
     const hostStatus = {
       ...makeHostStatus(),
       pathConfigured: null,
-      detail: 'Orca could not read the Windows user PATH registry value.'
+      detail: 'AIO-ADE could not read the Windows user PATH registry value.'
     } satisfies CliInstallStatus
     const installer = new WslCliInstaller({
       platform: 'win32',
@@ -223,29 +244,29 @@ describe('WslCliInstaller', () => {
     await expect(installer.getStatus()).resolves.toMatchObject({
       supported: true,
       state: 'not_installed',
-      commandPath: '/home/alice/.local/bin/orca-ide'
+      commandPath: '/home/alice/.local/bin/aio-ade'
     })
   })
 
   it('derives the shared WSL bridge path for current and legacy command names', () => {
-    expect(_internals.getBridgePathFromCommandPath('/home/alice/.local/bin/orca-ide')).toBe(
-      '/home/alice/.local/share/orca/orca-wsl-bridge.ps1'
+    expect(_internals.getBridgePathFromCommandPath('/home/alice/.local/bin/aio-ade')).toBe(
+      '/home/alice/.local/share/aio-ade/aio-ade-wsl-bridge.ps1'
     )
-    expect(_internals.getBridgePathFromCommandPath('/home/alice/.local/bin/orca')).toBe(
-      '/home/alice/.local/share/orca/orca-wsl-bridge.ps1'
+    expect(_internals.getBridgePathFromCommandPath('/home/alice/.local/bin/aio-ade')).toBe(
+      '/home/alice/.local/share/aio-ade/aio-ade-wsl-bridge.ps1'
     )
   })
 
   it('reports installed WSL launchers whose bin directory is missing from PATH', async () => {
     const launcher = _internals.buildWslLauncher(
-      'C:\\Orca\\orca.cmd',
-      '/home/alice/.local/share/orca/orca-wsl-bridge.ps1'
+      'C:\\AIO-ADE\\aio-ade.cmd',
+      '/home/alice/.local/share/aio-ade/aio-ade-wsl-bridge.ps1'
     )
     const wsl = createWslRunner(launcher, false)
     const installer = new WslCliInstaller({
       platform: 'win32',
       distro: 'Ubuntu',
-      hostInstaller: { getStatus: async () => makeHostStatus('C:\\Orca\\orca.cmd') },
+      hostInstaller: { getStatus: async () => makeHostStatus('C:\\AIO-ADE\\aio-ade.cmd') },
       wslRunner: wsl.runner
     })
 
@@ -258,16 +279,16 @@ describe('WslCliInstaller', () => {
 
   it('accepts current managed WSL scripts with an extra heredoc trailing newline', async () => {
     const launcher = `${_internals.buildWslLauncher(
-      'C:\\Orca\\orca.cmd',
-      '/home/alice/.local/share/orca/orca-wsl-bridge.ps1'
+      'C:\\AIO-ADE\\aio-ade.cmd',
+      '/home/alice/.local/share/aio-ade/aio-ade-wsl-bridge.ps1'
     )}\n`
     const wsl = createWslRunner(launcher)
     const installer = new WslCliInstaller({
       platform: 'win32',
       distro: 'Ubuntu',
-      hostInstaller: { getStatus: async () => makeHostStatus('C:\\Orca\\orca.cmd') },
+      hostInstaller: { getStatus: async () => makeHostStatus('C:\\AIO-ADE\\aio-ade.cmd') },
       wslRunner: async (distro, command) => {
-        if (command.includes('cat /home/alice/.local/share/orca/orca-wsl-bridge.ps1')) {
+        if (command.includes('cat /home/alice/.local/share/aio-ade/aio-ade-wsl-bridge.ps1')) {
           return `${_internals.buildWslBridgeScript()}\n`
         }
         return wsl.runner(distro, command)
@@ -276,7 +297,7 @@ describe('WslCliInstaller', () => {
 
     await expect(installer.getStatus()).resolves.toMatchObject({
       state: 'installed',
-      currentTarget: 'C:\\Orca\\orca.cmd'
+      currentTarget: 'C:\\AIO-ADE\\aio-ade.cmd'
     })
   })
 
@@ -296,14 +317,14 @@ describe('WslCliInstaller', () => {
   it('removes a managed WSL launcher', async () => {
     const wsl = createWslRunner(
       _internals.buildWslLauncher(
-        'C:\\Orca\\orca.cmd',
-        '/home/alice/.local/share/orca/orca-wsl-bridge.ps1'
+        'C:\\AIO-ADE\\aio-ade.cmd',
+        '/home/alice/.local/share/aio-ade/aio-ade-wsl-bridge.ps1'
       )
     )
     const installer = new WslCliInstaller({
       platform: 'win32',
       distro: 'Ubuntu',
-      hostInstaller: { getStatus: async () => makeHostStatus('C:\\Orca\\orca.cmd') },
+      hostInstaller: { getStatus: async () => makeHostStatus('C:\\AIO-ADE\\aio-ade.cmd') },
       wslRunner: wsl.runner
     })
 
@@ -313,34 +334,34 @@ describe('WslCliInstaller', () => {
 
   it('generates a launcher that forwards arguments through a PowerShell file bridge', () => {
     const launcher = _internals.buildWslLauncher(
-      'C:\\Program Files\\Orca\\orca.cmd',
-      '/home/alice/.local/share/orca/orca-wsl-bridge.ps1'
+      'C:\\Program Files\\AIO-ADE\\aio-ade.cmd',
+      '/home/alice/.local/share/aio-ade/aio-ade-wsl-bridge.ps1'
     )
     const bridge = _internals.buildWslBridgeScript()
 
     expect(launcher).toContain('command -v powershell.exe')
     expect(launcher).toContain('/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe')
     expect(launcher).toContain(
-      'Orca WSL CLI requires Windows interop and could not find powershell.exe.'
+      'AIO-ADE WSL CLI requires Windows interop and could not find powershell.exe.'
     )
-    expect(launcher).toContain('"$ORCA_POWERSHELL" -NoProfile -ExecutionPolicy Bypass -File')
-    expect(launcher).toContain('ORCA_WSL_CWD=$(pwd -P 2>/dev/null) || {')
-    expect(launcher).toContain('ORCA_WSL_CWD=/')
+    expect(launcher).toContain('"$AIO_ADE_POWERSHELL" -NoProfile -ExecutionPolicy Bypass -File')
+    expect(launcher).toContain('AIO_ADE_WSL_CWD=$(pwd -P 2>/dev/null) || {')
+    expect(launcher).toContain('AIO_ADE_WSL_CWD=/')
     expect(launcher).toContain('cd /')
-    expect(launcher).toContain('ORCA_WSL_CWD_WIN=$(wslpath -w "$ORCA_WSL_CWD")')
-    expect(launcher.indexOf('ORCA_WSL_CWD=$(pwd -P')).toBeLessThan(
-      launcher.indexOf('ORCA_BRIDGE_PS1_WIN=$(wslpath')
+    expect(launcher).toContain('AIO_ADE_WSL_CWD_WIN=$(wslpath -w "$AIO_ADE_WSL_CWD")')
+    expect(launcher.indexOf('AIO_ADE_WSL_CWD=$(pwd -P')).toBeLessThan(
+      launcher.indexOf('AIO_ADE_BRIDGE_PS1_WIN=$(wslpath')
     )
-    expect(launcher).toContain('"$ORCA_WIN_LAUNCHER" -WslCwd "$ORCA_WSL_CWD_WIN" "$@"')
+    expect(launcher).toContain('"$AIO_ADE_WIN_LAUNCHER" -WslCwd "$AIO_ADE_WSL_CWD_WIN" "$@"')
     expect(launcher).not.toContain('-Command')
     expect(bridge).toContain('[CmdletBinding(PositionalBinding=$false)]')
     expect(bridge).toContain('[Parameter(Mandatory=$true, Position=0)]')
     expect(bridge).toContain('[string]$WslCwd')
     expect(bridge).toContain('[Parameter(ValueFromRemainingArguments=$true)]')
     expect(bridge).toContain('if ([string]::IsNullOrEmpty($WslCwd))')
-    expect(bridge).toContain('$env:ORCA_CLI_CWD = $WslCwd')
-    expect(bridge).toContain('Push-Location -LiteralPath (Split-Path -Parent $OrcaLauncher)')
-    expect(bridge).toContain('& $OrcaLauncher @ForwardArgs')
+    expect(bridge).toContain('$env:AIO_ADE_CLI_CWD = $WslCwd')
+    expect(bridge).toContain('Push-Location -LiteralPath (Split-Path -Parent $AioAdeLauncher)')
+    expect(bridge).toContain('& $AioAdeLauncher @ForwardArgs')
     const nullExitCodeBranch = bridge.indexOf('if ($null -eq $LASTEXITCODE)')
     const invocationFailureBranch = bridge.indexOf('if (-not $?)')
     expect(nullExitCodeBranch).toBeGreaterThan(-1)
@@ -348,7 +369,7 @@ describe('WslCliInstaller', () => {
     // checking the native status first preserves that specific exit code.
     expect(nullExitCodeBranch).toBeLessThan(invocationFailureBranch)
     expect(bridge).toContain('$exitCode = $LASTEXITCODE')
-    expect(bridge).toContain('Remove-Item Env:ORCA_CLI_CWD -ErrorAction SilentlyContinue')
+    expect(bridge).toContain('Remove-Item Env:AIO_ADE_CLI_CWD -ErrorAction SilentlyContinue')
     expect(bridge).toContain('catch')
     expect(bridge).toContain('$exitCode = 1')
     expect(bridge).toContain('exit $exitCode')
@@ -357,10 +378,10 @@ describe('WslCliInstaller', () => {
   it('wraps WSL bash scripts as a single encoded command line', () => {
     const command = [
       'set -euo pipefail',
-      `cat > "$command_tmp" <<'ORCA_WSL_CLI'`,
+      `cat > "$command_tmp" <<'AIO_ADE_WSL_CLI'`,
       '#!/usr/bin/env bash',
       'exec powershell.exe "$@"',
-      'ORCA_WSL_CLI'
+      'AIO_ADE_WSL_CLI'
     ].join('\n')
     const wrapped = _internals.buildEncodedWslBashCommand(command)
     const encoded = wrapped.match(
@@ -390,14 +411,14 @@ describe('WslCliInstaller', () => {
 
     await expect(installer.getStatus()).resolves.toMatchObject({
       state: 'not_installed',
-      commandPath: '/home/alice/.local/bin/orca-ide'
+      commandPath: '/home/alice/.local/bin/aio-ade'
     })
   })
 
   it('marks stale managed launchers that point at the old app bin instead of packaged resources', async () => {
     const oldLauncher = _internals.buildWslLauncher(
-      'C:\\Users\\me\\AppData\\Local\\Programs\\Orca\\bin\\orca.cmd',
-      '/home/alice/.local/share/orca/orca-wsl-bridge.ps1'
+      'C:\\Users\\me\\AppData\\Local\\Programs\\AIO-ADE\\bin\\aio-ade.cmd',
+      '/home/alice/.local/share/aio-ade/aio-ade-wsl-bridge.ps1'
     )
     const wsl = createWslRunner(oldLauncher)
     const installer = new WslCliInstaller({
@@ -409,18 +430,18 @@ describe('WslCliInstaller', () => {
 
     await expect(installer.getStatus()).resolves.toMatchObject({
       state: 'stale',
-      currentTarget: 'C:\\Users\\me\\AppData\\Local\\Programs\\Orca\\bin\\orca.cmd',
-      launcherPath: 'C:\\Users\\me\\AppData\\Local\\Programs\\Orca\\resources\\bin\\orca.exe'
+      currentTarget: 'C:\\Users\\me\\AppData\\Local\\Programs\\AIO-ADE\\bin\\aio-ade.cmd',
+      launcherPath: 'C:\\Users\\me\\AppData\\Local\\Programs\\AIO-ADE\\resources\\bin\\aio-ade.exe'
     })
 
     await expect(installer.install()).resolves.toMatchObject({
       state: 'installed',
-      currentTarget: 'C:\\Users\\me\\AppData\\Local\\Programs\\Orca\\resources\\bin\\orca.exe'
+      currentTarget: 'C:\\Users\\me\\AppData\\Local\\Programs\\AIO-ADE\\resources\\bin\\aio-ade.exe'
     })
   })
 
   it('repairs the frozen pre-rc4 registration so orchestration send/reply reach native rc4', async () => {
-    const nativeLauncher = 'C:\\Program Files\\Orca\\resources\\bin\\orca.exe'
+    const nativeLauncher = 'C:\\Program Files\\AIO-ADE\\resources\\bin\\aio-ade.exe'
     const wsl = createWslRunner(PRE_RC4_MANAGED_WSL_LAUNCHER)
     const installer = new WslCliInstaller({
       platform: 'win32',
@@ -434,6 +455,10 @@ describe('WslCliInstaller', () => {
       ['orchestration', 'reply', '--message', 'line one\nline two']
     ]
     const simulateRc4Launch = (args: string[]): number => {
+      /* Exit 2 models the actual regression: the batch launcher mangles multi-line orchestration
+       * payloads. The name checked here is the pre-rebrand `.cmd`, because that is what the frozen
+       * on-disk registration above still points at — checking the current name would score a
+       * broken registration as healthy and the assertion would pass for the wrong reason. */
       const target = _internals.parseManagedLauncherTarget(wsl.getFile() ?? '')
       return target?.toLowerCase().endsWith('orca.cmd') &&
         args[0] === 'orchestration' &&
@@ -485,7 +510,7 @@ describe('WslCliInstaller', () => {
   })
 
   it('repairs a managed launcher whose bridge is missing, but preserves a conflicting bridge', async () => {
-    const nativeLauncher = 'C:\\Orca\\resources\\bin\\orca.exe'
+    const nativeLauncher = 'C:\\AIO-ADE\\resources\\bin\\aio-ade.exe'
     const missingBridge = createWslRunner(PRE_RC4_MANAGED_WSL_LAUNCHER, true, {
       initialBridge: null
     })
@@ -503,7 +528,7 @@ describe('WslCliInstaller', () => {
     expect(missingBridge.getBridge()).toBe(_internals.buildWslBridgeScript())
 
     const staleBridge = createWslRunner(PRE_RC4_MANAGED_WSL_LAUNCHER, true, {
-      initialBridge: '# Orca managed WSL CLI PowerShell bridge\nWrite-Output "stale"\n'
+      initialBridge: '# AIO-ADE managed WSL CLI PowerShell bridge\nWrite-Output "stale"\n'
     })
     const staleBridgeInstaller = new WslCliInstaller({
       platform: 'win32',
@@ -542,10 +567,10 @@ describe('WslCliInstaller', () => {
   })
 
   it('retains command ownership when only the bridge conflicts', async () => {
-    const nativeLauncher = 'C:\\Orca\\resources\\bin\\orca.exe'
+    const nativeLauncher = 'C:\\AIO-ADE\\resources\\bin\\aio-ade.exe'
     const currentLauncher = _internals.buildWslLauncher(
       nativeLauncher,
-      '/home/alice/.local/share/orca/orca-wsl-bridge.ps1'
+      '/home/alice/.local/share/aio-ade/aio-ade-wsl-bridge.ps1'
     )
     const wsl = createWslRunner(currentLauncher, true, {
       initialBridge: 'Write-Output "user-owned bridge"\n'
@@ -566,8 +591,8 @@ describe('WslCliInstaller', () => {
     expect(wsl.getFile()).toBe(currentLauncher)
   })
 
-  it('moves a legacy-only managed registration to orca-ide without touching unmanaged names', async () => {
-    const nativeLauncher = 'C:\\Orca\\resources\\bin\\orca.exe'
+  it('moves a legacy-only managed registration to aio-ade without touching unmanaged names', async () => {
+    const nativeLauncher = 'C:\\AIO-ADE\\resources\\bin\\aio-ade.exe'
     const managedLegacy = createWslRunner(null, true, {
       initialBridge: _internals.buildWslBridgeScript(),
       initialLegacyFile: PRE_RC4_MANAGED_WSL_LAUNCHER
@@ -625,7 +650,7 @@ describe('WslCliInstaller', () => {
   })
 
   it('removes the managed legacy launcher on removal so reconciliation cannot re-adopt it', async () => {
-    const nativeLauncher = 'C:\\Orca\\resources\\bin\\orca.exe'
+    const nativeLauncher = 'C:\\AIO-ADE\\resources\\bin\\aio-ade.exe'
     const managedLegacy = createWslRunner(null, true, {
       initialBridge: _internals.buildWslBridgeScript(),
       initialLegacyFile: PRE_RC4_MANAGED_WSL_LAUNCHER
@@ -658,7 +683,7 @@ describe('WslCliInstaller', () => {
     const installedWithLegacy = createWslRunner(
       _internals.buildWslLauncher(
         nativeLauncher,
-        '/home/alice/.local/share/orca/orca-wsl-bridge.ps1'
+        '/home/alice/.local/share/aio-ade/aio-ade-wsl-bridge.ps1'
       ),
       true,
       { initialLegacyFile: PRE_RC4_MANAGED_WSL_LAUNCHER }
@@ -684,7 +709,8 @@ describe('WslCliInstaller', () => {
       platform: 'win32',
       distro: 'Ubuntu',
       hostInstaller: {
-        getStatus: async () => makeHostStatus('C:\\Program Files\\Orca\\resources\\bin\\orca.exe')
+        getStatus: async () =>
+          makeHostStatus('C:\\Program Files\\AIO-ADE\\resources\\bin\\aio-ade.exe')
       },
       wslRunner: wsl.runner
     })
@@ -703,21 +729,21 @@ describe('WslCliInstaller', () => {
     expect(installCommand).toContain('committed=1')
     expect(installCommand).toContain('flock -x -w 30 9')
     // Why: the command replace must stay one atomic rename; a mv-based backup
-    // would leave a window where a concurrent shell finds no orca-ide at all.
+    // would leave a window where a concurrent shell finds no aio-ade at all.
     expect(installCommand).not.toContain('command_backup')
-    expect(installCommand).not.toContain(`mv -f '/home/alice/.local/bin/orca-ide'`)
+    expect(installCommand).not.toContain(`mv -f '/home/alice/.local/bin/aio-ade'`)
   })
 
   it.skipIf(process.platform === 'win32')(
     'rolls both files back when the command replacement fails after the bridge move',
     async () => {
-      const root = await mkdtemp(join(tmpdir(), 'orca-wsl-cli-rollback-'))
+      const root = await mkdtemp(join(tmpdir(), 'aio-ade-wsl-cli-rollback-'))
       const home = join(root, 'home with spaces')
-      const commandPath = join(home, '.local', 'bin', 'orca-ide')
-      const bridgePath = join(home, '.local', 'share', 'orca', 'orca-wsl-bridge.ps1')
+      const commandPath = join(home, '.local', 'bin', 'aio-ade')
+      const bridgePath = join(home, '.local', 'share', 'aio-ade', 'aio-ade-wsl-bridge.ps1')
       const bridge = _internals.buildWslBridgeScript()
       await mkdir(join(home, '.local', 'bin'), { recursive: true })
-      await mkdir(join(home, '.local', 'share', 'orca'), { recursive: true })
+      await mkdir(join(home, '.local', 'share', 'aio-ade'), { recursive: true })
       await writeFile(commandPath, PRE_RC4_MANAGED_WSL_LAUNCHER, 'utf8')
       await writeFile(bridgePath, bridge, 'utf8')
 
@@ -744,7 +770,8 @@ describe('WslCliInstaller', () => {
         platform: 'win32',
         distro: 'Ubuntu',
         hostInstaller: {
-          getStatus: async () => makeHostStatus('C:\\Program Files\\Orca\\resources\\bin\\orca.exe')
+          getStatus: async () =>
+            makeHostStatus('C:\\Program Files\\AIO-ADE\\resources\\bin\\aio-ade.exe')
         },
         wslRunner: runner
       })
@@ -776,7 +803,7 @@ describe('WslCliInstaller', () => {
   })
 
   it('is idempotent after repairing an old managed registration', async () => {
-    const nativeLauncher = 'D:\\Custom Orca\\resources\\bin\\orca.exe'
+    const nativeLauncher = 'D:\\Custom AIO-ADE\\resources\\bin\\aio-ade.exe'
     const wsl = createWslRunner(PRE_RC4_MANAGED_WSL_LAUNCHER)
     const installer = new WslCliInstaller({
       platform: 'win32',
@@ -788,7 +815,9 @@ describe('WslCliInstaller', () => {
     await expect(installer.repairManagedRegistration()).resolves.toMatchObject({ changed: true })
     await expect(installer.repairManagedRegistration()).resolves.toMatchObject({ changed: false })
     expect(wsl.calls.filter((command) => command.includes('cat > "$command_tmp"'))).toHaveLength(1)
-    expect(wsl.getFile()).toContain("ORCA_WIN_LAUNCHER='D:\\Custom Orca\\resources\\bin\\orca.exe'")
+    expect(wsl.getFile()).toContain(
+      "AIO_ADE_WIN_LAUNCHER='D:\\Custom AIO-ADE\\resources\\bin\\aio-ade.exe'"
+    )
   })
 
   it('settles when wsl.exe never reports completion', async () => {
@@ -819,25 +848,25 @@ describe('WslCliInstaller', () => {
 
   it('refuses to remove an old managed launcher when the bridge path is user-owned', async () => {
     const oldLauncher = _internals.buildWslLauncher(
-      'C:\\Old\\orca.cmd',
-      '/home/alice/.local/share/orca/orca-wsl-bridge.ps1'
+      'C:\\Old\\aio-ade.cmd',
+      '/home/alice/.local/share/aio-ade/aio-ade-wsl-bridge.ps1'
     )
     const wsl = createWslRunner(oldLauncher)
     const installer = new WslCliInstaller({
       platform: 'win32',
       distro: 'Ubuntu',
-      hostInstaller: { getStatus: async () => makeHostStatus('C:\\Orca\\orca.cmd') },
+      hostInstaller: { getStatus: async () => makeHostStatus('C:\\AIO-ADE\\aio-ade.cmd') },
       wslRunner: async (distro, command) => {
-        if (command.includes('cat /home/alice/.local/share/orca/orca-wsl-bridge.ps1')) {
+        if (command.includes('cat /home/alice/.local/share/aio-ade/aio-ade-wsl-bridge.ps1')) {
           return 'user bridge'
         }
         if (command.includes('rm -f')) {
-          throw new Error('__ORCA_CONFLICT__')
+          throw new Error('__AIO_ADE_CONFLICT__')
         }
         return wsl.runner(distro, command)
       }
     })
 
-    await expect(installer.remove()).rejects.toThrow('__ORCA_CONFLICT__')
+    await expect(installer.remove()).rejects.toThrow('__AIO_ADE_CONFLICT__')
   })
 })

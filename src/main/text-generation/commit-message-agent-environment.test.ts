@@ -25,7 +25,7 @@ afterEach(() => {
 
 function makeHome(): string {
   Object.defineProperty(process, 'platform', { configurable: true, value: 'linux' })
-  const dir = mkdtempSync(join(tmpdir(), 'orca-commit-env-'))
+  const dir = mkdtempSync(join(tmpdir(), 'aio-ade-commit-env-'))
   tempDirs.push(dir)
   process.env.HOME = dir
   process.env.SHELL = '/bin/zsh'
@@ -62,20 +62,20 @@ describe('prepareLocalCommitMessageAgentEnv', () => {
   it('sets CODEX_HOME for host managed Codex accounts', async () => {
     const result = await prepareLocalCommitMessageAgentEnv('codex', {
       prepareForCodexLaunch: () =>
-        'C:\\Users\\tester\\AppData\\Roaming\\Orca\\codex-accounts\\a\\home'
+        'C:\\Users\\tester\\AppData\\Roaming\\AIO-ADE\\codex-accounts\\a\\home'
     })
 
     expect(result).toEqual({
       ok: true,
       env: expect.objectContaining({
-        CODEX_HOME: 'C:\\Users\\tester\\AppData\\Roaming\\Orca\\codex-accounts\\a\\home'
+        CODEX_HOME: 'C:\\Users\\tester\\AppData\\Roaming\\AIO-ADE\\codex-accounts\\a\\home'
       })
     })
   })
 
-  it('strips a nested-Orca CODEX_HOME override when the launch resolves to the real home', async () => {
+  it('strips a nested-AIO-ADE CODEX_HOME override when the launch resolves to the real home', async () => {
     process.env.CODEX_HOME = '/managed/runtime/home'
-    process.env.ORCA_CODEX_HOME = '/managed/runtime/home'
+    process.env.AIO_ADE_CODEX_HOME = '/managed/runtime/home'
 
     const result = await prepareLocalCommitMessageAgentEnv('codex', {
       prepareForCodexLaunch: () => null
@@ -85,12 +85,12 @@ describe('prepareLocalCommitMessageAgentEnv', () => {
     const env = (result as { ok: true; env?: NodeJS.ProcessEnv }).env
     expect(env).toBeDefined()
     expect(env?.CODEX_HOME).toBeUndefined()
-    expect(env?.ORCA_CODEX_HOME).toBeUndefined()
+    expect(env?.AIO_ADE_CODEX_HOME).toBeUndefined()
   })
 
   it('preserves a user-owned CODEX_HOME when the launch resolves to the real home', async () => {
     process.env.CODEX_HOME = '/home/me/.config/codex'
-    delete process.env.ORCA_CODEX_HOME
+    delete process.env.AIO_ADE_CODEX_HOME
 
     const result = await prepareLocalCommitMessageAgentEnv('codex', {
       prepareForCodexLaunch: () => null
@@ -106,7 +106,7 @@ describe('prepareLocalCommitMessageAgentEnv', () => {
 
     const result = await prepareLocalCommitMessageAgentEnv('codex', {
       prepareForCodexLaunch: () =>
-        '\\\\wsl.localhost\\Ubuntu\\home\\tester\\.local\\share\\orca\\codex-accounts\\a\\home'
+        '\\\\wsl.localhost\\Ubuntu\\home\\tester\\.local\\share\\aio-ade\\codex-accounts\\a\\home'
     })
 
     expect(result).toEqual({ ok: true })

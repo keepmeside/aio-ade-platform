@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import {
   installReposRuntimeRoutingHarness,
   localRepo,
-  orcaProfileFindProjectProfiles,
+  aioAdeProfileFindProjectProfiles,
   projectGroupsMoveProject,
   projectsSetupExistingFolder,
   ptyKill,
@@ -173,12 +173,12 @@ describe('repo slice runtime routing', () => {
     })
     expect(reposAdd).not.toHaveBeenCalled()
     expect(reposPickFolder).not.toHaveBeenCalled()
-    expect(orcaProfileFindProjectProfiles).not.toHaveBeenCalled()
+    expect(aioAdeProfileFindProjectProfiles).not.toHaveBeenCalled()
   })
 
   it('warns when a local project is already present in another profile', async () => {
     reposAdd.mockResolvedValue({ repo: localRepo })
-    orcaProfileFindProjectProfiles.mockResolvedValue({
+    aioAdeProfileFindProjectProfiles.mockResolvedValue({
       projects: [
         {
           profileId: 'work',
@@ -190,14 +190,14 @@ describe('repo slice runtime routing', () => {
       ]
     })
     const store = createTestStore()
-    store.setState({ activeOrcaProfileId: 'local-default' })
+    store.setState({ activeAioAdeProfileId: 'local-default' })
 
     await expect(store.getState().addRepoPath('/local')).resolves.toEqual({
       ...localRepo,
       executionHostId: 'local'
     })
 
-    expect(orcaProfileFindProjectProfiles).toHaveBeenCalledWith({
+    expect(aioAdeProfileFindProjectProfiles).toHaveBeenCalledWith({
       path: '/local',
       connectionId: null,
       executionHostId: 'local',
@@ -400,7 +400,7 @@ describe('repo slice runtime routing', () => {
       store.getState().setupProjectClone({
         projectId: project.id,
         hostId: 'local',
-        url: 'https://github.com/stablyai/orca.git',
+        url: 'https://github.com/keepmeside/aio-ade-platform.git',
         destination: '/workspace',
         displayName: 'Project'
       })
@@ -411,7 +411,7 @@ describe('repo slice runtime routing', () => {
     })
 
     expect(reposClone).toHaveBeenCalledWith({
-      url: 'https://github.com/stablyai/orca.git',
+      url: 'https://github.com/keepmeside/aio-ade-platform.git',
       destination: '/workspace'
     })
     expect(projectsSetupExistingFolder).toHaveBeenCalledWith({
@@ -465,7 +465,7 @@ describe('repo slice runtime routing', () => {
       store.getState().setupProjectClone({
         projectId: project.id,
         hostId: 'runtime:env-1',
-        url: 'https://github.com/stablyai/orca.git',
+        url: 'https://github.com/keepmeside/aio-ade-platform.git',
         destination: '/srv',
         displayName: 'Project'
       })
@@ -485,7 +485,7 @@ describe('repo slice runtime routing', () => {
       selector: 'env-1',
       method: 'repo.clone',
       params: {
-        url: 'https://github.com/stablyai/orca.git',
+        url: 'https://github.com/keepmeside/aio-ade-platform.git',
         destination: '/srv'
       },
       timeoutMs: 10 * 60_000
@@ -535,7 +535,7 @@ describe('repo slice runtime routing', () => {
       store.getState().setupProjectClone({
         projectId: project.id,
         hostId: 'ssh:ssh-1',
-        url: 'https://github.com/stablyai/orca.git',
+        url: 'https://github.com/keepmeside/aio-ade-platform.git',
         destination: '/srv',
         displayName: 'Project'
       })
@@ -547,7 +547,7 @@ describe('repo slice runtime routing', () => {
 
     expect(reposCloneRemote).toHaveBeenCalledWith({
       connectionId: 'ssh-1',
-      url: 'https://github.com/stablyai/orca.git',
+      url: 'https://github.com/keepmeside/aio-ade-platform.git',
       destination: '/srv'
     })
     expect(projectsSetupExistingFolder).toHaveBeenCalledWith({
@@ -628,7 +628,7 @@ describe('repo slice runtime routing', () => {
 
   it('removes SSH-owned repos through local IPC even when a runtime is focused', async () => {
     const store = createTestStore()
-    const worktreeId = `${sshRepo.id}::/home/orca/wt`
+    const worktreeId = `${sshRepo.id}::/home/aio-ade/wt`
     store.setState({
       settings: { activeRuntimeEnvironmentId: 'env-1' } as never,
       repos: [sshRepo],
@@ -648,7 +648,7 @@ describe('repo slice runtime routing', () => {
 
   it('drops persisted visit timestamps for removed unhydrated SSH repos', async () => {
     const store = createTestStore()
-    const sshWorktreeId = `${sshRepo.id}::/home/orca/wt`
+    const sshWorktreeId = `${sshRepo.id}::/home/aio-ade/wt`
     const localWorktreeId = `${localRepo.id}::/local/wt`
     store.setState({
       repos: [sshRepo, localRepo],
@@ -674,7 +674,7 @@ describe('repo slice runtime routing', () => {
       _meta: { runtimeId: 'runtime-remote' }
     })
     const store = createTestStore()
-    const remoteWorktreeId = `${remoteRepo.id}::/srv/orca/wt`
+    const remoteWorktreeId = `${remoteRepo.id}::/srv/aio-ade/wt`
     const localWorktreeId = `${localRepo.id}::/local/wt`
     store.setState({
       settings: { activeRuntimeEnvironmentId: 'env-1' } as never,

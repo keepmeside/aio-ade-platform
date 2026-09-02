@@ -5,7 +5,7 @@ const extraArgs = rawExtraArgs[0] === '--' ? rawExtraArgs.slice(1) : rawExtraArg
 const pnpm = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
 const env = {
   ...process.env,
-  ORCA_E2E_SSH_DOCKER: '1'
+  AIO_ADE_E2E_SSH_DOCKER: '1'
 }
 
 // Why: Node's CVE-2024-27980 hardening rejects .cmd spawns without shell on Windows.
@@ -22,7 +22,7 @@ if (runtime.status !== 0) {
 }
 
 // Why both specs in one runner: they share the docker SSH rig and the same
-// ORCA_E2E_SSH_DOCKER gate — the SSH parking spec proves SSH panes park and
+// AIO_ADE_E2E_SSH_DOCKER gate — the SSH parking spec proves SSH panes park and
 // restore, the retention spec proves the C1 budget bounds what they retain.
 const result = spawnSync(
   pnpm,

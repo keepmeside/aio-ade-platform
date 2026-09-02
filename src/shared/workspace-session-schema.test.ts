@@ -116,7 +116,7 @@ describe('parseWorkspaceSession', () => {
             id: 'browser-1',
             worktreeId: 'wt',
             sessionProfileId: 'iso-profile',
-            sessionPartition: 'persist:orca-browser-session-iso-profile',
+            sessionPartition: 'persist:aio-ade-browser-session-iso-profile',
             url: 'https://example.com',
             title: 'Example',
             loading: false,
@@ -134,7 +134,7 @@ describe('parseWorkspaceSession', () => {
       return
     }
     expect(result.value.browserTabsByWorktree?.wt?.[0]?.sessionPartition).toBe(
-      'persist:orca-browser-session-iso-profile'
+      'persist:aio-ade-browser-session-iso-profile'
     )
   })
 

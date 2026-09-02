@@ -3,34 +3,34 @@
 import PackageDescription
 
 let package = Package(
-    name: "OrcaComputerUseMacOS",
+    name: "AioAdeComputerUseMacOS",
     platforms: [
         .macOS(.v14)
     ],
     products: [
         .library(
-            name: "OrcaComputerUseMacOSCore",
-            targets: ["OrcaComputerUseMacOSCore"]
+            name: "AioAdeComputerUseMacOSCore",
+            targets: ["AioAdeComputerUseMacOSCore"]
         ),
         .executable(
-            name: "orca-computer-use-macos",
-            targets: ["OrcaComputerUseMacOS"]
+            name: "aio-ade-computer-use-macos",
+            targets: ["AioAdeComputerUseMacOS"]
         )
     ],
     targets: [
         .target(
-            name: "OrcaComputerUseMacOSCore",
-            path: "Sources/OrcaComputerUseMacOSCore"
+            name: "AioAdeComputerUseMacOSCore",
+            path: "Sources/AioAdeComputerUseMacOSCore"
         ),
         .executableTarget(
-            name: "OrcaComputerUseMacOS",
-            dependencies: ["OrcaComputerUseMacOSCore"],
-            path: "Sources/OrcaComputerUseMacOS"
+            name: "AioAdeComputerUseMacOS",
+            dependencies: ["AioAdeComputerUseMacOSCore"],
+            path: "Sources/AioAdeComputerUseMacOS"
         ),
         .testTarget(
-            name: "OrcaComputerUseMacOSTests",
-            dependencies: ["OrcaComputerUseMacOSCore"],
-            path: "Tests/OrcaComputerUseMacOSTests"
+            name: "AioAdeComputerUseMacOSTests",
+            dependencies: ["AioAdeComputerUseMacOSCore"],
+            path: "Tests/AioAdeComputerUseMacOSTests"
         )
     ]
 )

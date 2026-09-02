@@ -15,7 +15,7 @@ Status: implemented single-PR v1 design for issues #8878 and #9352; deterministi
 
 ## Summary
 
-A remote Orca host, not an attached renderer, decides whether a provider agent
+A remote AIO-ADE host, not an attached renderer, decides whether a provider agent
 session already has a live PTY. Clients send structured intent (fresh launch or
 explicit provider identity); the host returns one canonical terminal surface.
 
@@ -69,7 +69,7 @@ The following are not v1 guarantees:
 - host-authoritative deduplication of resumes through an unverified
   direct/nested SSH execution namespace (those launches retain legacy behavior);
 - supervising a provider process after its owning PTY exits;
-- coordinating multiple independent Orca main processes for one profile;
+- coordinating multiple independent AIO-ADE main processes for one profile;
 - preventing a nonconforming new client from deliberately sending the same
   legacy wire request as an old client; authenticated request-level capability
   negotiation does not yet exist, so the server cannot distinguish them.
@@ -253,7 +253,7 @@ legacy launch. A cold or expired cache therefore cannot bypass authority or
 remove the pre-change workflow.
 
 AI Vault resumes use provider metadata for agents with a structured identity. If
-metadata or host capability is absent, Orca preserves the prior opaque legacy
+metadata or host capability is absent, AIO-ADE preserves the prior opaque legacy
 resume request instead of blocking the user.
 
 Background launches, quick launches, and mounted remote panes use
@@ -390,7 +390,7 @@ Run:
 pnpm test:repro:remote-agent-session
 ```
 
-The harness builds Orca, starts a real headless Electron `orca serve` process on
+The harness builds AIO-ADE, starts a real headless Electron `aio-ade serve` process on
 an ephemeral port, and connects independent Node client processes over the
 normal encrypted WebSocket pairing path. It creates and registers a real Git
 repository in an isolated profile and uses the real daemon claim registry with
@@ -449,7 +449,7 @@ v1 does not claim deduplication for that route.
 
 ### Multi-process coordination
 
-Supporting multiple Orca main processes against one profile requires an
+Supporting multiple AIO-ADE main processes against one profile requires an
 OS-held coordinator lease around claim and journal mutation. The current v1
 contract coordinates clients of one runtime/controller process and its daemon
 or registered relays.

@@ -256,11 +256,11 @@ export const ORCHESTRATION_FEDERATION_ATTACH_METHODS: RpcMethod[] = [
             taskId: params.taskId,
             dispatchId: params.dispatchId,
             taskSpec: params.taskSpec,
-            coordinatorHandle: 'Run home (relayed by Orca)',
+            coordinatorHandle: 'Run home (relayed by AIO-ADE)',
             workerHandle: terminalHandle,
             dispatchCapability: capability,
             devMode: params.devMode,
-            cliCommand: runtime.getTerminalOrchestrationCliCommand(terminalHandle)
+            cliCommand: runtime.getTerminalOrchestrationCliCommand()
           })
         )
         effects.push({

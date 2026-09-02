@@ -10,7 +10,7 @@ import type {
   RuntimeMobileSessionTabsSnapshot
 } from '../../shared/runtime-types'
 import type { WorkspaceSessionState } from '../../shared/types'
-import { OrcaRuntimeService } from './orca-runtime'
+import { AioAdeRuntimeService } from './aio-ade-runtime'
 
 // Freshness predicate of shouldApplyWebSessionTabsSnapshot in
 // src/renderer/src/runtime/web-session-tabs-sync.ts, copied as a literal
@@ -89,7 +89,7 @@ function makeTerminalTab(id: string, ptyId: string | null) {
 
 function createRuntime(initialSession: WorkspaceSessionState) {
   let session = initialSession
-  const runtime = new OrcaRuntimeService({
+  const runtime = new AioAdeRuntimeService({
     ...storeBase,
     getWorkspaceSession: () => session,
     setWorkspaceSession: (next: WorkspaceSessionState) => {

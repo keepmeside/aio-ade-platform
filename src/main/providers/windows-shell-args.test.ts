@@ -29,16 +29,16 @@ describe('resolveWindowsShellLaunchArgs', () => {
   let userDataPath: string
 
   beforeEach(() => {
-    previousUserDataPath = process.env.ORCA_USER_DATA_PATH
+    previousUserDataPath = process.env.AIO_ADE_USER_DATA_PATH
     userDataPath = mkdtempSync(join(tmpdir(), 'windows-shell-args-test-'))
-    process.env.ORCA_USER_DATA_PATH = userDataPath
+    process.env.AIO_ADE_USER_DATA_PATH = userDataPath
   })
 
   afterEach(() => {
     if (previousUserDataPath === undefined) {
-      delete process.env.ORCA_USER_DATA_PATH
+      delete process.env.AIO_ADE_USER_DATA_PATH
     } else {
-      process.env.ORCA_USER_DATA_PATH = previousUserDataPath
+      process.env.AIO_ADE_USER_DATA_PATH = previousUserDataPath
     }
     rmSync(userDataPath, { recursive: true, force: true })
   })
@@ -99,7 +99,7 @@ describe('resolveWindowsShellLaunchArgs', () => {
 
     const command = decodePowerShellCommand(result)
     const outputEncodingIndex = command.indexOf('[Console]::OutputEncoding')
-    const codexRestoreIndex = command.indexOf('$env:CODEX_HOME = $env:ORCA_CODEX_HOME')
+    const codexRestoreIndex = command.indexOf('$env:CODEX_HOME = $env:AIO_ADE_CODEX_HOME')
     const promptIndex = command.indexOf('function Global:prompt')
     const cwdRestoreIndex = command.indexOf(
       expectedPowerShellRestoreCwdCommand("'C:\\Users\\alice'")
@@ -108,7 +108,7 @@ describe('resolveWindowsShellLaunchArgs', () => {
     expect(command).not.toContain('$PROFILE')
     expect(command).not.toContain('OPENCODE_CONFIG_DIR')
     expect(command).not.toContain('PI_CODING_AGENT_DIR')
-    expect(command).not.toContain('ORCA_OMP_STATUS_EXTENSION')
+    expect(command).not.toContain('AIO_ADE_OMP_STATUS_EXTENSION')
     expect(outputEncodingIndex).toBeGreaterThanOrEqual(0)
     expect(codexRestoreIndex).toBeGreaterThan(outputEncodingIndex)
     expect(promptIndex).toBeGreaterThan(codexRestoreIndex)
@@ -164,7 +164,7 @@ describe('resolveWindowsShellLaunchArgs', () => {
 
   it('preserves complex PowerShell startup command text through EncodedCommand', () => {
     const startupCommand =
-      '& "C:\\Program Files\\Orca CLI\\orca.exe" "--label" "quoted value"; $env:ORCA_VALUE = "nested"'
+      '& "C:\\Program Files\\AIO-ADE CLI\\aio-ade.exe" "--label" "quoted value"; $env:AIO_ADE_VALUE = "nested"'
     const result = resolveWindowsShellLaunchArgs(
       'powershell.exe',
       'C:\\Users\\alice',
@@ -185,7 +185,7 @@ describe('resolveWindowsShellLaunchArgs', () => {
       'C:\\Users\\alice',
       'C:\\Users\\alice',
       undefined,
-      `orca ${'x'.repeat(7000)}`
+      `aio-ade ${'x'.repeat(7000)}`
     )
 
     expect(result.startupCommandDeliveredInShellArgs).toBeUndefined()
@@ -270,8 +270,8 @@ describe('resolveWindowsShellLaunchArgs', () => {
     const bashRcfile = readFileSync(join(userDataPath, 'shell-ready', 'bash', 'rcfile'), 'utf8')
     const zshLogin = readFileSync(join(userDataPath, 'shell-ready', 'zsh', '.zlogin'), 'utf8')
     for (const wrapperFile of [bashRcfile, zshLogin]) {
-      expect(wrapperFile).toContain('[[ -n "${ORCA_CODEX_HOME:-}" ]] && export CODEX_HOME=')
-      expect(wrapperFile).not.toContain('ORCA_OMP_STATUS_EXTENSION')
+      expect(wrapperFile).toContain('[[ -n "${AIO_ADE_CODEX_HOME:-}" ]] && export CODEX_HOME=')
+      expect(wrapperFile).not.toContain('AIO_ADE_OMP_STATUS_EXTENSION')
     }
   })
 
@@ -307,7 +307,7 @@ describe('resolveWindowsShellLaunchArgs', () => {
     // The injected sh cmd must not break out of the surrounding single quotes
     // when the path contains a ' character.
     expect(result.shellArgs[3]).toContain("cd '/mnt/c/weird'\\''path'")
-    expect(result.shellArgs[3]).toContain('exec "\\$_orca_wsl_shell" -l')
+    expect(result.shellArgs[3]).toContain('exec "\\$_aio_ade_wsl_shell" -l')
   })
 
   it('falls back to /mnt/c when cwd is not a drive-letter path', () => {
@@ -379,7 +379,7 @@ describe('resolveWindowsShellLaunchArgs', () => {
 // never be re-parsed as an open string.
 describe('issue #7236: PowerShell setup-runner command delivery', () => {
   // git rev-parse hands back a forward-slash Windows-absolute path for the runner.
-  const runnerPath = 'C:/Users/alice/repo/.git/orca/setup-runner.cmd'
+  const runnerPath = 'C:/Users/alice/repo/.git/aio-ade/setup-runner.cmd'
 
   it('wraps the setup runner in balanced double quotes', () => {
     const { command } = resolveSetupRunnerCommand(runnerPath, 'windows')

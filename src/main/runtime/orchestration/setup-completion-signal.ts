@@ -3,9 +3,9 @@ import {
   type SetupRunnerCommandPlatform
 } from '../../../shared/setup-runner-command'
 
-const SETUP_COMPLETION_PREFIX = '__ORCA_SETUP_COMPLETE__:'
+const SETUP_COMPLETION_PREFIX = '__AIO_ADE_SETUP_COMPLETE__:'
 const SETUP_COMPLETION_CARRY_LENGTH = SETUP_COMPLETION_PREFIX.length + 96
-const WINDOWS_SETUP_RUNNER_ENV = 'ORCA_SETUP_RUNNER_PATH'
+const WINDOWS_SETUP_RUNNER_ENV = 'AIO_ADE_SETUP_RUNNER_PATH'
 
 export function buildObservedSetupCommand(
   runnerScriptPath: string,

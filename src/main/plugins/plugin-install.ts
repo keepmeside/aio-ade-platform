@@ -1,5 +1,4 @@
 import { mkdtemp, readdir, realpath, rm } from 'node:fs/promises'
-import { existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { isAbsolute, join, relative, resolve, sep } from 'node:path'
 import {
@@ -23,6 +22,7 @@ import { checkoutPluginGitSource } from './plugin-git-repository'
 import { readPluginCurrentPointer } from './plugin-current-pointer'
 import { readPluginInstallProvenance } from './plugin-install-provenance'
 import { publishPluginInstall } from './plugin-install-publication'
+import { hasPluginManifest } from './plugin-manifest-file'
 
 export type { PluginInstallResult } from './plugin-install-staging'
 
@@ -72,7 +72,7 @@ export async function installPluginFromLocalPath(input: {
   blockedPluginReason?: (pluginKey: string) => string | null
 }): Promise<PluginInstallResult> {
   return serializePluginMutation(input.pluginsDir, async () => {
-    if (!existsSync(join(input.sourcePath, PLUGIN_MANIFEST_FILENAME))) {
+    if (!hasPluginManifest(input.sourcePath)) {
       return { ok: false, error: `no ${PLUGIN_MANIFEST_FILENAME} found in ${input.sourcePath}` }
     }
     return installStagedPluginTree({
@@ -119,7 +119,7 @@ export async function installPluginFromGit(input: {
     return { ok: false, error: 'plugin Git URL must use HTTPS or SSH' }
   }
   return serializePluginMutation(input.pluginsDir, async () => {
-    const stagingDir = await mkdtemp(join(tmpdir(), 'orca-plugin-install-'))
+    const stagingDir = await mkdtemp(join(tmpdir(), 'aio-ade-plugin-install-'))
     try {
       const ref = input.ref.trim()
       const resolvedCommit = await checkoutPluginGitSource({
@@ -165,7 +165,7 @@ export async function installPluginFromMarketplace(input: {
     return { ok: false, error: 'invalid previewed plugin commit' }
   }
   return serializePluginMutation(input.pluginsDir, async () => {
-    const stagingDir = await mkdtemp(join(tmpdir(), 'orca-plugin-marketplace-install-'))
+    const stagingDir = await mkdtemp(join(tmpdir(), 'aio-ade-plugin-marketplace-install-'))
     try {
       const resolvedCommit = await checkoutPluginGitSource({
         url: input.plugin.url,
@@ -207,7 +207,7 @@ export async function rollbackInstalledPlugin(input: {
   }
   const blockedReason = input.blockedPluginReason?.(input.pluginKey)
   if (blockedReason) {
-    return { ok: false, error: `plugin is blocked by Orca's safety list: ${blockedReason}` }
+    return { ok: false, error: `plugin is blocked by AIO-ADE's safety list: ${blockedReason}` }
   }
   return serializePluginMutation(input.pluginsDir, async () => {
     const pluginDir = join(input.pluginsDir, input.pluginKey)

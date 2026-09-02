@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { RpcDispatcher } from '../dispatcher'
 import type { RpcRequest } from '../core'
-import type { OrcaRuntimeService } from '../../orca-runtime'
+import type { AioAdeRuntimeService } from '../../aio-ade-runtime'
 import { JIRA_METHODS } from './jira'
 
 function makeRequest(method: string, params?: unknown): RpcRequest {
@@ -17,7 +17,7 @@ describe('jira RPC methods', () => {
       jiraConnect: vi.fn().mockResolvedValue({ ok: true, viewer: { displayName: 'Ada' } }),
       jiraSelectSite: vi.fn().mockResolvedValue({ connected: true, viewer: null }),
       jiraDisconnect: vi.fn().mockResolvedValue({ ok: true })
-    } as unknown as OrcaRuntimeService
+    } as unknown as AioAdeRuntimeService
     const dispatcher = new RpcDispatcher({ runtime, methods: JIRA_METHODS })
 
     await dispatcher.dispatch(makeRequest('jira.status'))
@@ -53,7 +53,7 @@ describe('jira RPC methods', () => {
       jiraUpdateIssue: vi.fn().mockResolvedValue({ ok: true }),
       jiraAddIssueComment: vi.fn().mockResolvedValue({ ok: true, id: 'comment-1' }),
       jiraIssueComments: vi.fn().mockResolvedValue([{ id: 'comment-2' }])
-    } as unknown as OrcaRuntimeService
+    } as unknown as AioAdeRuntimeService
     const dispatcher = new RpcDispatcher({ runtime, methods: JIRA_METHODS })
 
     await dispatcher.dispatch(
@@ -122,7 +122,7 @@ describe('jira RPC methods', () => {
     const runtime = {
       getRuntimeId: () => 'test-runtime',
       jiraGetIssue: vi.fn().mockResolvedValue({ key: 'ABC-3', description })
-    } as unknown as OrcaRuntimeService
+    } as unknown as AioAdeRuntimeService
     const dispatcher = new RpcDispatcher({ runtime, methods: JIRA_METHODS })
     const replies: string[] = []
 
@@ -152,7 +152,7 @@ describe('jira RPC methods', () => {
       jiraGetProjectStatusOrder: vi.fn().mockResolvedValue({
         statusIdsByColumn: [['status-1']]
       })
-    } as unknown as OrcaRuntimeService
+    } as unknown as AioAdeRuntimeService
     const dispatcher = new RpcDispatcher({ runtime, methods: JIRA_METHODS })
 
     await dispatcher.dispatch(makeRequest('jira.listProjects', { siteId: 'all' }))

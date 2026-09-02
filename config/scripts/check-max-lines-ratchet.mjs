@@ -115,7 +115,7 @@ function printAddedFailure(added) {
     console.error(`    • ${target}\n        ↳ added an eslint/oxlint-disable max-lines comment`)
   }
   console.error('')
-  console.error('  Orca caps file size (300 .ts / 400 .tsx / 600 .mjs / 800 test — non-blank,')
+  console.error('  AIO-ADE caps file size (300 .ts / 400 .tsx / 600 .mjs / 800 test — non-blank,')
   console.error(
     '  non-comment lines). Existing oversized files are grandfathered; NEW ones are not.'
   )

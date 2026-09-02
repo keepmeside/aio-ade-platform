@@ -1,0 +1,67 @@
+# NOTICE
+
+AIO-ADE
+Copyright (c) 2026 Keepmeside and SalyyS1
+
+This product is licensed under the MIT License. See [LICENSE](./LICENSE) for the
+full text.
+
+## Upstream work
+
+AIO-ADE is a fork of Orca, and substantial portions of this software remain the
+work of the original authors. The upstream copyright notice below is reproduced
+as the MIT License requires, and must not be removed:
+
+```
+MIT License
+
+Copyright (c) 2026 Lovecast Inc.
+```
+
+The upstream project's full license text is the same MIT text carried in
+[LICENSE](./LICENSE) at the root of this repository.
+
+The MIT License grants copyright permissions only. It conveys no trademark
+rights, so the upstream product name is not used to identify this fork.
+
+## Third-party components
+
+The distributed application bundles the components below. Each is used under its
+own license; the list covers runtime dependencies that ship inside a release
+artifact, not build-time-only tooling.
+
+| Component | License |
+|---|---|
+| Electron | MIT |
+| React, React DOM | MIT |
+| xterm.js (`@xterm/xterm`, `@xterm/headless`, `@xterm/addon-serialize`) | MIT |
+| node-pty | MIT |
+| ssh2 | MIT |
+| ws | MIT |
+| zod | MIT |
+| i18next, react-i18next | MIT |
+| zustand | MIT |
+| qrcode | MIT |
+| jsonc-parser | MIT |
+| electron-updater | MIT |
+| posthog-node | MIT |
+| `@linear/sdk` | MIT |
+| `@parcel/watcher` | MIT |
+| `@floating-ui/dom` | MIT |
+| Tailwind CSS | MIT |
+| yaml | ISC |
+| TweetNaCl.js (`tweetnacl`) | Unlicense |
+| sherpa-onnx | Apache-2.0 |
+| agent-browser | Apache-2.0 |
+| serve-sim | Apache-2.0 |
+
+Apache-2.0 components are redistributed with their own LICENSE and NOTICE files
+preserved inside the packaged bundle, as that license requires.
+
+## Maintaining this file
+
+This file is the single attribution surface for the project. When a change adds,
+removes, or upgrades a component that ships inside a release artifact, update the
+table in the same change. Entries are recorded by component and license only —
+full license texts travel with each dependency in the bundle rather than being
+copied here, so this file cannot drift from them.

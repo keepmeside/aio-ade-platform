@@ -1,6 +1,6 @@
-export const ORCHESTRATION_SETUP_STATE_EVENT = 'orca:orchestration-setup-state'
-export const ORCHESTRATION_ENABLED_STORAGE_KEY = 'orca.orchestration.enabled'
-export const ORCHESTRATION_SETUP_DISMISSED_STORAGE_KEY = 'orca.orchestration.setupDismissed'
+export const ORCHESTRATION_SETUP_STATE_EVENT = 'aio-ade:orchestration-setup-state'
+export const ORCHESTRATION_ENABLED_STORAGE_KEY = 'aio-ade.orchestration.enabled'
+export const ORCHESTRATION_SETUP_DISMISSED_STORAGE_KEY = 'aio-ade.orchestration.setupDismissed'
 
 export function isOrchestrationSetupEnabled(): boolean {
   return localStorage.getItem(ORCHESTRATION_ENABLED_STORAGE_KEY) === '1'

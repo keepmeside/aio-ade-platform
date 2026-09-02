@@ -4,7 +4,7 @@ import { basename, extname, join } from 'node:path'
 import type { AgentType } from '../../shared/native-chat-types'
 import { resolveNativeChatTranscriptAgent } from '../../shared/native-chat-agent-support'
 import { walkSessionFiles } from '../ai-vault/session-scanner-discovery'
-import { getOrcaManagedCodexHomePath } from '../codex/codex-home-paths'
+import { getAioAdeManagedCodexHomePath } from '../codex/codex-home-paths'
 import {
   findGrokChatHistoryBySessionId,
   resolveGrokSessionsDir
@@ -19,15 +19,15 @@ function claudeProjectsDir(): string {
   return join(homedir(), '.claude', 'projects')
 }
 
-// Why: Orca launches Codex with ORCA_CODEX_HOME pointing at its own managed
-// runtime home, so Orca-started Codex rollout files land under
+// Why: AIO-ADE launches Codex with AIO_ADE_CODEX_HOME pointing at its own managed
+// runtime home, so AIO-ADE-started Codex rollout files land under
 // `<managed home>/sessions`, NOT `~/.codex/sessions`. Search the managed home
 // first (that's where this main process's Codex sessions actually live), then
-// fall back to CODEX_HOME/~/.codex so a non-Orca Codex transcript still resolves.
+// fall back to CODEX_HOME/~/.codex so a non-AIO-ADE Codex transcript still resolves.
 // Duplicates are filtered so a managed-home symlink to ~/.codex isn't scanned twice.
 function codexSessionsDirs(): string[] {
   const candidates = [
-    join(getOrcaManagedCodexHomePath(), 'sessions'),
+    join(getAioAdeManagedCodexHomePath(), 'sessions'),
     join(process.env.CODEX_HOME?.trim() || join(homedir(), '.codex'), 'sessions')
   ]
   return candidates.filter((dir, index) => candidates.indexOf(dir) === index)
@@ -41,7 +41,7 @@ export type ResolveSessionFileOptions = {
   /** Override the Claude projects root (used by tests / isolated scans). */
   claudeProjectsDir?: string
   /** Override the Codex sessions roots, searched in order (tests / isolated
-   *  scans). Defaults to the orca-managed home then CODEX_HOME/~/.codex. */
+   *  scans). Defaults to the aio-ade-managed home then CODEX_HOME/~/.codex. */
   codexSessionsDirs?: string[]
   /** Override the Grok sessions root (`~/.grok/sessions`). */
   grokSessionsDir?: string

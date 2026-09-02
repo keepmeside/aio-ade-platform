@@ -17,7 +17,7 @@ import {
 } from '../../../../shared/agent-session-host-authority'
 import { isTuiAgent } from '../../../../shared/tui-agent-config'
 import { isValidTerminalTabId } from '../../../../shared/terminal-tab-id'
-import type { OrcaRuntimeService } from '../../orca-runtime'
+import type { AioAdeRuntimeService } from '../../aio-ade-runtime'
 import { defineMethod, type RpcAnyMethod } from '../core'
 
 const MAX_WORKTREE_SELECTOR_LENGTH = 32_768
@@ -173,7 +173,7 @@ export const CreateAgentSessionParams: z.ZodType<RuntimeCreateAgentSessionReques
     }
   })
 
-type AgentSessionRuntime = OrcaRuntimeService & {
+type AgentSessionRuntime = AioAdeRuntimeService & {
   ensureAgentSession(
     request: RuntimeEnsureAgentSessionRequest,
     caller?: RuntimeAgentSessionRpcCaller

@@ -1,4 +1,4 @@
-import { expect } from './orca-app'
+import { expect } from './aio-ade-app'
 import type { PairedElectronClient } from './paired-electron-client'
 
 export async function assertRuntimeSshStatus(

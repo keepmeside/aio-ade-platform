@@ -60,9 +60,9 @@ export function normalizeAgentActivityDisplayMode(value: unknown): AgentActivity
 export const ONBOARDING_FINAL_STEP = 5
 export const ONBOARDING_FLOW_VERSION = 4
 
-export const ORCA_BROWSER_PARTITION = 'persist:orca-browser'
+export const AIO_ADE_BROWSER_PARTITION = 'persist:aio-ade-browser'
 // Why: inert blank-tab URL shared by main/renderer so the attach policy can allow just this one data URL and reject others.
-export const ORCA_BROWSER_BLANK_URL = 'data:text/html,'
+export const AIO_ADE_BROWSER_BLANK_URL = 'data:text/html,'
 
 // Why: Electron's invoke error path preserves only message text, so signal reconnect via this stable token.
 export const SSH_TERMINATE_RECONNECT_REQUIRED = 'SSH_TERMINATE_RECONNECT_REQUIRED'
@@ -167,7 +167,7 @@ export function getDefaultOnboardingState(): OnboardingState {
 function getDefaultWorkspaceDir(homeDir: string): string {
   const separator = homeDir.includes('\\') ? '\\' : '/'
   const trimmedHomeDir = homeDir.replace(/[\\/]+$/, '')
-  return [trimmedHomeDir, 'orca', 'workspaces'].join(separator)
+  return [trimmedHomeDir, 'aio-ade', 'workspaces'].join(separator)
 }
 
 export function getDefaultSettings(homedir: string): GlobalSettings {
@@ -278,8 +278,8 @@ export function getDefaultSettings(homedir: string): GlobalSettings {
     showMobileButton: true,
     showPinnedWorktreesInGroups: false,
     ctrlTabOrderMode: 'mru',
-    // Why: Orca-first keeps core shortcuts working from a focused terminal; TUI-ownership users opt in.
-    terminalShortcutPolicy: 'orca-first',
+    // Why: AIO-ADE-first keeps core shortcuts working from a focused terminal; TUI-ownership users opt in.
+    terminalShortcutPolicy: 'aio-ade-first',
     floatingTerminalEnabled: true,
     floatingTerminalDefaultedForAllUsers: true,
     floatingTerminalCwd: '~',
@@ -493,7 +493,7 @@ export function getDefaultUIState(): PersistedUIState {
     statusBarUsageMode: DEFAULT_STATUS_BAR_USAGE_MODE,
     dismissedUpdateVersion: null,
     lastUpdateCheckAt: null,
-    trustedOrcaHooks: {},
+    trustedAioAdeHooks: {},
     setupScriptPromptDismissedRepoIds: [],
     acknowledgedAgentsByPaneKey: {},
     setupGuideSidebarDismissed: false,

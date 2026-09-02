@@ -105,7 +105,7 @@ const PERMISSIONS: PermissionDefinition[] = [
     get description() {
       return translate(
         'auto.components.settings.DeveloperPermissionsPane.7ca17b62c8',
-        "macOS names Orca when the agents it runs read other apps' data, because Orca is the responsible process for terminal commands. Grant this to Orca and Orca Helper to reduce those prompts. Then quit Orca, end any surviving Orca Helper process, and reopen Orca."
+        "macOS names AIO-ADE when the agents it runs read other apps' data, because AIO-ADE is the responsible process for terminal commands. Grant this to AIO-ADE and AIO-ADE Helper to reduce those prompts. Then quit AIO-ADE, end any surviving AIO-ADE Helper process, and reopen AIO-ADE."
       )
     },
     actionLabel: 'Open Settings',
@@ -252,7 +252,7 @@ export function DeveloperPermissionsPane(): React.JSX.Element {
   }, [refresh])
 
   // Why: after the user flips a permission in System Settings and switches
-  // back to Orca, the chip should reflect the new status without a manual
+  // back to AIO-ADE, the chip should reflect the new status without a manual
   // Refresh click. Tied to window focus rather than a polling interval so
   // we don't keep hammering `systemPreferences` while the pane is idle.
   useEffect(() => {
@@ -320,13 +320,13 @@ export function DeveloperPermissionsPane(): React.JSX.Element {
             <ShieldCheck className="size-4" />
             {translate(
               'auto.components.settings.DeveloperPermissionsPane.6f011b9bf6',
-              "Terminal tools inherit Orca's macOS privacy envelope."
+              "Terminal tools inherit AIO-ADE's macOS privacy envelope."
             )}
           </div>
           <p className="text-xs text-muted-foreground">
             {translate(
               'auto.components.settings.DeveloperPermissionsPane.6326a4c5cc',
-              'Use these controls when a CLI, local app, or automation tool needs macOS privacy access. Orca does not ask at startup.'
+              'Use these controls when a CLI, local app, or automation tool needs macOS privacy access. AIO-ADE does not ask at startup.'
             )}
           </p>
         </div>

@@ -1,15 +1,15 @@
 #!/bin/bash
 # Why: remove the PATH symlink that after-install.sh created, but only if it
-# still points into an Orca install dir — never delete an unrelated
-# /usr/bin/orca-ide a user or other package may own.
+# still points into an AIO-ADE install dir — never delete an unrelated
+# /usr/bin/aio-ade a user or other package may own.
 set -e
 
-link="/usr/bin/orca-ide"
+link="/usr/bin/aio-ade"
 
 if [ -L "$link" ]; then
   target="$(readlink "$link" || true)"
   case "$target" in
-    /opt/Orca/*|/opt/orca-ide/*|/opt/orca/*)
+    /opt/AIO-ADE/*|/opt/aio-ade/*|/opt/aio-ade/*)
       rm -f "$link"
       ;;
   esac

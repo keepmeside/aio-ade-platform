@@ -1,7 +1,7 @@
 import {
-  PANEL_ACTION_RESULT_TYPE,
   PANEL_CONTROL_MESSAGE_MAX_BYTES,
-  looksLikePanelActionRequest,
+  readPanelActionRequestType,
+  resolvePanelActionResultType,
   parsePanelActionRequest,
   readPanelPongId,
   type PluginPanelActionOutcome,
@@ -110,6 +110,11 @@ export function createPanelBridgeMessageHandler(
       }
       return
     }
+    // Why read the dialect first: a refusal below is still a reply, and a panel written before
+    // the rebrand filters replies by the old result type. Reading one property is O(1) and does
+    // not weaken the rule that schema validation stays behind the budget.
+    const requestType = readPanelActionRequestType(event.data)
+    const resultType = resolvePanelActionResultType(requestType ?? undefined)
     // Budgets run before parsing: a flood of malformed junk must not buy
     // free schema-validation CPU either.
     const refusal = budget.admit(now(), structuredCloneMessageBytes(event.data, budget.maxBytes))
@@ -120,7 +125,7 @@ export function createPanelBridgeMessageHandler(
           : undefined
       if (typeof requestId === 'string' && requestId.length > 0 && requestId.length <= 128) {
         respond({
-          type: PANEL_ACTION_RESULT_TYPE,
+          type: resultType,
           requestId,
           ok: false,
           errorCode: refusal === 'oversized' ? 'invalid_request' : 'rate_limited',
@@ -138,14 +143,14 @@ export function createPanelBridgeMessageHandler(
       }
       return
     }
-    if (!looksLikePanelActionRequest(event.data)) {
+    if (requestType === null) {
       return
     }
     const parsed = parsePanelActionRequest(event.data)
     if (!parsed.ok) {
       if (parsed.requestId) {
         respond({
-          type: PANEL_ACTION_RESULT_TYPE,
+          type: resultType,
           requestId: parsed.requestId,
           ok: false,
           errorCode: 'invalid_request',
@@ -160,9 +165,9 @@ export function createPanelBridgeMessageHandler(
       .then((outcome) => {
         respond(
           outcome.ok
-            ? { type: PANEL_ACTION_RESULT_TYPE, requestId, ok: true, value: outcome.value }
+            ? { type: resultType, requestId, ok: true, value: outcome.value }
             : {
-                type: PANEL_ACTION_RESULT_TYPE,
+                type: resultType,
                 requestId,
                 ok: false,
                 errorCode: outcome.code,
@@ -172,7 +177,7 @@ export function createPanelBridgeMessageHandler(
       })
       .catch((error: unknown) => {
         respond({
-          type: PANEL_ACTION_RESULT_TYPE,
+          type: resultType,
           requestId,
           ok: false,
           errorCode: 'action_failed',

@@ -78,7 +78,7 @@ export class AgentSessionClaimSigner {
       args.namespace.providerRoot
     ]
     const identityFields = [
-      'orca-agent-session-claim-v1',
+      'aio-ade-agent-session-claim-v1',
       this.authorityDomainId,
       ...namespaceFields,
       args.identity.agent,
@@ -86,7 +86,7 @@ export class AgentSessionClaimSigner {
       args.identity.providerSession.id
     ]
     const worktreeFields = [
-      'orca-agent-session-worktree-v1',
+      'aio-ade-agent-session-worktree-v1',
       this.authorityDomainId,
       ...namespaceFields,
       args.canonicalWorktreeId

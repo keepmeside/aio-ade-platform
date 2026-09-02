@@ -28,9 +28,11 @@ describe('RelayAgentHookServer', () => {
   })
 
   it('keeps named-pipe endpoint files on a real filesystem path', () => {
-    const endpointDir = endpointDirForRelaySocket('\\\\.\\pipe\\orca-relay-abc123')
+    const endpointDir = endpointDirForRelaySocket('\\\\.\\pipe\\aio-ade-relay-abc123')
 
-    expect(endpointDir).toBe(join(homedir(), '.orca-relay', 'agent-hooks', 'orca-relay-abc123'))
+    expect(endpointDir).toBe(
+      join(homedir(), '.aio-ade-relay', 'agent-hooks', 'aio-ade-relay-abc123')
+    )
     expect(endpointDir).not.toContain('\\\\.\\pipe')
   })
 
@@ -44,7 +46,7 @@ describe('RelayAgentHookServer', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Orca-Agent-Hook-Token': token
+          'X-AIO-ADE-Agent-Hook-Token': token
         },
         body: JSON.stringify({
           paneKey: PANE_KEY,
@@ -64,7 +66,7 @@ describe('RelayAgentHookServer', () => {
       expect(envelope.connectionId).toBeNull()
       expect(envelope.payload.state).toBe('working')
       expect(envelope.payload.prompt).toBe('hi')
-      // Why: the relay forwards body env/version so Orca's warn-once
+      // Why: the relay forwards body env/version so AIO-ADE's warn-once
       // protocol diagnostics and remote-location marker survive the wire.
       expect(envelope.env).toBe('remote')
       expect(envelope.version).toBe('1')
@@ -83,7 +85,7 @@ describe('RelayAgentHookServer', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Orca-Agent-Hook-Token': 'wrong'
+          'X-AIO-ADE-Agent-Hook-Token': 'wrong'
         },
         body: '{}'
       })
@@ -104,7 +106,7 @@ describe('RelayAgentHookServer', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Orca-Agent-Hook-Token': token
+          'X-AIO-ADE-Agent-Hook-Token': token
         },
         body: JSON.stringify({
           paneKey: PANE_KEY,
@@ -140,7 +142,7 @@ describe('RelayAgentHookServer', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Orca-Agent-Hook-Token': token
+          'X-AIO-ADE-Agent-Hook-Token': token
         },
         body: JSON.stringify({
           paneKey: PANE_KEY,
@@ -158,7 +160,7 @@ describe('RelayAgentHookServer', () => {
   })
 
   // Why: the relay should still drop malformed HTTP events before they reach
-  // the wire, even though Orca main re-validates at the SSH trust boundary.
+  // the wire, even though AIO-ADE main re-validates at the SSH trust boundary.
   it('does not forward when normalizeHookPayload rejects the event', async () => {
     const forward = vi.fn<(envelope: AgentHookRelayEnvelope) => void>()
     const server = new RelayAgentHookServer({ endpointDir: dir, forward })
@@ -169,7 +171,7 @@ describe('RelayAgentHookServer', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Orca-Agent-Hook-Token': token
+          'X-AIO-ADE-Agent-Hook-Token': token
         },
         body: JSON.stringify({
           paneKey: 'tab-1:0',
@@ -190,17 +192,17 @@ describe('RelayAgentHookServer', () => {
     }
   })
 
-  it('exposes ORCA_AGENT_HOOK_* env vars after start', async () => {
+  it('exposes AIO_ADE_AGENT_HOOK_* env vars after start', async () => {
     const forward = vi.fn()
     const server = new RelayAgentHookServer({ endpointDir: dir, forward })
     await server.start()
     try {
       const env = server.buildPtyEnv()
-      expect(env.ORCA_AGENT_HOOK_PORT).toMatch(/^\d+$/)
-      expect(env.ORCA_AGENT_HOOK_TOKEN).toBeTruthy()
-      expect(env.ORCA_AGENT_HOOK_ENV).toBe('remote')
-      expect(env.ORCA_AGENT_HOOK_VERSION).toBe('1')
-      expect(env.ORCA_AGENT_HOOK_ENDPOINT).toBeTruthy()
+      expect(env.AIO_ADE_AGENT_HOOK_PORT).toMatch(/^\d+$/)
+      expect(env.AIO_ADE_AGENT_HOOK_TOKEN).toBeTruthy()
+      expect(env.AIO_ADE_AGENT_HOOK_ENV).toBe('remote')
+      expect(env.AIO_ADE_AGENT_HOOK_VERSION).toBe('1')
+      expect(env.AIO_ADE_AGENT_HOOK_ENDPOINT).toBeTruthy()
     } finally {
       server.stop()
     }
@@ -211,9 +213,9 @@ describe('RelayAgentHookServer', () => {
     const server = new RelayAgentHookServer({ endpointDir: dir, forward })
     await server.start({ publishEndpoint: false })
     try {
-      expect(server.buildPtyEnv().ORCA_AGENT_HOOK_ENDPOINT).toBeUndefined()
+      expect(server.buildPtyEnv().AIO_ADE_AGENT_HOOK_ENDPOINT).toBeUndefined()
       expect(server.publishEndpointFile()).toBe(true)
-      expect(server.buildPtyEnv().ORCA_AGENT_HOOK_ENDPOINT).toBeTruthy()
+      expect(server.buildPtyEnv().AIO_ADE_AGENT_HOOK_ENDPOINT).toBeTruthy()
     } finally {
       server.stop()
     }
@@ -234,7 +236,7 @@ describe('RelayAgentHookServer', () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Orca-Agent-Hook-Token': token
+            'X-AIO-ADE-Agent-Hook-Token': token
           },
           body: JSON.stringify({
             paneKey,

@@ -262,11 +262,11 @@ export type Repo = {
    *  identically to `'auto'`; writers leave it undefined on creation so
    *  existing persisted records stay forward-compatible. */
   issueSourcePreference?: IssueSourcePreference
-  /** Controls Orca's fork-default-branch sync offer for repos with upstream metadata. */
+  /** Controls AIO-ADE's fork-default-branch sync offer for repos with upstream metadata. */
   forkSyncMode?: ForkSyncMode
-  /** Canonical identity for the repo remote Orca should use for provider-level grouping. */
+  /** Canonical identity for the repo remote AIO-ADE should use for provider-level grouping. */
   gitRemoteIdentity?: GitRemoteIdentity | null
-  /** Controls whether worktrees Orca did not create appear in the sidebar. */
+  /** Controls whether worktrees AIO-ADE did not create appear in the sidebar. */
   externalWorktreeVisibility?: ExternalWorktreeVisibility
   /** True when the repo predates hidden-by-default external worktrees. */
   externalWorktreeVisibilityLegacy?: boolean
@@ -504,12 +504,12 @@ export type Worktree = {
   /** User-authored sidebar ordering. Higher values render earlier in Manual sort. */
   manualOrder?: number
   lastActivityAt: number
-  /** Set once when Orca creates the worktree. Absent for worktrees discovered
+  /** Set once when AIO-ADE creates the worktree. Absent for worktrees discovered
    *  on disk or persisted before this field existed. Used by the sidebar to
    *  grant newly-created worktrees a short grace window at the top of Recent,
    *  immune to ambient PTY-bump reordering in other worktrees. */
   createdAt?: number
-  /** Agent selected when Orca originally created the worktree. Used only to
+  /** Agent selected when AIO-ADE originally created the worktree. Used only to
    *  seed a replacement terminal if the user later reopens the worktree after
    *  closing every visible surface. */
   createdWithAgent?: TuiAgent
@@ -527,7 +527,7 @@ export type Worktree = {
   sparsePresetId?: string
   /** Intended create base for stale-base probes. Persisted metadata, not UI drift state. */
   baseRef?: string
-  /** Remote/branch Orca should publish review commits to when it created this worktree. */
+  /** Remote/branch AIO-ADE should publish review commits to when it created this worktree. */
   pushTarget?: GitPushTarget
   /** Path-derived worktree ids this worktree had before folder renames. */
   priorWorktreeIds?: string[]
@@ -538,13 +538,13 @@ export type Worktree = {
   cliProvenance?: CliWorkspaceProvenance
 } & GitWorktreeInfo
 
-/** Provenance for workspaces created through `orca worktree create`. Absent on
+/** Provenance for workspaces created through `aio-ade worktree create`. Absent on
  *  workspaces created before this field existed and on every non-CLI create, so
  *  consumers must read "missing" as "not CLI-created". */
 export type CliWorkspaceProvenance = {
   kind: 'created-by-cli'
   createdAt: number
-  /** Orca terminal the CLI ran inside, when the caller had one — distinguishes
+  /** AIO-ADE terminal the CLI ran inside, when the caller had one — distinguishes
    *  an agent-issued create from one hand-typed in an external shell. */
   callerTerminalHandle?: string
   /** Agent requested via `--agent`, when one was passed. */
@@ -576,7 +576,7 @@ export type GitPushTarget = {
   remoteName: string
   branchName: string
   remoteUrl?: string
-  /** True when Orca added this remote while preparing a fork-PR worktree. */
+  /** True when AIO-ADE added this remote while preparing a fork-PR worktree. */
   remoteCreated?: boolean
 }
 
@@ -627,9 +627,9 @@ export type WorktreeMeta = {
   /** User-authored sidebar ordering. Higher values render earlier in Manual sort. */
   manualOrder?: number
   lastActivityAt: number
-  /** See {@link Worktree.createdAt}. Persisted to orca-data.json. */
+  /** See {@link Worktree.createdAt}. Persisted to aio-ade-data.json. */
   createdAt?: number
-  /** See {@link Worktree.createdWithAgent}. Persisted to orca-data.json. */
+  /** See {@link Worktree.createdWithAgent}. Persisted to aio-ade-data.json. */
   createdWithAgent?: TuiAgent
   /** See {@link Worktree.pendingFirstAgentMessageRename}. */
   pendingFirstAgentMessageRename?: boolean
@@ -640,15 +640,15 @@ export type WorktreeMeta = {
   sparsePresetId?: string
   /** Intended create base for stale-base probes. Persisted metadata, not UI drift state. */
   baseRef?: string
-  /** True when Orca checked out a pre-existing local branch that delete must not prune. */
+  /** True when AIO-ADE checked out a pre-existing local branch that delete must not prune. */
   preserveBranchOnDelete?: boolean
   /** See {@link Worktree.pushTarget}. Persisted so refreshed worktree lists keep the target. */
   pushTarget?: GitPushTarget
-  /** Explicit marker stamped when Orca creates the worktree. */
-  orcaCreatedAt?: number
-  orcaCreationSource?: 'desktop' | 'runtime' | 'cli' | 'ssh'
-  /** Workspace layout active when Orca created the worktree. */
-  orcaCreationWorkspaceLayout?: OrcaWorkspaceLayout
+  /** Explicit marker stamped when AIO-ADE creates the worktree. */
+  aioAdeCreatedAt?: number
+  aioAdeCreationSource?: 'desktop' | 'runtime' | 'cli' | 'ssh'
+  /** Workspace layout active when AIO-ADE created the worktree. */
+  aioAdeCreationWorkspaceLayout?: AioAdeWorkspaceLayout
   /** User-assigned workspace board status for manual sidebar organization. */
   workspaceStatus?: WorkspaceStatus
   diffComments?: DiffComment[]
@@ -660,11 +660,11 @@ export type WorktreeMeta = {
   mobileDiffReview?: MobileDiffReviewState
   /** System-owned provenance for workspaces created by automation new-per-run dispatches. */
   automationProvenance?: AutomationWorkspaceProvenance
-  /** System-owned provenance for workspaces created via `orca worktree create`. */
+  /** System-owned provenance for workspaces created via `aio-ade worktree create`. */
   cliProvenance?: CliWorkspaceProvenance
 }
 
-export type WorktreeOwnership = 'orca-managed' | 'external' | 'unknown-legacy' | 'agent-scratch'
+export type WorktreeOwnership = 'aio-ade-managed' | 'external' | 'unknown-legacy' | 'agent-scratch'
 
 export type DetectedWorktreeListSource = 'git' | 'metadata-fallback' | 'session-fallback'
 
@@ -740,7 +740,7 @@ export type WorktreeLineageWarning = {
 // Why: users leave review notes on specific lines of the modified side of
 // a diff so they can be handed back to an AI agent (pasted into a terminal
 // or used to bootstrap a new agent session). Stored on WorktreeMeta so the
-// existing persistence layer writes them to orca-data.json automatically.
+// existing persistence layer writes them to aio-ade-data.json automatically.
 export type DiffCommentSource = 'diff' | 'markdown'
 export type DiffReviewScope = 'unstaged' | 'staged' | 'branch'
 
@@ -855,7 +855,7 @@ export type TerminalTab = {
   worktreeId: string
   title: string
   /** Stable fallback label for default-named terminals ("Terminal 1", etc.).
-   *  Why: agent CLIs overwrite the live title via OSC updates, but Orca still
+   *  Why: agent CLIs overwrite the live title via OSC updates, but AIO-ADE still
    *  needs the original terminal label for numbering and reset behavior. */
   defaultTitle?: string
   /** Stable opt-in label derived from the first known agent prompt. */
@@ -880,7 +880,7 @@ export type TerminalTab = {
   /** Why: explorer-created terminals can start below the workspace root while
    *  still belonging to that workspace for tab/session ownership. */
   startupCwd?: string
-  /** Why: the coding-harness agent Orca launched in this tab. Lets the tab bar
+  /** Why: the coding-harness agent AIO-ADE launched in this tab. Lets the tab bar
    *  show the provider icon immediately, before the agent emits its first hook
    *  event (a freshly-launched, idle agent reports no live status yet). Live
    *  hook status overrides this once the agent does anything. Plain terminals
@@ -974,7 +974,7 @@ export type BrowserPage = {
 export type BrowserWorkspace = {
   id: string
   worktreeId: string
-  /** Stable display label for the outer Orca tab ("Browser 1", "Browser 2", …).
+  /** Stable display label for the outer AIO-ADE tab ("Browser 1", "Browser 2", …).
    *  Optional so sessions persisted before this field was added fall back
    *  gracefully to the URL-derived label in getBrowserTabLabel. */
   label?: string
@@ -990,7 +990,7 @@ export type BrowserWorkspace = {
   activePageId?: string | null
   pageIds?: string[]
   // Why: the active page owns real browser chrome state now, but the top-level
-  // Orca tab strip still renders one workspace entry. Mirror the active page's
+  // AIO-ADE tab strip still renders one workspace entry. Mirror the active page's
   // title/url/loading metadata here so existing workspace-level UI can stay
   // stable while Phase 2 introduces nested browser pages.
   url: string
@@ -1630,7 +1630,7 @@ export type GitHubPRReviewCommentInput = {
 }
 
 export type GitHubWorkItemDetails = {
-  // Why: main-process doesn't know Orca's Repo.id, so this inner item omits
+  // Why: main-process doesn't know AIO-ADE's Repo.id, so this inner item omits
   // repoId. The renderer stamps it when routing the details through the store.
   item: Omit<GitHubWorkItem, 'repoId'>
   body: string
@@ -2087,32 +2087,32 @@ export type LinearTeam = {
   url?: string
 }
 
-// ─── Hooks (orca.yaml) ──────────────────────────────────────────────
-export type OrcaHooks = {
+// ─── Hooks (aio-ade.yaml) ──────────────────────────────────────────────
+export type AioAdeHooks = {
   scripts: {
     setup?: string // Runs after worktree is created
     archive?: string // Runs before worktree is archived
   }
   issueCommand?: string // Shared default command for linked GitHub issues
-  defaultTabs?: OrcaDefaultTabTemplate[] // Terminal tabs to create once for a new worktree
-  environmentRecipes?: OrcaVmRecipe[] // Project-scoped per-workspace environment recipes
-  environmentRecipeDiagnostics?: OrcaVmRecipeDiagnostic[] // Non-fatal validation issues from environmentRecipes
-  worktree?: OrcaWorktreeDefaults // Project-scoped defaults applied when a worktree is created
+  defaultTabs?: AioAdeDefaultTabTemplate[] // Terminal tabs to create once for a new worktree
+  environmentRecipes?: AioAdeVmRecipe[] // Project-scoped per-workspace environment recipes
+  environmentRecipeDiagnostics?: AioAdeVmRecipeDiagnostic[] // Non-fatal validation issues from environmentRecipes
+  worktree?: AioAdeWorktreeDefaults // Project-scoped defaults applied when a worktree is created
 }
 
-export type OrcaWorktreeDefaults = {
+export type AioAdeWorktreeDefaults = {
   // Why: shared (symlinked) rather than copied — large rebuildable dirs like
   // node_modules should be one install serving every worktree.
   sharedDirectories?: string[]
 }
 
-export type OrcaDefaultTabTemplate = {
+export type AioAdeDefaultTabTemplate = {
   title?: string
   color?: string
   command?: string
 }
 
-export type OrcaVmRecipe = {
+export type AioAdeVmRecipe = {
   id: string
   name: string
   create: string
@@ -2123,7 +2123,7 @@ export type OrcaVmRecipe = {
   destroyDisabled?: boolean
 }
 
-export type OrcaVmRecipeDiagnostic = {
+export type AioAdeVmRecipeDiagnostic = {
   index: number
   field?: string
   message: string
@@ -2160,7 +2160,7 @@ export type WorktreeStartupLaunch = {
 }
 
 export type WorktreeDefaultTabsLaunch = {
-  tabs: OrcaDefaultTabTemplate[]
+  tabs: AioAdeDefaultTabTemplate[]
   runCommands: boolean
 }
 
@@ -2433,7 +2433,7 @@ export type CodexManagedAccountSummary = {
 }
 
 /** Live, read-only identity of the user's real ~/.codex used by the
- *  system-default (activeAccountId:null) Codex account. Orca reads this to
+ *  system-default (activeAccountId:null) Codex account. AIO-ADE reads this to
  *  display and attribute the system default; it never writes ~/.codex. */
 export type CodexSystemDefaultIdentity = {
   /** True when ~/.codex/auth.json exists (signed in via a token file). */
@@ -2500,7 +2500,7 @@ export type ClaudeManagedAccountRuntimeSelection = {
   wsl: Record<string, string | null>
 }
 
-/** The agents Orca natively launches. Deliberately narrow (decision 2026-08-21): only Claude Code
+/** The agents AIO-ADE natively launches. Deliberately narrow (decision 2026-08-21): only Claude Code
  *  and Codex get a per-agent native integration; every other agent arrives through the generic ACP
  *  slot (phase 10).
  *
@@ -2509,7 +2509,7 @@ export type ClaudeManagedAccountRuntimeSelection = {
  *  display table in the codebase. `src/shared/native-roster-preflight.test.ts` enforces this. */
 export type TuiAgent =
   | 'claude' // Claude Code
-  | 'claude-agent-teams' // Claude Code Agent Teams via Orca native panes
+  | 'claude-agent-teams' // Claude Code Agent Teams via AIO-ADE native panes
   | 'codex' // OpenAI Codex
 
 export type TaskViewPresetId = 'all' | 'issues' | 'review' | 'my-issues' | 'my-prs' | 'prs'
@@ -2623,12 +2623,12 @@ export type GlobalSettings = {
    *  host-varying setting is `host override ?? client default`. */
   hostSettingOverrides?: Partial<Record<ExecutionHostId, HostSettingOverrides>>
   nestWorkspaces: boolean
-  workspaceDirHistory?: OrcaWorkspaceLayout[]
+  workspaceDirHistory?: AioAdeWorkspaceLayout[]
   refreshLocalBaseRefOnWorktreeCreate: boolean
   /** Set once the user dismisses the "local main is behind" suggestion toast, so
    *  the nudge to enable refreshLocalBaseRefOnWorktreeCreate never shows again. */
   localBaseRefSuggestionDismissed: boolean
-  /** When enabled, Orca renames a workspace's auto-generated creature branch to
+  /** When enabled, AIO-ADE renames a workspace's auto-generated creature branch to
    *  a short name derived from the first prompt once work begins. Users can
    *  still turn this off from global Git settings. */
   autoRenameBranchFromWork: boolean
@@ -2715,7 +2715,7 @@ export type GlobalSettings = {
   windowBackgroundBlur?: boolean
   /** Windows-only: close (X) hides to tray instead of quitting; the tray icon is always present regardless. */
   minimizeToTrayOnClose?: boolean
-  /** macOS: toggles the additive menu-bar entry (Orca survives last-window close); doesn't change Dock behavior. */
+  /** macOS: toggles the additive menu-bar entry (AIO-ADE survives last-window close); doesn't change Dock behavior. */
   showMenuBarIcon?: boolean
   /** Windows convention: right-click pastes; macOS/Linux keep the context menu. */
   terminalRightClickToPaste: boolean
@@ -2778,19 +2778,19 @@ export type GlobalSettings = {
   sourceControlGroupOrder: SourceControlGroupOrder
   /** Compare base defaults to the branch upstream instead of the repo default; affects only the compare/diff view, not the PR/rebase target. Per-user. */
   sourceControlCompareAgainstUpstream: boolean
-  /** Whether to show the Orca app name in the titlebar. */
+  /** Whether to show the AIO-ADE app name in the titlebar. */
   showTitlebarAppName: boolean
   /** Hides the Tasks sidebar button (also removes it from keyboard navigation). */
   showTasksButton: boolean
   /** Only toggles the sidebar shortcut; Automations stay reachable from Settings/View menu. */
   showAutomationsButton?: boolean
-  /** Only toggles the sidebar shortcut; Orca Mobile stays reachable from Settings. */
+  /** Only toggles the sidebar shortcut; AIO-ADE Mobile stays reachable from Settings. */
   showMobileButton?: boolean
   /** Pinned workspaces show in one sidebar location by default; opt in to also show them in their natural groups. */
   showPinnedWorktreesInGroups?: boolean
   /** How Ctrl+Tab picks the next visible tab; optional (older profiles), readers default to MRU. */
   ctrlTabOrderMode?: CtrlTabOrderMode
-  /** Orca-first keeps app shortcuts from TUIs; terminal-first is opt-in to let shell/TUI bindings win. */
+  /** AIO-ADE-first keeps app shortcuts from TUIs; terminal-first is opt-in to let shell/TUI bindings win. */
   terminalShortcutPolicy?: TerminalShortcutPolicy
   /** Floating Workspace: global surface for terminal/browser/markdown tabs outside repo/worktree context. */
   floatingTerminalEnabled: boolean
@@ -2804,7 +2804,7 @@ export type GlobalSettings = {
   floatingTerminalCwdMigratedToAppWorkspace?: boolean
   /** Where the Floating Workspace toggle is shown; defaults to the floating button for discoverability. */
   floatingTerminalTriggerLocation: FloatingTerminalTriggerLocation
-  /** Legacy keyboard-shortcut overrides; new writes go to ~/.orca/keybindings.json, migrated once when present. */
+  /** Legacy keyboard-shortcut overrides; new writes go to ~/.aio-ade/keybindings.json, migrated once when present. */
   keybindings?: KeybindingOverrides
   diffDefaultView: 'inline' | 'side-by-side'
   diffWordWrap: boolean
@@ -2816,7 +2816,7 @@ export type GlobalSettings = {
   promptCacheTimerEnabled: boolean
   /** Prompt-cache TTL (ms); only 300000 (5 min standard) or 3600000 (1 hr, extended-TTL plans). */
   promptCacheTtlMs: number
-  /** Why: durable main-owned pref so Orca can prepare shared ~/.codex before the renderer hydrates. */
+  /** Why: durable main-owned pref so AIO-ADE can prepare shared ~/.codex before the renderer hydrates. */
   codexManagedAccounts: CodexManagedAccount[]
   activeCodexManagedAccountId: string | null
   activeCodexManagedAccountIdsByRuntime?: CodexManagedAccountRuntimeSelection
@@ -2895,7 +2895,7 @@ export type GlobalSettings = {
   /** Per-agent CLI command overrides. A missing key means use the catalog default binary name. */
   agentCmdOverrides: Partial<Record<TuiAgent, string>>
   /** Custom CODEX_HOME for Codex session-history discovery (defaults to ~/.codex).
-   *  History-only: does not change which account/config/hooks Orca uses. */
+   *  History-only: does not change which account/config/hooks AIO-ADE uses. */
   codexSessionSourceHome?: {
     /** Absolute host path; empty/undefined falls back to ~/.codex. */
     host?: string
@@ -2916,7 +2916,7 @@ export type GlobalSettings = {
   tabAutoGenerateTitle: boolean
   /** Why: pinned tabs can still be closed via keyboard/native-menu; this gates that behind a confirmation. Defaults on. */
   confirmClosePinnedTab: boolean
-  /** When true, Orca requests local awake assertions while hook-reported agents are working. */
+  /** When true, AIO-ADE requests local awake assertions while hook-reported agents are working. */
   keepComputerAwakeWhileAgentsRun: boolean
   /** macOS Option key: compose layout chars (@ German, € French) vs act as Meta/Esc for readline.
    *  'auto' (default) = layout-aware via navigator.keyboard.getLayoutMap() (US → Meta, else compose);
@@ -2999,7 +2999,7 @@ export type GlobalSettings = {
   voice?: VoiceSettings
 }
 
-export type OrcaWorkspaceLayout = {
+export type AioAdeWorkspaceLayout = {
   path: string
   nestWorkspaces: boolean
 }
@@ -3169,7 +3169,7 @@ export type WorktreeCardProperty =
   | 'linear-issue'
   | 'pr'
   | 'automation'
-  // Badge marking workspaces created through `orca worktree create`.
+  // Badge marking workspaces created through `aio-ade worktree create`.
   | 'cli'
   | 'comment'
   | 'ports'
@@ -3283,7 +3283,7 @@ export type PersistedUIState = {
   hideDefaultBranchWorkspace: boolean
   /** Hide workspaces created by automation new-per-run dispatches. */
   hideAutomationGeneratedWorkspaces?: boolean
-  /** Hide workspaces created through `orca worktree create`. */
+  /** Hide workspaces created through `aio-ade worktree create`. */
   hideCliCreatedWorkspaces?: boolean
   /** Hide workspaces sitting on a detached HEAD; folder workspaces (no head at all) are unaffected. */
   hideDetachedHeadWorkspaces?: boolean
@@ -3329,7 +3329,7 @@ export type PersistedUIState = {
   lastUpdateCheckAt: number | null
   pendingUpdateNudgeId?: string | null
   dismissedUpdateNudgeId?: string | null
-  /** Whether Orca already tried triggering the macOS notification permission dialog; prevents re-firing every launch. */
+  /** Whether AIO-ADE already tried triggering the macOS notification permission dialog; prevents re-firing every launch. */
   notificationPermissionRequested?: boolean
   /** Once the "your sessions won't be interrupted" reassurance card is seen, never show it again. */
   updateReassuranceSeen?: boolean
@@ -3343,7 +3343,7 @@ export type PersistedUIState = {
   setupGuideBrowserMilestoneLegacyComplete?: boolean
   /** User-dismissed browser import toolbar hint; import stays available from Settings > Browser and the overflow menu. */
   browserImportHintHidden?: boolean
-  /** Why: Windows-only. Set once on first hide to tray so the "Orca is still running" notice shows only once. */
+  /** Why: Windows-only. Set once on first hide to tray so the "AIO-ADE is still running" notice shows only once. */
   trayMinimizeNoticeShown?: boolean
   /** Set by the OSC 52 default-on migration when it overrode a persisted `false`; the renderer shows one notice and clears it. */
   osc52ClipboardDefaultOnNoticePending?: boolean
@@ -3385,13 +3385,13 @@ export type PersistedUIState = {
   starNagAppVersion?: string | null
   /** Next agents-since-baseline threshold that fires the star-nag; starts at 35, doubles per dismissal without starring. */
   starNagNextThreshold?: number
-  /** Once the user has starred Orca (any entry point), permanently suppress the nag. */
+  /** Once the user has starred AIO-ADE (any entry point), permanently suppress the nag. */
   starNagCompleted?: boolean
   /** Timestamp until which nonterminal dismissals suppress threshold prompts (force-show bypasses for dev/testing). */
   starNagDeferredUntil?: number | null
   /** App version that consumed the first value-moment ask; main-owned so remote/web clients can't spoof the once-per-version cap. */
   starNagAgentValueMomentAppVersion?: string | null
-  trustedOrcaHooks?: PersistedTrustedOrcaHooks
+  trustedAioAdeHooks?: PersistedTrustedAioAdeHooks
   setupScriptPromptDismissedRepoIds?: string[]
   /** Pet overlay visibility, separate from the experimentalPet settings flag so "Hide pet" is a reversible dismiss; absent = true. */
   petVisible?: boolean
@@ -3456,22 +3456,22 @@ export type SpriteAnimation = {
   frameDurationsMs?: number[]
 }
 
-export type PersistedTrustedOrcaHookEntry = {
+export type PersistedTrustedAioAdeHookEntry = {
   contentHash: string
   approvedAt: number
 }
 
-export type PersistedTrustedOrcaHookRepo = {
+export type PersistedTrustedAioAdeHookRepo = {
   all?: {
     approvedAt: number
   }
-  setup?: PersistedTrustedOrcaHookEntry
-  archive?: PersistedTrustedOrcaHookEntry
-  issueCommand?: PersistedTrustedOrcaHookEntry
-  vmRecipe?: PersistedTrustedOrcaHookEntry
+  setup?: PersistedTrustedAioAdeHookEntry
+  archive?: PersistedTrustedAioAdeHookEntry
+  issueCommand?: PersistedTrustedAioAdeHookEntry
+  vmRecipe?: PersistedTrustedAioAdeHookEntry
 }
 
-export type PersistedTrustedOrcaHooks = Record<string, PersistedTrustedOrcaHookRepo>
+export type PersistedTrustedAioAdeHooks = Record<string, PersistedTrustedAioAdeHookRepo>
 
 export type LegacyPaneKeyAliasEntry = {
   ptyId: string
@@ -3698,7 +3698,7 @@ export type AppMemory = UsageValues & {
   main: UsageValues
   renderer: UsageValues
   other: UsageValues
-  /** Oldest-first memory samples (bytes) for the whole Orca app; empty before the first snapshot. */
+  /** Oldest-first memory samples (bytes) for the whole AIO-ADE app; empty before the first snapshot. */
   history: number[]
 }
 

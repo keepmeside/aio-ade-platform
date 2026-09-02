@@ -2,13 +2,14 @@ import { chmod, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { accessSync, constants, existsSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { delimiter, dirname, join } from 'node:path'
+import { getAppHomePath } from '../../shared/app-home-paths'
 import {
   addClaudeTeammateModeAuto,
   addClaudeTeammateModeInProcess,
   isDirectClaudeCommand,
   type ClaudeAgentTeamsMode
 } from '../../shared/claude-agent-teams-tmux-compat'
-import { getOrcaCliCommandNameForPlatform } from '../../shared/orca-cli-command-name'
+import { getCliCommandNameForPlatform } from '../../shared/cli-command-name'
 
 export type ClaudeAgentTeamsLaunchPlan = {
   command: string
@@ -47,29 +48,33 @@ export async function buildClaudeAgentTeamsLaunchPlan(args: {
   return {
     command: addClaudeTeammateModeAuto(args.command),
     env,
-    envToDelete: ['TERM_PROGRAM', 'ORCA_ATTRIBUTION_SHIM_DIR']
+    envToDelete: ['TERM_PROGRAM', 'AIO_ADE_ATTRIBUTION_SHIM_DIR']
   }
 }
 
 export function resolveClaudeAgentTeamsShimBin(
   env: Record<string, string | undefined> = process.env
 ): string {
-  if (env.ORCA_AGENT_TEAMS_SHIM_BIN) {
-    return env.ORCA_AGENT_TEAMS_SHIM_BIN
+  if (env.AIO_ADE_AGENT_TEAMS_SHIM_BIN) {
+    return env.AIO_ADE_AGENT_TEAMS_SHIM_BIN
   }
   const bundled = bundledLauncherPath()
   if (bundled && isExecutableFile(bundled)) {
     return bundled
   }
   return (
-    findExecutableOnPath(process.platform === 'win32' ? 'orca-dev.cmd' : 'orca-dev', env.PATH) ??
-    findExecutableOnPath(getOrcaCliCommandNameForPlatform(process.platform), env.PATH) ??
-    getOrcaCliCommandNameForPlatform(process.platform)
+    findExecutableOnPath(
+      process.platform === 'win32' ? 'aio-ade-dev.cmd' : 'aio-ade-dev',
+      env.PATH
+    ) ??
+    findExecutableOnPath(getCliCommandNameForPlatform(process.platform), env.PATH) ??
+    getCliCommandNameForPlatform(process.platform)
   )
 }
 
 function defaultShimRoot(): string {
-  return join(homedir(), '.orca', 'claude-agent-teams-bin')
+  // Regenerated on demand, so it follows the canonical root with no legacy fallback.
+  return getAppHomePath(homedir(), 'claude-agent-teams-bin')
 }
 
 function bundledLauncherPath(): string | null {
@@ -77,13 +82,13 @@ function bundledLauncherPath(): string | null {
     return null
   }
   if (process.platform === 'darwin') {
-    return join(process.resourcesPath, 'bin', 'orca')
+    return join(process.resourcesPath, 'bin', 'aio-ade')
   }
   if (process.platform === 'linux') {
-    return join(process.resourcesPath, 'bin', 'orca-ide')
+    return join(process.resourcesPath, 'bin', 'aio-ade')
   }
   if (process.platform === 'win32') {
-    return join(process.resourcesPath, 'bin', 'orca.exe')
+    return join(process.resourcesPath, 'bin', 'aio-ade.exe')
   }
   return null
 }
@@ -117,7 +122,7 @@ function unixShimScript(): string {
   return [
     '#!/usr/bin/env sh',
     'set -eu',
-    `exec "\${ORCA_AGENT_TEAMS_SHIM_BIN:-${getOrcaCliCommandNameForPlatform(process.platform)}}" agent-teams-tmux "$@"`,
+    `exec "\${AIO_ADE_AGENT_TEAMS_SHIM_BIN:-${getCliCommandNameForPlatform(process.platform)}}" agent-teams-tmux "$@"`,
     ''
   ].join('\n')
 }
@@ -126,10 +131,10 @@ function windowsShimScript(): string {
   return [
     '@echo off',
     'setlocal',
-    'if "%ORCA_AGENT_TEAMS_SHIM_BIN%"=="" (',
-    `  set "ORCA_AGENT_TEAMS_SHIM_BIN=${getOrcaCliCommandNameForPlatform(process.platform)}"`,
+    'if "%AIO_ADE_AGENT_TEAMS_SHIM_BIN%"=="" (',
+    `  set "AIO_ADE_AGENT_TEAMS_SHIM_BIN=${getCliCommandNameForPlatform(process.platform)}"`,
     ')',
-    '"%ORCA_AGENT_TEAMS_SHIM_BIN%" agent-teams-tmux %*',
+    '"%AIO_ADE_AGENT_TEAMS_SHIM_BIN%" agent-teams-tmux %*',
     ''
   ].join('\r\n')
 }

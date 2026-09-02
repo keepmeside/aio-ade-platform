@@ -211,8 +211,8 @@ function buildRemoteLinearIssueRequest(
     depth: clampLinearIssueDepth(requestedDepth),
     context: {
       remote: true,
-      ...(env.ORCA_WORKTREE_ID ? { worktreeId: env.ORCA_WORKTREE_ID } : {}),
-      ...(env.ORCA_TERMINAL_HANDLE ? { terminalHandle: env.ORCA_TERMINAL_HANDLE } : {})
+      ...(env.AIO_ADE_WORKTREE_ID ? { worktreeId: env.AIO_ADE_WORKTREE_ID } : {}),
+      ...(env.AIO_ADE_TERMINAL_HANDLE ? { terminalHandle: env.AIO_ADE_TERMINAL_HANDLE } : {})
     }
   }
 }

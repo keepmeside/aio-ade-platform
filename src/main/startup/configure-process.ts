@@ -6,7 +6,7 @@ import { getVersionManagerBinPaths } from '../codex-cli/command'
 import { getMainE2EConfig } from '../e2e-config'
 
 const DEV_PARENT_SHUTDOWN_GRACE_MS = 3000
-const HTTP1_COMPATIBILITY_ENV_VAR = 'ORCA_DISABLE_HTTP2'
+const HTTP1_COMPATIBILITY_ENV_VAR = 'AIO_ADE_DISABLE_HTTP2'
 const TRUE_ENV_VALUES = new Set(['1', 'true', 'yes', 'on'])
 const FALSE_ENV_VALUES = new Set(['0', 'false', 'no', 'off'])
 let devParentShutdownRequested = false
@@ -31,7 +31,7 @@ function parseBooleanEnvFlag(value: string | undefined): boolean | null {
 }
 
 function readPersistedHttp1CompatibilityMode(userDataPath: string): boolean {
-  const dataFile = join(userDataPath, 'orca-data.json')
+  const dataFile = join(userDataPath, 'aio-ade-data.json')
   if (!existsSync(dataFile)) {
     return false
   }
@@ -114,7 +114,7 @@ export function patchPackagedProcessPath(): void {
         join(home, 'bin'),
         join(home, '.local/bin'),
         join(home, '.nix-profile/bin'),
-        // Why: some agent CLIs install into ~/.<name>/bin; GUI-launched Electron's minimal PATH misses them (stablyai/orca#829).
+        // Why: some agent CLIs install into ~/.<name>/bin; GUI-launched Electron's minimal PATH misses them (keepmeside/aio-ade-platform#829).
         join(home, '.opencode/bin'),
         join(home, '.vite-plus/bin')
       )
@@ -144,7 +144,7 @@ export function configureDevUserDataPath(isDev: boolean): void {
     // dedicated userData path per launch prevents persisted repos, worktrees,
     // and session state from leaking between tests through the shared dev
     // profile while still leaving the user's real packaged profile untouched.
-    const e2eHomeDir = process.env.ORCA_E2E_HOME_DIR ?? join(e2eConfig.userDataDir, 'home')
+    const e2eHomeDir = process.env.AIO_ADE_E2E_HOME_DIR ?? join(e2eConfig.userDataDir, 'home')
     // Why: E2E imports can resolve os.homedir() before Electron is ready. Abort
     // startup if a direct launch skipped the disposable Node-home contract.
     if (!areSameE2EHomePath(homedir(), e2eHomeDir)) {
@@ -161,14 +161,14 @@ export function configureDevUserDataPath(isDev: boolean): void {
   if (!isDev) {
     return
   }
-  const overrideUserDataPath = process.env.ORCA_DEV_USER_DATA_PATH
+  const overrideUserDataPath = process.env.AIO_ADE_DEV_USER_DATA_PATH
   if (overrideUserDataPath) {
     // Why: automated repros need an isolated profile so the dev's persisted tabs/worktrees don't skew startup and hide window bugs.
     app.setPath('userData', overrideUserDataPath)
     return
   }
-  // Why: without a dev-only path, pnpm dev overwrites the packaged app's runtime pointer under userData and breaks the orca CLI.
-  app.setPath('userData', join(app.getPath('appData'), 'orca-dev'))
+  // Why: without a dev-only path, pnpm dev overwrites the packaged app's runtime pointer under userData and breaks the aio-ade CLI.
+  app.setPath('userData', join(app.getPath('appData'), 'aio-ade-dev'))
 }
 
 function areSameE2EHomePath(left: string, right: string): boolean {
@@ -179,14 +179,14 @@ function areSameE2EHomePath(left: string, right: string): boolean {
     : normalizedLeft === normalizedRight
 }
 
-export function configureOrcaUserDataPathEnv(): void {
-  // Why: relaunches can inherit a stale ORCA_USER_DATA_PATH; canonicalize before CLI-shared modules build runtime-home paths.
-  process.env.ORCA_USER_DATA_PATH = app.getPath('userData')
+export function configureAioAdeUserDataPathEnv(): void {
+  // Why: relaunches can inherit a stale AIO_ADE_USER_DATA_PATH; canonicalize before CLI-shared modules build runtime-home paths.
+  process.env.AIO_ADE_USER_DATA_PATH = app.getPath('userData')
 }
 
 export function shouldInstallManagedHooks(isDev: boolean): boolean {
   void isDev
-  // Why: managed hooks now target Orca-owned Codex homes, not ~/.codex, so keep install on for all agents until each gets its own seam.
+  // Why: managed hooks now target AIO-ADE-owned Codex homes, not ~/.codex, so keep install on for all agents until each gets its own seam.
   return true
 }
 
@@ -232,7 +232,7 @@ export function installDevParentWatchdog(isDev: boolean): void {
 
     if (parentPidChanged || parentMissing) {
       clearInterval(timer)
-      // Why: the dev runner spawns Electron without IPC, so on macOS Ctrl+C leaves Orca open; watch the parent PID to couple shutdown.
+      // Why: the dev runner spawns Electron without IPC, so on macOS Ctrl+C leaves AIO-ADE open; watch the parent PID to couple shutdown.
       requestDevParentShutdown()
     }
   }, 1000)

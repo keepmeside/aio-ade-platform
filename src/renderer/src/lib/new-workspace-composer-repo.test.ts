@@ -99,32 +99,38 @@ describe('new-workspace-composer-repo', () => {
   })
 
   describe('resolveComposerActiveRepoId', () => {
-    const localOrca = makeRepo('local-orca', { upstream: { owner: 'stablyai', repo: 'orca' } })
-    const runtimeOrca = makeRepo('runtime-orca', {
-      connectionId: 'runtime-ssh-orca-1',
-      upstream: { owner: 'stablyai', repo: 'orca' }
+    const localAioAde = makeRepo('local-aio-ade', {
+      upstream: { owner: 'keepmeside', repo: 'aio-ade-platform' }
     })
-    const otherProject = makeRepo('noqa', { upstream: { owner: 'stablyai', repo: 'noqa' } })
-    const repos = [otherProject, localOrca, runtimeOrca]
+    const runtimeAioAde = makeRepo('runtime-aio-ade', {
+      connectionId: 'runtime-ssh-aio-ade-1',
+      upstream: { owner: 'keepmeside', repo: 'aio-ade-platform' }
+    })
+    const otherProject = makeRepo('noqa', { upstream: { owner: 'keepmeside', repo: 'noqa' } })
+    const repos = [otherProject, localAioAde, runtimeAioAde]
     const eligibleRepos = getComposerEligibleRepos(repos)
 
     it('maps an active runtime-owned SSH repo to its local same-project sibling', () => {
-      expect(resolveComposerActiveRepoId(repos, eligibleRepos, 'runtime-orca')).toBe('local-orca')
+      expect(resolveComposerActiveRepoId(repos, eligibleRepos, 'runtime-aio-ade')).toBe(
+        'local-aio-ade'
+      )
     })
 
     it('leaves a normal active repo unchanged', () => {
-      expect(resolveComposerActiveRepoId(repos, eligibleRepos, 'local-orca')).toBe('local-orca')
+      expect(resolveComposerActiveRepoId(repos, eligibleRepos, 'local-aio-ade')).toBe(
+        'local-aio-ade'
+      )
     })
 
     it('keeps the runtime repo id when no same-project sibling is eligible', () => {
-      const onlyRuntime = [runtimeOrca]
+      const onlyRuntime = [runtimeAioAde]
       expect(
         resolveComposerActiveRepoId(
           onlyRuntime,
           getComposerEligibleRepos(onlyRuntime),
-          'runtime-orca'
+          'runtime-aio-ade'
         )
-      ).toBe('runtime-orca')
+      ).toBe('runtime-aio-ade')
     })
 
     it('passes through null/undefined active repo', () => {

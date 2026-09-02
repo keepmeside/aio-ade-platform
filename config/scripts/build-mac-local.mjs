@@ -37,8 +37,8 @@ if (process.argv[1] && resolve(process.argv[1]) === resolve(import.meta.filename
     {
       env: {
         ...process.env,
-        ORCA_BUILD_COMMIT: identity.commit,
-        ORCA_LOCAL_BUILD_VERSION: identity.version
+        AIO_ADE_BUILD_COMMIT: identity.commit,
+        AIO_ADE_LOCAL_BUILD_VERSION: identity.version
       },
       stdio: 'inherit'
     }

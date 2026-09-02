@@ -1877,11 +1877,11 @@ describe('AgentHookServer listener replay', () => {
     try {
       const env = server.buildPtyEnv()
       const postHook = (prompt: string): Promise<Response> =>
-        fetch(`http://127.0.0.1:${env.ORCA_AGENT_HOOK_PORT}/hook/claude`, {
+        fetch(`http://127.0.0.1:${env.AIO_ADE_AGENT_HOOK_PORT}/hook/claude`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Orca-Agent-Hook-Token': env.ORCA_AGENT_HOOK_TOKEN
+            'X-AIO-ADE-Agent-Hook-Token': env.AIO_ADE_AGENT_HOOK_TOKEN
           },
           body: JSON.stringify(buildBody({ hook_event_name: 'UserPromptSubmit', prompt }))
         })
@@ -1901,7 +1901,7 @@ describe('AgentHookServer listener replay', () => {
   })
 
   it('hydrates cached statuses as not observed in the current runtime', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'orca-agent-hooks-'))
+    const dir = mkdtempSync(join(tmpdir(), 'aio-ade-agent-hooks-'))
     const firstServer = new AgentHookServer()
     const secondServer = new AgentHookServer()
     try {
@@ -1938,14 +1938,14 @@ describe('AgentHookServer listener replay', () => {
     await server.start({ env: 'production' })
     try {
       const env = server.buildPtyEnv()
-      expect(env.ORCA_AGENT_HOOK_PORT).toBeTruthy()
-      expect(env.ORCA_AGENT_HOOK_TOKEN).toBeTruthy()
+      expect(env.AIO_ADE_AGENT_HOOK_PORT).toBeTruthy()
+      expect(env.AIO_ADE_AGENT_HOOK_TOKEN).toBeTruthy()
 
-      const response = await fetch(`http://127.0.0.1:${env.ORCA_AGENT_HOOK_PORT}/hook/claude`, {
+      const response = await fetch(`http://127.0.0.1:${env.AIO_ADE_AGENT_HOOK_PORT}/hook/claude`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Orca-Agent-Hook-Token': env.ORCA_AGENT_HOOK_TOKEN
+          'X-AIO-ADE-Agent-Hook-Token': env.AIO_ADE_AGENT_HOOK_TOKEN
         },
         body: JSON.stringify(
           buildBody({
@@ -1986,11 +1986,11 @@ describe('AgentHookServer listener replay', () => {
     try {
       const env = server.buildPtyEnv()
       const postClaudeHook = async (payload: Record<string, unknown>): Promise<Response> =>
-        fetch(`http://127.0.0.1:${env.ORCA_AGENT_HOOK_PORT}/hook/claude`, {
+        fetch(`http://127.0.0.1:${env.AIO_ADE_AGENT_HOOK_PORT}/hook/claude`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Orca-Agent-Hook-Token': env.ORCA_AGENT_HOOK_TOKEN
+            'X-AIO-ADE-Agent-Hook-Token': env.AIO_ADE_AGENT_HOOK_TOKEN
           },
           body: JSON.stringify(buildBody(payload))
         })
@@ -1999,7 +1999,7 @@ describe('AgentHookServer listener replay', () => {
         postClaudeHook({
           hook_event_name: 'PermissionRequest',
           tool_name: 'Bash',
-          tool_input: { command: 'rm -rf /tmp/orca-subagent-repro' }
+          tool_input: { command: 'rm -rf /tmp/aio-ade-subagent-repro' }
         })
       ).resolves.toMatchObject({ status: 204 })
       await expect(
@@ -2016,7 +2016,7 @@ describe('AgentHookServer listener replay', () => {
           state: 'waiting',
           agentType: 'claude',
           toolName: 'Bash',
-          toolInput: 'rm -rf /tmp/orca-subagent-repro'
+          toolInput: 'rm -rf /tmp/aio-ade-subagent-repro'
         })
       ])
     } finally {
@@ -2030,11 +2030,11 @@ describe('AgentHookServer listener replay', () => {
     try {
       const env = server.buildPtyEnv()
       const postClaudeHook = async (payload: Record<string, unknown>): Promise<Response> =>
-        fetch(`http://127.0.0.1:${env.ORCA_AGENT_HOOK_PORT}/hook/claude`, {
+        fetch(`http://127.0.0.1:${env.AIO_ADE_AGENT_HOOK_PORT}/hook/claude`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Orca-Agent-Hook-Token': env.ORCA_AGENT_HOOK_TOKEN
+            'X-AIO-ADE-Agent-Hook-Token': env.AIO_ADE_AGENT_HOOK_TOKEN
           },
           body: JSON.stringify(buildBody(payload))
         })
@@ -2042,12 +2042,12 @@ describe('AgentHookServer listener replay', () => {
       await postClaudeHook({
         hook_event_name: 'PermissionRequest',
         tool_name: 'Bash',
-        tool_input: { command: 'rm -rf /tmp/orca-subagent-repro' }
+        tool_input: { command: 'rm -rf /tmp/aio-ade-subagent-repro' }
       })
       await postClaudeHook({
         hook_event_name: 'PreToolUse',
         tool_name: 'Bash',
-        tool_input: { command: 'rm -rf /tmp/orca-subagent-repro' }
+        tool_input: { command: 'rm -rf /tmp/aio-ade-subagent-repro' }
       })
 
       expect(server.getStatusSnapshot()).toEqual([
@@ -2056,7 +2056,7 @@ describe('AgentHookServer listener replay', () => {
           state: 'waiting',
           agentType: 'claude',
           toolName: 'Bash',
-          toolInput: 'rm -rf /tmp/orca-subagent-repro'
+          toolInput: 'rm -rf /tmp/aio-ade-subagent-repro'
         })
       ])
     } finally {
@@ -2070,11 +2070,11 @@ describe('AgentHookServer listener replay', () => {
     try {
       const env = server.buildPtyEnv()
       const postClaudeHook = async (payload: Record<string, unknown>): Promise<Response> =>
-        fetch(`http://127.0.0.1:${env.ORCA_AGENT_HOOK_PORT}/hook/claude`, {
+        fetch(`http://127.0.0.1:${env.AIO_ADE_AGENT_HOOK_PORT}/hook/claude`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Orca-Agent-Hook-Token': env.ORCA_AGENT_HOOK_TOKEN
+            'X-AIO-ADE-Agent-Hook-Token': env.AIO_ADE_AGENT_HOOK_TOKEN
           },
           body: JSON.stringify(buildBody(payload))
         })
@@ -2082,12 +2082,12 @@ describe('AgentHookServer listener replay', () => {
       await postClaudeHook({
         hook_event_name: 'PermissionRequest',
         tool_name: 'Bash',
-        tool_input: { command: 'rm -rf /tmp/orca-subagent-repro' }
+        tool_input: { command: 'rm -rf /tmp/aio-ade-subagent-repro' }
       })
       await postClaudeHook({
         hook_event_name: 'PreToolUse',
         tool_name: 'Bash',
-        tool_input: { command: 'rm -rf /tmp/orca-subagent-repro' },
+        tool_input: { command: 'rm -rf /tmp/aio-ade-subagent-repro' },
         tool_use_id: 'toolu-approved-1'
       })
 
@@ -2097,7 +2097,7 @@ describe('AgentHookServer listener replay', () => {
           state: 'waiting',
           agentType: 'claude',
           toolName: 'Bash',
-          toolInput: 'rm -rf /tmp/orca-subagent-repro'
+          toolInput: 'rm -rf /tmp/aio-ade-subagent-repro'
         })
       ])
     } finally {
@@ -2111,11 +2111,11 @@ describe('AgentHookServer listener replay', () => {
     try {
       const env = server.buildPtyEnv()
       const postClaudeHook = async (payload: Record<string, unknown>): Promise<Response> =>
-        fetch(`http://127.0.0.1:${env.ORCA_AGENT_HOOK_PORT}/hook/claude`, {
+        fetch(`http://127.0.0.1:${env.AIO_ADE_AGENT_HOOK_PORT}/hook/claude`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Orca-Agent-Hook-Token': env.ORCA_AGENT_HOOK_TOKEN
+            'X-AIO-ADE-Agent-Hook-Token': env.AIO_ADE_AGENT_HOOK_TOKEN
           },
           body: JSON.stringify(buildBody(payload))
         })
@@ -2123,18 +2123,18 @@ describe('AgentHookServer listener replay', () => {
       await postClaudeHook({
         hook_event_name: 'PreToolUse',
         tool_name: 'Bash',
-        tool_input: { command: 'rm -rf /tmp/orca-2824-permission-target' },
+        tool_input: { command: 'rm -rf /tmp/aio-ade-2824-permission-target' },
         tool_use_id: 'toolu-approved-by-claude'
       })
       await postClaudeHook({
         hook_event_name: 'PermissionRequest',
         tool_name: 'Bash',
-        tool_input: { command: 'rm -rf /tmp/orca-2824-permission-target' }
+        tool_input: { command: 'rm -rf /tmp/aio-ade-2824-permission-target' }
       })
       await postClaudeHook({
         hook_event_name: 'PostToolUse',
         tool_name: 'Bash',
-        tool_input: { command: 'rm -rf /tmp/orca-2824-permission-target' },
+        tool_input: { command: 'rm -rf /tmp/aio-ade-2824-permission-target' },
         tool_use_id: 'toolu-approved-by-claude'
       })
 
@@ -2144,7 +2144,7 @@ describe('AgentHookServer listener replay', () => {
           state: 'working',
           agentType: 'claude',
           toolName: 'Bash',
-          toolInput: 'rm -rf /tmp/orca-2824-permission-target'
+          toolInput: 'rm -rf /tmp/aio-ade-2824-permission-target'
         })
       ])
     } finally {
@@ -2158,11 +2158,11 @@ describe('AgentHookServer listener replay', () => {
     try {
       const env = server.buildPtyEnv()
       const postClaudeHook = async (payload: Record<string, unknown>): Promise<Response> =>
-        fetch(`http://127.0.0.1:${env.ORCA_AGENT_HOOK_PORT}/hook/claude`, {
+        fetch(`http://127.0.0.1:${env.AIO_ADE_AGENT_HOOK_PORT}/hook/claude`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Orca-Agent-Hook-Token': env.ORCA_AGENT_HOOK_TOKEN
+            'X-AIO-ADE-Agent-Hook-Token': env.AIO_ADE_AGENT_HOOK_TOKEN
           },
           body: JSON.stringify(buildBody(payload))
         })
@@ -2204,11 +2204,11 @@ describe('AgentHookServer listener replay', () => {
     try {
       const env = server.buildPtyEnv()
       const postClaudeHook = async (payload: Record<string, unknown>): Promise<Response> =>
-        fetch(`http://127.0.0.1:${env.ORCA_AGENT_HOOK_PORT}/hook/claude`, {
+        fetch(`http://127.0.0.1:${env.AIO_ADE_AGENT_HOOK_PORT}/hook/claude`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Orca-Agent-Hook-Token': env.ORCA_AGENT_HOOK_TOKEN
+            'X-AIO-ADE-Agent-Hook-Token': env.AIO_ADE_AGENT_HOOK_TOKEN
           },
           body: JSON.stringify(buildBody(payload))
         })
@@ -2250,11 +2250,11 @@ describe('AgentHookServer listener replay', () => {
     try {
       const env = server.buildPtyEnv()
       const postClaudeHook = async (payload: Record<string, unknown>): Promise<Response> =>
-        fetch(`http://127.0.0.1:${env.ORCA_AGENT_HOOK_PORT}/hook/claude`, {
+        fetch(`http://127.0.0.1:${env.AIO_ADE_AGENT_HOOK_PORT}/hook/claude`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Orca-Agent-Hook-Token': env.ORCA_AGENT_HOOK_TOKEN
+            'X-AIO-ADE-Agent-Hook-Token': env.AIO_ADE_AGENT_HOOK_TOKEN
           },
           body: JSON.stringify(buildBody(payload))
         })
@@ -2297,11 +2297,11 @@ describe('AgentHookServer listener replay', () => {
     try {
       const env = server.buildPtyEnv()
       const postClaudeHook = async (payload: Record<string, unknown>): Promise<Response> =>
-        fetch(`http://127.0.0.1:${env.ORCA_AGENT_HOOK_PORT}/hook/claude`, {
+        fetch(`http://127.0.0.1:${env.AIO_ADE_AGENT_HOOK_PORT}/hook/claude`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Orca-Agent-Hook-Token': env.ORCA_AGENT_HOOK_TOKEN
+            'X-AIO-ADE-Agent-Hook-Token': env.AIO_ADE_AGENT_HOOK_TOKEN
           },
           body: JSON.stringify(buildBody(payload))
         })
@@ -2347,11 +2347,11 @@ describe('AgentHookServer listener replay', () => {
     try {
       const env = server.buildPtyEnv()
       const postClaudeHook = async (payload: Record<string, unknown>): Promise<Response> =>
-        fetch(`http://127.0.0.1:${env.ORCA_AGENT_HOOK_PORT}/hook/claude`, {
+        fetch(`http://127.0.0.1:${env.AIO_ADE_AGENT_HOOK_PORT}/hook/claude`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Orca-Agent-Hook-Token': env.ORCA_AGENT_HOOK_TOKEN
+            'X-AIO-ADE-Agent-Hook-Token': env.AIO_ADE_AGENT_HOOK_TOKEN
           },
           body: JSON.stringify(buildBody(payload))
         })
@@ -2360,13 +2360,13 @@ describe('AgentHookServer listener replay', () => {
         hook_event_name: 'PermissionRequest',
         agent_type: 'main',
         tool_name: 'Bash',
-        tool_input: { command: 'rm -rf /tmp/orca-subagent-repro' }
+        tool_input: { command: 'rm -rf /tmp/aio-ade-subagent-repro' }
       })
       await postClaudeHook({
         hook_event_name: 'PreToolUse',
         agent_type: 'main',
         tool_name: 'Bash',
-        tool_input: { command: 'rm -rf /tmp/orca-subagent-repro' },
+        tool_input: { command: 'rm -rf /tmp/aio-ade-subagent-repro' },
         tool_use_id: 'toolu-approved-1'
       })
 
@@ -2376,7 +2376,7 @@ describe('AgentHookServer listener replay', () => {
           state: 'working',
           agentType: 'claude',
           toolName: 'Bash',
-          toolInput: 'rm -rf /tmp/orca-subagent-repro'
+          toolInput: 'rm -rf /tmp/aio-ade-subagent-repro'
         })
       ])
     } finally {
@@ -2390,11 +2390,11 @@ describe('AgentHookServer listener replay', () => {
     try {
       const env = server.buildPtyEnv()
       const postClaudeHook = async (payload: Record<string, unknown>): Promise<Response> =>
-        fetch(`http://127.0.0.1:${env.ORCA_AGENT_HOOK_PORT}/hook/claude`, {
+        fetch(`http://127.0.0.1:${env.AIO_ADE_AGENT_HOOK_PORT}/hook/claude`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Orca-Agent-Hook-Token': env.ORCA_AGENT_HOOK_TOKEN
+            'X-AIO-ADE-Agent-Hook-Token': env.AIO_ADE_AGENT_HOOK_TOKEN
           },
           body: JSON.stringify(buildBody(payload))
         })
@@ -2435,11 +2435,11 @@ describe('AgentHookServer listener replay', () => {
     try {
       const env = server.buildPtyEnv()
       const postClaudeHook = async (payload: Record<string, unknown>): Promise<Response> =>
-        fetch(`http://127.0.0.1:${env.ORCA_AGENT_HOOK_PORT}/hook/claude`, {
+        fetch(`http://127.0.0.1:${env.AIO_ADE_AGENT_HOOK_PORT}/hook/claude`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Orca-Agent-Hook-Token': env.ORCA_AGENT_HOOK_TOKEN
+            'X-AIO-ADE-Agent-Hook-Token': env.AIO_ADE_AGENT_HOOK_TOKEN
           },
           body: JSON.stringify(buildBody(payload))
         })
@@ -2480,11 +2480,11 @@ describe('AgentHookServer listener replay', () => {
     try {
       const env = server.buildPtyEnv()
       const postClaudeHook = async (payload: Record<string, unknown>): Promise<Response> =>
-        fetch(`http://127.0.0.1:${env.ORCA_AGENT_HOOK_PORT}/hook/claude`, {
+        fetch(`http://127.0.0.1:${env.AIO_ADE_AGENT_HOOK_PORT}/hook/claude`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Orca-Agent-Hook-Token': env.ORCA_AGENT_HOOK_TOKEN
+            'X-AIO-ADE-Agent-Hook-Token': env.AIO_ADE_AGENT_HOOK_TOKEN
           },
           body: JSON.stringify(buildBody(payload))
         })
@@ -2525,11 +2525,11 @@ describe('AgentHookServer listener replay', () => {
     try {
       const env = server.buildPtyEnv()
       const postClaudeHook = async (payload: Record<string, unknown>): Promise<Response> =>
-        fetch(`http://127.0.0.1:${env.ORCA_AGENT_HOOK_PORT}/hook/claude`, {
+        fetch(`http://127.0.0.1:${env.AIO_ADE_AGENT_HOOK_PORT}/hook/claude`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Orca-Agent-Hook-Token': env.ORCA_AGENT_HOOK_TOKEN
+            'X-AIO-ADE-Agent-Hook-Token': env.AIO_ADE_AGENT_HOOK_TOKEN
           },
           body: JSON.stringify(buildBody(payload))
         })
@@ -2565,11 +2565,11 @@ describe('AgentHookServer listener replay', () => {
     try {
       const env = server.buildPtyEnv()
       const postClaudeHook = async (payload: Record<string, unknown>): Promise<Response> =>
-        fetch(`http://127.0.0.1:${env.ORCA_AGENT_HOOK_PORT}/hook/claude`, {
+        fetch(`http://127.0.0.1:${env.AIO_ADE_AGENT_HOOK_PORT}/hook/claude`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Orca-Agent-Hook-Token': env.ORCA_AGENT_HOOK_TOKEN
+            'X-AIO-ADE-Agent-Hook-Token': env.AIO_ADE_AGENT_HOOK_TOKEN
           },
           body: JSON.stringify(buildBody(payload))
         })
@@ -2577,7 +2577,7 @@ describe('AgentHookServer listener replay', () => {
       await postClaudeHook({
         hook_event_name: 'PermissionRequest',
         tool_name: 'Bash',
-        tool_input: { command: 'rm -rf /tmp/orca-subagent-repro' }
+        tool_input: { command: 'rm -rf /tmp/aio-ade-subagent-repro' }
       })
       await postClaudeHook({
         hook_event_name: 'UserPromptSubmit',
@@ -2604,11 +2604,11 @@ describe('AgentHookServer listener replay', () => {
     await server.start({ env: 'production' })
     try {
       const env = server.buildPtyEnv()
-      await fetch(`http://127.0.0.1:${env.ORCA_AGENT_HOOK_PORT}/hook/codex`, {
+      await fetch(`http://127.0.0.1:${env.AIO_ADE_AGENT_HOOK_PORT}/hook/codex`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Orca-Agent-Hook-Token': env.ORCA_AGENT_HOOK_TOKEN
+          'X-AIO-ADE-Agent-Hook-Token': env.AIO_ADE_AGENT_HOOK_TOKEN
         },
         body: JSON.stringify(
           buildBody({
@@ -2640,12 +2640,12 @@ describe('AgentHookServer listener replay', () => {
         payload: Record<string, unknown>
       ): Promise<void> => {
         const response = await fetch(
-          `http://127.0.0.1:${env.ORCA_AGENT_HOOK_PORT}/hook/${source}`,
+          `http://127.0.0.1:${env.AIO_ADE_AGENT_HOOK_PORT}/hook/${source}`,
           {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'X-Orca-Agent-Hook-Token': env.ORCA_AGENT_HOOK_TOKEN
+              'X-AIO-ADE-Agent-Hook-Token': env.AIO_ADE_AGENT_HOOK_TOKEN
             },
             body: JSON.stringify(buildBody(payload))
           }
@@ -2693,11 +2693,11 @@ describe('AgentHookServer listener replay', () => {
     try {
       server.registerPaneKeyAlias('tab-1:0', PANE)
       const env = server.buildPtyEnv()
-      const response = await fetch(`http://127.0.0.1:${env.ORCA_AGENT_HOOK_PORT}/hook/claude`, {
+      const response = await fetch(`http://127.0.0.1:${env.AIO_ADE_AGENT_HOOK_PORT}/hook/claude`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Orca-Agent-Hook-Token': env.ORCA_AGENT_HOOK_TOKEN
+          'X-AIO-ADE-Agent-Hook-Token': env.AIO_ADE_AGENT_HOOK_TOKEN
         },
         body: JSON.stringify(
           buildBody(
@@ -2736,11 +2736,11 @@ describe('AgentHookServer listener replay', () => {
     await server.start({ env: 'production' })
     try {
       const env = server.buildPtyEnv()
-      const response = await fetch(`http://127.0.0.1:${env.ORCA_AGENT_HOOK_PORT}/hook/claude`, {
+      const response = await fetch(`http://127.0.0.1:${env.AIO_ADE_AGENT_HOOK_PORT}/hook/claude`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Orca-Agent-Hook-Token': env.ORCA_AGENT_HOOK_TOKEN
+          'X-AIO-ADE-Agent-Hook-Token': env.AIO_ADE_AGENT_HOOK_TOKEN
         },
         body: JSON.stringify(
           buildBody(
@@ -2886,18 +2886,18 @@ describe('AgentHookServer listener replay', () => {
         tabId: 'tab-1',
         worktreeId: 'repo::/tmp/worktree with "quotes"',
         env: 'production',
-        version: env.ORCA_AGENT_HOOK_VERSION ?? '',
+        version: env.AIO_ADE_AGENT_HOOK_VERSION ?? '',
         payload: JSON.stringify({
           hook_event_name: 'UserPromptSubmit',
           prompt: 'form encoded'
         })
       })
 
-      const response = await fetch(`http://127.0.0.1:${env.ORCA_AGENT_HOOK_PORT}/hook/claude`, {
+      const response = await fetch(`http://127.0.0.1:${env.AIO_ADE_AGENT_HOOK_PORT}/hook/claude`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'X-Orca-Agent-Hook-Token': env.ORCA_AGENT_HOOK_TOKEN
+          'X-AIO-ADE-Agent-Hook-Token': env.AIO_ADE_AGENT_HOOK_TOKEN
         },
         body: params
       })
@@ -2939,14 +2939,14 @@ describe('AgentHookServer listener replay', () => {
           tabId: 'tab-1',
           worktreeId: 'wt-1',
           env: 'production',
-          version: env.ORCA_AGENT_HOOK_VERSION ?? '',
+          version: env.AIO_ADE_AGENT_HOOK_VERSION ?? '',
           payload: JSON.stringify(payload)
         })
-        const response = await fetch(`http://127.0.0.1:${env.ORCA_AGENT_HOOK_PORT}/hook/codex`, {
+        const response = await fetch(`http://127.0.0.1:${env.AIO_ADE_AGENT_HOOK_PORT}/hook/codex`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-            'X-Orca-Agent-Hook-Token': env.ORCA_AGENT_HOOK_TOKEN
+            'X-AIO-ADE-Agent-Hook-Token': env.AIO_ADE_AGENT_HOOK_TOKEN
           },
           body: params
         })
@@ -3037,11 +3037,11 @@ describe('AgentHookServer prompt-sent telemetry', () => {
     await server.start({ env: 'production' })
     try {
       const env = server.buildPtyEnv()
-      const response = await fetch(`http://127.0.0.1:${env.ORCA_AGENT_HOOK_PORT}/hook/claude`, {
+      const response = await fetch(`http://127.0.0.1:${env.AIO_ADE_AGENT_HOOK_PORT}/hook/claude`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Orca-Agent-Hook-Token': env.ORCA_AGENT_HOOK_TOKEN
+          'X-AIO-ADE-Agent-Hook-Token': env.AIO_ADE_AGENT_HOOK_TOKEN
         },
         body: JSON.stringify(
           buildBody({
@@ -3823,7 +3823,7 @@ describe('Claude hook normalization', () => {
     let transcriptPath: string
 
     beforeEach(() => {
-      tmpDir = mkdtempSync(join(tmpdir(), 'orca-hook-test-'))
+      tmpDir = mkdtempSync(join(tmpdir(), 'aio-ade-hook-test-'))
       transcriptPath = join(tmpDir, 'transcript.jsonl')
     })
 
@@ -4156,7 +4156,7 @@ describe('Endpoint file lifecycle', () => {
   let userDataPath: string
 
   beforeEach(() => {
-    userDataPath = mkdtempSync(join(tmpdir(), 'orca-endpoint-'))
+    userDataPath = mkdtempSync(join(tmpdir(), 'aio-ade-endpoint-'))
   })
 
   afterEach(() => {
@@ -4171,13 +4171,13 @@ describe('Endpoint file lifecycle', () => {
       expect(filePath).toBeTruthy()
       expect(existsSync(filePath!)).toBe(true)
       const contents = readFileSync(filePath!, 'utf8')
-      const expectedPort = server.buildPtyEnv().ORCA_AGENT_HOOK_PORT
-      const expectedToken = server.buildPtyEnv().ORCA_AGENT_HOOK_TOKEN
+      const expectedPort = server.buildPtyEnv().AIO_ADE_AGENT_HOOK_PORT
+      const expectedToken = server.buildPtyEnv().AIO_ADE_AGENT_HOOK_TOKEN
       const prefix = process.platform === 'win32' ? 'set ' : ''
-      expect(contents).toContain(`${prefix}ORCA_AGENT_HOOK_PORT=${expectedPort}`)
-      expect(contents).toContain(`${prefix}ORCA_AGENT_HOOK_TOKEN=${expectedToken}`)
-      expect(contents).toContain(`${prefix}ORCA_AGENT_HOOK_ENV=development`)
-      expect(contents).toContain(`${prefix}ORCA_AGENT_HOOK_VERSION=1`)
+      expect(contents).toContain(`${prefix}AIO_ADE_AGENT_HOOK_PORT=${expectedPort}`)
+      expect(contents).toContain(`${prefix}AIO_ADE_AGENT_HOOK_TOKEN=${expectedToken}`)
+      expect(contents).toContain(`${prefix}AIO_ADE_AGENT_HOOK_ENV=development`)
+      expect(contents).toContain(`${prefix}AIO_ADE_AGENT_HOOK_VERSION=1`)
     } finally {
       server.stop()
     }
@@ -4203,14 +4203,14 @@ describe('Endpoint file lifecycle', () => {
     const server = new AgentHookServer()
     await server.start({ env: 'production', userDataPath })
     const firstPath = server.endpointFilePath
-    const firstToken = server.buildPtyEnv().ORCA_AGENT_HOOK_TOKEN
+    const firstToken = server.buildPtyEnv().AIO_ADE_AGENT_HOOK_TOKEN
     server.stop()
 
     await server.start({ env: 'production', userDataPath })
     try {
       const secondPath = server.endpointFilePath
-      const secondPort = server.buildPtyEnv().ORCA_AGENT_HOOK_PORT
-      const secondToken = server.buildPtyEnv().ORCA_AGENT_HOOK_TOKEN
+      const secondPort = server.buildPtyEnv().AIO_ADE_AGENT_HOOK_PORT
+      const secondToken = server.buildPtyEnv().AIO_ADE_AGENT_HOOK_TOKEN
       // Path is stable (so PTYs stamped before restart can still find the file)
       expect(secondPath).toBe(firstPath)
       // Contents refresh with a new token so stale-env survivors reach the live server.
@@ -4218,16 +4218,16 @@ describe('Endpoint file lifecycle', () => {
       expect(secondToken).not.toBe(firstToken)
       const contents = readFileSync(secondPath!, 'utf8')
       // Why: assert on token (randomUUID, can't collide), not port — listen(0) may legitimately reuse the ephemeral port and flake a port check.
-      expect(contents).toContain(`ORCA_AGENT_HOOK_PORT=${secondPort}`)
-      expect(contents).toContain(`ORCA_AGENT_HOOK_TOKEN=${secondToken}`)
-      expect(contents).not.toContain(`ORCA_AGENT_HOOK_TOKEN=${firstToken}`)
+      expect(contents).toContain(`AIO_ADE_AGENT_HOOK_PORT=${secondPort}`)
+      expect(contents).toContain(`AIO_ADE_AGENT_HOOK_TOKEN=${secondToken}`)
+      expect(contents).not.toContain(`AIO_ADE_AGENT_HOOK_TOKEN=${firstToken}`)
     } finally {
       server.stop()
     }
   })
 
   it('leaves the endpoint file in place on stop()', async () => {
-    // Why: stop() leaves the file (stale = fail-open); unlinking would race a concurrent Orca instance rewriting it between token-check and unlink (TOCTOU).
+    // Why: stop() leaves the file (stale = fail-open); unlinking would race a concurrent AIO-ADE instance rewriting it between token-check and unlink (TOCTOU).
     const server = new AgentHookServer()
     await server.start({ env: 'production', userDataPath })
     const filePath = server.endpointFilePath!
@@ -4236,30 +4236,30 @@ describe('Endpoint file lifecycle', () => {
     expect(existsSync(filePath)).toBe(true)
   })
 
-  it('buildPtyEnv includes ORCA_AGENT_HOOK_ENDPOINT when the server is running', async () => {
+  it('buildPtyEnv includes AIO_ADE_AGENT_HOOK_ENDPOINT when the server is running', async () => {
     const server = new AgentHookServer()
     await server.start({ env: 'production', userDataPath })
     try {
       const env = server.buildPtyEnv()
-      expect(env.ORCA_AGENT_HOOK_ENDPOINT).toBe(server.endpointFilePath)
+      expect(env.AIO_ADE_AGENT_HOOK_ENDPOINT).toBe(server.endpointFilePath)
     } finally {
       server.stop()
     }
   })
 
-  it('buildPtyEnv includes namespaced ORCA_AGENT_HOOK_ENDPOINT for development servers', async () => {
+  it('buildPtyEnv includes namespaced AIO_ADE_AGENT_HOOK_ENDPOINT for development servers', async () => {
     const server = new AgentHookServer()
     await server.start({
       env: 'development',
       userDataPath,
-      endpointNamespace: 'com.stablyai.orca.dev.test123'
+      endpointNamespace: 'com.keepmeside.aio-ade.dev.test123'
     })
     try {
       const env = server.buildPtyEnv()
-      expect(env.ORCA_AGENT_HOOK_ENDPOINT).toBe(server.endpointFilePath)
-      expect(env.ORCA_AGENT_HOOK_ENDPOINT).toContain('com.stablyai.orca.dev.test123')
-      expect(env.ORCA_AGENT_HOOK_PORT).toBeTruthy()
-      expect(env.ORCA_AGENT_HOOK_TOKEN).toBeTruthy()
+      expect(env.AIO_ADE_AGENT_HOOK_ENDPOINT).toBe(server.endpointFilePath)
+      expect(env.AIO_ADE_AGENT_HOOK_ENDPOINT).toContain('com.keepmeside.aio-ade.dev.test123')
+      expect(env.AIO_ADE_AGENT_HOOK_PORT).toBeTruthy()
+      expect(env.AIO_ADE_AGENT_HOOK_TOKEN).toBeTruthy()
     } finally {
       server.stop()
     }
@@ -4272,8 +4272,10 @@ describe('Endpoint file lifecycle', () => {
     await secondServer.start({ env: 'development', userDataPath, endpointNamespace: 'dev-b' })
     try {
       expect(firstServer.endpointFilePath).not.toBe(secondServer.endpointFilePath)
-      expect(firstServer.buildPtyEnv().ORCA_AGENT_HOOK_ENDPOINT).toBe(firstServer.endpointFilePath)
-      expect(secondServer.buildPtyEnv().ORCA_AGENT_HOOK_ENDPOINT).toBe(
+      expect(firstServer.buildPtyEnv().AIO_ADE_AGENT_HOOK_ENDPOINT).toBe(
+        firstServer.endpointFilePath
+      )
+      expect(secondServer.buildPtyEnv().AIO_ADE_AGENT_HOOK_ENDPOINT).toBe(
         secondServer.endpointFilePath
       )
       expect(existsSync(firstServer.endpointFilePath!)).toBe(true)
@@ -4284,15 +4286,15 @@ describe('Endpoint file lifecycle', () => {
     }
   })
 
-  it('buildPtyEnv omits ORCA_AGENT_HOOK_ENDPOINT when no userDataPath was provided', async () => {
+  it('buildPtyEnv omits AIO_ADE_AGENT_HOOK_ENDPOINT when no userDataPath was provided', async () => {
     // Why: the endpoint file is opt-in via userDataPath; without it, hooks fall back to v1 behavior (no ENDPOINT key).
     const server = new AgentHookServer()
     await server.start({ env: 'production' })
     try {
       const env = server.buildPtyEnv()
-      expect(env.ORCA_AGENT_HOOK_ENDPOINT).toBeUndefined()
-      expect(env.ORCA_AGENT_HOOK_PORT).toBeTruthy()
-      expect(env.ORCA_AGENT_HOOK_TOKEN).toBeTruthy()
+      expect(env.AIO_ADE_AGENT_HOOK_ENDPOINT).toBeUndefined()
+      expect(env.AIO_ADE_AGENT_HOOK_PORT).toBeTruthy()
+      expect(env.AIO_ADE_AGENT_HOOK_TOKEN).toBeTruthy()
     } finally {
       server.stop()
     }
@@ -4330,10 +4332,10 @@ describe('Endpoint file lifecycle', () => {
     await server.start({ env: 'bad;value', userDataPath })
     try {
       expect(existsSync(server.endpointFilePath!)).toBe(false)
-      expect(server.buildPtyEnv().ORCA_AGENT_HOOK_ENDPOINT).toBeUndefined()
+      expect(server.buildPtyEnv().AIO_ADE_AGENT_HOOK_ENDPOINT).toBeUndefined()
       // PORT/TOKEN still flow via PTY env — fail-open to v1 behavior.
-      expect(server.buildPtyEnv().ORCA_AGENT_HOOK_PORT).toBeTruthy()
-      expect(server.buildPtyEnv().ORCA_AGENT_HOOK_TOKEN).toBeTruthy()
+      expect(server.buildPtyEnv().AIO_ADE_AGENT_HOOK_PORT).toBeTruthy()
+      expect(server.buildPtyEnv().AIO_ADE_AGENT_HOOK_TOKEN).toBeTruthy()
     } finally {
       server.stop()
     }
@@ -4409,9 +4411,12 @@ describe('Endpoint file lifecycle', () => {
     await server.start({ env: 'production', userDataPath })
     try {
       const filePath = server.endpointFilePath!
-      const expectedPort = server.buildPtyEnv().ORCA_AGENT_HOOK_PORT
+      const expectedPort = server.buildPtyEnv().AIO_ADE_AGENT_HOOK_PORT
       // Why: source the file exactly as the managed hook script does, catching drift from the KEY=VALUE shape before users do.
-      const out = execFileSync('/bin/sh', ['-c', `. "${filePath}" && echo "$ORCA_AGENT_HOOK_PORT"`])
+      const out = execFileSync('/bin/sh', [
+        '-c',
+        `. "${filePath}" && echo "$AIO_ADE_AGENT_HOOK_PORT"`
+      ])
         .toString()
         .trim()
       expect(out).toBe(expectedPort)
@@ -4425,7 +4430,7 @@ describe('Last-status persistence', () => {
   let userDataPath: string
 
   beforeEach(() => {
-    userDataPath = mkdtempSync(join(tmpdir(), 'orca-laststatus-'))
+    userDataPath = mkdtempSync(join(tmpdir(), 'aio-ade-laststatus-'))
   })
 
   afterEach(() => {
@@ -4447,11 +4452,11 @@ describe('Last-status persistence', () => {
     path: string = '/hook/claude'
   ): Promise<Response> {
     const env = server.buildPtyEnv()
-    return fetch(`http://127.0.0.1:${env.ORCA_AGENT_HOOK_PORT}${path}`, {
+    return fetch(`http://127.0.0.1:${env.AIO_ADE_AGENT_HOOK_PORT}${path}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Orca-Agent-Hook-Token': env.ORCA_AGENT_HOOK_TOKEN
+        'X-AIO-ADE-Agent-Hook-Token': env.AIO_ADE_AGENT_HOOK_TOKEN
       },
       body: JSON.stringify(body)
     })

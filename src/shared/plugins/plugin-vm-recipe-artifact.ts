@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { ORCA_VM_RECIPE_ID_PATTERN, ORCA_VM_RECIPE_ID_RULE } from '../orca-yaml'
-import type { OrcaVmRecipe } from '../types'
+import { AIO_ADE_VM_RECIPE_ID_PATTERN, AIO_ADE_VM_RECIPE_ID_RULE } from '../aio-ade-yaml'
+import type { AioAdeVmRecipe } from '../types'
 
 const recipeCommandSchema = z
   .string()
@@ -12,7 +12,7 @@ const recipeCommandSchema = z
 const pluginVmRecipeArtifactSchema = z
   .object({
     schemaVersion: z.literal(1),
-    id: z.string().regex(ORCA_VM_RECIPE_ID_PATTERN, ORCA_VM_RECIPE_ID_RULE),
+    id: z.string().regex(AIO_ADE_VM_RECIPE_ID_PATTERN, AIO_ADE_VM_RECIPE_ID_RULE),
     name: z.string().trim().min(1).max(128),
     description: z.string().trim().min(1).max(1024).optional(),
     create: recipeCommandSchema,
@@ -36,7 +36,7 @@ export type PluginVmRecipeCommand = {
   command: string
 }
 
-export function parsePluginVmRecipeArtifact(raw: string): OrcaVmRecipe {
+export function parsePluginVmRecipeArtifact(raw: string): AioAdeVmRecipe {
   const parsed = pluginVmRecipeArtifactSchema.parse(JSON.parse(raw))
   const destroyDisabled = parsed.destroy === 'none'
   return {
@@ -51,7 +51,7 @@ export function parsePluginVmRecipeArtifact(raw: string): OrcaVmRecipe {
   }
 }
 
-export function listPluginVmRecipeCommands(recipe: OrcaVmRecipe): PluginVmRecipeCommand[] {
+export function listPluginVmRecipeCommands(recipe: AioAdeVmRecipe): PluginVmRecipeCommand[] {
   return [
     { phase: 'create', command: recipe.create },
     ...(recipe.suspend ? [{ phase: 'suspend' as const, command: recipe.suspend }] : []),

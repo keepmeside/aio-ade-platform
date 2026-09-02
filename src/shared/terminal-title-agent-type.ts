@@ -185,7 +185,7 @@ export function getAgentLabel(title: string): string | null {
 // as `node`, but its "✳ Claude Code" title resolves here). Agents whose process
 // name already matches (codex, etc.) never reach this path.
 //
-// getAgentLabel still recognizes CLIs Orca does not launch: a user can run one by hand, and its
+// getAgentLabel still recognizes CLIs AIO-ADE does not launch: a user can run one by hand, and its
 // label is what stops a braille-spinner title from being attributed to Claude. Those labels
 // deliberately have no entry here, so they resolve to no agent identity.
 const TITLE_LABEL_TO_AGENT: Partial<Record<string, TuiAgent>> = {

@@ -64,7 +64,7 @@ const CARD = {
   worktreeId: 'worktree-1',
   tabId: 'tab-1',
   leafId: 'leaf-1',
-  repoName: 'Orca',
+  repoName: 'AIO-ADE',
   worktreeName: 'Dashboard',
   startedAt: 1,
   finishedAt: null,

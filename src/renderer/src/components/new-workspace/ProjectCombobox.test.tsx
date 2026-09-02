@@ -34,19 +34,19 @@ let root: Root
 const projects: NewWorkspaceProjectOption[] = [
   {
     kind: 'project',
-    id: 'github:stablyai/orca',
-    projectId: 'github:stablyai/orca',
-    displayName: 'orca',
+    id: 'github:keepmeside/aio-ade-platform',
+    projectId: 'github:keepmeside/aio-ade-platform',
+    displayName: 'aio-ade',
     badgeColor: '#111111',
-    detail: 'stablyai/orca'
+    detail: 'keepmeside/aio-ade-platform'
   },
   {
     kind: 'project',
-    id: 'github:stablyai/noqa',
-    projectId: 'github:stablyai/noqa',
+    id: 'github:keepmeside/noqa',
+    projectId: 'github:keepmeside/noqa',
     displayName: 'noqa',
     badgeColor: '#222222',
-    detail: 'stablyai/noqa'
+    detail: 'keepmeside/noqa'
   },
   {
     kind: 'project-group',
@@ -112,12 +112,16 @@ describe('ProjectCombobox', () => {
   it('renders a logical project label without host-specific SSH chrome', () => {
     act(() => {
       root.render(
-        <ProjectCombobox options={projects} value="github:stablyai/orca" onValueChange={vi.fn()} />
+        <ProjectCombobox
+          options={projects}
+          value="github:keepmeside/aio-ade-platform"
+          onValueChange={vi.fn()}
+        />
       )
     })
 
     const shell = container.querySelector('[data-project-combobox-root="true"]')
-    expect(shell?.textContent).toContain('orca')
+    expect(shell?.textContent).toContain('aio-ade')
     expect(shell?.textContent).not.toContain('SSH')
   })
 
@@ -143,17 +147,17 @@ describe('ProjectCombobox', () => {
       root.render(
         <ProjectCombobox
           options={projects}
-          value="github:stablyai/orca"
+          value="github:keepmeside/aio-ade-platform"
           onValueChange={onValueChange}
         />
       )
     })
     openList()
     act(() => {
-      rowFor('stablyai/noqa').dispatchEvent(new MouseEvent('click', { bubbles: true }))
+      rowFor('keepmeside/noqa').dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
 
-    expect(onValueChange).toHaveBeenCalledWith('github:stablyai/noqa')
+    expect(onValueChange).toHaveBeenCalledWith('github:keepmeside/noqa')
   })
 
   it('renders and selects project-group options', () => {
@@ -285,8 +289,8 @@ describe('ProjectCombobox', () => {
     expect(container.querySelectorAll('input')).toHaveLength(1)
 
     type('noq')
-    expect(container.textContent).toContain('stablyai/noqa')
-    expect(container.textContent).not.toContain('stablyai/orca')
+    expect(container.textContent).toContain('keepmeside/noqa')
+    expect(container.textContent).not.toContain('keepmeside/aio-ade-platform')
   })
 
   it('commits the armed row on Enter', () => {
@@ -309,8 +313,8 @@ describe('ProjectCombobox', () => {
       field().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
     })
 
-    expect(onValueChange).toHaveBeenCalledWith('github:stablyai/noqa')
-    expect(onValueSelected).toHaveBeenCalledWith('github:stablyai/noqa')
+    expect(onValueChange).toHaveBeenCalledWith('github:keepmeside/noqa')
+    expect(onValueSelected).toHaveBeenCalledWith('github:keepmeside/noqa')
   })
 
   it('arms "Add a new project" when a query matches nothing, so Enter is never a wrong guess', () => {
@@ -340,7 +344,11 @@ describe('ProjectCombobox', () => {
   it('restores the committed project on Escape instead of stranding a stale query', () => {
     act(() => {
       root.render(
-        <ProjectCombobox options={projects} value="github:stablyai/orca" onValueChange={vi.fn()} />
+        <ProjectCombobox
+          options={projects}
+          value="github:keepmeside/aio-ade-platform"
+          onValueChange={vi.fn()}
+        />
       )
     })
     openList()
@@ -361,13 +369,17 @@ describe('ProjectCombobox', () => {
 
     expect(field().value).toBe('')
     const shell = container.querySelector('[data-project-combobox-root="true"]')
-    expect(shell?.textContent).toContain('orca')
+    expect(shell?.textContent).toContain('aio-ade')
   })
 
   it('drops an uncommitted query when the list closes, so junk text never persists', () => {
     act(() => {
       root.render(
-        <ProjectCombobox options={projects} value="github:stablyai/orca" onValueChange={vi.fn()} />
+        <ProjectCombobox
+          options={projects}
+          value="github:keepmeside/aio-ade-platform"
+          onValueChange={vi.fn()}
+        />
       )
     })
     openList()
@@ -383,7 +395,7 @@ describe('ProjectCombobox', () => {
 
     expect(field().value).toBe('')
     const shell = container.querySelector('[data-project-combobox-root="true"]')
-    expect(shell?.textContent).toContain('orca')
+    expect(shell?.textContent).toContain('aio-ade')
   })
 
   it('marks the field invalid so a failed create press can turn it red', () => {
@@ -413,7 +425,7 @@ describe('ProjectCombobox', () => {
       projectId: `project-${index}`,
       displayName: `svc-${index}`,
       badgeColor: '#111111',
-      detail: `stablyai/svc-${index}`
+      detail: `keepmeside/svc-${index}`
     })),
     {
       kind: 'project-group',

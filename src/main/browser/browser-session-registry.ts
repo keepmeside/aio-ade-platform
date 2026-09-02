@@ -12,13 +12,14 @@ import {
   writeFileSync
 } from 'node:fs'
 import { dirname, join } from 'node:path'
-import { ORCA_BROWSER_PARTITION } from '../../shared/constants'
+import { AIO_ADE_BROWSER_PARTITION } from '../../shared/constants'
 import {
-  DEFAULT_LOCAL_ORCA_PROFILE_ID,
-  getOrcaProfileBrowserDefaultPartition,
-  getOrcaProfileBrowserPartitionSegment,
-  getOrcaProfileBrowserSessionPartition
-} from '../../shared/orca-profiles'
+  DEFAULT_LOCAL_AIO_ADE_PROFILE_ID,
+  DEFAULT_PROFILE_BROWSER_SESSION_PARTITION_PREFIX,
+  getAioAdeProfileBrowserDefaultPartition,
+  getAioAdeProfileBrowserPartitionSegment,
+  getAioAdeProfileBrowserSessionPartition
+} from '../../shared/aio-ade-profiles'
 import type { BrowserSessionProfile, BrowserSessionProfileScope } from '../../shared/types'
 import { browserManager } from './browser-manager'
 import { hasSystemMediaAccess, requestSystemMediaAccess } from './browser-media-access'
@@ -41,30 +42,33 @@ type BrowserSessionMeta = {
 }
 
 export type BrowserSessionRegistryProfileOptions = {
-  orcaProfileId: string
+  aioAdeProfileId: string
   profileDirectory: string
 }
 
 const BROWSER_SESSION_META_FILE_NAME = 'browser-session-meta.json'
-const LEGACY_BROWSER_SESSION_PARTITION_RE =
-  /^persist:orca-browser-session-[\da-f-]{8}-[\da-f-]{4}-[\da-f-]{4}-[\da-f-]{4}-[\da-f-]{12}$/
+// Built from the creating side's prefix so the two can't drift into a state where the app rejects
+// partitions it just created. Suffix is the browser-session profile UUID.
+const LEGACY_BROWSER_SESSION_PARTITION_RE = new RegExp(
+  `^${DEFAULT_PROFILE_BROWSER_SESSION_PARTITION_PREFIX}[\\da-f-]{8}-[\\da-f-]{4}-[\\da-f-]{4}-[\\da-f-]{4}-[\\da-f-]{12}$`
+)
 
 // Why: source of truth for valid partitions; will-attach-webview consults it so a compromised renderer can't smuggle in an arbitrary partition.
 
 class BrowserSessionRegistry {
   private readonly profiles = new Map<string, BrowserSessionProfile>()
-  private activeOrcaProfileId = DEFAULT_LOCAL_ORCA_PROFILE_ID
+  private activeAioAdeProfileId = DEFAULT_LOCAL_AIO_ADE_PROFILE_ID
   private metadataPathOverride: string | null = null
-  private defaultPartition = ORCA_BROWSER_PARTITION
+  private defaultPartition = AIO_ADE_BROWSER_PARTITION
 
   constructor() {
     this.resetDefaultProfile()
   }
 
-  configureForOrcaProfile(options: BrowserSessionRegistryProfileOptions): void {
-    this.activeOrcaProfileId = options.orcaProfileId
+  configureForAioAdeProfile(options: BrowserSessionRegistryProfileOptions): void {
+    this.activeAioAdeProfileId = options.aioAdeProfileId
     this.metadataPathOverride = join(options.profileDirectory, BROWSER_SESSION_META_FILE_NAME)
-    this.defaultPartition = getOrcaProfileBrowserDefaultPartition(options.orcaProfileId)
+    this.defaultPartition = getAioAdeProfileBrowserDefaultPartition(options.aioAdeProfileId)
     this.profiles.clear()
     this.resetDefaultProfile()
   }
@@ -354,7 +358,7 @@ class BrowserSessionRegistry {
 
   resolveKnownPartition(profileId: string | null | undefined): string | null {
     if (!profileId) {
-      // Why: use the active Orca profile's default partition, not the legacy constant, or profiles resolve local-default's cookie jar.
+      // Why: use the active AIO-ADE profile's default partition, not the legacy constant, or profiles resolve local-default's cookie jar.
       return this.defaultPartition
     }
     return this.profiles.get(profileId)?.partition ?? null
@@ -367,7 +371,7 @@ class BrowserSessionRegistry {
     }
     const id = randomUUID()
     // Why: deterministic partition-from-id lets main rebuild the allowlist on restart without a separate partition→profile map.
-    const partition = getOrcaProfileBrowserSessionPartition(this.activeOrcaProfileId, id)
+    const partition = getAioAdeProfileBrowserSessionPartition(this.activeAioAdeProfileId, id)
     const profile: BrowserSessionProfile = {
       id,
       scope,
@@ -477,14 +481,14 @@ class BrowserSessionRegistry {
 
   private isProfileOwnedSessionPartition(partition: string): boolean {
     if (
-      this.activeOrcaProfileId === DEFAULT_LOCAL_ORCA_PROFILE_ID &&
+      this.activeAioAdeProfileId === DEFAULT_LOCAL_AIO_ADE_PROFILE_ID &&
       LEGACY_BROWSER_SESSION_PARTITION_RE.test(partition)
     ) {
       return true
     }
 
-    const segment = getOrcaProfileBrowserPartitionSegment(this.activeOrcaProfileId)
-    const prefix = `persist:orca-profile-${segment}-browser-session-`
+    const segment = getAioAdeProfileBrowserPartitionSegment(this.activeAioAdeProfileId)
+    const prefix = `persist:aio-ade-profile-${segment}-browser-session-`
     if (!partition.startsWith(prefix)) {
       return false
     }

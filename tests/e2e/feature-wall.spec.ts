@@ -1,4 +1,4 @@
-import { test, expect } from './helpers/orca-app'
+import { test, expect } from './helpers/aio-ade-app'
 import { getStoreState, waitForSessionReady } from './helpers/store'
 import type { ElectronApplication } from '@stablyai/playwright-test'
 
@@ -6,10 +6,10 @@ async function openFeatureTourFromMenu(electronApp: ElectronApplication): Promis
   await electronApp.evaluate(({ BrowserWindow, Menu }) => {
     const featureTourItem = Menu.getApplicationMenu()
       ?.items.find((item) => item.label === 'Help')
-      ?.submenu?.items.find((item) => item.label === 'Explore Orca')
+      ?.submenu?.items.find((item) => item.label === 'Explore AIO-ADE')
 
     if (!featureTourItem) {
-      throw new Error('Explore Orca menu item was not registered')
+      throw new Error('Explore AIO-ADE menu item was not registered')
     }
 
     const window = BrowserWindow.getAllWindows()[0]
@@ -24,36 +24,36 @@ async function openFeatureTourFromMenu(electronApp: ElectronApplication): Promis
 }
 
 test.describe('Feature tour modal', () => {
-  test.beforeEach(async ({ orcaPage }) => {
-    await waitForSessionReady(orcaPage)
+  test.beforeEach(async ({ aioAdePage }) => {
+    await waitForSessionReady(aioAdePage)
   })
 
   test('opens from the Help menu and renders the workflow rail', async ({
     electronApp,
-    orcaPage
+    aioAdePage
   }) => {
     await openFeatureTourFromMenu(electronApp)
 
-    await expect(orcaPage.getByRole('dialog', { name: 'Get to know Orca' })).toBeVisible({
+    await expect(aioAdePage.getByRole('dialog', { name: 'Get to know AIO-ADE' })).toBeVisible({
       timeout: 10_000
     })
-    await expect(orcaPage.getByText('Reopen any time from Help > Explore Orca.')).toBeVisible()
+    await expect(aioAdePage.getByText('Reopen any time from Help > Explore AIO-ADE.')).toBeVisible()
 
     // Five workflow rows in the rail.
-    const rail = orcaPage.getByRole('navigation', { name: 'Workflows' })
+    const rail = aioAdePage.getByRole('navigation', { name: 'Workflows' })
     await expect(rail.getByRole('tab')).toHaveCount(5)
     await expect(rail.getByRole('tab', { name: /Workspaces/i })).toHaveAttribute(
       'aria-selected',
       'true'
     )
 
-    await expect(orcaPage.locator('[data-ws-id]')).toHaveCount(3)
+    await expect(aioAdePage.locator('[data-ws-id]')).toHaveCount(3)
 
     // ArrowDown moves selection through the rail.
     await rail.getByRole('tab', { name: /Workspaces/i }).focus()
-    await orcaPage.keyboard.press('ArrowDown')
+    await aioAdePage.keyboard.press('ArrowDown')
     await expect(rail.getByRole('tab', { name: /Tasks/i })).toHaveAttribute('aria-selected', 'true')
-    await orcaPage.keyboard.press('ArrowDown')
+    await aioAdePage.keyboard.press('ArrowDown')
     await expect(rail.getByRole('tab', { name: /Agents/i })).toHaveAttribute(
       'aria-selected',
       'true'
@@ -62,20 +62,22 @@ test.describe('Feature tour modal', () => {
     await rail.getByRole('tab', { name: /Workbench/i }).click()
     await rail.getByRole('button', { name: /Browser/i }).click()
     await expect(
-      orcaPage.getByText(
-        "Run your app in Orca's browser, send selected UI elements to agents, and let your agents interact with your webpage."
+      aioAdePage.getByText(
+        "Run your app in AIO-ADE's browser, send selected UI elements to agents, and let your agents interact with your webpage."
       )
     ).toBeVisible()
-    await expect(orcaPage.getByRole('heading', { name: 'Browser Use skill' })).toBeVisible()
+    await expect(aioAdePage.getByRole('heading', { name: 'Browser Use skill' })).toBeVisible()
     await expect(
-      orcaPage.getByText("Enables agents to navigate and verify pages in Orca's browser.")
+      aioAdePage.getByText("Enables agents to navigate and verify pages in AIO-ADE's browser.")
     ).toBeVisible()
-    await expect(orcaPage.getByRole('heading', { name: 'CLI skill' })).toHaveCount(0)
-    await expect(orcaPage.getByText('With the Orca CLI skill', { exact: false })).toHaveCount(0)
+    await expect(aioAdePage.getByRole('heading', { name: 'CLI skill' })).toHaveCount(0)
+    await expect(aioAdePage.getByText('With the AIO-ADE CLI skill', { exact: false })).toHaveCount(
+      0
+    )
   })
 
-  test('shows unified task copy without leaving the walkthrough', async ({ orcaPage }) => {
-    await orcaPage.evaluate(() => {
+  test('shows unified task copy without leaving the walkthrough', async ({ aioAdePage }) => {
+    await aioAdePage.evaluate(() => {
       const store = window.__store
       if (!store) {
         throw new Error('window.__store is not available')
@@ -109,25 +111,25 @@ test.describe('Feature tour modal', () => {
       store.getState().openModal('feature-wall', { source: 'help_menu' })
     })
 
-    await expect(orcaPage.getByRole('dialog', { name: 'Get to know Orca' })).toBeVisible({
+    await expect(aioAdePage.getByRole('dialog', { name: 'Get to know AIO-ADE' })).toBeVisible({
       timeout: 10_000
     })
-    await orcaPage
+    await aioAdePage
       .getByRole('navigation', { name: 'Workflows' })
       .getByRole('tab', { name: /Tasks/i })
       .click()
-    await expect(orcaPage.getByText('Start work directly from GitHub or Linear.')).toBeVisible()
-    await expect(orcaPage.getByText('Connect GitHub or Linear once')).toHaveCount(0)
-    await expect(orcaPage.getByRole('dialog', { name: 'Get to know Orca' })).toBeVisible()
+    await expect(aioAdePage.getByText('Start work directly from GitHub or Linear.')).toBeVisible()
+    await expect(aioAdePage.getByText('Connect GitHub or Linear once')).toHaveCount(0)
+    await expect(aioAdePage.getByRole('dialog', { name: 'Get to know AIO-ADE' })).toBeVisible()
     await expect
-      .poll(async () => getStoreState<string>(orcaPage, 'activeView'))
+      .poll(async () => getStoreState<string>(aioAdePage, 'activeView'))
       .not.toBe('settings')
   })
 
   test('continue advances through workflow substeps before the next workflow', async ({
-    orcaPage
+    aioAdePage
   }) => {
-    await orcaPage.evaluate(() => {
+    await aioAdePage.evaluate(() => {
       const store = window.__store
       if (!store) {
         throw new Error('window.__store is not available')
@@ -135,8 +137,8 @@ test.describe('Feature tour modal', () => {
       store.getState().openModal('feature-wall', { source: 'help_menu' })
     })
 
-    const rail = orcaPage.getByRole('navigation', { name: 'Workflows' })
-    const continueButton = orcaPage.getByRole('button', { name: /^Continue/ })
+    const rail = aioAdePage.getByRole('navigation', { name: 'Workflows' })
+    const continueButton = aioAdePage.getByRole('button', { name: /^Continue/ })
 
     await continueButton.click()
     await expect(rail.getByRole('tab', { name: /Tasks/i })).toHaveAttribute('aria-selected', 'true')
@@ -179,18 +181,18 @@ test.describe('Feature tour modal', () => {
   })
 
   test('does not pre-check configured workflows until the user visits them', async ({
-    orcaPage
+    aioAdePage
   }) => {
-    await orcaPage.evaluate(() => {
+    await aioAdePage.evaluate(() => {
       for (const key of [
-        'orca.featureWall.visitedWorkflows.v1',
-        'orca.featureWall.visitedAgentSteps.v1',
-        'orca.featureWall.visitedWorkbenchSteps.v1',
-        'orca.featureWall.visitedReviewSteps.v1',
-        'orca.featureWall.completedWorkflows.v1',
-        'orca.featureWall.completedAgentSteps.v1',
-        'orca.featureWall.completedWorkbenchSteps.v1',
-        'orca.featureWall.completedReviewSteps.v1'
+        'aio-ade.featureWall.visitedWorkflows.v1',
+        'aio-ade.featureWall.visitedAgentSteps.v1',
+        'aio-ade.featureWall.visitedWorkbenchSteps.v1',
+        'aio-ade.featureWall.visitedReviewSteps.v1',
+        'aio-ade.featureWall.completedWorkflows.v1',
+        'aio-ade.featureWall.completedAgentSteps.v1',
+        'aio-ade.featureWall.completedWorkbenchSteps.v1',
+        'aio-ade.featureWall.completedReviewSteps.v1'
       ]) {
         localStorage.removeItem(key)
       }
@@ -227,7 +229,7 @@ test.describe('Feature tour modal', () => {
       store.getState().openModal('feature-wall', { source: 'help_menu' })
     })
 
-    const rail = orcaPage.getByRole('navigation', { name: 'Workflows' })
+    const rail = aioAdePage.getByRole('navigation', { name: 'Workflows' })
     const workspacesTab = rail.locator('[data-feature-wall-workflow-id="workspaces"]')
     const tasksTab = rail.locator('[data-feature-wall-workflow-id="tasks"]')
     await expect(workspacesTab.locator('[aria-label="Completed"]')).toHaveCount(1)
@@ -238,15 +240,15 @@ test.describe('Feature tour modal', () => {
   })
 
   test('keeps persisted completed setup-backed substeps checked when reopened', async ({
-    orcaPage
+    aioAdePage
   }) => {
-    await orcaPage.evaluate(() => {
+    await aioAdePage.evaluate(() => {
       localStorage.setItem(
-        'orca.featureWall.completedAgentSteps.v1',
+        'aio-ade.featureWall.completedAgentSteps.v1',
         JSON.stringify(['orchestration'])
       )
       localStorage.setItem(
-        'orca.featureWall.completedWorkbenchSteps.v1',
+        'aio-ade.featureWall.completedWorkbenchSteps.v1',
         JSON.stringify(['browser'])
       )
       const store = window.__store
@@ -256,7 +258,7 @@ test.describe('Feature tour modal', () => {
       store.getState().openModal('feature-wall', { source: 'help_menu' })
     })
 
-    const rail = orcaPage.getByRole('navigation', { name: 'Workflows' })
+    const rail = aioAdePage.getByRole('navigation', { name: 'Workflows' })
 
     await rail.getByRole('tab', { name: /Agents/i }).click()
     await expect(

@@ -13,7 +13,7 @@ export type TerminalKeyboardProtocolContext = WindowsPtyCompatibilityContext & {
  * Whether the Kitty enhanced keyboard protocol (CSI-u) must be withheld from a
  * pane's xterm advertisement.
  *
- * Why: Orca's default options advertise `vtExtensions.kittyKeyboard` so probing
+ * Why: AIO-ADE's default options advertise `vtExtensions.kittyKeyboard` so probing
  * CLIs enable enhanced key reporting. But local native Windows shells are backed
  * by ConPTY, where a CLI can read the advertisement without decoding CSI-u and
  * then ignore Enter/Up/Down and other navigation keys. Disabling the

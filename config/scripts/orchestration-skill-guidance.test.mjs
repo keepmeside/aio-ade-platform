@@ -25,27 +25,27 @@ function getSection(markdown, heading) {
 }
 
 describe('orchestration skill guidance', () => {
-  it('requires Orca runtime state before claiming a worker was orchestrated', () => {
+  it('requires AIO-ADE runtime state before claiming a worker was orchestrated', () => {
     const skill = readSkill()
     const toolBoundary = getSection(skill, 'Tool Boundary')
 
     expect(toolBoundary).toContain('must create or bind a Run')
-    expect(toolBoundary).toContain('create the Task with `orca orchestration task-create`')
-    expect(toolBoundary).toContain('preferred `orca orchestration worker-start` composition')
-    expect(toolBoundary).toContain('low-level `orca orchestration dispatch --inject` path')
-    expect(toolBoundary).not.toContain('or `orca orchestration run`')
+    expect(toolBoundary).toContain('create the Task with `aio-ade orchestration task-create`')
+    expect(toolBoundary).toContain('preferred `aio-ade orchestration worker-start` composition')
+    expect(toolBoundary).toContain('low-level `aio-ade orchestration dispatch --inject` path')
+    expect(toolBoundary).not.toContain('or `aio-ade orchestration run`')
     expect(skill).toContain(
       '`coordinator-start`, `coordinator-stop`, `run`, and `run-stop` are retired scheduler commands'
     )
     expect(toolBoundary).toContain(
-      'Do not substitute non-Orca subagent tools, generic agent-spawn APIs, or chat-only parallel worker features'
+      'Do not substitute non-AIO-ADE subagent tools, generic agent-spawn APIs, or chat-only parallel worker features'
     )
-    expect(toolBoundary).toContain('do not create Orca task/dispatch provenance')
+    expect(toolBoundary).toContain('do not create AIO-ADE task/dispatch provenance')
     expect(toolBoundary).toContain('injected lifecycle preambles')
     expect(toolBoundary).toContain('`worker_done` authority')
     expect(toolBoundary).toContain('decision gates')
-    expect(toolBoundary).toContain('orca orchestration task-list --json')
-    expect(toolBoundary).toContain('orca orchestration dispatch-show --task <task_id> --json')
+    expect(toolBoundary).toContain('aio-ade orchestration task-list --json')
+    expect(toolBoundary).toContain('aio-ade orchestration dispatch-show --task <task_id> --json')
     expect(toolBoundary).toContain(
       'do not retroactively describe the external worker as orchestrated'
     )
@@ -94,7 +94,7 @@ describe('orchestration skill guidance', () => {
 
     expect(skill).toContain('Full handoff means ownership transfer, not supervised dispatch.')
     expect(fullHandoffs).toContain(
-      'Do not run `orca orchestration task-create`, `orca orchestration dispatch --inject`, or `orca orchestration check --wait` for full handoffs.'
+      'Do not run `aio-ade orchestration task-create`, `aio-ade orchestration dispatch --inject`, or `aio-ade orchestration check --wait` for full handoffs.'
     )
     expect(fullHandoffs).toContain(
       '`task-create` is also forbidden because it records coordinator-owned tracking state'
@@ -104,16 +104,16 @@ describe('orchestration skill guidance', () => {
       'read the worker terminal after prompt delivery except to avoid losing the initial prompt'
     )
     expect(skill).toContain(
-      '`--no-parent` only controls Orca lineage; it does not choose the Git base.'
+      '`--no-parent` only controls AIO-ADE lineage; it does not choose the Git base.'
     )
     expect(skill).toContain(
       'never base it on the current feature branch unless the user explicitly asks'
     )
     expect(skill).toContain(
-      'orca worktree create --name <task-name> --no-parent --agent codex --prompt'
+      'aio-ade worktree create --name <task-name> --no-parent --agent codex --prompt'
     )
     expect(fullHandoffs).toContain(
-      'Before creating a new worktree from an active feature branch, decide and state whether the desired Orca lineage is child or top-level'
+      'Before creating a new worktree from an active feature branch, decide and state whether the desired AIO-ADE lineage is child or top-level'
     )
     expect(fullHandoffs).toContain(
       'Use child worktree lineage only when the new work is conceptually stacked under or dependent on the active worktree'
@@ -218,7 +218,7 @@ describe('orchestration skill guidance', () => {
 
     expect(agentGuidance).toContain('After sending `worker_done`, end your turn')
     expect(agentGuidance).toContain('idle at the agent prompt')
-    expect(agentGuidance).toContain('Do not poll or keep calling `orca orchestration check`')
+    expect(agentGuidance).toContain('Do not poll or keep calling `aio-ade orchestration check`')
     expect(agentGuidance).toContain('fresh preamble + TASK block delivered as new terminal input')
     expect(skill).not.toContain('post-completion polling messages')
     expect(skill).not.toContain('every 2 minutes')
@@ -243,7 +243,7 @@ describe('orchestration skill guidance', () => {
     const messaging = getSection(skill, 'Messaging')
     const workerTerminals = getSection(skill, 'Worker Terminals')
     const agentFirstExample = workerTerminals.match(
-      /```bash\norca worktree create --name <task-name> --agent codex --setup run --json\n[\s\S]*?```/
+      /```bash\naio-ade worktree create --name <task-name> --agent codex --setup run --json\n[\s\S]*?```/
     )?.[0]
 
     expect(workerTerminals).toContain('For an allowed new worktree, use agent-first:')
@@ -258,7 +258,7 @@ describe('orchestration skill guidance', () => {
     expect(workerTerminals).not.toContain('bare create opens a default shell')
     expect(workerTerminals).not.toContain('ends with **one** agent tab')
     expect(agentFirstExample).toBeDefined()
-    expect(agentFirstExample).not.toContain('orca terminal list')
+    expect(agentFirstExample).not.toContain('aio-ade terminal list')
     expect(agentFirstExample).toContain('agentTerminalHandle')
     expect(agentFirstExample).toContain('startupTerminal.handle')
     expect(messaging).toContain('Prefer `agentTerminalHandle` from the create response')
@@ -273,20 +273,20 @@ describe('orchestration install stub', () => {
     const stub = readFileSync(stubPath, 'utf8')
 
     expect(stub).toContain('discovery stub')
-    expect(stub).toContain('ORCA skills get orchestration')
-    // The safe CLI-resolution contract must survive in the stub, never a bare `orca`.
-    expect(stub).toContain('ORCA_CLI_COMMAND')
-    expect(stub).toContain('orca-dev')
-    expect(stub).toContain('orca-ide')
+    expect(stub).toContain('AIO_ADE skills get orchestration')
+    // The safe CLI-resolution contract must survive in the stub, never a bare `aio-ade`.
+    expect(stub).toContain('AIO_ADE_CLI_COMMAND')
+    expect(stub).toContain('aio-ade-dev')
+    expect(stub).toContain('aio-ade')
     expect(stub).toContain('GNOME Orca screen reader')
-    expect(stub).not.toMatch(/^orca /mu)
+    expect(stub).not.toMatch(/^aio-ade /mu)
   })
 
   it('does not tell agents to mutate orchestration state before loading the guide', () => {
     const preGuide = readFileSync(stubPath, 'utf8').split('## Load the full guide')[0]
 
-    expect(preGuide).not.toContain('orca orchestration task-create')
-    expect(preGuide).not.toContain('orca orchestration dispatch')
+    expect(preGuide).not.toContain('aio-ade orchestration task-create')
+    expect(preGuide).not.toContain('aio-ade orchestration dispatch')
   })
 
   it('gives older binaries a bounded fallback instead of a dead end', () => {

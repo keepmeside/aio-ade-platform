@@ -51,7 +51,7 @@ async function writeClaudeSession(args: {
 
 describe('scanAiVaultSessions scope inclusion', () => {
   it('surfaces in-scope sessions older than the global recency cap', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'orca-ai-vault-scope-'))
+    const root = await mkdtemp(join(tmpdir(), 'aio-ade-ai-vault-scope-'))
     tempRoots.push(root)
     const claudeRoot = join(root, 'claude-projects')
 
@@ -100,7 +100,7 @@ describe('scanAiVaultSessions scope inclusion', () => {
   })
 
   it('does not duplicate sessions already in the capped result', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'orca-ai-vault-scope-'))
+    const root = await mkdtemp(join(tmpdir(), 'aio-ade-ai-vault-scope-'))
     tempRoots.push(root)
     const claudeRoot = join(root, 'claude-projects')
 
@@ -121,7 +121,7 @@ describe('scanAiVaultSessions scope inclusion', () => {
   })
 
   it('matches WSL UNC scope paths against Linux Claude cwd values', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'orca-ai-vault-scope-'))
+    const root = await mkdtemp(join(tmpdir(), 'aio-ade-ai-vault-scope-'))
     tempRoots.push(root)
     const claudeRoot = join(root, 'claude-projects')
 

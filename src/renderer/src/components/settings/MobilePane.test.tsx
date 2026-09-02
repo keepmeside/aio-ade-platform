@@ -22,7 +22,7 @@ type PairedDevicesProps = {
 }
 
 type StoreState = {
-  orcaProfileAuthStatus: { state: 'connected' | 'local' }
+  aioAdeProfileAuthStatus: { state: 'connected' | 'local' }
   settings: {
     mobileAutoRestoreFitMs: number | null
     mobilePairingConnectionMode?: MobilePairingConnectionMode
@@ -139,7 +139,7 @@ describe('MobilePane pairing connection mode', () => {
     getPairingQR.mockReset().mockResolvedValue({
       available: true,
       qrDataUrl: 'data:image/png;base64,qr',
-      pairingUrl: 'orca://pair',
+      pairingUrl: 'aio-ade://pair',
       endpoint: 'ws://host',
       connectionMode: 'automatic'
     })
@@ -148,7 +148,7 @@ describe('MobilePane pairing connection mode', () => {
     mocks.revokeDevice.mockReset().mockResolvedValue({ revoked: true })
     updateSettings.mockReset().mockResolvedValue(undefined)
     mocks.holder.state = {
-      orcaProfileAuthStatus: { state: 'connected' },
+      aioAdeProfileAuthStatus: { state: 'connected' },
       settings: { mobileAutoRestoreFitMs: null },
       updateSettings,
       recordFeatureInteraction: vi.fn()
@@ -183,7 +183,7 @@ describe('MobilePane pairing connection mode', () => {
   })
 
   it('keeps Anywhere selected but blocks generation when signed out', async () => {
-    mocks.holder.state.orcaProfileAuthStatus = { state: 'local' }
+    mocks.holder.state.aioAdeProfileAuthStatus = { state: 'local' }
     const user = userEvent.setup()
     render(<MobilePane />)
     expect(screen.getByTestId('mode')).toHaveTextContent('automatic')
@@ -201,7 +201,7 @@ describe('MobilePane pairing connection mode', () => {
     getPairingQR.mockResolvedValue({
       available: true,
       qrDataUrl: 'data:image/png;base64,qr',
-      pairingUrl: 'orca://pair#degraded',
+      pairingUrl: 'aio-ade://pair#degraded',
       endpoint: 'ws://host',
       // Relay provisioning failed server-side; the offer encodes local-only.
       connectionMode: 'local-only'
@@ -237,7 +237,7 @@ describe('MobilePane pairing connection mode', () => {
       available: true,
       qrDataUrl: null,
       qrError: 'encoding_failed',
-      pairingUrl: 'orca://pair?code=copy-fallback',
+      pairingUrl: 'aio-ade://pair?code=copy-fallback',
       endpoint: 'wss://host.example/large',
       connectionMode: 'automatic'
     })
@@ -282,7 +282,7 @@ describe('MobilePane pairing connection mode', () => {
     await waitFor(() => expect(getPairingQR).toHaveBeenCalledWith({ connectionMode: 'automatic' }))
 
     // Sign out while the Relay mint is still in flight.
-    mocks.holder.state.orcaProfileAuthStatus = { state: 'local' }
+    mocks.holder.state.aioAdeProfileAuthStatus = { state: 'local' }
     rerender(<MobilePane />)
 
     // The superseded response arrives; it must not paint a QR on a desktop that
@@ -290,7 +290,7 @@ describe('MobilePane pairing connection mode', () => {
     resolveQr?.({
       available: true,
       qrDataUrl: 'data:image/png;base64,relay',
-      pairingUrl: 'orca://relay',
+      pairingUrl: 'aio-ade://relay',
       endpoint: 'ws://relay'
     })
     await new Promise((resolve) => setTimeout(resolve, 10))
@@ -314,7 +314,7 @@ describe('MobilePane pairing connection mode', () => {
 
     // Sign out while the Relay mint is still in flight; the superseded request
     // must drop loading so Generate isn't wedged disabled forever.
-    mocks.holder.state.orcaProfileAuthStatus = { state: 'local' }
+    mocks.holder.state.aioAdeProfileAuthStatus = { state: 'local' }
     rerender(<MobilePane />)
     await waitFor(() => expect(screen.getByTestId('loading')).toHaveTextContent('false'))
 
@@ -322,7 +322,7 @@ describe('MobilePane pairing connection mode', () => {
     resolveQr?.({
       available: true,
       qrDataUrl: 'data:image/png;base64,relay',
-      pairingUrl: 'orca://relay',
+      pairingUrl: 'aio-ade://relay',
       endpoint: 'ws://relay'
     })
     await new Promise((resolve) => setTimeout(resolve, 10))
@@ -385,7 +385,7 @@ describe('MobilePane pairing connection mode', () => {
     resolveQr?.({
       available: true,
       qrDataUrl: 'data:image/png;base64,relay',
-      pairingUrl: 'orca://relay',
+      pairingUrl: 'aio-ade://relay',
       endpoint: 'ws://relay'
     })
     await new Promise((resolve) => setTimeout(resolve, 10))
@@ -431,7 +431,7 @@ describe('MobilePane', () => {
     mocks.getPairingQR.mockReset().mockResolvedValue({
       available: true,
       qrDataUrl: 'data:image/png;base64,qr',
-      pairingUrl: 'orca://pair',
+      pairingUrl: 'aio-ade://pair',
       endpoint: 'ws://host'
     })
     mocks.listDevices.mockReset()
@@ -439,7 +439,7 @@ describe('MobilePane', () => {
     mocks.revokeDevice.mockReset()
     mocks.updateSettings.mockReset().mockResolvedValue(undefined)
     mocks.holder.state = {
-      orcaProfileAuthStatus: { state: 'connected' },
+      aioAdeProfileAuthStatus: { state: 'connected' },
       settings: { mobileAutoRestoreFitMs: null },
       updateSettings: mocks.updateSettings,
       recordFeatureInteraction: vi.fn()

@@ -1,5 +1,5 @@
-import type { OrcaCloudAuthConfig } from '../../orca-profiles/profile-cloud-auth-config'
-import type { MobilePairingConnectionContext, OrcaRuntimeRpcServer } from '../runtime-rpc'
+import type { AioAdeCloudAuthConfig } from '../../aio-ade-profiles/profile-cloud-auth-config'
+import type { MobilePairingConnectionContext, AioAdeRuntimeRpcServer } from '../runtime-rpc'
 import type {
   DeviceCredentialInstalled,
   PairingGetEndpointsParams,
@@ -20,10 +20,10 @@ import { deriveRelayHostId } from './relay-http-client'
 import { RelayDemandLedger } from './relay-demand-ledger'
 
 type DesktopRelayServiceOptions = {
-  authConfig: OrcaCloudAuthConfig
+  authConfig: AioAdeCloudAuthConfig
   userDataPath: string
   appVersion: string
-  runtimeRpc: OrcaRuntimeRpcServer
+  runtimeRpc: AioAdeRuntimeRpcServer
   onStatus: (status: RelayBrokerStatus) => void
 }
 
@@ -45,7 +45,7 @@ export function pairingAuthorizationForContext(
 export class DesktopRelayService {
   private readonly coordinator: RelayAuthCoordinator
   private readonly revokeOutbox: RelayRevokeOutbox
-  private readonly runtimeRpc: OrcaRuntimeRpcServer
+  private readonly runtimeRpc: AioAdeRuntimeRpcServer
   private readonly demandLedger: RelayDemandLedger
   private demandExpiryTimer: ReturnType<typeof setTimeout> | null = null
   private stopped = false

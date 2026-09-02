@@ -126,7 +126,7 @@ jobs:
             tar -xzf "$archive" -C "$source" --strip-components=1
             make -C "$source" -j"$(nproc)" \
               NO_GETTEXT=YesPlease NO_TCLTK=YesPlease NO_PYTHON=YesPlease git
-            ORCA_GIT_COMPAT_BINARY="$source/git" ORCA_GIT_COMPAT_VERSION="2.25.5" \
+            AIO_ADE_GIT_COMPAT_BINARY="$source/git" AIO_ADE_GIT_COMPAT_VERSION="2.25.5" \
               pnpm exec vitest run --config config/vitest.config.ts \
               src/shared/git-binary-compatibility.test.ts
           ) &
@@ -138,7 +138,7 @@ jobs:
             (
               image="${spec%%|*}"
               version="${spec#*|}"
-              ORCA_GIT_COMPAT_IMAGE="$image" ORCA_GIT_COMPAT_VERSION="$version" \
+              AIO_ADE_GIT_COMPAT_IMAGE="$image" AIO_ADE_GIT_COMPAT_VERSION="$version" \
                 pnpm exec vitest run --config config/vitest.config.ts \
                 src/shared/git-binary-compatibility.test.ts
             ) &
@@ -259,7 +259,7 @@ jobs:
 
       - name: Package unpacked app
         env:
-          ORCA_REUSE_PREPARED_NATIVE_RUNTIME: '1'
+          AIO_ADE_REUSE_PREPARED_NATIVE_RUNTIME: '1'
         run: pnpm exec electron-builder --config config/electron-builder.config.cjs --dir
 
       - name: Smoke packaged CLI

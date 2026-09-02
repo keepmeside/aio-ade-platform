@@ -9,7 +9,7 @@ import type { MobilePairingConnectionMode } from '../../../../shared/mobile-pair
 
 type StoreState = {
   closeMobilePage: () => void
-  orcaProfileAuthStatus: { state: 'connected' | 'local' }
+  aioAdeProfileAuthStatus: { state: 'connected' | 'local' }
   settings: { showMobileButton: boolean; mobilePairingConnectionMode?: MobilePairingConnectionMode }
   updateSettings: () => Promise<void>
 }
@@ -66,7 +66,7 @@ vi.mock('./MobilePageContent', () => ({
         Continue
       </button>
       <button type="button" onClick={() => props.handleConnectionModeChange('automatic')}>
-        Orca Relay
+        AIO-ADE Relay
       </button>
       <button type="button" onClick={() => props.handleConnectionModeChange('local-only')}>
         LAN
@@ -99,11 +99,11 @@ describe('MobilePage pairing connection mode', () => {
     getPairingQR.mockReset().mockResolvedValue({
       available: true,
       qrDataUrl: 'data:image/png;base64,qr',
-      pairingUrl: 'orca://pair#automatic'
+      pairingUrl: 'aio-ade://pair#automatic'
     })
     mocks.storeState = {
       closeMobilePage: vi.fn(),
-      orcaProfileAuthStatus: { state: 'connected' },
+      aioAdeProfileAuthStatus: { state: 'connected' },
       settings: { showMobileButton: true },
       updateSettings: vi.fn().mockResolvedValue(undefined)
     }
@@ -166,7 +166,7 @@ describe('MobilePage pairing connection mode', () => {
     resolveRotatedLocalQr?.({
       available: true,
       qrDataUrl: 'data:image/png;base64,local-qr',
-      pairingUrl: 'orca://pair#local'
+      pairingUrl: 'aio-ade://pair#local'
     })
     await waitFor(() => expect(screen.getByTestId('pairing-qr')).toHaveTextContent('local-qr'))
   })
@@ -183,7 +183,7 @@ describe('MobilePage pairing connection mode', () => {
   })
 
   it('does not auto-mint any QR when signed out with Anywhere selected', async () => {
-    mocks.storeState.orcaProfileAuthStatus = { state: 'local' }
+    mocks.storeState.aioAdeProfileAuthStatus = { state: 'local' }
     await openPairingStep()
 
     // Aligned with Settings: signed-out Anywhere cannot serve Relay, so we mint
@@ -196,7 +196,7 @@ describe('MobilePage pairing connection mode', () => {
   })
 
   it('mints a local-only QR when switching to LAN while signed out', async () => {
-    mocks.storeState.orcaProfileAuthStatus = { state: 'local' }
+    mocks.storeState.aioAdeProfileAuthStatus = { state: 'local' }
     const user = userEvent.setup()
     await openPairingStep()
     await new Promise((resolve) => setTimeout(resolve, 20))
@@ -210,7 +210,7 @@ describe('MobilePage pairing connection mode', () => {
   })
 
   it('does not remint when switching from Local to Anywhere while signed out', async () => {
-    mocks.storeState.orcaProfileAuthStatus = { state: 'local' }
+    mocks.storeState.aioAdeProfileAuthStatus = { state: 'local' }
     const user = userEvent.setup()
     await openPairingStep()
 
@@ -218,9 +218,9 @@ describe('MobilePage pairing connection mode', () => {
     await waitFor(() => expect(screen.getByTestId('pairing-qr')).toHaveTextContent('base64,qr'))
     getPairingQR.mockClear()
 
-    // Switching back to Orca Relay must clear the local QR, not remint a
+    // Switching back to AIO-ADE Relay must clear the local QR, not remint a
     // local-only code under the Relay label.
-    await user.click(screen.getByRole('button', { name: 'Orca Relay' }))
+    await user.click(screen.getByRole('button', { name: 'AIO-ADE Relay' }))
     await waitFor(() => expect(screen.getByTestId('mode')).toHaveTextContent('automatic'))
     await waitFor(() => expect(screen.getByTestId('pairing-qr')).toHaveTextContent('none'))
     await new Promise((resolve) => setTimeout(resolve, 20))
@@ -229,7 +229,7 @@ describe('MobilePage pairing connection mode', () => {
   })
 
   it('does not mint on address change while signed out with Anywhere selected', async () => {
-    mocks.storeState.orcaProfileAuthStatus = { state: 'local' }
+    mocks.storeState.aioAdeProfileAuthStatus = { state: 'local' }
     const user = userEvent.setup()
     await openPairingStep()
     await new Promise((resolve) => setTimeout(resolve, 20))
@@ -242,7 +242,7 @@ describe('MobilePage pairing connection mode', () => {
   })
 
   it('mints a Relay QR when signing in with Anywhere selected', async () => {
-    mocks.storeState.orcaProfileAuthStatus = { state: 'local' }
+    mocks.storeState.aioAdeProfileAuthStatus = { state: 'local' }
     const user = userEvent.setup()
     const { rerender } = render(<MobilePage />)
     await waitFor(() => expect(screen.getByTestId('stage')).toHaveTextContent('intro'))
@@ -264,7 +264,7 @@ describe('MobilePage pairing connection mode', () => {
     )
 
     // Signing in unlocks Relay, so Step 2 mints an honest Relay QR.
-    mocks.storeState.orcaProfileAuthStatus = { state: 'connected' }
+    mocks.storeState.aioAdeProfileAuthStatus = { state: 'connected' }
     rerender(<MobilePage />)
     await waitFor(() => expect(getPairingQR).toHaveBeenCalledWith({ connectionMode: 'automatic' }))
     // Between the auth flip and the mint resolving, no code may be shown — the
@@ -275,7 +275,7 @@ describe('MobilePage pairing connection mode', () => {
     resolveRelayQr?.({
       available: true,
       qrDataUrl: 'data:image/png;base64,qr',
-      pairingUrl: 'orca://pair#automatic'
+      pairingUrl: 'aio-ade://pair#automatic'
     })
     await waitFor(() => expect(screen.getByTestId('pairing-qr')).toHaveTextContent('base64,qr'))
     expect(screen.getByTestId('mode')).toHaveTextContent('automatic')
@@ -298,7 +298,7 @@ describe('MobilePage pairing connection mode', () => {
       available: true,
       qrDataUrl: null,
       qrError: 'encoding_failed',
-      pairingUrl: 'orca://pair?code=copy-fallback',
+      pairingUrl: 'aio-ade://pair?code=copy-fallback',
       endpoint: 'wss://host.example/large',
       connectionMode: 'automatic'
     })
@@ -318,7 +318,7 @@ describe('MobilePage pairing connection mode', () => {
       available: true,
       qrDataUrl: null,
       qrError: 'encoding_failed',
-      pairingUrl: 'orca://pair?code=copy-fallback',
+      pairingUrl: 'aio-ade://pair?code=copy-fallback',
       endpoint: 'wss://custom.example/large',
       connectionMode: 'automatic'
     })

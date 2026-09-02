@@ -34,7 +34,7 @@ function invokeHandler(mirroredHome: string | null): CodexConfigSyncStatus {
 }
 
 beforeEach(() => {
-  root = mkdtempSync(join(tmpdir(), 'orca-config-sync-ipc-'))
+  root = mkdtempSync(join(tmpdir(), 'aio-ade-config-sync-ipc-'))
   homedirMock.mockReturnValue(root)
   mkdirSync(join(root, '.codex'), { recursive: true })
 })

@@ -1,4 +1,4 @@
-/* Phase-01 safety net (plans/260730-0117-aio-ide-rebrand-and-integration/phase-01).
+/* Proof that a diagnostics export carries no API key, secret reference, or personal path.
  *
  * The 2026-08-21 telemetry decision points diagnostics at a Keepmeside endpoint, and gates
  * turning it on behind "redaction tests prove no API key / secretRef / personal path in the
@@ -28,7 +28,7 @@ function span(overrides: Partial<RedactableSpan> = {}): RedactableSpan {
   }
 }
 
-describe('phase-01 safety net: provider API keys never reach a payload', () => {
+describe('provider API keys never reach a payload', () => {
   it.each([
     ['anthropic', 'sk-ant-api03-0123456789abcdefghijklmnopqrstuvwxyz0123456789ABCDEF'],
     ['openai', 'sk-proj-0123456789abcdefghijklmnopqrstuvwxyz0123'],

@@ -16,7 +16,7 @@ const LOGIN_PREFLIGHT_TIMEOUT_MS = 500
 // Why: the death-watch probe runs off the spawn path, so it can afford a bound
 // that outlasts a PAM stack answering slowly rather than misreading it as a hang.
 const LOGIN_SESSION_WATCH_PROBE_TIMEOUT_MS = 4_000
-const LOGIN_PREFLIGHT_MARKER = 'ORCA_LOGIN_PREFLIGHT_OK'
+const LOGIN_PREFLIGHT_MARKER = 'AIO_ADE_LOGIN_PREFLIGHT_OK'
 const LOGIN_PREFLIGHT_MAX_BUFFER_BYTES = 1024
 const LOGIN_PREFLIGHT_RETRY_BASE_MS = 5_000
 const LOGIN_PREFLIGHT_RETRY_MAX_MS = 5 * 60_000
@@ -29,7 +29,7 @@ const LOGIN_PREFLIGHT_REJECTED_REVALIDATE_MS = 30 * 60_000
  * user's environment misbehaves under login(1); terminals fall back to today's
  * direct-spawn behavior.
  */
-const DISABLE_ENV_VAR = 'ORCA_DISABLE_MACOS_LOGIN_SHELL'
+const DISABLE_ENV_VAR = 'AIO_ADE_DISABLE_MACOS_LOGIN_SHELL'
 
 /**
  * Result of one PAM probe. `conclusive` marks a real PAM verdict (accept or
@@ -304,12 +304,12 @@ export async function probeMacosLoginSessionAlive(
 
 /**
  * Wrap a macOS shell spawn in `/usr/bin/login -flpq <user> …` so terminal children
- * get their own TCC identity instead of collapsing into Orca's bundle id — signed
+ * get their own TCC identity instead of collapsing into AIO-ADE's bundle id — signed
  * CLIs like `op` otherwise re-prompt every launch because tccd attributes the grant
- * to Orca and never persists it (#6996). This mirrors how Terminal.app spawns shells.
+ * to AIO-ADE and never persists it (#6996). This mirrors how Terminal.app spawns shells.
  *
  * Why the env(1) interposition: login(1) overwrites SHELL from the account DB even
- * under -p, so `/usr/bin/env SHELL=<shell>` re-asserts the shell Orca actually runs
+ * under -p, so `/usr/bin/env SHELL=<shell>` re-asserts the shell AIO-ADE actually runs
  * without disturbing login's attribution (skipped when the shell path contains `=`).
  *
  * No-op off macOS, when already wrapped, when disabled via {@link DISABLE_ENV_VAR},

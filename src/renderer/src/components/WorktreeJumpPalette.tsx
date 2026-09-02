@@ -79,7 +79,7 @@ import {
 } from '@/lib/workspace-tab-palette-search'
 import { activateWorkspaceTabPaletteResult } from '@/lib/workspace-tab-palette-activation'
 import {
-  ORCA_BROWSER_FOCUS_REQUEST_EVENT,
+  AIO_ADE_BROWSER_FOCUS_REQUEST_EVENT,
   queueBrowserFocusRequest
 } from '@/components/browser-pane/browser-focus'
 import { RepoBadgeMark } from '@/components/repo/RepoBadgeLabel'
@@ -1142,7 +1142,7 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
       previousBrowserFocusTargetRef.current =
         activeTabType === 'browser' &&
         document.activeElement instanceof HTMLElement &&
-        document.activeElement.closest('[data-orca-browser-address-bar="true"]')
+        document.activeElement.closest('[data-aio-ade-browser-address-bar="true"]')
           ? 'address-bar'
           : 'webview'
       // Why: same timing constraint — capture pre-dialog focus now so Escape can restore the exact input (not document.body).
@@ -1232,7 +1232,7 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
     (detail: { pageId: string; target: 'webview' | 'address-bar' }) => {
       queueBrowserFocusRequest(detail)
       window.dispatchEvent(
-        new CustomEvent(ORCA_BROWSER_FOCUS_REQUEST_EVENT, {
+        new CustomEvent(AIO_ADE_BROWSER_FOCUS_REQUEST_EVENT, {
           detail
         })
       )
@@ -1690,7 +1690,7 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
       ),
       subtitle: translate(
         'auto.components.WorktreeJumpPalette.f7fda8d562',
-        'Create a worktree or open a tab in Orca to get started.'
+        'Create a worktree or open a tab in AIO-ADE to get started.'
       )
     }
   })()

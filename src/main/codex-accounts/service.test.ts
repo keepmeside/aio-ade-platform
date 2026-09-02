@@ -54,15 +54,15 @@ type TestSettingsOverrides = Partial<GlobalSettings> & {
 }
 
 function setRealHomeLaneForTest(enabled: boolean): void {
-  process.env.ORCA_CODEX_SYSTEM_DEFAULT_REAL_HOME = enabled ? '1' : '0'
+  process.env.AIO_ADE_CODEX_SYSTEM_DEFAULT_REAL_HOME = enabled ? '1' : '0'
 }
 
-const initialRealHomeLaneEnv = process.env.ORCA_CODEX_SYSTEM_DEFAULT_REAL_HOME
+const initialRealHomeLaneEnv = process.env.AIO_ADE_CODEX_SYSTEM_DEFAULT_REAL_HOME
 afterEach(() => {
   if (initialRealHomeLaneEnv === undefined) {
-    delete process.env.ORCA_CODEX_SYSTEM_DEFAULT_REAL_HOME
+    delete process.env.AIO_ADE_CODEX_SYSTEM_DEFAULT_REAL_HOME
   } else {
-    process.env.ORCA_CODEX_SYSTEM_DEFAULT_REAL_HOME = initialRealHomeLaneEnv
+    process.env.AIO_ADE_CODEX_SYSTEM_DEFAULT_REAL_HOME = initialRealHomeLaneEnv
   }
 })
 
@@ -99,10 +99,10 @@ function createSettings(overrides: TestSettingsOverrides = {}): GlobalSettings {
     terminalLigatures: 'auto',
     terminalCursorStyle: 'block',
     terminalCursorBlink: false,
-    terminalThemeDark: 'orca-dark',
+    terminalThemeDark: 'aio-ade-dark',
     terminalDividerColorDark: '#000000',
     terminalUseSeparateLightTheme: false,
-    terminalThemeLight: 'orca-light',
+    terminalThemeLight: 'aio-ade-light',
     terminalDividerColorLight: '#ffffff',
     terminalInactivePaneOpacity: 0.5,
     terminalActivePaneOpacity: 1,
@@ -268,7 +268,7 @@ function createResetRateLimitState(
 function createManagedHome(rootDir: string, accountId: string, config = '', auth = ''): string {
   const managedHomePath = join(rootDir, 'codex-accounts', accountId, 'home')
   mkdirSync(managedHomePath, { recursive: true })
-  writeFileSync(join(managedHomePath, '.orca-managed-home'), `${accountId}\n`, 'utf-8')
+  writeFileSync(join(managedHomePath, '.aio-ade-managed-home'), `${accountId}\n`, 'utf-8')
   if (config) {
     writeFileSync(join(managedHomePath, 'config.toml'), config, 'utf-8')
   }
@@ -295,7 +295,7 @@ function createCodexAuthJson(email: string, accountId: string, refreshToken: str
 
 async function createCanonicalHookTrustFixture(): Promise<{
   config: string
-  orcaKeys: string[]
+  aioAdeKeys: string[]
   userKey: string
 }> {
   const { MANAGED_HOOK_TIMEOUT_SECONDS } = await import('../agent-hooks/installer-utils')
@@ -328,7 +328,7 @@ async function createCanonicalHookTrustFixture(): Promise<{
   const expectedHashKey = computeTrustKey(expectedHashEntry)
   const ledgerHashKey = computeTrustKey(ledgerHashEntry)
   const userKey = computeTrustKey(userEntry)
-  const ledgerTrustedHash = 'sha256:codex-granted-orca-hook'
+  const ledgerTrustedHash = 'sha256:codex-granted-aio-ade-hook'
   writeCodexTrustGrantLedgerHome(sourceHomePath, {
     binary: null,
     entries: {
@@ -347,7 +347,7 @@ async function createCanonicalHookTrustFixture(): Promise<{
       block(ledgerHashKey, ledgerTrustedHash),
       block(userKey, computeTrustedHash(userEntry))
     ].join('\n\n'),
-    orcaKeys: [expectedHashKey, ledgerHashKey],
+    aioAdeKeys: [expectedHashKey, ledgerHashKey],
     userKey
   }
 }
@@ -356,10 +356,10 @@ describe('CodexAccountService config sync', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
-    testState.userDataDir = mkdtempSync(join(tmpdir(), 'orca-codex-accounts-'))
-    testState.fakeHomeDir = mkdtempSync(join(tmpdir(), 'orca-codex-home-'))
-    testState.previousUserDataPath = process.env.ORCA_USER_DATA_PATH
-    process.env.ORCA_USER_DATA_PATH = testState.userDataDir
+    testState.userDataDir = mkdtempSync(join(tmpdir(), 'aio-ade-codex-accounts-'))
+    testState.fakeHomeDir = mkdtempSync(join(tmpdir(), 'aio-ade-codex-home-'))
+    testState.previousUserDataPath = process.env.AIO_ADE_USER_DATA_PATH
+    process.env.AIO_ADE_USER_DATA_PATH = testState.userDataDir
     mkdirSync(join(testState.fakeHomeDir, '.codex'), { recursive: true })
   })
 
@@ -367,9 +367,9 @@ describe('CodexAccountService config sync', () => {
     rmSync(testState.userDataDir, { recursive: true, force: true })
     rmSync(testState.fakeHomeDir, { recursive: true, force: true })
     if (testState.previousUserDataPath === undefined) {
-      delete process.env.ORCA_USER_DATA_PATH
+      delete process.env.AIO_ADE_USER_DATA_PATH
     } else {
-      process.env.ORCA_USER_DATA_PATH = testState.previousUserDataPath
+      process.env.AIO_ADE_USER_DATA_PATH = testState.previousUserDataPath
     }
   })
 
@@ -451,7 +451,7 @@ describe('CodexAccountService config sync', () => {
     )
     const expectSanitizedManagedConfig = (): void => {
       const entries = readHookTrustEntries(join(managedHomePath, 'config.toml'))
-      for (const key of fixture.orcaKeys) {
+      for (const key of fixture.aioAdeKeys) {
         expect(entries.has(key)).toBe(false)
       }
       // The launch-time hook mirror remaps user trust to this home's hooks.json.
@@ -816,7 +816,7 @@ describe('CodexAccountService config sync', () => {
         const loginHome = options.env.CODEX_HOME
         expect(loginHome).toBeTruthy()
         const entries = readHookTrustEntries(join(loginHome!, 'config.toml'))
-        for (const key of fixture.orcaKeys) {
+        for (const key of fixture.aioAdeKeys) {
           expect(entries.has(key)).toBe(false)
         }
         expect(entries.has(fixture.userKey)).toBe(false)
@@ -890,7 +890,7 @@ describe('CodexAccountService config sync', () => {
       )
 
       await expect(service.addAccount()).rejects.toThrow(
-        'Orca cannot add a Codex OAuth account while ~/.codex/config.toml pins the custom provider "codex-lb". Keep using the system-default account for this provider, or remove model_provider (or set it to "openai") before adding an OAuth account. Orca left your config unchanged.'
+        'AIO-ADE cannot add a Codex OAuth account while ~/.codex/config.toml pins the custom provider "codex-lb". Keep using the system-default account for this provider, or remove model_provider (or set it to "openai") before adding an OAuth account. AIO-ADE left your config unchanged.'
       )
 
       expect(spawnMock).not.toHaveBeenCalled()
@@ -918,7 +918,7 @@ describe('CodexAccountService config sync', () => {
       (_command: string, _args: string[], options: { env: NodeJS.ProcessEnv }) => {
         const loginHome = options.env.CODEX_HOME
         expect(loginHome).toBeTruthy()
-        expect(readFileSync(join(loginHome!, '.orca-managed-home'), 'utf-8')).toBe('account-1\n')
+        expect(readFileSync(join(loginHome!, '.aio-ade-managed-home'), 'utf-8')).toBe('account-1\n')
         expect(readFileSync(join(loginHome!, 'config.toml'), 'utf-8')).toBe(canonicalConfig)
 
         const child = new EventEmitter() as EventEmitter & {
@@ -1046,7 +1046,7 @@ describe('CodexAccountService config sync', () => {
       ),
       managedHomeRuntime: 'wsl' as const,
       wslDistro: 'Ubuntu',
-      wslLinuxHomePath: '/home/test/.local/share/orca/codex-accounts/account-wsl/home',
+      wslLinuxHomePath: '/home/test/.local/share/aio-ade/codex-accounts/account-wsl/home',
       providerAccountId: 'provider-wsl',
       workspaceLabel: null,
       workspaceAccountId: 'provider-wsl',
@@ -1250,7 +1250,7 @@ describe('CodexAccountService config sync', () => {
     )
 
     await expect(service.reauthenticateAccount('account-1')).rejects.toThrow(
-      'Managed Codex home is missing Orca ownership marker.'
+      'Managed Codex home is missing AIO-ADE ownership marker.'
     )
     expect(spawnMock).not.toHaveBeenCalled()
     warnSpy.mockRestore()
@@ -1266,7 +1266,8 @@ describe('CodexAccountService config sync', () => {
 
     const wslManagedHomePath = join(testState.userDataDir, 'wsl-managed-home')
     const wslConfigPath = join(testState.userDataDir, 'wsl-config.toml')
-    const wslLinuxHomePath = '/home/alice/.local/share/orca/codex-accounts/account-id-for-test/home'
+    const wslLinuxHomePath =
+      '/home/alice/.local/share/aio-ade/codex-accounts/account-id-for-test/home'
     writeFileSync(
       wslConfigPath,
       'sandbox_mode = "danger-full-access"\nmodel_instructions_file = "instructions.md"\n',
@@ -1290,7 +1291,7 @@ describe('CodexAccountService config sync', () => {
         return ''
       }
       mkdirSync(wslManagedHomePath, { recursive: true })
-      writeFileSync(join(wslManagedHomePath, '.orca-managed-home'), 'account-id-for-test\n')
+      writeFileSync(join(wslManagedHomePath, '.aio-ade-managed-home'), 'account-id-for-test\n')
       return ''
     })
     const spawnMock = vi.fn((command: string, args: string[]) => {
@@ -1381,7 +1382,8 @@ describe('CodexAccountService config sync', () => {
     })
 
     const wslManagedHomePath = join(testState.userDataDir, 'wsl-managed-home')
-    const wslLinuxHomePath = '/home/alice/.local/share/orca/codex-accounts/account-id-for-test/home'
+    const wslLinuxHomePath =
+      '/home/alice/.local/share/aio-ade/codex-accounts/account-id-for-test/home'
 
     const execFileSyncMock = vi.fn((_command: string, args: string[]) => {
       const script = decodeEncodedWslBashCommand(String(args.at(-1)))
@@ -1397,7 +1399,7 @@ describe('CodexAccountService config sync', () => {
         throw new Error('codex missing')
       }
       mkdirSync(wslManagedHomePath, { recursive: true })
-      writeFileSync(join(wslManagedHomePath, '.orca-managed-home'), 'account-id-for-test\n')
+      writeFileSync(join(wslManagedHomePath, '.aio-ade-managed-home'), 'account-id-for-test\n')
       return ''
     })
     const spawnMock = vi.fn()
@@ -1452,9 +1454,9 @@ describe('CodexAccountService config sync', () => {
     })
 
     const wslManagedHomePath = join(testState.userDataDir, 'wsl-account', 'home')
-    const wslLinuxHomePath = '/home/alice/.local/share/orca/codex-accounts/account-1/home'
+    const wslLinuxHomePath = '/home/alice/.local/share/aio-ade/codex-accounts/account-1/home'
     mkdirSync(wslManagedHomePath, { recursive: true })
-    writeFileSync(join(wslManagedHomePath, '.orca-managed-home'), 'account-1\n', 'utf-8')
+    writeFileSync(join(wslManagedHomePath, '.aio-ade-managed-home'), 'account-1\n', 'utf-8')
     writeFileSync(
       join(wslManagedHomePath, 'auth.json'),
       JSON.stringify({
@@ -1596,13 +1598,13 @@ describe('CodexAccountService config sync', () => {
     })
 
     const wslManagedHomePath = join(testState.userDataDir, 'wsl-account', 'home')
-    const wslLinuxHomePath = '/home/alice/.local/share/orca/codex-accounts/account-1/home'
+    const wslLinuxHomePath = '/home/alice/.local/share/aio-ade/codex-accounts/account-1/home'
 
     const execFileSyncMock = vi.fn((_command: string, args: string[]) => {
       const script = decodeEncodedWslBashCommand(String(args.at(-1)))
       if (script.includes('mkdir -p -- "$candidate"')) {
         mkdirSync(wslManagedHomePath, { recursive: true })
-        writeFileSync(join(wslManagedHomePath, '.orca-managed-home'), 'account-1\n', 'utf-8')
+        writeFileSync(join(wslManagedHomePath, '.aio-ade-managed-home'), 'account-1\n', 'utf-8')
         return ''
       }
       if (script.includes('readlink -f')) {
@@ -1613,7 +1615,7 @@ describe('CodexAccountService config sync', () => {
     const spawnMock = vi.fn((command: string, args: string[]) => {
       expect(command).toBe('wsl.exe')
       expect(args).toEqual(buildWslCodexLoginArgs('Ubuntu', wslLinuxHomePath))
-      expect(readFileSync(join(wslManagedHomePath, '.orca-managed-home'), 'utf-8')).toBe(
+      expect(readFileSync(join(wslManagedHomePath, '.aio-ade-managed-home'), 'utf-8')).toBe(
         'account-1\n'
       )
       const child = new EventEmitter() as EventEmitter & {
@@ -1705,9 +1707,9 @@ describe('CodexAccountService config sync', () => {
     })
 
     const wslManagedHomePath = join(testState.userDataDir, 'wsl-account', 'home')
-    const wslLinuxHomePath = '/home/alice/.local/share/orca/codex-accounts/account-1/home'
+    const wslLinuxHomePath = '/home/alice/.local/share/aio-ade/codex-accounts/account-1/home'
     mkdirSync(wslManagedHomePath, { recursive: true })
-    writeFileSync(join(wslManagedHomePath, '.orca-managed-home'), 'account-1\n', 'utf-8')
+    writeFileSync(join(wslManagedHomePath, '.aio-ade-managed-home'), 'account-1\n', 'utf-8')
 
     vi.doMock('node:child_process', () => ({
       execFileSync: vi.fn((_command: string, args: string[]) => {
@@ -1718,7 +1720,7 @@ describe('CodexAccountService config sync', () => {
             'test "$candidate_real" = "$managed_root_real/$expected_marker/home"'
           )
           expect(script).toContain(
-            'test "$(cat "$candidate_real/.orca-managed-home")" = "$expected_marker"'
+            'test "$(cat "$candidate_real/.aio-ade-managed-home")" = "$expected_marker"'
           )
           return `${wslLinuxHomePath}\n`
         }
@@ -1895,7 +1897,7 @@ describe('CodexAccountService config sync', () => {
       '{"account":"host"}\n'
     )
     const wslManagedHomePath =
-      '\\\\wsl.localhost\\Ubuntu\\home\\alice\\.local\\share\\orca\\codex-accounts\\wsl-account\\home'
+      '\\\\wsl.localhost\\Ubuntu\\home\\alice\\.local\\share\\aio-ade\\codex-accounts\\wsl-account\\home'
     const settings = createSettings({
       codexManagedAccounts: [
         {
@@ -1918,7 +1920,7 @@ describe('CodexAccountService config sync', () => {
           managedHomePath: wslManagedHomePath,
           managedHomeRuntime: 'wsl',
           wslDistro: 'Ubuntu',
-          wslLinuxHomePath: '/home/alice/.local/share/orca/codex-accounts/wsl-account/home',
+          wslLinuxHomePath: '/home/alice/.local/share/aio-ade/codex-accounts/wsl-account/home',
           providerAccountId: null,
           workspaceLabel: null,
           workspaceAccountId: null,

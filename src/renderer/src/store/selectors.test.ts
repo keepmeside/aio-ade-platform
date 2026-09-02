@@ -243,8 +243,8 @@ describe('store selectors', () => {
     const repos = [
       makeRepo({
         id: 'repo-1',
-        path: '/Users/alice/orca',
-        displayName: 'orca'
+        path: '/Users/alice/aio-ade',
+        displayName: 'aio-ade'
       })
     ]
     const state = { repos }
@@ -265,8 +265,8 @@ describe('store selectors', () => {
     const repos = [
       makeRepo({
         id: 'repo-1',
-        path: '/Users/alice/orca',
-        displayName: 'orca'
+        path: '/Users/alice/aio-ade',
+        displayName: 'aio-ade'
       })
     ]
     const projects = [
@@ -285,8 +285,8 @@ describe('store selectors', () => {
         projectId: 'project-1',
         hostId: 'local' as const,
         repoId: 'repo-1',
-        path: '/Users/alice/orca',
-        displayName: 'orca',
+        path: '/Users/alice/aio-ade',
+        displayName: 'aio-ade',
         setupState: 'ready' as const,
         setupMethod: 'legacy-repo' as const,
         createdAt: 1,
@@ -303,33 +303,33 @@ describe('store selectors', () => {
   it('groups hydrated VM project setups under the repo-derived project identity', () => {
     const repos = [
       makeRepo({
-        id: 'local-orca',
-        path: '/Users/alice/stably/orca',
-        displayName: 'orca',
-        upstream: { owner: 'stablyai', repo: 'orca' }
+        id: 'local-aio-ade',
+        path: '/Users/alice/stably/aio-ade',
+        displayName: 'aio-ade',
+        upstream: { owner: 'keepmeside', repo: 'aio-ade-platform' }
       }),
       makeRepo({
-        id: 'vm-orca',
-        path: '/vercel/sandbox/orca',
-        displayName: 'orca',
-        upstream: { owner: 'stablyai', repo: 'orca' },
+        id: 'vm-aio-ade',
+        path: '/vercel/sandbox/aio-ade',
+        displayName: 'aio-ade',
+        upstream: { owner: 'keepmeside', repo: 'aio-ade-platform' },
         executionHostId: toRuntimeExecutionHostId('vm-env')
       })
     ]
     const projects = [
       {
-        id: 'github:stablyai/orca',
-        displayName: 'orca',
+        id: 'github:keepmeside/aio-ade-platform',
+        displayName: 'aio-ade',
         badgeColor: '#737373',
-        sourceRepoIds: ['local-orca'],
+        sourceRepoIds: ['local-aio-ade'],
         createdAt: 1,
         updatedAt: 1
       },
       {
-        id: 'repo:vm-orca',
-        displayName: 'vercel/sandbox/orca',
+        id: 'repo:vm-aio-ade',
+        displayName: 'vercel/sandbox/aio-ade',
         badgeColor: '#737373',
-        sourceRepoIds: ['vm-orca'],
+        sourceRepoIds: ['vm-aio-ade'],
         createdAt: 1,
         updatedAt: 1
       }
@@ -337,11 +337,11 @@ describe('store selectors', () => {
     const projectHostSetups = [
       {
         id: 'local-setup',
-        projectId: 'github:stablyai/orca',
+        projectId: 'github:keepmeside/aio-ade-platform',
         hostId: 'local' as const,
-        repoId: 'local-orca',
-        path: '/Users/alice/stably/orca',
-        displayName: 'orca',
+        repoId: 'local-aio-ade',
+        path: '/Users/alice/stably/aio-ade',
+        displayName: 'aio-ade',
         setupState: 'ready' as const,
         setupMethod: 'legacy-repo' as const,
         createdAt: 1,
@@ -349,11 +349,11 @@ describe('store selectors', () => {
       },
       {
         id: 'vm-setup',
-        projectId: 'repo:vm-orca',
+        projectId: 'repo:vm-aio-ade',
         hostId: toRuntimeExecutionHostId('vm-env'),
-        repoId: 'vm-orca',
-        path: '/vercel/sandbox/orca',
-        displayName: 'orca',
+        repoId: 'vm-aio-ade',
+        path: '/vercel/sandbox/aio-ade',
+        displayName: 'aio-ade',
         setupState: 'ready' as const,
         setupMethod: 'provisioned' as const,
         createdAt: 1,
@@ -367,11 +367,16 @@ describe('store selectors', () => {
       projectHostSetups
     })
 
-    expect(projection.projects.map((project) => project.id)).toEqual(['github:stablyai/orca'])
+    expect(projection.projects.map((project) => project.id)).toEqual([
+      'github:keepmeside/aio-ade-platform'
+    ])
     expect(projection.setups).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ id: 'local-setup', projectId: 'github:stablyai/orca' }),
-        expect.objectContaining({ id: 'vm-setup', projectId: 'github:stablyai/orca' })
+        expect.objectContaining({
+          id: 'local-setup',
+          projectId: 'github:keepmeside/aio-ade-platform'
+        }),
+        expect.objectContaining({ id: 'vm-setup', projectId: 'github:keepmeside/aio-ade-platform' })
       ])
     )
   })
@@ -380,9 +385,9 @@ describe('store selectors', () => {
     const repos = [
       makeRepo({
         id: 'repo-1',
-        path: '/Users/alice/orca',
-        displayName: 'orca',
-        upstream: { owner: 'stablyai', repo: 'orca' }
+        path: '/Users/alice/aio-ade',
+        displayName: 'aio-ade',
+        upstream: { owner: 'keepmeside', repo: 'aio-ade-platform' }
       })
     ]
 
@@ -394,17 +399,17 @@ describe('store selectors', () => {
 
     expect(projection.projects).toEqual([
       expect.objectContaining({
-        id: 'github:stablyai/orca',
+        id: 'github:keepmeside/aio-ade-platform',
         sourceRepoIds: ['repo-1']
       })
     ])
     expect(projection.setups).toEqual([
       expect.objectContaining({
         id: 'repo-1',
-        projectId: 'github:stablyai/orca',
+        projectId: 'github:keepmeside/aio-ade-platform',
         repoId: 'repo-1',
         hostId: 'local',
-        path: '/Users/alice/orca'
+        path: '/Users/alice/aio-ade'
       })
     ])
   })
@@ -413,8 +418,8 @@ describe('store selectors', () => {
     const repos = [
       makeRepo({
         id: 'repo-1',
-        path: '/Users/alice/orca',
-        displayName: 'orca'
+        path: '/Users/alice/aio-ade',
+        displayName: 'aio-ade'
       })
     ]
     const projects = [

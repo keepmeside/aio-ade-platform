@@ -4,11 +4,11 @@ import { describe, expect, it } from 'vitest'
 
 describe('packaged Windows CLI launcher asset', () => {
   it('keeps the batch compatibility shim behind the newline-safe native launcher', () => {
-    const launcherPath = join(process.cwd(), 'resources', 'win32', 'bin', 'orca.cmd')
+    const launcherPath = join(process.cwd(), 'resources', 'win32', 'bin', 'aio-ade.cmd')
     const launcher = readFileSync(launcherPath, 'utf8')
 
-    expect(launcher).toContain('set "LAUNCHER=%SCRIPT_DIR%orca.exe"')
-    expect(launcher).toContain('orca.cmd cannot safely forward orchestration message bodies')
+    expect(launcher).toContain('set "LAUNCHER=%SCRIPT_DIR%aio-ade.exe"')
+    expect(launcher).toContain('aio-ade.cmd cannot safely forward orchestration message bodies')
     expect(launcher).not.toContain('"%ELECTRON%" "%CLI%" %*')
   })
 })

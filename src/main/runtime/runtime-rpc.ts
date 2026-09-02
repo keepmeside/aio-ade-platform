@@ -4,7 +4,7 @@ import { randomBytes } from 'node:crypto'
 import { readdirSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import type { RuntimeMetadata, RuntimeTransportMetadata } from '../../shared/runtime-bootstrap'
-import type { OrcaRuntimeService } from './orca-runtime'
+import type { AioAdeRuntimeService } from './aio-ade-runtime'
 import { writeRuntimeMetadata } from './runtime-metadata'
 import {
   RUNTIME_METADATA_OWNERSHIP_POLL_MS,
@@ -49,14 +49,14 @@ import {
 
 const DEFAULT_WS_PORT = 6768
 
-type OrcaRuntimeRpcServerOptions = {
-  runtime: OrcaRuntimeService
+type AioAdeRuntimeRpcServerOptions = {
+  runtime: AioAdeRuntimeService
   userDataPath: string
   pid?: number
   platform?: NodeJS.Platform
   enableWebSocket?: boolean
   wsPort?: number
-  // Why: true when the caller pinned a port (`orca serve --port`) so bind order prefers it over a stale STA-1511 fallback (#8535).
+  // Why: true when the caller pinned a port (`aio-ade serve --port`) so bind order prefers it over a stale STA-1511 fallback (#8535).
   preferPinnedWsPort?: boolean
   webClientRoot?: string
   // Why: test-only overrides for the two constants below; production must not pass these (defaults set by §3.1).
@@ -90,9 +90,9 @@ function pairingUnavailable(
 }
 
 const DEVICE_REGISTRY_UNAVAILABLE_GUIDANCE =
-  'The pairing registry is unavailable. Verify that the Orca data directory is writable.'
+  'The pairing registry is unavailable. Verify that the AIO-ADE data directory is writable.'
 const E2EE_KEY_UNAVAILABLE_GUIDANCE =
-  'The E2EE identity is unavailable. Verify that the Orca data directory is writable.'
+  'The E2EE identity is unavailable. Verify that the AIO-ADE data directory is writable.'
 
 type MobileRelayPairingProvider = {
   createPairingRelay(
@@ -444,8 +444,8 @@ function injectDeviceScope(response: string, scope: DeviceScope): string {
   }
 }
 
-export class OrcaRuntimeRpcServer {
-  private readonly runtime: OrcaRuntimeService
+export class AioAdeRuntimeRpcServer {
+  private readonly runtime: AioAdeRuntimeService
   private readonly dispatcher: RpcDispatcher
   private readonly userDataPath: string
   private readonly pid: number
@@ -496,7 +496,7 @@ export class OrcaRuntimeRpcServer {
     keepaliveIntervalMs = KEEPALIVE_INTERVAL_MS,
     longPollCap = LONG_POLL_CAP,
     metadataOwnershipPollMs = RUNTIME_METADATA_OWNERSHIP_POLL_MS
-  }: OrcaRuntimeRpcServerOptions) {
+  }: AioAdeRuntimeRpcServerOptions) {
     this.runtime = runtime
     this.dispatcher = new RpcDispatcher({ runtime })
     this.userDataPath = userDataPath
@@ -1029,7 +1029,7 @@ export class OrcaRuntimeRpcServer {
       },
       onReclaim: (previous) => {
         console.warn(
-          `[runtime] Reclaimed orca-runtime.json from a dead runtime (pid ${previous?.pid ?? 'none'}); republished pid ${this.pid}.`
+          `[runtime] Reclaimed aio-ade-runtime.json from a dead runtime (pid ${previous?.pid ?? 'none'}); republished pid ${this.pid}.`
         )
       }
     })
@@ -1334,7 +1334,7 @@ export function createRuntimeTransportMetadata(
     return {
       kind: 'named-pipe',
       // Why: named pipes lack the chmod hardening of Unix sockets; a per-runtime suffix avoids a stable, guessable endpoint name.
-      endpoint: `\\\\.\\pipe\\orca-${pid}-${endpointSuffix}`
+      endpoint: `\\\\.\\pipe\\aio-ade-${pid}-${endpointSuffix}`
     }
   }
   return {

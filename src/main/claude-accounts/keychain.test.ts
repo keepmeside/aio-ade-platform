@@ -3,10 +3,13 @@ import { execFile } from 'node:child_process'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   deleteActiveClaudeKeychainCredentials,
+  deleteManagedClaudeKeychainCredentials,
   readActiveClaudeKeychainCredentials,
   readActiveClaudeKeychainCredentialsStrict,
+  readManagedClaudeKeychainCredentials,
   writeActiveClaudeKeychainCredentials,
-  writeActiveClaudeKeychainCredentialsForRuntime
+  writeActiveClaudeKeychainCredentialsForRuntime,
+  writeManagedClaudeKeychainCredentials
 } from './keychain'
 
 vi.mock('node:child_process', () => ({
@@ -232,5 +235,85 @@ describe('Claude Keychain credentials', () => {
         process.env.USER || process.env.USERNAME || 'user'
       ]
     ])
+  })
+})
+
+/* A managed credential written before the rebrand lives under the old service name. The
+ * entry is invisible to a diff review, so these pin the dual-read: reads must find it,
+ * writes must move to the canonical name, and deletes must clear both or forgetting an
+ * account leaves the secret readable under the legacy service. */
+describe('managed Claude credentials across the rebrand', () => {
+  const MANAGED = 'AIO-ADE Claude Code Managed Credentials'
+  const LEGACY = 'Orca Claude Code Managed Credentials'
+
+  beforeEach(() => {
+    setPlatform('darwin')
+    execFileMock.mockReset()
+  })
+
+  afterEach(() => {
+    if (originalPlatform) {
+      Object.defineProperty(process, 'platform', originalPlatform)
+    }
+  })
+
+  it('reads the canonical service without consulting the legacy one', async () => {
+    execFileMock.mockImplementationOnce((_file, _args, _options, callback) => {
+      invokeExecFileCallback(callback, null, 'canonical\n', '')
+      return null as never
+    })
+
+    await expect(readManagedClaudeKeychainCredentials('account-1')).resolves.toBe('canonical')
+
+    expect(execFileMock).toHaveBeenCalledTimes(1)
+    expect(execFileMock.mock.calls[0][1]).toEqual([
+      'find-generic-password',
+      '-s',
+      MANAGED,
+      '-a',
+      'account-1',
+      '-w'
+    ])
+  })
+
+  it('falls back to the pre-rebrand service so an existing account is not logged out', async () => {
+    const notFound = Object.assign(new Error('not found'), { code: 44 })
+    execFileMock
+      .mockImplementationOnce((_file, _args, _options, callback) => {
+        invokeExecFileCallback(callback, notFound, '', 'could not be found')
+        return null as never
+      })
+      .mockImplementationOnce((_file, _args, _options, callback) => {
+        invokeExecFileCallback(callback, null, 'pre-rebrand\n', '')
+        return null as never
+      })
+
+    await expect(readManagedClaudeKeychainCredentials('account-1')).resolves.toBe('pre-rebrand')
+
+    expect(execFileMock.mock.calls[1][1]?.[2]).toBe(LEGACY)
+  })
+
+  it('writes only the canonical service so a re-auth migrates the account', async () => {
+    execFileMock.mockImplementation((_file, _args, _options, callback) => {
+      invokeExecFileCallback(callback, null, '', '')
+      return null as never
+    })
+
+    await writeManagedClaudeKeychainCredentials('account-1', 'secret')
+
+    const args = execFileMock.mock.calls.flatMap((call) => call[1] ?? [])
+    expect(args).toContain(MANAGED)
+    expect(args).not.toContain(LEGACY)
+  })
+
+  it('deletes both services so forgetting an account strands no credential', async () => {
+    execFileMock.mockImplementation((_file, _args, _options, callback) => {
+      invokeExecFileCallback(callback, null, '', '')
+      return null as never
+    })
+
+    await deleteManagedClaudeKeychainCredentials('account-1')
+
+    expect(execFileMock.mock.calls.map((call) => call[1]?.[2])).toEqual([MANAGED, LEGACY])
   })
 })

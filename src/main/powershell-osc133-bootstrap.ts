@@ -1,8 +1,8 @@
 export { encodePowerShellCommand } from '../shared/powershell-command-encoding'
 
-const POWERSHELL_OSC133_BOOTSTRAP = `# Orca OSC 133 shell integration for PowerShell.
-if ((Test-Path variable:global:__OrcaOsc133State) -and
-    $null -ne $Global:__OrcaOsc133State.OriginalPrompt) {
+const POWERSHELL_OSC133_BOOTSTRAP = `# AIO-ADE OSC 133 shell integration for PowerShell.
+if ((Test-Path variable:global:__AioAdeOsc133State) -and
+    $null -ne $Global:__AioAdeOsc133State.OriginalPrompt) {
     return
 }
 
@@ -21,10 +21,10 @@ try {
     $OutputEncoding = [Console]::OutputEncoding
 } catch { Write-Error $_ -ErrorAction Continue }
 
-# Profiles can re-export user defaults after Orca's spawn env is set.
-if ($env:ORCA_CODEX_HOME) { $env:CODEX_HOME = $env:ORCA_CODEX_HOME }
+# Profiles can re-export user defaults after AIO-ADE's spawn env is set.
+if ($env:AIO_ADE_CODEX_HOME) { $env:CODEX_HOME = $env:AIO_ADE_CODEX_HOME }
 
-$Global:__OrcaOsc133State = @{
+$Global:__AioAdeOsc133State = @{
     OriginalPrompt = $function:prompt
     OriginalReadLine = $function:PSConsoleHostReadLine
     HasSeenPrompt = $false
@@ -41,24 +41,24 @@ function Global:prompt {
 
     # Emit D from prompt, not readline state. Some profile setups bypass
     # PSConsoleHostReadLine; the consumer only needs completion.
-    if ($Global:__OrcaOsc133State.HasSeenPrompt) {
-        $result += "$($Global:__OrcaOsc133State.Esc)]133;D;$fakeExitCode$($Global:__OrcaOsc133State.Bel)"
+    if ($Global:__AioAdeOsc133State.HasSeenPrompt) {
+        $result += "$($Global:__AioAdeOsc133State.Esc)]133;D;$fakeExitCode$($Global:__AioAdeOsc133State.Bel)"
     }
-    $Global:__OrcaOsc133State.HasSeenPrompt = $true
+    $Global:__AioAdeOsc133State.HasSeenPrompt = $true
 
-    $result += "$($Global:__OrcaOsc133State.Esc)]133;A$($Global:__OrcaOsc133State.Bel)"
+    $result += "$($Global:__AioAdeOsc133State.Esc)]133;A$($Global:__AioAdeOsc133State.Bel)"
     # Preserve the previous success/failure value for prompts that inspect it.
     if ($fakeExitCode -ne 0) { Write-Error "failure" -ea ignore }
-    $result += $Global:__OrcaOsc133State.OriginalPrompt.Invoke()
-    $result += "$($Global:__OrcaOsc133State.Esc)]133;B$($Global:__OrcaOsc133State.Bel)"
+    $result += $Global:__AioAdeOsc133State.OriginalPrompt.Invoke()
+    $result += "$($Global:__AioAdeOsc133State.Esc)]133;B$($Global:__AioAdeOsc133State.Bel)"
     $result
 }
 
-if ($Global:__OrcaOsc133State.HasPSReadLine -and
-    $null -ne $Global:__OrcaOsc133State.OriginalReadLine) {
+if ($Global:__AioAdeOsc133State.HasPSReadLine -and
+    $null -ne $Global:__AioAdeOsc133State.OriginalReadLine) {
     function Global:PSConsoleHostReadLine {
-        $commandLine = $Global:__OrcaOsc133State.OriginalReadLine.Invoke()
-        [Console]::Write("$($Global:__OrcaOsc133State.Esc)]133;C$($Global:__OrcaOsc133State.Bel)")
+        $commandLine = $Global:__AioAdeOsc133State.OriginalReadLine.Invoke()
+        [Console]::Write("$($Global:__AioAdeOsc133State.Esc)]133;C$($Global:__AioAdeOsc133State.Bel)")
         return $commandLine
     }
 }

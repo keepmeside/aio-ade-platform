@@ -153,7 +153,7 @@ describe('SshGitProvider', () => {
     mux.request.mockRejectedValueOnce(methodNotFound)
 
     await expect(provider.getSubmoduleStatus('/home/user/repo', 'vendor/lib')).rejects.toThrow(
-      'SSH submodule diff support is unavailable on this relay. Reconnect the SSH target to update Orca on the host, then try again.'
+      'SSH submodule diff support is unavailable on this relay. Reconnect the SSH target to update AIO-ADE on the host, then try again.'
     )
   })
 
@@ -227,7 +227,7 @@ describe('SshGitProvider', () => {
     await expect(
       provider.clone(['clone', '--progress', '--', 'url', 'repo'], '/home/user')
     ).rejects.toThrow(
-      'SSH clone support is unavailable on this relay. Reconnect the SSH target to update Orca on the host, then try again.'
+      'SSH clone support is unavailable on this relay. Reconnect the SSH target to update AIO-ADE on the host, then try again.'
     )
   })
 
@@ -299,25 +299,25 @@ describe('SshGitProvider', () => {
 
     await provider.execNonInteractive(
       '/bin/bash',
-      ['-lc', 'echo "$ORCA_WORKTREE_PATH"'],
+      ['-lc', 'echo "$AIO_ADE_WORKTREE_PATH"'],
       '/home/user/repo',
       120_000,
       undefined,
       {
-        ORCA_ROOT_PATH: '/home/user/repo',
-        ORCA_WORKTREE_PATH: '/home/user/repo-feature'
+        AIO_ADE_ROOT_PATH: '/home/user/repo',
+        AIO_ADE_WORKTREE_PATH: '/home/user/repo-feature'
       }
     )
 
     expect(mux.request).toHaveBeenCalledWith('agent.execNonInteractive', {
       binary: '/bin/bash',
-      args: ['-lc', 'echo "$ORCA_WORKTREE_PATH"'],
+      args: ['-lc', 'echo "$AIO_ADE_WORKTREE_PATH"'],
       cwd: '/home/user/repo',
       stdin: null,
       timeoutMs: 120_000,
       env: {
-        ORCA_ROOT_PATH: '/home/user/repo',
-        ORCA_WORKTREE_PATH: '/home/user/repo-feature'
+        AIO_ADE_ROOT_PATH: '/home/user/repo',
+        AIO_ADE_WORKTREE_PATH: '/home/user/repo-feature'
       }
     })
   })
@@ -769,14 +769,14 @@ describe('SshGitProvider', () => {
 
   it('pushBranch sends git.push request and forwards publish mode and target', async () => {
     await provider.pushBranch('/home/user/repo', true, {
-      remoteName: 'pr-fork-orca',
+      remoteName: 'pr-fork-aio-ade',
       branchName: 'contributor/fix'
     })
     expect(mux.request).toHaveBeenCalledWith('git.push', {
       worktreePath: '/home/user/repo',
       publish: true,
       pushTarget: {
-        remoteName: 'pr-fork-orca',
+        remoteName: 'pr-fork-aio-ade',
         branchName: 'contributor/fix'
       }
     })
@@ -867,7 +867,7 @@ describe('SshGitProvider', () => {
     }
     mux.request.mockResolvedValue(syncResult)
 
-    const expectedUpstream = { owner: 'stablyai', repo: 'orca' }
+    const expectedUpstream = { owner: 'keepmeside', repo: 'aio-ade-platform' }
     const result = await provider.syncForkDefaultBranch('/home/user/repo', expectedUpstream)
 
     expect(mux.request).toHaveBeenCalledWith('git.forkSync', {
@@ -897,7 +897,7 @@ describe('SshGitProvider', () => {
 
   it('fetchGitLabMergeRequestHead sends the durable-ref git.fetchGitLabMergeRequestHeadRef request', async () => {
     mux.request.mockResolvedValueOnce({
-      localRef: 'refs/orca/merge-requests/origin-abc/42'
+      localRef: 'refs/aio-ade/merge-requests/origin-abc/42'
     })
 
     const localRef = await provider.fetchGitLabMergeRequestHead('/home/user/repo', 'origin', 42)
@@ -907,7 +907,7 @@ describe('SshGitProvider', () => {
       remote: 'origin',
       mrIid: 42
     })
-    expect(localRef).toBe('refs/orca/merge-requests/origin-abc/42')
+    expect(localRef).toBe('refs/aio-ade/merge-requests/origin-abc/42')
   })
 
   it('fetchGitLabMergeRequestHead maps old relays to the reconnect message', async () => {
@@ -920,7 +920,7 @@ describe('SshGitProvider', () => {
     await expect(
       provider.fetchGitLabMergeRequestHead('/home/user/repo', 'origin', 42)
     ).rejects.toThrow(
-      'This SSH host is running an older Orca relay that cannot fetch merge request heads. Reconnect to deploy the latest relay, then try again.'
+      'This SSH host is running an older AIO-ADE relay that cannot fetch merge request heads. Reconnect to deploy the latest relay, then try again.'
     )
   })
 
@@ -934,7 +934,7 @@ describe('SshGitProvider', () => {
   })
 
   it('fetchGitHubPullRequestHead sends git.fetchGitHubPullRequestHead request', async () => {
-    mux.request.mockResolvedValueOnce({ localRef: 'refs/orca/pull/origin-abc/42' })
+    mux.request.mockResolvedValueOnce({ localRef: 'refs/aio-ade/pull/origin-abc/42' })
 
     const localRef = await provider.fetchGitHubPullRequestHead('/home/user/repo', 'origin', 42)
 
@@ -943,7 +943,7 @@ describe('SshGitProvider', () => {
       remote: 'origin',
       prNumber: 42
     })
-    expect(localRef).toBe('refs/orca/pull/origin-abc/42')
+    expect(localRef).toBe('refs/aio-ade/pull/origin-abc/42')
   })
 
   it('fetchGitHubPullRequestHead rejects relays that omit the durable localRef', async () => {
@@ -964,7 +964,7 @@ describe('SshGitProvider', () => {
     await expect(
       provider.fetchGitHubPullRequestHead('/home/user/repo', 'origin', 42)
     ).rejects.toThrow(
-      'This SSH host is running an older Orca relay that cannot fetch pull request heads. Reconnect to deploy the latest relay, then try again.'
+      'This SSH host is running an older AIO-ADE relay that cannot fetch pull request heads. Reconnect to deploy the latest relay, then try again.'
     )
   })
 
@@ -1494,7 +1494,7 @@ describe('SshGitProvider', () => {
     await expect(
       provider.forceDeletePreservedBranch('/home/user/repo', 'you/fix-auth', 'abc123')
     ).rejects.toThrow(
-      'This SSH host is running an older Orca relay that cannot delete preserved branches. Reconnect to deploy the latest relay, then try again.'
+      'This SSH host is running an older AIO-ADE relay that cannot delete preserved branches. Reconnect to deploy the latest relay, then try again.'
     )
   })
 

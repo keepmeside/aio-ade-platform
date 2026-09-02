@@ -62,8 +62,8 @@ function formatRemoteRuntimeCloseMessage(code: number, reason: Buffer): string {
     suffixParts.push(reasonText)
   }
   return suffixParts.length > 0
-    ? `Remote Orca runtime closed the connection (${suffixParts.join(': ')}).`
-    : 'Remote Orca runtime closed the connection.'
+    ? `Remote AIO-ADE runtime closed the connection (${suffixParts.join(': ')}).`
+    : 'Remote AIO-ADE runtime closed the connection.'
 }
 
 export type RemoteRuntimeSubscription = {
@@ -129,7 +129,7 @@ export async function sendRemoteRuntimeRequest<TResult>(
       socket.off('error', onError)
       socket.off('close', onClose)
       socket.off('message', onMessage)
-      // Why: the settled one-shot no longer needs Orca callbacks, but a ws
+      // Why: the settled one-shot no longer needs AIO-ADE callbacks, but a ws
       // can still report a late transport error after close is requested.
       if (socket.readyState !== WebSocket.CLOSED) {
         socket.on('error', ignoreSettledRemoteRuntimeSocketError)
@@ -143,7 +143,7 @@ export async function sendRemoteRuntimeRequest<TResult>(
         ok: false,
         error: new RemoteRuntimeClientError(
           'runtime_timeout',
-          'Timed out waiting for the remote Orca runtime to respond.'
+          'Timed out waiting for the remote AIO-ADE runtime to respond.'
         )
       })
     }
@@ -208,7 +208,7 @@ export async function sendRemoteRuntimeRequest<TResult>(
         ok: false,
         error: new RemoteRuntimeClientError(
           'remote_runtime_unavailable',
-          'Could not connect to the remote Orca runtime.'
+          'Could not connect to the remote AIO-ADE runtime.'
         )
       })
     }
@@ -234,7 +234,7 @@ export async function sendRemoteRuntimeRequest<TResult>(
           ok: false,
           error: new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned an unexpected binary frame.'
+            'Remote AIO-ADE runtime returned an unexpected binary frame.'
           )
         })
         return
@@ -252,7 +252,7 @@ export async function sendRemoteRuntimeRequest<TResult>(
           ok: false,
           error: new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned an undecryptable frame.'
+            'Remote AIO-ADE runtime returned an undecryptable frame.'
           )
         })
         return
@@ -280,7 +280,7 @@ export async function sendRemoteRuntimeRequest<TResult>(
           ok: false,
           error: new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned an invalid E2EE handshake frame.'
+            'Remote AIO-ADE runtime returned an invalid E2EE handshake frame.'
           )
         })
         return
@@ -294,7 +294,7 @@ export async function sendRemoteRuntimeRequest<TResult>(
           ok: false,
           error: new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned an unexpected E2EE handshake frame.'
+            'Remote AIO-ADE runtime returned an unexpected E2EE handshake frame.'
           )
         })
         return
@@ -312,7 +312,7 @@ export async function sendRemoteRuntimeRequest<TResult>(
           ok: false,
           error: new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned an invalid E2EE auth frame.'
+            'Remote AIO-ADE runtime returned an invalid E2EE auth frame.'
           )
         })
         return
@@ -329,7 +329,7 @@ export async function sendRemoteRuntimeRequest<TResult>(
           ok: false,
           error: new RemoteRuntimeClientError(
             code,
-            'Remote Orca runtime rejected the pairing token.'
+            'Remote AIO-ADE runtime rejected the pairing token.'
           )
         })
         return
@@ -342,7 +342,7 @@ export async function sendRemoteRuntimeRequest<TResult>(
           ok: false,
           error: new RemoteRuntimeClientError(
             'remote_runtime_unavailable',
-            'Remote Orca runtime request was released before it could be sent.'
+            'Remote AIO-ADE runtime request was released before it could be sent.'
           )
         })
         return
@@ -359,7 +359,7 @@ export async function sendRemoteRuntimeRequest<TResult>(
           ok: false,
           error: new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned an invalid response frame.'
+            'Remote AIO-ADE runtime returned an invalid response frame.'
           )
         })
         return
@@ -374,7 +374,7 @@ export async function sendRemoteRuntimeRequest<TResult>(
           ok: false,
           error: new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned an invalid response frame.'
+            'Remote AIO-ADE runtime returned an invalid response frame.'
           )
         })
         return
@@ -385,7 +385,7 @@ export async function sendRemoteRuntimeRequest<TResult>(
           ok: false,
           error: new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned a mismatched response id.'
+            'Remote AIO-ADE runtime returned a mismatched response id.'
           )
         })
         return
@@ -440,7 +440,7 @@ export async function subscribeRemoteRuntimeRequest<TResult>(
       socket.off('pong', onLivenessSignal)
       socket.off('ping', onLivenessSignal)
       ws = null
-      // Why: startup failures detach Orca callbacks before closing the ws,
+      // Why: startup failures detach AIO-ADE callbacks before closing the ws,
       // but ws can still emit a late transport error while close is in flight.
       if (socket.readyState !== WebSocket.CLOSED) {
         socket.on('error', ignoreSettledRemoteRuntimeSocketError)
@@ -461,7 +461,7 @@ export async function subscribeRemoteRuntimeRequest<TResult>(
       fail(
         new RemoteRuntimeClientError(
           'runtime_timeout',
-          'Timed out waiting for the remote Orca runtime subscription to start.'
+          'Timed out waiting for the remote AIO-ADE runtime subscription to start.'
         )
       )
     }, timeoutMs)
@@ -492,7 +492,7 @@ export async function subscribeRemoteRuntimeRequest<TResult>(
             fail(
               new RemoteRuntimeClientError(
                 'remote_runtime_unavailable',
-                'Remote Orca runtime send buffer overflow; reconnecting.'
+                'Remote AIO-ADE runtime send buffer overflow; reconnecting.'
               )
             )
         })
@@ -559,7 +559,7 @@ export async function subscribeRemoteRuntimeRequest<TResult>(
       fail(
         new RemoteRuntimeClientError(
           'remote_runtime_unavailable',
-          'Could not connect to the remote Orca runtime.'
+          'Could not connect to the remote AIO-ADE runtime.'
         )
       )
     }
@@ -598,7 +598,7 @@ export async function subscribeRemoteRuntimeRequest<TResult>(
         fail(
           new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned an undecryptable frame.'
+            'Remote AIO-ADE runtime returned an undecryptable frame.'
           )
         )
         return
@@ -640,7 +640,7 @@ export async function subscribeRemoteRuntimeRequest<TResult>(
         fail(
           new RemoteRuntimeClientError(
             'remote_runtime_unavailable',
-            'Remote Orca runtime stopped responding; the stream connection was reset.'
+            'Remote AIO-ADE runtime stopped responding; the stream connection was reset.'
           )
         )
         try {
@@ -661,7 +661,7 @@ export async function subscribeRemoteRuntimeRequest<TResult>(
         fail(
           new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned an invalid E2EE handshake frame.'
+            'Remote AIO-ADE runtime returned an invalid E2EE handshake frame.'
           )
         )
         return
@@ -674,7 +674,7 @@ export async function subscribeRemoteRuntimeRequest<TResult>(
         fail(
           new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned an unexpected E2EE handshake frame.'
+            'Remote AIO-ADE runtime returned an unexpected E2EE handshake frame.'
           )
         )
         return
@@ -691,7 +691,7 @@ export async function subscribeRemoteRuntimeRequest<TResult>(
         fail(
           new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned an invalid E2EE auth frame.'
+            'Remote AIO-ADE runtime returned an invalid E2EE auth frame.'
           )
         )
         return
@@ -704,7 +704,9 @@ export async function subscribeRemoteRuntimeRequest<TResult>(
           (authenticated as { error?: { code?: unknown } }).error?.code === 'unauthorized'
             ? 'unauthorized'
             : 'invalid_runtime_response'
-        fail(new RemoteRuntimeClientError(code, 'Remote Orca runtime rejected the pairing token.'))
+        fail(
+          new RemoteRuntimeClientError(code, 'Remote AIO-ADE runtime rejected the pairing token.')
+        )
         return
       }
       state = 'ready'
@@ -720,7 +722,7 @@ export async function subscribeRemoteRuntimeRequest<TResult>(
         fail(
           new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned an invalid response frame.'
+            'Remote AIO-ADE runtime returned an invalid response frame.'
           )
         )
         return
@@ -734,7 +736,7 @@ export async function subscribeRemoteRuntimeRequest<TResult>(
         fail(
           new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned a mismatched response id.'
+            'Remote AIO-ADE runtime returned a mismatched response id.'
           )
         )
         return
@@ -747,7 +749,7 @@ export async function subscribeRemoteRuntimeRequest<TResult>(
         fail(
           new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned binary data before authentication.'
+            'Remote AIO-ADE runtime returned binary data before authentication.'
           )
         )
         return
@@ -757,7 +759,7 @@ export async function subscribeRemoteRuntimeRequest<TResult>(
         fail(
           new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned an undecryptable binary frame.'
+            'Remote AIO-ADE runtime returned an undecryptable binary frame.'
           )
         )
         return

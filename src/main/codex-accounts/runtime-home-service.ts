@@ -33,11 +33,11 @@ import type { Store } from '../persistence'
 import { WSL_CODEX_RUNTIME_HOME_SEGMENTS } from '../pty/codex-home-wsl-env'
 import { writeFileAtomically } from './fs-utils'
 import {
-  getOrcaManagedCodexHomePath,
-  getOrcaUserDataPath,
+  getAioAdeManagedCodexHomePath,
+  getAioAdeUserDataPath,
   getCodexSessionBackfillStateDirPath,
   getSystemCodexHomePath,
-  resolveOrcaManagedCodexHomePath,
+  resolveAioAdeManagedCodexHomePath,
   syncCodexGlobalInstructionsIntoManagedHome,
   syncSystemCodexResourcesIntoManagedHome
 } from '../codex/codex-home-paths'
@@ -99,7 +99,7 @@ type CodexReadBackMatch =
 
 function readLaunchEnvValue(
   launchEnv: NodeJS.ProcessEnv,
-  key: 'CODEX_HOME' | 'ORCA_CODEX_HOME' | 'HOME' | 'SHELL'
+  key: 'CODEX_HOME' | 'AIO_ADE_CODEX_HOME' | 'HOME' | 'SHELL'
 ): string | undefined {
   return Object.prototype.hasOwnProperty.call(launchEnv, key) ? launchEnv[key] : process.env[key]
 }
@@ -107,14 +107,14 @@ function readLaunchEnvValue(
 function getEffectiveCodexHomeEnv(launchEnv: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   return {
     CODEX_HOME: readLaunchEnvValue(launchEnv, 'CODEX_HOME'),
-    ORCA_CODEX_HOME: readLaunchEnvValue(launchEnv, 'ORCA_CODEX_HOME')
+    AIO_ADE_CODEX_HOME: readLaunchEnvValue(launchEnv, 'AIO_ADE_CODEX_HOME')
   }
 }
 
 export class CodexRuntimeHomeService {
   // Which managed account runtime auth.json mirrors; null means it follows system-default ~/.codex instead of a managed account.
   private lastSyncedAccountId: string | null = null
-  // Last auth.json Orca wrote to the runtime home; a later diff signals an out-of-band change (Codex token refresh, or external login to adopt).
+  // Last auth.json AIO-ADE wrote to the runtime home; a later diff signals an out-of-band change (Codex token refresh, or external login to adopt).
   private lastWrittenAuthJson: string | null = null
   // Why: WSL terminals have per-distro runtime homes; sharing the host baseline can make stale WSL auth look newer than managed storage.
   private readonly lastWrittenWslAuthJsonByDistro = new Map<string, string | null>()
@@ -139,7 +139,7 @@ export class CodexRuntimeHomeService {
       settings.codexManagedAccounts,
       normalizeCodexRuntimeSelection(settings).host
     )
-    // Why: WSL-managed homes never touch host ~/.codex; treating one as "last synced" makes cold start mangle host auth Orca never touched.
+    // Why: WSL-managed homes never touch host ~/.codex; treating one as "last synced" makes cold start mangle host auth AIO-ADE never touched.
     this.lastSyncedAccountId = this.getWslManagedHomePath(activeAccount)
       ? null
       : normalizeCodexRuntimeSelection(settings).host
@@ -259,7 +259,7 @@ export class CodexRuntimeHomeService {
 
   // Why: Codex's own `/resume` picker only lists rollouts under the launch
   // CODEX_HOME, so a self-contained account home starts out with no history at
-  // all. Hardlink every other Orca-visible home's rollouts in — after launch,
+  // all. Hardlink every other AIO-ADE-visible home's rollouts in — after launch,
   // since history trees can be large — so switching accounts no longer hides
   // the user's conversations.
   private startSelfContainedSessionBridgeForLaunch(perAccountHome: string): void {
@@ -275,7 +275,7 @@ export class CodexRuntimeHomeService {
       // home they actually record sessions in; falls back to the real ~/.codex.
       resolveHostCodexSessionSourceHome(this.store.getSettings()) ?? getSystemCodexHomePath(),
       // Why: path only — a per-account install must not materialize the mirror.
-      resolveOrcaManagedCodexHomePath(),
+      resolveAioAdeManagedCodexHomePath(),
       ...this.getManagedHostAccountHomesForSessionDiscovery()
     ]
   }
@@ -376,7 +376,7 @@ export class CodexRuntimeHomeService {
   getHostCodexHomePathsForSessionDiscovery(): string[] {
     const homes = [this.getRuntimeHomePath()]
     if (this.isHostSystemDefaultRealHome() || this.getSelfContainedManagedHostAccount()) {
-      // Why: nested Orca processes can retain an ambient managed CODEX_HOME.
+      // Why: nested AIO-ADE processes can retain an ambient managed CODEX_HOME.
       // Per-account lanes no longer bridge real-home history into the shared
       // mirror, so include the real root for both directly-routed host lanes.
       homes.push(getSystemCodexHomePath())
@@ -528,7 +528,7 @@ export class CodexRuntimeHomeService {
     }
     if (this.isHostSystemDefaultRealHome()) {
       // Why: null lets the fetcher fall back to the main process's inherited
-      // CODEX_HOME before ~/.codex. Nested Orca launches can inherit the
+      // CODEX_HOME before ~/.codex. Nested AIO-ADE launches can inherit the
       // managed home, restarting the background OAuth conflict (#5370), so
       // pin this non-interactive lane to the native home explicitly.
       return getSystemCodexHomePath()
@@ -631,7 +631,7 @@ export class CodexRuntimeHomeService {
           this.persistRuntimeLogoutMarker(null)
           this.lastWrittenAuthJson = null
         } else if (this.lastWrittenAuthJson === null) {
-          // Why: unmanaged sessions use an Orca-owned CODEX_HOME; seed it once from system-default auth so terminals stay logged in without mutating ~/.codex.
+          // Why: unmanaged sessions use an AIO-ADE-owned CODEX_HOME; seed it once from system-default auth so terminals stay logged in without mutating ~/.codex.
           this.restoreSystemDefaultSnapshot({ detectExternalLogin: false })
         } else {
           this.persistRuntimeLogoutMarker()
@@ -671,7 +671,7 @@ export class CodexRuntimeHomeService {
       this.captureSystemDefaultSnapshot({ force: true })
     }
 
-    // Why: Codex refreshes OAuth tokens in the runtime auth.json; if it differs from Orca's last write, read those back to managed storage before overwriting.
+    // Why: Codex refreshes OAuth tokens in the runtime auth.json; if it differs from AIO-ADE's last write, read those back to managed storage before overwriting.
     if (this.lastSyncedAccountId === activeAccount.id) {
       if (this.skipNextReadBackForAccountId === activeAccount.id) {
         this.skipNextReadBackForAccountId = null
@@ -796,7 +796,7 @@ export class CodexRuntimeHomeService {
       if (runtimeContents === this.lastWrittenAuthJson) {
         return 'unchanged'
       }
-      // Why: the canonical file is gone, so the exact in-memory bytes Orca
+      // Why: the canonical file is gone, so the exact in-memory bytes AIO-ADE
       // previously mirrored are the only safe identity baseline for recovery.
       if (!codexAuthMatchesManagedAccount(runtimeContents, account, this.lastWrittenAuthJson)) {
         return 'rejected'
@@ -846,7 +846,7 @@ export class CodexRuntimeHomeService {
       const settings = this.store.getSettings()
       const selectedAccountId = getSelectedCodexAccountIdForTarget(settings, target)
       if (selectedAccountId === null) {
-        // Why: the system-default account changes outside Orca, so read its real home directly to avoid a stale cached runtime copy.
+        // Why: the system-default account changes outside AIO-ADE, so read its real home directly to avoid a stale cached runtime copy.
         return this.getWslSystemCodexHomePath(target)
       }
       const cachedRuntimeHomePath = this.wslRuntimeHomePathByDistro.get(distro)
@@ -1193,7 +1193,7 @@ export class CodexRuntimeHomeService {
   }
 
   private getRuntimeHomePath(): string {
-    return getOrcaManagedCodexHomePath()
+    return getAioAdeManagedCodexHomePath()
   }
 
   /**
@@ -1214,7 +1214,7 @@ export class CodexRuntimeHomeService {
     if (this.isHostSystemDefaultRealHome()) {
       return null
     }
-    return join(getOrcaUserDataPath(), 'codex-runtime-home', 'home')
+    return join(getAioAdeUserDataPath(), 'codex-runtime-home', 'home')
   }
 
   private getRuntimeAuthPath(): string {
@@ -1387,7 +1387,7 @@ export class CodexRuntimeHomeService {
         continue
       }
       const managedHomePath = join(managedAccountsRoot, entry.name, 'home')
-      if (existsSync(join(managedHomePath, '.orca-managed-home'))) {
+      if (existsSync(join(managedHomePath, '.aio-ade-managed-home'))) {
         managedHomes.push(managedHomePath)
       }
     }
@@ -1484,7 +1484,7 @@ export class CodexRuntimeHomeService {
   private getPreservedLegacySessionPath(runtimeFilePath: string, accountId: string): string {
     const extension = extname(runtimeFilePath)
     const basename = runtimeFilePath.slice(0, runtimeFilePath.length - extension.length)
-    return `${basename}.orca-legacy-${accountId}${extension}`
+    return `${basename}.aio-ade-legacy-${accountId}${extension}`
   }
 
   private appendMigrationDiagnostic(record: Record<string, string>): void {
@@ -1549,7 +1549,7 @@ export class CodexRuntimeHomeService {
           this.lastWrittenAuthJson = runtimeAuth
           return
         }
-        // Why: mirror external logins/logouts into Orca's runtime home so unmanaged Codex sessions keep matching the current system-default state.
+        // Why: mirror external logins/logouts into AIO-ADE's runtime home so unmanaged Codex sessions keep matching the current system-default state.
         this.captureSystemDefaultSnapshot({ force: true })
         this.writeRuntimeAuth(systemDefaultAuth)
       }
@@ -1570,7 +1570,7 @@ export class CodexRuntimeHomeService {
     }
 
     if (options.detectExternalLogin && !existsSync(runtimeAuthPath)) {
-      // Why: with Orca owning CODEX_HOME, a deleted runtime auth.json is a local logout, not a cue to restore the user's real ~/.codex snapshot.
+      // Why: with AIO-ADE owning CODEX_HOME, a deleted runtime auth.json is a local logout, not a cue to restore the user's real ~/.codex snapshot.
       this.persistRuntimeLogoutMarker()
       this.lastWrittenAuthJson = null
       return
@@ -1624,7 +1624,7 @@ export class CodexRuntimeHomeService {
   }
 
   private clearRuntimeAuthAfterSystemDefaultLogout(runtimeAuthPath: string): void {
-    // Why: a vanished ~/.codex auth means external logout for unmanaged sessions, even if runtime auth already refreshed in Orca's CODEX_HOME.
+    // Why: a vanished ~/.codex auth means external logout for unmanaged sessions, even if runtime auth already refreshed in AIO-ADE's CODEX_HOME.
     rmSync(runtimeAuthPath, { force: true })
     this.captureSystemDefaultSnapshot({ force: true })
     this.persistRuntimeLogoutMarker()

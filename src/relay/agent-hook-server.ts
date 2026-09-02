@@ -8,7 +8,7 @@ import { randomUUID } from 'node:crypto'
 import { basename, dirname, join } from 'node:path'
 import { homedir } from 'node:os'
 
-import { ORCA_HOOK_PROTOCOL_VERSION } from '../shared/agent-hook-types'
+import { AIO_ADE_HOOK_PROTOCOL_VERSION } from '../shared/agent-hook-types'
 import {
   clearAllListenerCaches,
   clearPaneCacheState,
@@ -32,7 +32,7 @@ import {
 export type RelayHookForward = (envelope: AgentHookRelayEnvelope) => void
 
 // Why: relay's userData equivalent under $HOME so each user on a shared dev box gets their own 0o700 dir.
-const RELAY_HOOKS_DIR_NAME = '.orca-relay'
+const RELAY_HOOKS_DIR_NAME = '.aio-ade-relay'
 const RELAY_HOOKS_SUBDIR = 'agent-hooks'
 const CODEX_SUBAGENT_POLL_MS = 1_000
 
@@ -67,7 +67,7 @@ export function endpointDirForRelaySocket(sockPath: string): string {
 }
 
 export type RelayHookServerOptions = {
-  /** Where to put endpoint.env / endpoint.cmd. Defaults to `$HOME/.orca-relay/agent-hooks`. */
+  /** Where to put endpoint.env / endpoint.cmd. Defaults to `$HOME/.aio-ade-relay/agent-hooks`. */
   endpointDir?: string
   /** Env tag forwarded into hook payloads. Defaults to "remote", which main excludes from dev-vs-prod mismatch warnings. */
   env?: string
@@ -176,7 +176,7 @@ export class RelayAgentHookServer {
       port: this.port,
       token: this.token,
       env: this.env,
-      version: ORCA_HOOK_PROTOCOL_VERSION
+      version: AIO_ADE_HOOK_PROTOCOL_VERSION
     })
     return this.endpointFileWritten
   }
@@ -224,13 +224,13 @@ export class RelayAgentHookServer {
       return {}
     }
     const env: Record<string, string> = {
-      ORCA_AGENT_HOOK_PORT: String(this.port),
-      ORCA_AGENT_HOOK_TOKEN: this.token,
-      ORCA_AGENT_HOOK_ENV: this.env,
-      ORCA_AGENT_HOOK_VERSION: ORCA_HOOK_PROTOCOL_VERSION
+      AIO_ADE_AGENT_HOOK_PORT: String(this.port),
+      AIO_ADE_AGENT_HOOK_TOKEN: this.token,
+      AIO_ADE_AGENT_HOOK_ENV: this.env,
+      AIO_ADE_AGENT_HOOK_VERSION: AIO_ADE_HOOK_PROTOCOL_VERSION
     }
     if (this.endpointFileWritten) {
-      env.ORCA_AGENT_HOOK_ENDPOINT = this.endpointFilePath
+      env.AIO_ADE_AGENT_HOOK_ENDPOINT = this.endpointFilePath
     }
     return env
   }
@@ -248,7 +248,7 @@ export class RelayAgentHookServer {
       res.end()
       return
     }
-    if (req.headers['x-orca-agent-hook-token'] !== this.token) {
+    if (req.headers['x-aio-ade-agent-hook-token'] !== this.token) {
       res.writeHead(403)
       res.end()
       return
@@ -354,7 +354,7 @@ export class RelayAgentHookServer {
     env?: string,
     version?: string
   ): void {
-    // Why: a nested non-codex CLI inherits ORCA_PANE_KEY, so clearing here would silently end a live codex poll.
+    // Why: a nested non-codex CLI inherits AIO_ADE_PANE_KEY, so clearing here would silently end a live codex poll.
     if (source !== 'codex') {
       return
     }

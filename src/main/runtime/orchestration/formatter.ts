@@ -28,9 +28,9 @@ export function formatMessageBanner(msg: MessageRow): string {
   }
 
   if (!legacyReadOnly) {
-    // Why: older shells can lack Orca's terminal identity environment.
+    // Why: older shells can lack AIO-ADE's terminal identity environment.
     lines.push(
-      `[Reply: orca orchestration reply --id ${msg.id} --from ${msg.to_handle} --body "..."]`
+      `[Reply: aio-ade orchestration reply --id ${msg.id} --from ${msg.to_handle} --body "..."]`
     )
   }
   lines.push(SEPARATOR)

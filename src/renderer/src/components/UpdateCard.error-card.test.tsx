@@ -62,7 +62,7 @@ afterEach(() => {
 describe('UpdateCard Windows signature failures', () => {
   it('does not offer the rejected version as a manual publisher-check bypass', () => {
     const message =
-      'New version 1.4.200 is not signed by the application owner: publisherNames: Orca'
+      'New version 1.4.200 is not signed by the application owner: publisherNames: AIO-ADE'
     renderAfterAvailableStatus()
 
     act(() => useAppStore.getState().setUpdateStatus({ state: 'error', message }))
@@ -72,7 +72,7 @@ describe('UpdateCard Windows signature failures', () => {
     expect(screen.queryByText(message)).toBeNull()
 
     fireEvent.click(screen.getByRole('button', { name: 'Check official releases' }))
-    expect(openUrl).toHaveBeenCalledWith('https://github.com/stablyai/orca/releases')
+    expect(openUrl).toHaveBeenCalledWith('https://github.com/keepmeside/aio-ade-platform/releases')
     expect(openUrl).not.toHaveBeenCalledWith(expect.stringContaining('/tag/'))
   })
 

@@ -6,7 +6,7 @@ import {
   createShutdownCheckpointGuard,
   preventUnloadAndScheduleShutdownCheckpointReset
 } from './shutdown-checkpoint-guard'
-import { ORCA_RENDERER_UNLOAD_PREVENTED_EVENT } from '../../../shared/renderer-shutdown-events'
+import { AIO_ADE_RENDERER_UNLOAD_PREVENTED_EVENT } from '../../../shared/renderer-shutdown-events'
 
 describe('createShutdownCheckpointGuard', () => {
   it('dedupes the synthetic and native unload events in one close attempt', () => {
@@ -83,7 +83,7 @@ describe('createShutdownCheckpointGuard', () => {
     }
     eventTarget.addEventListener('beforeunload', preventReload)
     eventTarget.addEventListener('beforeunload', createShutdownCheckpointBeforeUnloadHandler(guard))
-    eventTarget.addEventListener(ORCA_RENDERER_UNLOAD_PREVENTED_EVENT, guard.reset)
+    eventTarget.addEventListener(AIO_ADE_RENDERER_UNLOAD_PREVENTED_EVENT, guard.reset)
 
     expect(eventTarget.dispatchEvent(new Event('beforeunload', { cancelable: true }))).toBe(false)
     await Promise.resolve()

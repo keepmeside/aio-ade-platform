@@ -4,7 +4,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import type * as GitUsernameModule from '../git/git-username'
 import type { RuntimeMobileSessionTabsSnapshot } from '../../shared/runtime-types'
-import { OrcaRuntimeService } from './orca-runtime'
+import { AioAdeRuntimeService } from './aio-ade-runtime'
 
 vi.mock('../git/worktree', () => ({
   listWorktrees: vi.fn().mockResolvedValue([
@@ -86,7 +86,7 @@ const store = {
 }
 
 function createRuntime() {
-  const runtime = new OrcaRuntimeService(store)
+  const runtime = new AioAdeRuntimeService(store)
   const ptySizes = new Map<string, { cols: number; rows: number }>()
   ptySizes.set('pty-1', { cols: 150, rows: 40 })
   ptySizes.set('pty-2', { cols: 120, rows: 35 })
@@ -919,7 +919,7 @@ describe('mobile subscribe integration', () => {
       notifyMobileSessionTabsChanged: (worktreeId?: string) => void
     }
 
-    function seedPtyBackedSnapshot(runtime: OrcaRuntimeService, ptyId: string): void {
+    function seedPtyBackedSnapshot(runtime: AioAdeRuntimeService, ptyId: string): void {
       const priv = runtime as unknown as SessionTabsPrivate
       priv.mobileSessionTabsByWorktree.set('worktree-a', {
         worktree: 'worktree-a',

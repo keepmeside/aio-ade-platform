@@ -6,9 +6,10 @@
 // AgentHookServer.ingestRemote. This is the chain the Windows-rig GUI run
 // exercises minus the wsl.exe byte transport (validated separately on-rig).
 import { execFileSync, spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { getAppHomePath } from '../../shared/app-home-paths'
 import { createServer } from 'node:net'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
@@ -18,6 +19,30 @@ import { WslHookRelayManager } from './wsl-hook-relay-manager'
 const BUNDLE_DIR = join(process.cwd(), 'out', 'relay', 'wsl')
 const BUNDLE_JS = join(BUNDLE_DIR, 'wsl-agent-hook-relay.js')
 const LEAF = '11111111-1111-4111-8111-111111111111'
+/* Trees esbuild pulls into the guest bundle. Approximate on purpose — over-rebuilding costs seconds,
+ * under-rebuilding costs a false failure that is indistinguishable from a real one. */
+const BUNDLED_SOURCE_DIRS = ['src/relay', 'src/shared']
+
+function newestSourceMtimeMs(dir: string): number {
+  let newest = 0
+  for (const entry of readdirSync(dir, { withFileTypes: true, recursive: true })) {
+    if (!entry.isFile() || !entry.name.endsWith('.ts') || entry.name.includes('.test.')) {
+      continue
+    }
+    newest = Math.max(newest, statSync(join(entry.parentPath, entry.name)).mtimeMs)
+  }
+  return newest
+}
+
+function bundleIsStale(): boolean {
+  if (!existsSync(BUNDLE_JS)) {
+    return true
+  }
+  const bundledAtMs = statSync(BUNDLE_JS).mtimeMs
+  return BUNDLED_SOURCE_DIRS.some(
+    (dir) => newestSourceMtimeMs(join(process.cwd(), dir)) > bundledAtMs
+  )
+}
 
 async function pickFreePort(): Promise<number> {
   const probe = createServer()
@@ -39,11 +64,15 @@ describe.skipIf(process.platform === 'win32')(
   () => {
     let fakeHome: string
     let manager: WslHookRelayManager | null
-    let orcaServer: AgentHookServer | null
+    let aioAdeServer: AgentHookServer | null
     let child: ChildProcessWithoutNullStreams | null
 
     beforeAll(() => {
-      if (!existsSync(BUNDLE_JS)) {
+      /* Rebuild when the bundle is missing OR older than what it bundles. Checking only for absence
+       * let a pre-rebrand bundle survive the brand rename and fail against host-side paths that were
+       * already correct. CI starts with no `out/`, so this staleness case is local-only — which is
+       * exactly where this program's verification happens while Actions are unavailable. */
+      if (bundleIsStale()) {
         execFileSync(process.execPath, [join('config', 'scripts', 'build-relay.mjs')], {
           cwd: process.cwd(),
           stdio: 'ignore'
@@ -53,7 +82,7 @@ describe.skipIf(process.platform === 'win32')(
 
     afterEach(() => {
       manager?.disposeAll()
-      orcaServer?.stop()
+      aioAdeServer?.stop()
       child?.kill()
       rmSync(fakeHome, { recursive: true, force: true })
     })
@@ -63,26 +92,26 @@ describe.skipIf(process.platform === 'win32')(
       const preferredPort = await pickFreePort()
       const version = readFileSync(join(BUNDLE_DIR, '.version'), 'utf8').trim()
 
-      orcaServer = new AgentHookServer()
+      aioAdeServer = new AgentHookServer()
       const events: { paneKey: string; payload: unknown; connectionId: string | null }[] = []
-      orcaServer.setListener((event) => {
+      aioAdeServer.setListener((event) => {
         events.push({
           paneKey: event.paneKey,
           payload: event.payload,
           connectionId: event.connectionId
         })
       })
-      const server = orcaServer
+      const server = aioAdeServer
 
       const warns: string[] = []
       manager = new WslHookRelayManager({
         platform: () => 'win32',
         remoteHooksEnabled: () => true,
         hookCoordsEnv: () => ({
-          ORCA_AGENT_HOOK_PORT: String(preferredPort),
-          ORCA_AGENT_HOOK_TOKEN: 'live-token',
-          ORCA_AGENT_HOOK_ENV: 'production',
-          ORCA_AGENT_HOOK_VERSION: '1'
+          AIO_ADE_AGENT_HOOK_PORT: String(preferredPort),
+          AIO_ADE_AGENT_HOOK_TOKEN: 'live-token',
+          AIO_ADE_AGENT_HOOK_ENV: 'production',
+          AIO_ADE_AGENT_HOOK_VERSION: '1'
         }),
         instanceKey: () => 'liveinstance',
         resolveBundle: () => ({ jsPath: BUNDLE_JS, version }),
@@ -115,7 +144,7 @@ describe.skipIf(process.platform === 'win32')(
         fakeHome,
         '.local',
         'share',
-        'orca',
+        'aio-ade',
         'codex-runtime-home',
         'home'
       )
@@ -124,7 +153,7 @@ describe.skipIf(process.platform === 'win32')(
       })
       expect(existsSync(join(fakeHome, '.claude', 'settings.json'))).toBe(true)
       const claudeScript = readFileSync(
-        join(fakeHome, '.orca', 'agent-hooks', 'claude-hook.sh'),
+        getAppHomePath(fakeHome, 'agent-hooks', 'claude-hook.sh'),
         'utf8'
       )
       expect(claudeScript).toContain('/hook/claude')
@@ -137,15 +166,15 @@ describe.skipIf(process.platform === 'win32')(
       // endpoint file rather than assuming the preferred port bind won.
       const endpointFile = join(
         fakeHome,
-        '.orca-wsl',
+        '.aio-ade-wsl',
         'agent-hooks',
         'instance-liveinstance',
         'endpoint.env'
       )
       expect(existsSync(endpointFile)).toBe(true)
       const endpointText = readFileSync(endpointFile, 'utf8')
-      const port = Number(/ORCA_AGENT_HOOK_PORT=['"]?(\d+)/.exec(endpointText)?.[1])
-      const token = /ORCA_AGENT_HOOK_TOKEN=['"]?([A-Za-z0-9-]+)/.exec(endpointText)?.[1]
+      const port = Number(/AIO_ADE_AGENT_HOOK_PORT=['"]?(\d+)/.exec(endpointText)?.[1])
+      const token = /AIO_ADE_AGENT_HOOK_TOKEN=['"]?([A-Za-z0-9-]+)/.exec(endpointText)?.[1]
       expect(port).toBeGreaterThan(0)
       expect(token).toBe('live-token')
 
@@ -155,7 +184,7 @@ describe.skipIf(process.platform === 'win32')(
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Orca-Agent-Hook-Token': token ?? ''
+            'X-AIO-ADE-Agent-Hook-Token': token ?? ''
           },
           body: JSON.stringify({
             paneKey,

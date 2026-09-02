@@ -55,7 +55,7 @@ async function readDurableHostToken(): Promise<string | undefined> {
   if ((process.platform !== 'linux' && process.platform !== 'darwin') || uid === undefined) {
     return undefined
   }
-  const directory = join('/var', 'tmp', `orca-managed-hooks-${uid}`)
+  const directory = join('/var', 'tmp', `aio-ade-managed-hooks-${uid}`)
   const tokenPath = join(directory, 'host-id')
   try {
     await mkdir(directory, { recursive: true, mode: 0o700 })

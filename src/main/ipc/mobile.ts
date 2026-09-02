@@ -4,7 +4,7 @@ import type { RuntimeAccessGrant } from '../../shared/runtime-access-grants'
 import type { MobilePairingConnectionMode } from '../../shared/mobile-pairing-connection-mode'
 import { isTailnetIPv4Address } from '../../shared/tailnet-address'
 import type { DeviceEntry } from '../runtime/device-registry'
-import type { OrcaRuntimeRpcServer } from '../runtime/runtime-rpc'
+import type { AioAdeRuntimeRpcServer } from '../runtime/runtime-rpc'
 import type { RelayBrokerStatus } from '../runtime/relay/relay-session-broker'
 import { encodeMobilePairingQr, type MobilePairingQrResult } from '../runtime/mobile-pairing-qr'
 import {
@@ -35,7 +35,7 @@ function isProxyFakeIpIPv4Address(address: string): boolean {
 // connectable from a mobile device. We enumerate all non-internal IPv4 and
 // (non-link-local) IPv6 addresses so the user can choose which one to advertise
 // in the QR code (e.g. LAN vs Tailscale). IPv6 must be included so pairing works
-// on IPv6-only hosts (e.g. a headless `orca serve` reachable only over IPv6),
+// on IPv6-only hosts (e.g. a headless `aio-ade serve` reachable only over IPv6),
 // where an IPv4-only scan returns nothing and the UI reports "no interfaces".
 function getNetworkInterfaces(): NetworkInterface[] {
   const result: NetworkInterface[] = []
@@ -87,7 +87,7 @@ function toRuntimeAccessGrant(device: DeviceEntry): RuntimeAccessGrant {
 
 // Why: the mobile IPC handlers provide the renderer with QR code pairing data,
 // device management, and WebSocket readiness status. They depend on the
-// OrcaRuntimeRpcServer because it owns the device registry and TLS state.
+// AioAdeRuntimeRpcServer because it owns the device registry and TLS state.
 
 export type MobileHandlerDependencies = {
   firewallEnvironment?: WindowsMobileFirewallEnvironment
@@ -98,7 +98,7 @@ export type MobileHandlerDependencies = {
 }
 
 export function registerMobileHandlers(
-  rpcServer: OrcaRuntimeRpcServer,
+  rpcServer: AioAdeRuntimeRpcServer,
   dependencies: MobileHandlerDependencies = {}
 ): void {
   const firewallEnvironment = dependencies.firewallEnvironment ?? {

@@ -120,11 +120,11 @@ function respondWithNotReadyRelease({
   const atom = `<feed>${publishingIncident.atomTags
     .map(
       (tag) =>
-        `<entry><link rel="alternate" type="text/html" href="https://github.com/stablyai/orca/releases/tag/${tag}"/><title>${tag}</title></entry>`
+        `<entry><link rel="alternate" type="text/html" href="https://github.com/keepmeside/aio-ade-platform/releases/tag/${tag}"/><title>${tag}</title></entry>`
     )
     .join('')}</feed>`
   netFetchMock.mockImplementation((url: string, init?: { method?: string }) => {
-    if (url === 'https://github.com/stablyai/orca/releases.atom') {
+    if (url === 'https://github.com/keepmeside/aio-ade-platform/releases.atom') {
       return Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(atom) })
     }
     if (init?.method === 'HEAD' && assetStatus !== undefined) {
@@ -156,6 +156,12 @@ function makeBenignCheckFailure(message: string): void {
 describe('updater check failure handling', () => {
   beforeEach(() => {
     vi.resetModules()
+    /* Re-arm after `vi.resetModules()`: the gate resets to its production default, which keeps
+     * the updater inert while artifacts are unsigned. These suites test the machinery behind
+     * that gate. */
+    void import('./updater-distribution-gate').then((gate) =>
+      gate._setUpdateChannelAuthenticatedForTests(true)
+    )
     autoUpdaterMock.reset()
     nativeUpdaterMock.on.mockReset()
     browserWindowMock.getAllWindows.mockReset()
@@ -248,7 +254,7 @@ describe('updater check failure handling', () => {
     {
       assetStatus: publishingIncident.missingWindowsAssetStatus,
       caseName: 'asset 404',
-      manifestText: 'version: 1.4.142\nfiles:\n  - url: orca-windows-setup.exe'
+      manifestText: 'version: 1.4.142\nfiles:\n  - url: aio-ade-windows-setup.exe'
     }
   ])(
     'maps $caseName into neutral artifact-readiness status and diagnostics',

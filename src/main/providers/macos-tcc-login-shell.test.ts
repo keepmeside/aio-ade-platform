@@ -40,13 +40,13 @@ describe('wrapShellSpawnForMacosTccAttribution', () => {
 
   beforeEach(() => {
     origPlatform = Object.getOwnPropertyDescriptor(process, 'platform')
-    origDisable = process.env.ORCA_DISABLE_MACOS_LOGIN_SHELL
-    delete process.env.ORCA_DISABLE_MACOS_LOGIN_SHELL
+    origDisable = process.env.AIO_ADE_DISABLE_MACOS_LOGIN_SHELL
+    delete process.env.AIO_ADE_DISABLE_MACOS_LOGIN_SHELL
     existsSyncMock.mockReturnValue(true)
     userInfoMock.mockReturnValue({ username: 'ada', homedir: '/Users/ada' })
     execFileMock.mockImplementation(
       (_file: string, _args: string[], _options: unknown, callback: ExecFileCallback) => {
-        callback(null, 'ORCA_LOGIN_PREFLIGHT_OK', '')
+        callback(null, 'AIO_ADE_LOGIN_PREFLIGHT_OK', '')
         return { stdin: { end: stdinEndMock } }
       }
     )
@@ -59,9 +59,9 @@ describe('wrapShellSpawnForMacosTccAttribution', () => {
       Object.defineProperty(process, 'platform', origPlatform)
     }
     if (origDisable === undefined) {
-      delete process.env.ORCA_DISABLE_MACOS_LOGIN_SHELL
+      delete process.env.AIO_ADE_DISABLE_MACOS_LOGIN_SHELL
     } else {
-      process.env.ORCA_DISABLE_MACOS_LOGIN_SHELL = origDisable
+      process.env.AIO_ADE_DISABLE_MACOS_LOGIN_SHELL = origDisable
     }
     vi.restoreAllMocks()
     vi.clearAllMocks()
@@ -76,7 +76,7 @@ describe('wrapShellSpawnForMacosTccAttribution', () => {
     })
     expect(execFileMock).toHaveBeenCalledWith(
       '/usr/bin/login',
-      ['-flpq', 'ada', '/usr/bin/printf', 'ORCA_LOGIN_PREFLIGHT_OK'],
+      ['-flpq', 'ada', '/usr/bin/printf', 'AIO_ADE_LOGIN_PREFLIGHT_OK'],
       {
         cwd: '/Users/ada',
         encoding: 'utf8',
@@ -185,7 +185,7 @@ describe('wrapShellSpawnForMacosTccAttribution', () => {
           // A one-off PAM hiccup that login(1) reports as a deterministic rejection.
           callback(Object.assign(new Error('login incorrect'), { code: 1 }), '', '')
         } else {
-          callback(null, 'ORCA_LOGIN_PREFLIGHT_OK', '')
+          callback(null, 'AIO_ADE_LOGIN_PREFLIGHT_OK', '')
         }
         return { stdin: { end: stdinEndMock } }
       }
@@ -266,7 +266,7 @@ describe('wrapShellSpawnForMacosTccAttribution', () => {
         if (attempt === 1) {
           callback(Object.assign(new Error('timed out'), { killed: true }), '', '')
         } else {
-          callback(null, 'ORCA_LOGIN_PREFLIGHT_OK', '')
+          callback(null, 'AIO_ADE_LOGIN_PREFLIGHT_OK', '')
         }
         return { stdin: { end: stdinEndMock } }
       }
@@ -304,7 +304,7 @@ describe('wrapShellSpawnForMacosTccAttribution', () => {
       (_file: string, _args: string[], _options: unknown, callback: ExecFileCallback) => {
         callback(
           Object.assign(new Error('timed out'), { code: 'ETIMEDOUT' }),
-          'ORCA_LOGIN_PREFLIGHT_OK',
+          'AIO_ADE_LOGIN_PREFLIGHT_OK',
           ''
         )
         return { stdin: { end: stdinEndMock } }
@@ -332,7 +332,7 @@ describe('wrapShellSpawnForMacosTccAttribution', () => {
     setPlatform('darwin')
     await prepareMacosTccLoginShell()
     expect(
-      wrapShellSpawnForMacosTccAttribution('/bin/bash', ['--rcfile', '/orca/bash/rcfile'])
+      wrapShellSpawnForMacosTccAttribution('/bin/bash', ['--rcfile', '/aio-ade/bash/rcfile'])
     ).toEqual({
       file: '/usr/bin/login',
       args: [
@@ -342,7 +342,7 @@ describe('wrapShellSpawnForMacosTccAttribution', () => {
         'SHELL=/bin/bash',
         '/bin/bash',
         '--rcfile',
-        '/orca/bash/rcfile'
+        '/aio-ade/bash/rcfile'
       ]
     })
   })
@@ -436,7 +436,7 @@ describe('wrapShellSpawnForMacosTccAttribution', () => {
 
   it('falls back to the plain spawn when disabled via env', () => {
     setPlatform('darwin')
-    process.env.ORCA_DISABLE_MACOS_LOGIN_SHELL = '1'
+    process.env.AIO_ADE_DISABLE_MACOS_LOGIN_SHELL = '1'
     expect(wrapShellSpawnForMacosTccAttribution('/bin/zsh', ['-l'])).toEqual({
       file: '/bin/zsh',
       args: ['-l']
@@ -455,13 +455,13 @@ describe('probeMacosLoginSessionAlive', () => {
 
   beforeEach(() => {
     origPlatform = Object.getOwnPropertyDescriptor(process, 'platform')
-    origDisable = process.env.ORCA_DISABLE_MACOS_LOGIN_SHELL
-    delete process.env.ORCA_DISABLE_MACOS_LOGIN_SHELL
+    origDisable = process.env.AIO_ADE_DISABLE_MACOS_LOGIN_SHELL
+    delete process.env.AIO_ADE_DISABLE_MACOS_LOGIN_SHELL
     existsSyncMock.mockReturnValue(true)
     userInfoMock.mockReturnValue({ username: 'ada', homedir: '/Users/ada' })
     execFileMock.mockImplementation(
       (_file: string, _args: string[], _options: unknown, callback: ExecFileCallback) => {
-        callback(null, 'ORCA_LOGIN_PREFLIGHT_OK', '')
+        callback(null, 'AIO_ADE_LOGIN_PREFLIGHT_OK', '')
         return { stdin: { end: stdinEndMock } }
       }
     )
@@ -474,9 +474,9 @@ describe('probeMacosLoginSessionAlive', () => {
       Object.defineProperty(process, 'platform', origPlatform)
     }
     if (origDisable === undefined) {
-      delete process.env.ORCA_DISABLE_MACOS_LOGIN_SHELL
+      delete process.env.AIO_ADE_DISABLE_MACOS_LOGIN_SHELL
     } else {
-      process.env.ORCA_DISABLE_MACOS_LOGIN_SHELL = origDisable
+      process.env.AIO_ADE_DISABLE_MACOS_LOGIN_SHELL = origDisable
     }
     vi.restoreAllMocks()
     vi.clearAllMocks()
@@ -505,7 +505,7 @@ describe('probeMacosLoginSessionAlive', () => {
     const freshProbe = probeMacosLoginSessionAlive()
     expect(execFileMock).toHaveBeenCalledOnce()
 
-    finishPreflight(null, 'ORCA_LOGIN_PREFLIGHT_OK', '')
+    finishPreflight(null, 'AIO_ADE_LOGIN_PREFLIGHT_OK', '')
     await expect(Promise.all([warmup, freshProbe])).resolves.toEqual([
       ACCEPTED_OUTCOME,
       ACCEPTED_OUTCOME
@@ -530,7 +530,7 @@ describe('probeMacosLoginSessionAlive', () => {
 
     callbacks[0](Object.assign(new Error('login incorrect'), { code: 1 }), '', '')
     await expect(freshProbe).resolves.toEqual(REJECTED_OUTCOME)
-    callbacks[1](null, 'ORCA_LOGIN_PREFLIGHT_OK', '')
+    callbacks[1](null, 'AIO_ADE_LOGIN_PREFLIGHT_OK', '')
     await expect(spawnProbe).resolves.toEqual(ACCEPTED_OUTCOME)
 
     expect(wrapShellSpawnForMacosTccAttribution('/bin/zsh', ['-l']).file).toBe('/bin/zsh')
@@ -625,7 +625,7 @@ describe('probeMacosLoginSessionAlive', () => {
 
     execFileMock.mockImplementation(
       (_file: string, _args: string[], _options: unknown, callback: ExecFileCallback) => {
-        callback(null, 'ORCA_LOGIN_PREFLIGHT_OK', '')
+        callback(null, 'AIO_ADE_LOGIN_PREFLIGHT_OK', '')
         return { stdin: { end: stdinEndMock } }
       }
     )
@@ -641,7 +641,7 @@ describe('probeMacosLoginSessionAlive', () => {
     setPlatform('linux')
     expect(await probeMacosLoginSessionAlive()).toBeNull()
     setPlatform('darwin')
-    process.env.ORCA_DISABLE_MACOS_LOGIN_SHELL = '1'
+    process.env.AIO_ADE_DISABLE_MACOS_LOGIN_SHELL = '1'
     expect(await probeMacosLoginSessionAlive()).toBeNull()
     expect(execFileMock).not.toHaveBeenCalled()
   })

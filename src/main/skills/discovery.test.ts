@@ -19,7 +19,7 @@ function makeRepo(path: string, connectionId: string | null = null): Repo {
 
 describe('skill discovery', () => {
   it('discovers home and repo SKILL.md packages with provider metadata', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'orca-skills-'))
+    const root = await mkdtemp(join(tmpdir(), 'aio-ade-skills-'))
     const home = join(root, 'home')
     const repo = join(root, 'repo')
     const codexSkill = join(home, '.codex', 'skills', 'review')
@@ -46,7 +46,7 @@ describe('skill discovery', () => {
   })
 
   it('discovers the enabled Claude plugin version applicable to the project cwd', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'orca-skills-'))
+    const root = await mkdtemp(join(tmpdir(), 'aio-ade-skills-'))
     const home = join(root, 'home')
     const project = join(root, 'project')
     const cwd = join(project, 'worktree')
@@ -89,7 +89,7 @@ describe('skill discovery', () => {
   })
 
   it('skips Claude plugin discovery when no explicit cwd targets the scan (Settings shape)', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'orca-skills-'))
+    const root = await mkdtemp(join(tmpdir(), 'aio-ade-skills-'))
     const home = join(root, 'home')
     const install = join(home, '.claude', 'plugins', 'cache', 'compound', '3.14.3')
     const pluginId = 'compound-engineering@compound-engineering-plugin'
@@ -111,7 +111,7 @@ describe('skill discovery', () => {
   })
 
   it('records every contributing root when symlinked roots dedup to one skill', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'orca-skills-'))
+    const root = await mkdtemp(join(tmpdir(), 'aio-ade-skills-'))
     const home = join(root, 'home')
     const codexSkills = join(home, '.codex', 'skills')
     await mkdir(join(codexSkills, 'review'), { recursive: true })
@@ -206,13 +206,13 @@ describe('skill discovery', () => {
   })
 
   it('discovers skill packages through symlinked skill directories (#8256/#8503)', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'orca-skills-'))
+    const root = await mkdtemp(join(tmpdir(), 'aio-ade-skills-'))
     const home = join(root, 'home')
-    const realSkill = join(root, 'central-skills', 'orca-cli')
-    const linkedSkill = join(home, '.agents', 'skills', 'orca-cli')
+    const realSkill = join(root, 'central-skills', 'aio-ade-cli')
+    const linkedSkill = join(home, '.agents', 'skills', 'aio-ade-cli')
     await mkdir(realSkill, { recursive: true })
     await mkdir(join(home, '.agents', 'skills'), { recursive: true })
-    await writeFile(join(realSkill, 'SKILL.md'), '# Orca CLI\n\nUse the Orca CLI.')
+    await writeFile(join(realSkill, 'SKILL.md'), '# AIO-ADE CLI\n\nUse the AIO-ADE CLI.')
     await symlink(realSkill, linkedSkill, process.platform === 'win32' ? 'junction' : 'dir')
 
     const result = await discoverSkills({
@@ -220,14 +220,14 @@ describe('skill discovery', () => {
       cwd: join(root, 'missing-cwd')
     })
 
-    const skill = result.skills.find((entry) => entry.name === 'Orca CLI')
+    const skill = result.skills.find((entry) => entry.name === 'AIO-ADE CLI')
     expect(skill?.sourceKind).toBe('home')
     expect(skill?.directoryPath).toBe(linkedSkill)
     expect(skill?.providers).toEqual(['agent-skills'])
   })
 
   it('discovers worktree .agents skill symlinks from the requested cwd', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'orca-skills-'))
+    const root = await mkdtemp(join(tmpdir(), 'aio-ade-skills-'))
     const home = join(root, 'home')
     const worktree = join(root, 'worktree')
     const realSkill = join(root, 'central-skills', 'ref-oss')
@@ -254,13 +254,13 @@ describe('skill discovery', () => {
   })
 
   it('keeps home classification when cwd points at the same directory as home', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'orca-skills-'))
+    const root = await mkdtemp(join(tmpdir(), 'aio-ade-skills-'))
     const home = join(root, 'home')
-    const skillDir = join(home, '.agents', 'skills', 'orca-cli')
+    const skillDir = join(home, '.agents', 'skills', 'aio-ade-cli')
     await mkdir(skillDir, { recursive: true })
     await writeFile(
       join(skillDir, 'SKILL.md'),
-      ['---', 'name: orca-cli', 'description: Use the Orca CLI.', '---', ''].join('\n')
+      ['---', 'name: aio-ade-cli', 'description: Use the AIO-ADE CLI.', '---', ''].join('\n')
     )
 
     const result = await discoverSkills({
@@ -269,7 +269,7 @@ describe('skill discovery', () => {
       repos: []
     })
 
-    expect(result.skills.filter((entry) => entry.name === 'orca-cli')).toMatchObject([
+    expect(result.skills.filter((entry) => entry.name === 'aio-ade-cli')).toMatchObject([
       {
         sourceKind: 'home',
         sourceLabel: 'Agent skills home',
@@ -279,7 +279,7 @@ describe('skill discovery', () => {
   })
 
   it('does not loop through recursive symlinked skill directories', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'orca-skills-'))
+    const root = await mkdtemp(join(tmpdir(), 'aio-ade-skills-'))
     const home = join(root, 'home')
     const skillRoot = join(home, '.agents', 'skills')
     await mkdir(skillRoot, { recursive: true })
@@ -298,7 +298,7 @@ describe('skill discovery', () => {
   })
 
   it('enforces depth limits for valid child directories whose names start with dot-dot', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'orca-skills-'))
+    const root = await mkdtemp(join(tmpdir(), 'aio-ade-skills-'))
     const home = join(root, 'home')
     const deepSkill = join(home, '.agents', 'skills', '..deep', 'a', 'b', 'c', 'd', 'too-deep')
     await mkdir(deepSkill, { recursive: true })

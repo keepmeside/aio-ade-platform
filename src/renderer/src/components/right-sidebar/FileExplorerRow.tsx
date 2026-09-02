@@ -324,7 +324,7 @@ export function shouldShowRemoteDownloadAction(
     : Boolean(connectionId || runtimeDownloadContext)
   return (
     hasDownloadCapability &&
-    (globalThis as { __ORCA_WEB_CLIENT__?: boolean }).__ORCA_WEB_CLIENT__ !== true
+    (globalThis as { __AIO_ADE_WEB_CLIENT__?: boolean }).__AIO_ADE_WEB_CLIENT__ !== true
   )
 }
 
@@ -338,7 +338,7 @@ export function shouldShowCopyFileAction(
   return (
     (!connectionId || !node.isDirectory) &&
     selectionSize === 1 &&
-    (globalThis as { __ORCA_WEB_CLIENT__?: boolean }).__ORCA_WEB_CLIENT__ !== true
+    (globalThis as { __AIO_ADE_WEB_CLIENT__?: boolean }).__AIO_ADE_WEB_CLIENT__ !== true
   )
 }
 
@@ -489,7 +489,7 @@ export function FileExplorerRow({
       onNativeDragExpandDir,
       onMoveDrop
     })
-  const handleOpenInOrcaBrowser = useCallback(() => {
+  const handleOpenInAioAdeBrowser = useCallback(() => {
     if (!activeWorktreeId) {
       return
     }
@@ -748,11 +748,11 @@ export function FileExplorerRow({
           </ContextMenuItem>
         )}
         {!node.isDirectory && activeWorktreeId && (
-          <ContextMenuItem onSelect={handleOpenInOrcaBrowser}>
+          <ContextMenuItem onSelect={handleOpenInAioAdeBrowser}>
             <Globe />
             {translate(
               'auto.components.right.sidebar.FileExplorerRow.dd112c81d2',
-              'Open in Orca Browser'
+              'Open in AIO-ADE Browser'
             )}
           </ContextMenuItem>
         )}

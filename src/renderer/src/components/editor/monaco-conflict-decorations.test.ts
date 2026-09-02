@@ -105,17 +105,17 @@ describe('buildGitConflictDecorations', () => {
     expect(decorations).toHaveLength(5)
     expect(decorations[0]).toMatchObject({
       range: { startLineNumber: 2, endLineNumber: 2 },
-      options: { className: 'orca-conflict-section-line orca-conflict-current-line' }
+      options: { className: 'aio-ade-conflict-section-line aio-ade-conflict-current-line' }
     })
     expect(decorations[1]).toMatchObject({
       range: { startLineNumber: 4, endLineNumber: 4 },
-      options: { className: 'orca-conflict-section-line orca-conflict-incoming-line' }
+      options: { className: 'aio-ade-conflict-section-line aio-ade-conflict-incoming-line' }
     })
     expect(decorations[2]).toMatchObject({
       range: { startLineNumber: 1, endLineNumber: 1 },
       options: {
-        className: 'orca-conflict-marker-line',
-        linesDecorationsClassName: 'orca-conflict-line-decoration',
+        className: 'aio-ade-conflict-marker-line',
+        linesDecorationsClassName: 'aio-ade-conflict-line-decoration',
         after: { content: ' Current change' }
       }
     })

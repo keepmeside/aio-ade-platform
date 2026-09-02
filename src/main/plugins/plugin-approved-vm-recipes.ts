@@ -1,9 +1,9 @@
-import type { OrcaVmRecipe } from '../../shared/types'
+import type { AioAdeVmRecipe } from '../../shared/types'
 import type { PluginService } from './plugin-service'
 
 export async function getApprovedPluginVmRecipes(
   pluginService?: PluginService
-): Promise<OrcaVmRecipe[]> {
+): Promise<AioAdeVmRecipe[]> {
   if (!pluginService) {
     return []
   }

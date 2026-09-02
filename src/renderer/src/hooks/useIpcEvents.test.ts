@@ -1023,7 +1023,7 @@ describe('useIpcEvents browser tab create routing', () => {
         },
         browser: {
           onGuestLoadFailed: () => () => {},
-          onOpenLinkInOrcaTab: () => () => {},
+          onOpenLinkInAioAdeTab: () => () => {},
           onNavigationUpdate: () => () => {},
           onActivateView: (listener: NonNullable<typeof activateViewListenerRef.current>) => {
             activateViewListenerRef.current = listener
@@ -1248,7 +1248,7 @@ describe('useIpcEvents updater integration', () => {
         },
         browser: {
           onGuestLoadFailed: () => () => {},
-          onOpenLinkInOrcaTab: () => () => {},
+          onOpenLinkInAioAdeTab: () => () => {},
           onNavigationUpdate: () => () => {},
           onActivateView: () => () => {},
           onPaneFocus: () => () => {}
@@ -1617,7 +1617,7 @@ describe('useIpcEvents updater integration', () => {
         },
         browser: {
           onGuestLoadFailed: () => () => {},
-          onOpenLinkInOrcaTab: () => () => {},
+          onOpenLinkInAioAdeTab: () => () => {},
           onNavigationUpdate: () => () => {},
           onActivateView: () => () => {},
           onPaneFocus: () => () => {}
@@ -1806,7 +1806,7 @@ describe('useIpcEvents updater integration', () => {
     const createFloatingWorkspaceTerminalTab = vi.fn()
     const createWebRuntimeSessionTerminal = vi.fn().mockResolvedValue({
       status: 'failed',
-      message: 'The workspace is not connected to a remote Orca host.'
+      message: 'The workspace is not connected to a remote AIO-ADE host.'
     })
     const focusRuntimeTerminalSurface = vi.fn(() => false)
     const focusTerminalTabSurface = vi.fn()
@@ -2128,7 +2128,7 @@ describe('useIpcEvents updater integration', () => {
         },
         browser: {
           onGuestLoadFailed: () => () => {},
-          onOpenLinkInOrcaTab: () => () => {},
+          onOpenLinkInAioAdeTab: () => () => {},
           onNavigationUpdate: () => () => {},
           onActivateView: () => () => {},
           onPaneFocus: () => () => {}
@@ -2331,7 +2331,7 @@ describe('useIpcEvents updater integration', () => {
     expect(focusTerminalTabSurface).toHaveBeenCalledWith('tab-new', undefined)
     expect(dispatchEvent).toHaveBeenCalledWith(
       expect.objectContaining({
-        type: 'orca-background-mount-terminal-worktree',
+        type: 'aio-ade-background-mount-terminal-worktree',
         detail: { worktreeId: 'wt-3', tabIds: ['tab-new'] }
       })
     )
@@ -2394,7 +2394,7 @@ describe('useIpcEvents updater integration', () => {
     expect(focusTerminalTabSurface).toHaveBeenCalledWith('tab-new', undefined)
     expect(dispatchEvent).toHaveBeenCalledWith(
       expect.objectContaining({
-        type: 'orca-background-mount-terminal-worktree',
+        type: 'aio-ade-background-mount-terminal-worktree',
         detail: { worktreeId: 'wt-2', tabIds: ['tab-new'] }
       })
     )
@@ -2852,7 +2852,7 @@ describe('useIpcEvents updater integration', () => {
     })
     expect(dispatchEvent).toHaveBeenCalledWith(
       expect.objectContaining({
-        type: 'orca-split-terminal-pane',
+        type: 'aio-ade-split-terminal-pane',
         detail: {
           tabId: 'tab-existing',
           paneRuntimeId: -1,
@@ -3182,7 +3182,7 @@ describe('useIpcEvents browser tab close routing', () => {
         },
         browser: {
           onGuestLoadFailed: () => () => {},
-          onOpenLinkInOrcaTab: () => () => {},
+          onOpenLinkInAioAdeTab: () => () => {},
           onNavigationUpdate: () => () => {},
           onActivateView: () => () => {},
           onPaneFocus: () => () => {}
@@ -3723,7 +3723,7 @@ describe('useIpcEvents browser tab close routing', () => {
         },
         browser: {
           onGuestLoadFailed: () => () => {},
-          onOpenLinkInOrcaTab: () => () => {},
+          onOpenLinkInAioAdeTab: () => () => {},
           onNavigationUpdate: () => () => {},
           onActivateView: () => () => {},
           onPaneFocus: () => () => {}
@@ -3944,7 +3944,7 @@ describe('useIpcEvents browser tab close routing', () => {
         },
         browser: {
           onGuestLoadFailed: () => () => {},
-          onOpenLinkInOrcaTab: () => () => {},
+          onOpenLinkInAioAdeTab: () => () => {},
           onNavigationUpdate: () => () => {},
           onActivateView: () => () => {},
           onPaneFocus: () => () => {}
@@ -4160,7 +4160,7 @@ describe('useIpcEvents browser tab close routing', () => {
         },
         browser: {
           onGuestLoadFailed: () => () => {},
-          onOpenLinkInOrcaTab: () => () => {},
+          onOpenLinkInAioAdeTab: () => () => {},
           onNavigationUpdate: () => () => {},
           onActivateView: () => () => {},
           onPaneFocus: () => () => {}
@@ -4483,7 +4483,7 @@ describe('useIpcEvents CLI-created worktree activation', () => {
         },
         browser: {
           onGuestLoadFailed: () => () => {},
-          onOpenLinkInOrcaTab: () => () => {},
+          onOpenLinkInAioAdeTab: () => () => {},
           onNavigationUpdate: () => () => {},
           onActivateView: () => () => {},
           onPaneFocus: () => () => {}
@@ -4744,7 +4744,7 @@ describe('useIpcEvents CLI-created worktree activation', () => {
         },
         browser: {
           onGuestLoadFailed: () => () => {},
-          onOpenLinkInOrcaTab: () => () => {},
+          onOpenLinkInAioAdeTab: () => () => {},
           onNavigationUpdate: () => () => {},
           onActivateView: () => () => {},
           onPaneFocus: () => () => {}
@@ -5009,7 +5009,7 @@ describe('useIpcEvents agent status snapshot integration', () => {
         browser: {
           onGuestLoadFailed: () => () => {},
           onPaneFocus: () => () => {},
-          onOpenLinkInOrcaTab: () => () => {},
+          onOpenLinkInAioAdeTab: () => () => {},
           onNavigationUpdate: () => () => {},
           onActivateView: () => () => {}
         },

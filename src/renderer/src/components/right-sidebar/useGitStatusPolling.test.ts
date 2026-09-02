@@ -313,7 +313,7 @@ describe('useGitStatusPolling', () => {
     vi.useFakeTimers()
     const windowListeners = new Map<string, EventListener[]>()
     const emitWorktreeFileChange = (payload: FsChangedPayload): void => {
-      for (const listener of windowListeners.get('orca:worktree-file-change') ?? []) {
+      for (const listener of windowListeners.get('aio-ade:worktree-file-change') ?? []) {
         listener({ detail: { payload, runtimeEnvironmentId: null } } as CustomEvent)
       }
     }
@@ -396,7 +396,7 @@ describe('useGitStatusPolling', () => {
     GitStatusPollingHarness({ runPolling })
     await vi.waitFor(() => expect(gitStatus).toHaveBeenCalledTimes(1))
 
-    expect(windowListeners.get('orca:worktree-file-change')?.length).toBe(1)
+    expect(windowListeners.get('aio-ade:worktree-file-change')?.length).toBe(1)
     emitWorktreeFileChange({
       worktreePath: '/repo',
       events: [{ kind: 'update', absolutePath: '/repo/a.ts' }]
@@ -426,7 +426,7 @@ describe('useGitStatusPolling', () => {
     vi.useFakeTimers()
     const windowListeners = new Map<string, EventListener[]>()
     const emitWorktreeFileChange = (payload: FsChangedPayload): void => {
-      for (const listener of windowListeners.get('orca:worktree-file-change') ?? []) {
+      for (const listener of windowListeners.get('aio-ade:worktree-file-change') ?? []) {
         listener({ detail: { payload, runtimeEnvironmentId: null } } as CustomEvent)
       }
     }
@@ -508,7 +508,7 @@ describe('useGitStatusPolling', () => {
     const { useGitStatusPolling: runPolling } = await import('./useGitStatusPolling')
     GitStatusPollingHarness({ runPolling })
 
-    expect(windowListeners.get('orca:worktree-file-change')?.length).toBe(1)
+    expect(windowListeners.get('aio-ade:worktree-file-change')?.length).toBe(1)
     emitWorktreeFileChange({
       worktreePath: '/repo',
       events: [{ kind: 'update', absolutePath: '/repo/a.ts' }]
@@ -525,7 +525,7 @@ describe('useGitStatusPolling', () => {
     vi.useFakeTimers()
     const windowListeners = new Map<string, EventListener[]>()
     const emitWorktreeFileChange = (payload: FsChangedPayload): void => {
-      for (const listener of windowListeners.get('orca:worktree-file-change') ?? []) {
+      for (const listener of windowListeners.get('aio-ade:worktree-file-change') ?? []) {
         listener({ detail: { payload, runtimeEnvironmentId: null } } as CustomEvent)
       }
     }
@@ -645,9 +645,9 @@ describe('useGitStatusPolling', () => {
     await vi.advanceTimersByTimeAsync(60)
     state.openFiles = [{}]
     renderPolling()
-    expect(windowListeners.get('orca:worktree-file-change')?.length).toBe(1)
+    expect(windowListeners.get('aio-ade:worktree-file-change')?.length).toBe(1)
     expect(window.removeEventListener).not.toHaveBeenCalledWith(
-      'orca:worktree-file-change',
+      'aio-ade:worktree-file-change',
       expect.any(Function)
     )
     const callsBeforeDebounceFires = gitStatus.mock.calls.length

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { OrcaRuntimeService } from '../../orca-runtime'
+import type { AioAdeRuntimeService } from '../../aio-ade-runtime'
 import { isStreamingMethod } from '../core'
 import { ACCOUNT_METHODS } from './accounts'
 
@@ -17,7 +17,7 @@ describe('account RPC methods', () => {
     const runtime = {
       refreshAccountsForMobile: vi.fn().mockResolvedValue(undefined),
       getAccountsSnapshot: vi.fn(() => snapshot)
-    } as unknown as OrcaRuntimeService
+    } as unknown as AioAdeRuntimeService
     const list = method('accounts.list')
     if (isStreamingMethod(list)) {
       throw new Error('accounts.list must be a request method')
@@ -41,7 +41,7 @@ describe('account RPC methods', () => {
       snapshot: { claude: null, codex: null }
     }
     const consumeCodexRateLimitResetCredit = vi.fn().mockResolvedValue(result)
-    const runtime = { consumeCodexRateLimitResetCredit } as unknown as OrcaRuntimeService
+    const runtime = { consumeCodexRateLimitResetCredit } as unknown as AioAdeRuntimeService
     const reset = method('accounts.consumeCodexResetCredit')
     if (isStreamingMethod(reset)) {
       throw new Error('accounts.consumeCodexResetCredit must be a request method')
@@ -81,7 +81,7 @@ describe('account RPC methods', () => {
     const selectCodexAccountForTarget = vi
       .fn()
       .mockResolvedValue({ accounts: [], activeAccountId: null })
-    const runtime = { selectCodexAccountForTarget } as unknown as OrcaRuntimeService
+    const runtime = { selectCodexAccountForTarget } as unknown as AioAdeRuntimeService
     const select = method('accounts.selectCodexForTarget')
     if (isStreamingMethod(select)) {
       throw new Error('accounts.selectCodexForTarget must be a request method')
@@ -128,7 +128,7 @@ describe('account RPC methods', () => {
       }),
       refreshAccountsForMobile: vi.fn().mockResolvedValue(undefined),
       refreshAccountsForMobileSubscriber: vi.fn().mockResolvedValue(undefined)
-    } as unknown as OrcaRuntimeService
+    } as unknown as AioAdeRuntimeService
     const subscribe = method('accounts.subscribe')
     if (!isStreamingMethod(subscribe)) {
       throw new Error('accounts.subscribe must be a streaming method')

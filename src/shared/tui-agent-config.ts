@@ -1,5 +1,5 @@
 import type { TuiAgent } from './types'
-import { getOrcaCliCommandNameForPlatform } from './orca-cli-command-name'
+import { getCliCommandNameForPlatform } from './cli-command-name'
 
 export type AgentPromptInjectionMode =
   | 'argv'
@@ -49,21 +49,23 @@ export const TUI_AGENT_CONFIG: Record<TuiAgent, TuiAgentConfig> = {
     launchCmd: 'claude',
     expectedProcess: 'claude',
     promptInjectionMode: 'argv',
-    // Why: `claude --prefill <text>` seeds the input without submitting, avoiding the paste-after-ready race (PR https://github.com/stablyai/orca/pull/926).
+    // Why: `claude --prefill <text>` seeds the input without submitting, avoiding the paste-after-ready race (PR https://github.com/keepmeside/aio-ade-platform/pull/926).
     draftPromptFlag: '--prefill'
   },
   'claude-agent-teams': {
-    // Why: an Orca-provided launch mode, not a separate binary; detection follows the Orca CLI.
-    detectCmd: 'orca',
-    detectCmdAliases: ['orca-dev', 'orca-ide'],
-    // Why: require Claude too so fresh installs (Orca shim always present) don't report Agent Teams without an agent CLI.
+    // Why: an AIO-ADE-provided launch mode, not a separate binary; detection follows the AIO-ADE CLI.
+    detectCmd: 'aio-ade',
+    // No second Linux binary name any more: the pre-rebrand CLI needed one to dodge GNOME Orca, and
+    // a third alias here would just repeat detectCmd.
+    detectCmdAliases: ['aio-ade-dev'],
+    // Why: require Claude too so fresh installs (AIO-ADE shim always present) don't report Agent Teams without an agent CLI.
     detectRequiredCommands: ['claude'],
-    // Why: Windows/WSL use Claude's in-process Agent Teams fallback, not this Orca native-pane/tmux-shim wrapper.
+    // Why: Windows/WSL use Claude's in-process Agent Teams fallback, not this AIO-ADE native-pane/tmux-shim wrapper.
     detectUnsupportedRuntimes: ['win32', 'wsl'],
-    launchCmd: 'orca claude-teams',
+    launchCmd: 'aio-ade claude-teams',
     launchCmdByPlatform: {
-      linux: `${getOrcaCliCommandNameForPlatform('linux')} claude-teams`,
-      win32: `${getOrcaCliCommandNameForPlatform('win32')} claude-teams`
+      linux: `${getCliCommandNameForPlatform('linux')} claude-teams`,
+      win32: `${getCliCommandNameForPlatform('win32')} claude-teams`
     },
     expectedProcess: 'claude',
     promptInjectionMode: 'stdin-after-start'
@@ -91,7 +93,7 @@ export function getTuiAgentLaunchCommand(
   platform: NodeJS.Platform,
   opts?: { isRemote?: boolean }
 ): string {
-  // Why: local-only orca-ide rename (avoids GNOME Orca clash) must not leak to Linux remotes, whose relay shim is always `orca`.
+  // Why: local-only aio-ade rename (avoids GNOME Orca clash) must not leak to Linux remotes, whose relay shim is always `aio-ade`.
   if (opts?.isRemote && platform === 'linux') {
     return config.launchCmd
   }

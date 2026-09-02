@@ -103,7 +103,7 @@ describe('resolveTabAgentFromSignals', () => {
     ).toBe('claude')
   })
 
-  it('yields no identity for titles of CLIs Orca does not launch', () => {
+  it('yields no identity for titles of CLIs AIO-ADE does not launch', () => {
     // Their labels still keep a spinner title from being read as Claude, but
     // they map to no launchable agent id.
     for (const title of ['✦ Gemini CLI', 'MiMo Code', 'π - my-project']) {
@@ -310,7 +310,7 @@ describe('resolveTabAgentFromSignals', () => {
       resolveTabAgentFromSignals({
         hasObservedAgentSignal: false,
         isRemote: false,
-        title: '. Compare Opencode Vs Orca',
+        title: '. Compare Opencode Vs AIO-ADE',
         hookAgent: null,
         launchAgent: 'codex'
       })

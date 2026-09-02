@@ -15,10 +15,10 @@ import {
   type JsonTextStructureLimits
 } from './json-text-structure-limit'
 
-export const ORCA_PERSISTED_STATE_MAX_BYTES = 64 * 1024 * 1024
-export const ORCA_PERSISTED_STATE_SECRET_MAX_BYTES = 4 * 1024 * 1024
-export const ORCA_PERSISTED_STATE_HASH_CHUNK_CODE_UNITS = 64 * 1024
-export const ORCA_PERSISTED_STATE_JSON_LIMITS: JsonTextStructureLimits = {
+export const AIO_ADE_PERSISTED_STATE_MAX_BYTES = 64 * 1024 * 1024
+export const AIO_ADE_PERSISTED_STATE_SECRET_MAX_BYTES = 4 * 1024 * 1024
+export const AIO_ADE_PERSISTED_STATE_HASH_CHUNK_CODE_UNITS = 64 * 1024
+export const AIO_ADE_PERSISTED_STATE_JSON_LIMITS: JsonTextStructureLimits = {
   structuralTokens: 4_000_000,
   nestingDepth: 256
 }
@@ -31,7 +31,7 @@ export type PersistedStateJsonRead<T> = {
 export class PersistedStateSecretCapacityError extends Error {
   constructor(
     readonly observedBytes: number,
-    readonly maxBytes = ORCA_PERSISTED_STATE_SECRET_MAX_BYTES
+    readonly maxBytes = AIO_ADE_PERSISTED_STATE_SECRET_MAX_BYTES
   ) {
     super(`Persisted state secret exceeds ${maxBytes} bytes`)
     this.name = 'PersistedStateSecretCapacityError'
@@ -46,8 +46,8 @@ export function isPersistedStateFileCapacityError(
 
 export function readPersistedStateJsonFileSync<T>(
   filePath: string,
-  maxBytes = ORCA_PERSISTED_STATE_MAX_BYTES,
-  structureLimits: JsonTextStructureLimits = ORCA_PERSISTED_STATE_JSON_LIMITS
+  maxBytes = AIO_ADE_PERSISTED_STATE_MAX_BYTES,
+  structureLimits: JsonTextStructureLimits = AIO_ADE_PERSISTED_STATE_JSON_LIMITS
 ): PersistedStateJsonRead<T> {
   const { buffer } = readPersistedStateFileBytesSync(filePath, maxBytes)
   return {
@@ -58,14 +58,14 @@ export function readPersistedStateJsonFileSync<T>(
 
 export function readPersistedStateFileBytesSync(
   filePath: string,
-  maxBytes = ORCA_PERSISTED_STATE_MAX_BYTES
+  maxBytes = AIO_ADE_PERSISTED_STATE_MAX_BYTES
 ): BoundedNodeFileRead {
   return readNodeFileSyncWithinLimit(filePath, maxBytes)
 }
 
 export function parsePersistedStateJsonBuffer<T>(
   buffer: Buffer,
-  structureLimits: JsonTextStructureLimits = ORCA_PERSISTED_STATE_JSON_LIMITS
+  structureLimits: JsonTextStructureLimits = AIO_ADE_PERSISTED_STATE_JSON_LIMITS
 ): T {
   const serialized = buffer.toString('utf8')
   assertJsonTextStructureWithinLimits(serialized, structureLimits)
@@ -74,21 +74,21 @@ export function parsePersistedStateJsonBuffer<T>(
 
 export function stringifyPersistedStateWithinLimit(
   value: unknown,
-  maxBytes = ORCA_PERSISTED_STATE_MAX_BYTES
+  maxBytes = AIO_ADE_PERSISTED_STATE_MAX_BYTES
 ): { byteLength: number; serialized: string } {
   return stringifyJsonWithinByteLimit(value, maxBytes)
 }
 
 export function stringifyPrettyPersistedStateWithinLimit(
   value: unknown,
-  maxBytes = ORCA_PERSISTED_STATE_MAX_BYTES
+  maxBytes = AIO_ADE_PERSISTED_STATE_MAX_BYTES
 ): { byteLength: number; serialized: string } {
   return stringifyJsonWithinByteLimit(value, maxBytes, 2)
 }
 
 export function encodePersistedStateJsonStringContent(
   value: string,
-  maxBytes = ORCA_PERSISTED_STATE_MAX_BYTES
+  maxBytes = AIO_ADE_PERSISTED_STATE_MAX_BYTES
 ): string {
   const { serialized } = stringifyJsonWithinByteLimit(value, maxBytes)
   return serialized.slice(1, -1)
@@ -96,7 +96,7 @@ export function encodePersistedStateJsonStringContent(
 
 export function assertPersistedStateSecretWithinLimit(
   value: string,
-  maxBytes = ORCA_PERSISTED_STATE_SECRET_MAX_BYTES
+  maxBytes = AIO_ADE_PERSISTED_STATE_SECRET_MAX_BYTES
 ): void {
   const observedBytes = Buffer.byteLength(value, 'utf8')
   if (observedBytes > maxBytes) {
@@ -110,7 +110,7 @@ export function replacedPersistedStateJsonByteLength(options: {
   replacement: string
   search: string
 }): number {
-  const maxBytes = options.maxBytes ?? ORCA_PERSISTED_STATE_MAX_BYTES
+  const maxBytes = options.maxBytes ?? AIO_ADE_PERSISTED_STATE_MAX_BYTES
   if (!Number.isSafeInteger(maxBytes) || maxBytes < 0) {
     throw new RangeError('Persisted state JSON byte limit must be a non-negative safe integer')
   }
@@ -156,7 +156,7 @@ export function updatePersistedStateHashWithJsonRange(
   value: string,
   start = 0,
   end = value.length,
-  chunkCodeUnits = ORCA_PERSISTED_STATE_HASH_CHUNK_CODE_UNITS
+  chunkCodeUnits = AIO_ADE_PERSISTED_STATE_HASH_CHUNK_CODE_UNITS
 ): void {
   if (
     !Number.isSafeInteger(start) ||
@@ -189,7 +189,7 @@ export function updatePersistedStateHashWithJsonRange(
 export function restorePersistedStateBackupSync(
   sourcePath: string,
   targetPath: string,
-  maxBytes = ORCA_PERSISTED_STATE_MAX_BYTES
+  maxBytes = AIO_ADE_PERSISTED_STATE_MAX_BYTES
 ): number {
   const read = readValidatedPersistedStateBytesSync(sourcePath, maxBytes)
   mkdirSync(dirname(targetPath), { recursive: true })

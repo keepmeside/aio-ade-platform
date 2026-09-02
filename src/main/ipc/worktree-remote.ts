@@ -15,6 +15,7 @@ import type {
   GlobalSettings,
   LocalBaseRefRefreshResult,
   LocalBaseRefUpdateSuggestion,
+  AioAdeHooks,
   Repo,
   Worktree,
   WorktreeHeadIdentity,
@@ -39,10 +40,10 @@ import { assertGitPushTargetShape } from '../../shared/git-push-target-validatio
 import { gitExecFileAsync } from '../git/runner'
 import { parseGitHubOwnerRepo } from '../github/gh-utils'
 import type {
-  OrcaRuntimeService,
+  AioAdeRuntimeService,
   RemoteFetchResult,
   RemoteTrackingBase
-} from '../runtime/orca-runtime'
+} from '../runtime/aio-ade-runtime'
 import { getProjectHostSetupWorktreeMeta } from '../../shared/project-host-setup-projection'
 import {
   buildPosixRunnerScript,
@@ -53,7 +54,6 @@ import {
   getEffectiveHooksFromConfig,
   getSetupRunnerEnvVars,
   loadHooks,
-  parseOrcaYaml,
   shouldRunSetupForCreate
 } from '../hooks'
 import { requireSshGitProvider } from '../providers/ssh-git-dispatch'
@@ -108,7 +108,6 @@ import { formatWorktreeIncludeCopyWarning } from './worktree-include-copy-budget
 import { resolveWorktreeIncludePaths } from '../git/worktree-include-file'
 import { resolveWorktreeSharedDirectories } from '../git/worktree-shared-directories'
 import { normalizeSparseDirectories } from './sparse-checkout-directories'
-import { joinWorktreeRelativePath } from '../runtime/runtime-relative-paths'
 import type { IFilesystemProvider } from '../providers/types'
 import {
   buildSetupRunnerCommand,
@@ -131,6 +130,7 @@ import {
   getWorktreeCreateCandidate,
   WORKTREE_CREATE_MAX_SUFFIX_ATTEMPTS
 } from '../worktree-create-candidates'
+import { readRemoteProjectConfig } from '../remote-project-config-read'
 
 const SSH_WORKTREE_CREATE_FETCH_FRESHNESS_MS = 30_000
 const SSH_WORKTREE_CREATE_FETCH_CACHE_MAX = 512
@@ -243,7 +243,7 @@ function countNonEmptyGitOutputLines(output: string): number {
 }
 
 async function spawnLocalStartupAndSetupTerminals(args: {
-  runtime: OrcaRuntimeService | undefined
+  runtime: AioAdeRuntimeService | undefined
   worktree: Pick<Worktree, 'id' | 'path'>
   startup: CreateWorktreeArgs['startup']
   setup: CreateWorktreeResult['setup']
@@ -465,7 +465,7 @@ async function getOrStartSshWorktreeCreateFetch(
       return
     }
     await fetch()
-    // Why: SSH creation has no OrcaRuntimeService to share; still reuse recent fetches for repeated creates on the same target.
+    // Why: SSH creation has no AioAdeRuntimeService to share; still reuse recent fetches for repeated creates on the same target.
     rememberSshWorktreeCreateFetchCompletedAt(key)
   }).finally(() => {
     if (sshWorktreeCreateFetchInflight.get(key) === promise) {
@@ -1123,7 +1123,7 @@ async function prepareWorktreePushTargetSsh(
     const existingRemote = await findRemoteForUrlSsh(provider, repoPath, target.remoteUrl)
     if (existingRemote) {
       remoteName = existingRemote
-      // Why: a reused Orca-created fork remote must inherit ownership so deleting the final user can remove it.
+      // Why: a reused AIO-ADE-created fork remote must inherit ownership so deleting the final user can remove it.
       remoteCreated = store
         ? isPushTargetRemoteCreatedByKnownWorktree(
             store,
@@ -1190,16 +1190,15 @@ async function readRemoteEffectiveHooks(
   fsProvider: IFilesystemProvider,
   hooksRootPath: string
 ): Promise<ReturnType<typeof getEffectiveHooksFromConfig>> {
-  return getEffectiveHooksFromConfig(repo, await readRemoteOrcaYaml(fsProvider, hooksRootPath))
+  return getEffectiveHooksFromConfig(repo, await readRemoteAioAdeYaml(fsProvider, hooksRootPath))
 }
 
-async function readRemoteOrcaYaml(
+async function readRemoteAioAdeYaml(
   fsProvider: IFilesystemProvider,
   hooksRootPath: string
-): Promise<ReturnType<typeof parseOrcaYaml>> {
+): Promise<AioAdeHooks | null> {
   try {
-    const result = await fsProvider.readFile(joinWorktreeRelativePath(hooksRootPath, 'orca.yaml'))
-    return result.isBinary ? null : parseOrcaYaml(result.content)
+    return (await readRemoteProjectConfig(fsProvider, hooksRootPath)).hooks
   } catch {
     return null
   }
@@ -1213,7 +1212,9 @@ async function createRemoteSetupRunnerScript(
   fsProvider: IFilesystemProvider
 ): Promise<CreateWorktreeResult['setup']> {
   const useWindowsFormat = isWindowsAbsolutePathLike(worktreePath)
-  const runnerRelativePath = useWindowsFormat ? 'orca/setup-runner.cmd' : 'orca/setup-runner.sh'
+  const runnerRelativePath = useWindowsFormat
+    ? 'aio-ade/setup-runner.cmd'
+    : 'aio-ade/setup-runner.sh'
   const { stdout } = await gitProvider.exec(
     ['rev-parse', '--git-path', runnerRelativePath],
     worktreePath
@@ -1828,9 +1829,9 @@ export async function createRemoteWorktree(
     lastActivityAt: now,
     // Why: grace window atop Recent so ambient PTY bumps on others during create don't bury the new worktree. See smart-sort.ts `CREATE_GRACE_MS`.
     createdAt: now,
-    orcaCreatedAt: now,
-    orcaCreationSource: 'ssh',
-    orcaCreationWorkspaceLayout: getWorktreeCreationLayout(repo, settings),
+    aioAdeCreatedAt: now,
+    aioAdeCreationSource: 'ssh',
+    aioAdeCreationWorkspaceLayout: getWorktreeCreationLayout(repo, settings),
     ...(args.automationProvenance ? { automationProvenance: args.automationProvenance } : {}),
     ...(args.cliProvenance ? { cliProvenance: args.cliProvenance } : {}),
     baseRef: metadataBaseRef,
@@ -1877,13 +1878,13 @@ export async function createRemoteWorktree(
   })
   const workspaceLineage = recordWorkspaceLineageForCreatedWorktree(store, args, worktree, now)
 
-  // Why: shared/symlink paths, `orca.yaml` shared directories, and `.worktreeinclude` copies are local-only; remote (SSH) support needs a new relay method + auth surface, so all are skipped here.
+  // Why: shared/symlink paths, `aio-ade.yaml` shared directories, and `.worktreeinclude` copies are local-only; remote (SSH) support needs a new relay method + auth surface, so all are skipped here.
 
   let setup: CreateWorktreeResult['setup']
   let defaultTabs: CreateWorktreeResult['defaultTabs']
   if (fsProvider) {
     await timing.time('prepare_setup', async () => {
-      const yamlHooks = await readRemoteOrcaYaml(fsProvider, created.path)
+      const yamlHooks = await readRemoteAioAdeYaml(fsProvider, created.path)
       const hooks = getEffectiveHooksFromConfig(repo, yamlHooks)
       try {
         defaultTabs = getDefaultTabsLaunch(yamlHooks, repo, args.setupDecision)
@@ -1937,7 +1938,7 @@ export async function createLocalWorktree(
   repo: Repo,
   store: Store,
   mainWindow: BrowserWindow,
-  runtime?: OrcaRuntimeService
+  runtime?: AioAdeRuntimeService
 ): Promise<CreateWorktreeResult> {
   const timing = createWorktreeCreateTimingRecorder()
   const settings = store.getSettings()
@@ -2411,9 +2412,9 @@ export async function createLocalWorktree(
     lastActivityAt: now,
     // createdAt protects the new worktree from ambient PTY bumps for CREATE_GRACE_MS (see createRemoteWorktree above).
     createdAt: now,
-    orcaCreatedAt: now,
-    orcaCreationSource: 'desktop',
-    orcaCreationWorkspaceLayout: getWorktreeCreationLayout(repo, settings),
+    aioAdeCreatedAt: now,
+    aioAdeCreationSource: 'desktop',
+    aioAdeCreationWorkspaceLayout: getWorktreeCreationLayout(repo, settings),
     ...(args.automationProvenance ? { automationProvenance: args.automationProvenance } : {}),
     ...(args.cliProvenance ? { cliProvenance: args.cliProvenance } : {}),
     baseRef: metadataBaseRef,
@@ -2473,7 +2474,7 @@ export async function createLocalWorktree(
     })
   }
 
-  // Why: project-level `orca.yaml` shared directories add to (never replace) the per-user
+  // Why: project-level `aio-ade.yaml` shared directories add to (never replace) the per-user
   // setting, so a repo's shared dirs reach every teammate (issue #10451).
   const sharedDirectories = await timing.time('resolve_shared_directories', () =>
     resolveWorktreeSharedDirectories(repo.path, localWorktreeGitOptions)
@@ -2504,7 +2505,7 @@ export async function createLocalWorktree(
     })
   }
 
-  // Why: the worktree's base-branch `orca.yaml` is authoritative; we don't re-gate on content parity with the primary checkout since benign divergence silently disabled setup (#1280).
+  // Why: the worktree's base-branch `aio-ade.yaml` is authoritative; we don't re-gate on content parity with the primary checkout since benign divergence silently disabled setup (#1280).
   let setup: CreateWorktreeResult['setup']
   let defaultTabs: CreateWorktreeResult['defaultTabs']
   await timing.time('prepare_setup', async () => {

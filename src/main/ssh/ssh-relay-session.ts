@@ -60,8 +60,8 @@ import {
   SSH_RELAY_CONFIGURE_GRACE_TIME_METHOD
 } from '../../shared/ssh-types'
 import type { Store } from '../persistence'
-import type { OrcaRuntimeService } from '../runtime/orca-runtime'
-import { runRemoteOrcaCli } from './ssh-remote-orca-cli'
+import type { AioAdeRuntimeService } from '../runtime/aio-ade-runtime'
+import { runRemoteAioAdeCli } from './ssh-remote-aio-ade-cli'
 import { toSshExecutionHostId, type ExecutionHostId } from '../../shared/execution-host'
 import { isTerminalLeafId, makePaneKey } from '../../shared/stable-pane-id'
 import { isValidTerminalTabId } from '../../shared/terminal-tab-id'
@@ -154,7 +154,7 @@ export class SshRelaySession {
     private getMainWindow: () => BrowserWindow | null,
     private store: Store,
     private portForwardManager: SshPortForwardManager,
-    private runtime?: OrcaRuntimeService,
+    private runtime?: AioAdeRuntimeService,
     private onDetectedPortsChanged?: (
       targetId: string,
       ports: DetectedPort[],
@@ -166,7 +166,7 @@ export class SshRelaySession {
     getMainWindow: () => BrowserWindow | null,
     store: Store,
     portForwardManager: SshPortForwardManager,
-    runtime?: OrcaRuntimeService,
+    runtime?: AioAdeRuntimeService,
     onDetectedPortsChanged?: (targetId: string, ports: DetectedPort[], platform: string) => void
   ): void {
     this.getMainWindow = getMainWindow
@@ -253,7 +253,7 @@ export class SshRelaySession {
         remoteHome && remoteRelayDir && nodePath && sockPath && hostPlatform
           ? {
               remoteHome,
-              binDir: joinRemotePath(hostPlatform, remoteHome, '.orca-relay', 'bin'),
+              binDir: joinRemotePath(hostPlatform, remoteHome, '.aio-ade-relay', 'bin'),
               relayDir: remoteRelayDir,
               nodePath,
               sockPath,
@@ -352,7 +352,7 @@ export class SshRelaySession {
         remoteHome && remoteRelayDir && nodePath && sockPath && hostPlatform
           ? {
               remoteHome,
-              binDir: joinRemotePath(hostPlatform, remoteHome, '.orca-relay', 'bin'),
+              binDir: joinRemotePath(hostPlatform, remoteHome, '.aio-ade-relay', 'bin'),
               relayDir: remoteRelayDir,
               nodePath,
               sockPath,
@@ -509,11 +509,11 @@ export class SshRelaySession {
     }
 
     try {
-      await this.installRemoteOrcaCliLauncher()
+      await this.installRemoteAioAdeCliLauncher()
     } catch (error) {
       // Why: on MaxSessions=1 remotes the relay holds the only slot, so this raw-connection install can fail — don't fail the whole connection.
       console.warn(
-        `[ssh-relay-session] remote orca CLI launcher install failed for ${this.targetId}: ${
+        `[ssh-relay-session] remote aio-ade CLI launcher install failed for ${this.targetId}: ${
           error instanceof Error ? error.message : String(error)
         }`
       )
@@ -522,7 +522,7 @@ export class SshRelaySession {
       return false
     }
 
-    this.wireUpRemoteOrcaCli(mux)
+    this.wireUpRemoteAioAdeCli(mux)
 
     const ptyProvider = new SshPtyProvider(this.targetId, mux, this.remoteCliBridgeEnv ?? undefined)
     registerSshPtyProvider(this.targetId, ptyProvider)
@@ -624,7 +624,7 @@ export class SshRelaySession {
     }
   }
 
-  private async installRemoteOrcaCliLauncher(): Promise<void> {
+  private async installRemoteAioAdeCliLauncher(): Promise<void> {
     if (!this.remoteCliBridgeEnv) {
       return
     }
@@ -659,10 +659,10 @@ export class SshRelaySession {
     }
   }
 
-  private wireUpRemoteOrcaCli(mux: SshChannelMultiplexer): void {
-    mux.onRequest('orca.cli', async (params) => {
+  private wireUpRemoteAioAdeCli(mux: SshChannelMultiplexer): void {
+    mux.onRequest('aio-ade.cli', async (params) => {
       if (!this.runtime) {
-        throw new Error('Orca runtime is unavailable')
+        throw new Error('AIO-ADE runtime is unavailable')
       }
       const argv = Array.isArray(params.argv)
         ? params.argv.filter((item): item is string => typeof item === 'string')
@@ -679,7 +679,7 @@ export class SshRelaySession {
             )
           : {}
       const stdin = typeof params.stdin === 'string' ? params.stdin : undefined
-      return await runRemoteOrcaCli(this.runtime, {
+      return await runRemoteAioAdeCli(this.runtime, {
         argv,
         cwd,
         env,

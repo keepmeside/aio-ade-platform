@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
+import { getAppHomeDir } from '../../shared/app-home-paths'
 import { net, safeStorage, session } from 'electron'
 import {
   CredentialDecryptionError,
@@ -28,7 +29,7 @@ import { clearAttachmentImagesForSite } from './attachment-image-cache'
 // Electron's net.fetch sends a Chrome UA, so issue search/create/update/comment
 // all 403'd while GET calls (connect, /myself) passed. A non-browser UA is the
 // reliable fix; X-Atlassian-Token: no-check is not honored for this case.
-const JIRA_API_USER_AGENT = 'Orca'
+const JIRA_API_USER_AGENT = 'AIO-ADE'
 
 const MAX_CONCURRENT = 4
 let running = 0
@@ -90,24 +91,24 @@ const cachedTokens = new Map<string, string>()
 // failing reads without re-touching the keychain on every status poll.
 const credentialErrors = new Map<string, string>()
 
-function getOrcaDir(): string {
-  return join(homedir(), '.orca')
+function getAppDataDir(): string {
+  return getAppHomeDir(homedir())
 }
 
 function getSiteFilePath(): string {
-  return join(getOrcaDir(), 'jira-sites.json')
+  return join(getAppDataDir(), 'jira-sites.json')
 }
 
 function getTokenDir(): string {
-  return join(getOrcaDir(), 'jira-tokens')
+  return join(getAppDataDir(), 'jira-tokens')
 }
 
 function getTokenPath(siteId: string): string {
   return join(getTokenDir(), `${Buffer.from(siteId).toString('base64url')}.enc`)
 }
 
-function ensureOrcaDir(): void {
-  const dir = getOrcaDir()
+function ensureAppDataDir(): void {
+  const dir = getAppDataDir()
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true })
   }
@@ -197,7 +198,7 @@ function getSiteFile(): JiraSiteFile {
 }
 
 function writeSiteFile(file: JiraSiteFile): void {
-  ensureOrcaDir()
+  ensureAppDataDir()
   const sites = file.sites.filter((site) => hasStoredToken(site.id))
   const activeSiteId =
     file.activeSiteId && sites.some((site) => site.id === file.activeSiteId)
@@ -259,7 +260,7 @@ function readToken(siteId: string): string | null {
 }
 
 function saveToken(siteId: string, apiToken: string): void {
-  ensureOrcaDir()
+  ensureAppDataDir()
   ensureTokenDir()
   writeEncryptedToken(getTokenPath(siteId), apiToken)
   cachedTokens.set(siteId, apiToken)

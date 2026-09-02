@@ -10,7 +10,7 @@ import { AGENT_CATALOG, type AgentCatalogEntry } from './agent-catalog'
 
 const agents = [
   entry('claude', 'Claude', 'claude'),
-  entry('claude-agent-teams', 'Claude Agent Teams', 'orca claude-teams'),
+  entry('claude-agent-teams', 'Claude Agent Teams', 'aio-ade claude-teams'),
   entry('codex', 'Codex', 'codex')
 ]
 
@@ -27,7 +27,7 @@ describe('agent picker search', () => {
 
   it('prefers label matches over command and id aliases', () => {
     // Why: every entry carries "claude" in its id or command, so only label scoring can put
-    // the plain Claude row ahead of the Agent Teams row whose command is `orca claude-teams`.
+    // the plain Claude row ahead of the Agent Teams row whose command is `aio-ade claude-teams`.
     expect(searchAgentPickerEntries(agents, 'claude').map((agent) => agent.id)).toEqual([
       'claude',
       'claude-agent-teams'
@@ -40,7 +40,7 @@ describe('agent picker search', () => {
   })
 
   it('matches command aliases that do not appear in the display label', () => {
-    expect(searchAgentPickerEntries(agents, 'orca')[0]?.id).toBe('claude-agent-teams')
+    expect(searchAgentPickerEntries(agents, 'aio-ade')[0]?.id).toBe('claude-agent-teams')
     expect(searchAgentPickerEntries(agents, 'claude-teams')[0]?.id).toBe('claude-agent-teams')
   })
 

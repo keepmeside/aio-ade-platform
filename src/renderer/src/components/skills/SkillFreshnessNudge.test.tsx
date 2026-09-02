@@ -24,15 +24,15 @@ function placement(
   overrides: Partial<SkillFreshnessInstallation> = {}
 ): SkillFreshnessInstallation {
   return {
-    id: 'orca-cli',
-    name: 'orca-cli',
+    id: 'aio-ade-cli',
+    name: 'aio-ade-cli',
     rootId: 'home-agents',
     providers: ['agent-skills'],
     sourceKind: 'home',
     sourceLabel: 'Agent skills home',
-    unresolvedPath: '/home/.agents/skills/orca-cli',
-    resolvedPath: '/home/.agents/skills/orca-cli',
-    physicalIdentity: 'physical-orca-cli',
+    unresolvedPath: '/home/.agents/skills/aio-ade-cli',
+    resolvedPath: '/home/.agents/skills/aio-ade-cli',
+    physicalIdentity: 'physical-aio-ade-cli',
     topology: 'canonical-copy',
     status: 'outdated',
     installedReleaseRevision: 1,
@@ -50,7 +50,7 @@ function eligibleInventory(): SkillFreshnessInventory {
   return {
     schemaVersion: 1,
     installations: [placement()],
-    eligibleUpdateNames: ['orca-cli'],
+    eligibleUpdateNames: ['aio-ade-cli'],
     scanIssues: [],
     scannedAt: 1
   }
@@ -101,7 +101,7 @@ async function rerenderNudge(): Promise<void> {
   })
 }
 
-const DISMISSAL_KEY = ['physical-orca-cli', 'orca-cli', '2'].join('\0')
+const DISMISSAL_KEY = ['physical-aio-ade-cli', 'aio-ade-cli', '2'].join('\0')
 
 describe('SkillFreshnessNudge', () => {
   beforeEach(() => {

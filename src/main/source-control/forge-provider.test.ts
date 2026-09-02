@@ -106,8 +106,8 @@ describe('forge provider interface', () => {
   })
 
   it('preserves the existing hosted provider detection order', async () => {
-    getProjectSlugMock.mockResolvedValue({ host: 'gitlab.com', path: 'team/orca' })
-    getRepoSlugMock.mockResolvedValue({ owner: 'team', repo: 'orca' })
+    getProjectSlugMock.mockResolvedValue({ host: 'gitlab.com', path: 'team/aio-ade' })
+    getRepoSlugMock.mockResolvedValue({ owner: 'team', repo: 'aio-ade' })
 
     await expect(detectHostedReviewProvider({ repoPath: '/repo' })).resolves.toBe('gitlab')
     await expect(getForgeProviderForRepository({ repoPath: '/repo' })).resolves.toMatchObject({
@@ -119,13 +119,13 @@ describe('forge provider interface', () => {
   it('detects a GitHub Enterprise Server remote as the GitHub provider, not Gitea', async () => {
     // Regression for #8312: a GHES host is not github.com, so github.com-only
     // slug parsing returns null. Detection must claim it via the enterprise
-    // resolver instead of falling through to Gitea's demand for ORCA_GITEA_TOKEN.
+    // resolver instead of falling through to Gitea's demand for AIO_ADE_GITEA_TOKEN.
     getProjectSlugMock.mockResolvedValue(null)
     // Why: getRepoSlug resolves hosted identities itself now — a GHES remote
     // comes back host-qualified instead of null + separate enterprise fallback.
     getRepoSlugMock.mockResolvedValue({
       owner: 'team',
-      repo: 'orca',
+      repo: 'aio-ade',
       host: 'github.acme-corp.com'
     })
 
@@ -148,7 +148,7 @@ describe('forge provider interface', () => {
     getGiteaRepoSlugMock.mockResolvedValue({
       host: 'gitea.example.com',
       owner: 'team',
-      repo: 'orca',
+      repo: 'aio-ade',
       apiBaseUrl: 'https://gitea.example.com/api/v1',
       webBaseUrl: 'https://gitea.example.com'
     })
@@ -169,7 +169,7 @@ describe('forge provider interface', () => {
     createGitHubPullRequestMock.mockResolvedValue({
       ok: true,
       number: 12,
-      url: 'https://github.com/team/orca/pull/12'
+      url: 'https://github.com/team/aio-ade/pull/12'
     })
 
     const provider = getForgeProviderById('github')
@@ -183,7 +183,7 @@ describe('forge provider interface', () => {
     ).resolves.toEqual({
       ok: true,
       number: 12,
-      url: 'https://github.com/team/orca/pull/12'
+      url: 'https://github.com/team/aio-ade/pull/12'
     })
     expect(createGitHubPullRequestMock).toHaveBeenCalledWith('/repo', {
       provider: 'github',
@@ -197,7 +197,7 @@ describe('forge provider interface', () => {
     createGitLabMergeRequestMock.mockResolvedValue({
       ok: true,
       number: 44,
-      url: 'https://gitlab.com/team/orca/-/merge_requests/44'
+      url: 'https://gitlab.com/team/aio-ade/-/merge_requests/44'
     })
 
     const provider = getForgeProviderById('gitlab')
@@ -215,7 +215,7 @@ describe('forge provider interface', () => {
     ).resolves.toEqual({
       ok: true,
       number: 44,
-      url: 'https://gitlab.com/team/orca/-/merge_requests/44'
+      url: 'https://gitlab.com/team/aio-ade/-/merge_requests/44'
     })
     expect(createGitLabMergeRequestMock).toHaveBeenCalledWith(
       '/repo',
@@ -233,7 +233,7 @@ describe('forge provider interface', () => {
     createAzureDevOpsPullRequestMock.mockResolvedValue({
       ok: true,
       number: 88,
-      url: 'https://dev.azure.com/acme/Project/_git/orca/pullrequest/88'
+      url: 'https://dev.azure.com/acme/Project/_git/aio-ade/pullrequest/88'
     })
 
     const provider = getForgeProviderById('azure-devops')
@@ -251,7 +251,7 @@ describe('forge provider interface', () => {
     ).resolves.toEqual({
       ok: true,
       number: 88,
-      url: 'https://dev.azure.com/acme/Project/_git/orca/pullrequest/88'
+      url: 'https://dev.azure.com/acme/Project/_git/aio-ade/pullrequest/88'
     })
     expect(createAzureDevOpsPullRequestMock).toHaveBeenCalledWith(
       '/repo',
@@ -269,7 +269,7 @@ describe('forge provider interface', () => {
     createGiteaPullRequestMock.mockResolvedValue({
       ok: true,
       number: 19,
-      url: 'https://git.example.com/team/orca/pulls/19'
+      url: 'https://git.example.com/team/aio-ade/pulls/19'
     })
 
     const provider = getForgeProviderById('gitea')
@@ -287,7 +287,7 @@ describe('forge provider interface', () => {
     ).resolves.toEqual({
       ok: true,
       number: 19,
-      url: 'https://git.example.com/team/orca/pulls/19'
+      url: 'https://git.example.com/team/aio-ade/pulls/19'
     })
     expect(createGiteaPullRequestMock).toHaveBeenCalledWith(
       '/repo',
@@ -309,7 +309,7 @@ describe('forge provider interface', () => {
         number: 7,
         title: 'Provider branch',
         state: 'open',
-        url: 'https://github.com/team/orca/pull/7',
+        url: 'https://github.com/team/aio-ade/pull/7',
         checksStatus: 'success',
         updatedAt: '2026-05-29T00:00:00.000Z',
         mergeable: 'MERGEABLE'

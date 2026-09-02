@@ -1,22 +1,22 @@
 import { createHash } from 'node:crypto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ORCHESTRATION_CONTRACT_VERSION } from '../../../../shared/protocol-version'
-import { OrcaRuntimeService } from '../../orca-runtime'
+import { AioAdeRuntimeService } from '../../aio-ade-runtime'
 import { OrchestrationDb } from '../../orchestration/db'
 import { RpcDispatcher } from '../dispatcher'
 import type { RpcRequest } from '../core'
 import { ORCHESTRATION_METHODS } from './orchestration'
 
 describe('orchestration new-worktree workers', () => {
-  type CreateWorktreeResult = Awaited<ReturnType<OrcaRuntimeService['createManagedWorktree']>>
+  type CreateWorktreeResult = Awaited<ReturnType<AioAdeRuntimeService['createManagedWorktree']>>
   const coordinatorPaneKey = 'tab_coord:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
   let db: OrchestrationDb
-  let runtime: OrcaRuntimeService
+  let runtime: AioAdeRuntimeService
   let runId: string
 
   beforeEach(() => {
     db = new OrchestrationDb(':memory:')
-    runtime = new OrcaRuntimeService()
+    runtime = new AioAdeRuntimeService()
     runtime.setOrchestrationDb(db)
     runId = db.createRun({
       objective: 'Test new-worktree workers',
@@ -63,7 +63,7 @@ describe('orchestration new-worktree workers', () => {
     vi.spyOn(runtime, 'waitForSetupTerminalCompletion').mockReturnValue(
       new Promise(() => undefined)
     )
-    vi.spyOn(runtime, 'getTerminalOrchestrationCliCommand').mockReturnValue('orca')
+    vi.spyOn(runtime, 'getTerminalOrchestrationCliCommand').mockReturnValue('aio-ade')
     vi.spyOn(runtime, 'sendTerminalAgentPrompt').mockResolvedValue({
       handle: 'term_worker',
       accepted: true,
@@ -194,14 +194,15 @@ describe('orchestration new-worktree workers', () => {
 
   it('injects the execution host CLI command and Dispatch capability together', async () => {
     mockCreatedWorktree()
-    vi.mocked(runtime.getTerminalOrchestrationCliCommand).mockReturnValue('orca-ide')
+    vi.mocked(runtime.getTerminalOrchestrationCliCommand).mockReturnValue('aio-ade')
 
     await startWorker({ worktree: 'new-top-level' })
 
     const prompt = vi.mocked(runtime.sendTerminalAgentPrompt).mock.calls[0]?.[1] ?? ''
-    expect(prompt).toContain('orca-ide orchestration send')
+    expect(prompt).toContain('aio-ade orchestration send')
     expect(prompt).toMatch(/--dispatch-capability dcap_[A-Za-z0-9_-]+/)
-    expect(prompt).not.toMatch(/(^|\s)orca orchestration send/)
+    // The host's command reaches the prompt verbatim; no pre-rebrand name leaks alongside it.
+    expect(prompt).not.toMatch(/(^|\s)orca(-ide)? orchestration send/)
   })
 
   it('passes exact repo, base, metadata, lineage, and setup choices to worktree creation', async () => {
@@ -554,10 +555,10 @@ describe('orchestration new-worktree workers', () => {
   it('persists pre-effect, post-effect, and post-input stages in order', async () => {
     mockCreatedWorktree({ hookFound: false })
     let finishWait:
-      | ((value: Awaited<ReturnType<OrcaRuntimeService['waitForTerminal']>>) => void)
+      | ((value: Awaited<ReturnType<AioAdeRuntimeService['waitForTerminal']>>) => void)
       | undefined
     let finishPrompt:
-      | ((value: Awaited<ReturnType<OrcaRuntimeService['sendTerminalAgentPrompt']>>) => void)
+      | ((value: Awaited<ReturnType<AioAdeRuntimeService['sendTerminalAgentPrompt']>>) => void)
       | undefined
     vi.mocked(runtime.waitForTerminal).mockImplementationOnce(
       async () =>

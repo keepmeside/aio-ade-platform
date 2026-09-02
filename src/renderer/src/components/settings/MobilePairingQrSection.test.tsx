@@ -24,7 +24,7 @@ describe('MobilePairingQrSection', () => {
       <MobilePairingQrSection
         qrDataUrl={null}
         qrError
-        pairingUrl="orca://pair?code=copy-fallback"
+        pairingUrl="aio-ade://pair?code=copy-fallback"
         endpoint="wss://host.example/large"
         qrEnlarged={false}
         codeCopied={false}
@@ -36,6 +36,6 @@ describe('MobilePairingQrSection', () => {
 
     expect(screen.getByRole('alert')).toHaveTextContent('couldn’t be rendered as a QR code')
     await userEvent.click(screen.getByRole('button', { name: /copy-fallback/ }))
-    expect(writeClipboardText).toHaveBeenCalledWith('orca://pair?code=copy-fallback')
+    expect(writeClipboardText).toHaveBeenCalledWith('aio-ade://pair?code=copy-fallback')
   })
 })

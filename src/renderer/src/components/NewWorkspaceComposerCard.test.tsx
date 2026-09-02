@@ -143,8 +143,8 @@ const localReadyHostOption: ProjectHostSetupOption = {
   hostId: 'local',
   repoId: 'repo-a',
   label: 'Local Mac',
-  detail: 'Orca',
-  path: '/Users/alice/orca'
+  detail: 'AIO-ADE',
+  path: '/Users/alice/aio-ade'
 }
 
 const devboxNeedsSetupHostOption: ProjectHostSetupOption = {
@@ -729,10 +729,10 @@ describe('NewWorkspaceComposerCard folder task source mode', () => {
     })
 
     expect(findRunTargetItem('Add SSH host')).toBeTruthy()
-    expect(findRunTargetItem('Add Remote Orca Server')).toBeTruthy()
+    expect(findRunTargetItem('Add Remote AIO-ADE Server')).toBeTruthy()
   })
 
-  it('opens the remote Orca server add dialog over the composer without leaving for Settings', () => {
+  it('opens the remote AIO-ADE server add dialog over the composer without leaving for Settings', () => {
     current = renderCard({
       projectHostSetupOptions: [localReadyHostOption, devboxNeedsSetupHostOption],
       selectedProjectHostSetupId: 'setup-local'
@@ -740,7 +740,7 @@ describe('NewWorkspaceComposerCard folder task source mode', () => {
 
     openRunTargetPicker(current.container)
     act(() => findRunTargetItem('Add host')?.click())
-    act(() => findRunTargetItem('Add Remote Orca Server')?.click())
+    act(() => findRunTargetItem('Add Remote AIO-ADE Server')?.click())
 
     const dialog = document.body.querySelector('[data-testid="add-remote-host-dialog"]')
     expect(dialog?.getAttribute('data-mode')).toBe('server')
@@ -758,13 +758,13 @@ describe('NewWorkspaceComposerCard folder task source mode', () => {
           kind: 'ready',
           id: 'setup-local',
           label: 'Local Mac',
-          path: '/Users/alice/orca'
+          path: '/Users/alice/aio-ade'
         },
         {
           kind: 'ready',
           id: 'setup-builder',
           label: 'Builder',
-          path: '/workspace/orca'
+          path: '/workspace/aio-ade'
         }
       ] as never,
       selectedProjectHostSetupId: 'setup-local',
@@ -773,8 +773,8 @@ describe('NewWorkspaceComposerCard folder task source mode', () => {
         {
           id: 'vercel',
           name: 'Vercel Sandbox',
-          create: './scripts/orca-vm/vercel.start.sh',
-          destroy: './scripts/orca-vm/vercel.cleanup.sh',
+          create: './scripts/aio-ade-vm/vercel.start.sh',
+          destroy: './scripts/aio-ade-vm/vercel.cleanup.sh',
           destroyDisabled: false
         }
       ] as never,
@@ -812,13 +812,13 @@ describe('NewWorkspaceComposerCard folder task source mode', () => {
           kind: 'ready',
           id: 'setup-local',
           label: 'Local Mac',
-          path: '/Users/alice/orca'
+          path: '/Users/alice/aio-ade'
         },
         {
           kind: 'ready',
           id: 'setup-builder',
           label: 'Builder',
-          path: '/workspace/orca'
+          path: '/workspace/aio-ade'
         }
       ] as never,
       selectedProjectHostSetupId: 'setup-local',
@@ -827,7 +827,7 @@ describe('NewWorkspaceComposerCard folder task source mode', () => {
         {
           id: 'vercel',
           name: 'Vercel Sandbox',
-          create: './scripts/orca-vm/vercel.start.sh',
+          create: './scripts/aio-ade-vm/vercel.start.sh',
           destroyDisabled: true
         }
       ] as never,

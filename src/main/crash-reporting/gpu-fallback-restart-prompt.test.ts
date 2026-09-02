@@ -25,10 +25,10 @@ describe('promptForGpuFallbackRestart', () => {
       buttons: ['Restart with Software Rendering', 'Keep Running'],
       defaultId: 0,
       cancelId: 1,
-      title: 'Restart Orca?',
-      message: "Orca's graphics process has crashed repeatedly.",
+      title: 'Restart AIO-ADE?',
+      message: "AIO-ADE's graphics process has crashed repeatedly.",
       detail:
-        'Restart to switch to software rendering and reduce the chance of the app window crashing. If you keep running, Orca may become unstable.'
+        'Restart to switch to software rendering and reduce the chance of the app window crashing. If you keep running, AIO-ADE may become unstable.'
     })
   })
 

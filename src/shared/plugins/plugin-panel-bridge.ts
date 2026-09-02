@@ -12,11 +12,31 @@ import { getPluginHostMethodSpec, isPluginPanelAction } from './plugin-host-api'
  * bridge is a transport, not a second contract.
  */
 
-export const PANEL_ACTION_REQUEST_TYPE = 'orca-panel-action'
-export const PANEL_ACTION_RESULT_TYPE = 'orca-panel-action-result'
-export const PANEL_PING_TYPE = 'orca-panel-ping'
-export const PANEL_PONG_TYPE = 'orca-panel-pong'
-export const PLUGIN_PANEL_FRAME_NAME_PREFIX = 'orca-plugin-panel:'
+export const PANEL_ACTION_REQUEST_TYPE = 'aio-ade-panel-action'
+export const PANEL_ACTION_RESULT_TYPE = 'aio-ade-panel-action-result'
+
+/* Why both spellings: the request type is authored by plugin panel code and the result type is
+ * what that code filters replies on, so an installed panel written before the rebrand speaks
+ * only the old pair. Requests are accepted in either dialect and each reply answers in the
+ * dialect its request used. */
+export const LEGACY_PANEL_ACTION_REQUEST_TYPE = 'orca-panel-action'
+export const LEGACY_PANEL_ACTION_RESULT_TYPE = 'orca-panel-action-result'
+
+/* Host-internal: the ping responder is written by the host into the shell it generates, and the
+ * frame name is set by the renderer and read by the main-process navigation guard. Both ends
+ * ship together, so these carry no compatibility debt. */
+export const PANEL_PING_TYPE = 'aio-ade-panel-ping'
+export const PANEL_PONG_TYPE = 'aio-ade-panel-pong'
+export const PLUGIN_PANEL_FRAME_NAME_PREFIX = 'aio-ade-plugin-panel:'
+
+/** Reply in the dialect the request used, or the current one when it is unrecognized. */
+export function resolvePanelActionResultType(
+  requestType: string | undefined
+): typeof PANEL_ACTION_RESULT_TYPE | typeof LEGACY_PANEL_ACTION_RESULT_TYPE {
+  return requestType === LEGACY_PANEL_ACTION_REQUEST_TYPE
+    ? LEGACY_PANEL_ACTION_RESULT_TYPE
+    : PANEL_ACTION_RESULT_TYPE
+}
 
 /** Per-plugin bridge budgets, enforced host-side. */
 export const PANEL_MESSAGE_MAX_BYTES = 64 * 1024
@@ -36,7 +56,10 @@ export const PANEL_WATCHDOG_PING_INTERVAL_MS = 10_000
 export const PANEL_WATCHDOG_PONG_TIMEOUT_MS = 5_000
 
 export const panelActionRequestSchema = z.object({
-  type: z.literal(PANEL_ACTION_REQUEST_TYPE),
+  type: z.union([
+    z.literal(PANEL_ACTION_REQUEST_TYPE),
+    z.literal(LEGACY_PANEL_ACTION_REQUEST_TYPE)
+  ]),
   /** Plugin-chosen correlation id echoed back on the result message. */
   requestId: z.string().min(1).max(128),
   action: z.string().min(1).refine(isPluginPanelAction, 'not a panel-callable action'),
@@ -63,7 +86,7 @@ export type PluginPanelActionErrorCode =
 
 /** Result message posted back into the panel iframe. */
 export type PluginPanelActionResultMessage = {
-  type: typeof PANEL_ACTION_RESULT_TYPE
+  type: typeof PANEL_ACTION_RESULT_TYPE | typeof LEGACY_PANEL_ACTION_RESULT_TYPE
   requestId: string
   ok: boolean
   value?: unknown
@@ -127,11 +150,19 @@ export function parsePanelActionRequest(data: unknown): PanelActionRequestParseR
 /** True when `data` even looks like a bridge request (right `type`). Used to
  *  ignore unrelated window messages without replying to them. */
 export function looksLikePanelActionRequest(data: unknown): boolean {
-  return (
-    typeof data === 'object' &&
-    data !== null &&
-    (data as { type?: unknown }).type === PANEL_ACTION_REQUEST_TYPE
-  )
+  const type = readPanelActionRequestType(data)
+  return type !== null
+}
+
+/** The request's dialect, or null when this is not a panel action request at all. */
+export function readPanelActionRequestType(data: unknown): string | null {
+  if (typeof data !== 'object' || data === null) {
+    return null
+  }
+  const type = (data as { type?: unknown }).type
+  return type === PANEL_ACTION_REQUEST_TYPE || type === LEGACY_PANEL_ACTION_REQUEST_TYPE
+    ? type
+    : null
 }
 
 /** Reads a valid pong's pingId, or null. Hand-rolled rather than

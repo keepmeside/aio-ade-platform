@@ -13,7 +13,7 @@ import {
 
 /**
  * Shows the Full Disk Access hint only after macOS has repeatedly raised its
- * consent dialog naming Orca (#9756). The main process counts the dialogs, so
+ * consent dialog naming AIO-ADE (#9756). The main process counts the dialogs, so
  * users who never see one never see this.
  */
 export function useMacosTccPromptNotice(): void {
@@ -47,7 +47,7 @@ export function useMacosTccPromptNotice(): void {
         {
           description: translate(
             'auto.hooks.useMacosTccPromptNotice.description',
-            'macOS attributes file access by your agents and terminal tools to Orca. Granting Full Disk Access reduces these prompts.'
+            'macOS attributes file access by your agents and terminal tools to AIO-ADE. Granting Full Disk Access reduces these prompts.'
           ),
           duration: 12_000,
           action: {

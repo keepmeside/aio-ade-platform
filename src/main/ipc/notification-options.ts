@@ -35,8 +35,8 @@ export function buildNotificationOptions(args: NotificationDispatchRequest): {
 
   if (args.source === 'test') {
     return {
-      title: 'Orca notifications are on',
-      body: 'This is a test notification from Orca.'
+      title: 'AIO-ADE notifications are on',
+      body: 'This is a test notification from AIO-ADE.'
     }
   }
 

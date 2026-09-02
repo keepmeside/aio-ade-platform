@@ -5,7 +5,7 @@ export type BrowserFocusRequestDetail = {
   target: BrowserFocusTarget
 }
 
-export const ORCA_BROWSER_FOCUS_REQUEST_EVENT = 'orca:browser-focus-request'
+export const AIO_ADE_BROWSER_FOCUS_REQUEST_EVENT = 'aio-ade:browser-focus-request'
 
 const FOCUS_REQUEST_TTL_MS = 30_000
 

@@ -209,18 +209,37 @@ describe('validateGitExecArgs', () => {
 
   describe('git clone', () => {
     it('allows only the project setup clone shape', () => {
-      expectAllowed(['clone', '--', 'https://github.com/stablyai/orca.git', 'orca'])
-      expectAllowed(['clone', '--progress', '--', 'git@github.com:stablyai/orca.git', 'orca'])
+      expectAllowed([
+        'clone',
+        '--',
+        'https://github.com/keepmeside/aio-ade-platform.git',
+        'aio-ade'
+      ])
+      expectAllowed([
+        'clone',
+        '--progress',
+        '--',
+        'git@github.com:keepmeside/aio-ade-platform.git',
+        'aio-ade'
+      ])
     })
 
     it.each([
-      [['clone', 'https://github.com/stablyai/orca.git']],
-      [['clone', 'https://github.com/stablyai/orca.git', 'orca']],
-      [['clone', '--depth=1', '--', 'https://github.com/stablyai/orca.git', 'orca']],
-      [['clone', '--', 'https://github.com/stablyai/orca.git', '.']],
-      [['clone', '--', 'https://github.com/stablyai/orca.git', '..']],
-      [['clone', '--', 'https://github.com/stablyai/orca.git', 'nested/orca']],
-      [['clone', '--', 'https://github.com/stablyai/orca.git', 'nested\\orca']]
+      [['clone', 'https://github.com/keepmeside/aio-ade-platform.git']],
+      [['clone', 'https://github.com/keepmeside/aio-ade-platform.git', 'aio-ade']],
+      [
+        [
+          'clone',
+          '--depth=1',
+          '--',
+          'https://github.com/keepmeside/aio-ade-platform.git',
+          'aio-ade'
+        ]
+      ],
+      [['clone', '--', 'https://github.com/keepmeside/aio-ade-platform.git', '.']],
+      [['clone', '--', 'https://github.com/keepmeside/aio-ade-platform.git', '..']],
+      [['clone', '--', 'https://github.com/keepmeside/aio-ade-platform.git', 'nested/aio-ade']],
+      [['clone', '--', 'https://github.com/keepmeside/aio-ade-platform.git', 'nested\\aio-ade']]
     ])('rejects unsafe clone args %j', (args) => {
       expectBlocked(args, 'git clone')
     })

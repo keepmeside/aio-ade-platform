@@ -15,13 +15,14 @@ import {
   getPosixDirname,
   getWslBridgeMarker,
   getWslLauncherMarker,
+  isManagedWslScript,
   parseManagedLauncherTarget,
   quoteShell
 } from './wsl-cli-scripts'
 
 const MANAGED_MARKER = getWslLauncherMarker()
 const BRIDGE_MANAGED_MARKER = getWslBridgeMarker()
-const WSL_COMMAND_NAME = 'orca-ide'
+const WSL_COMMAND_NAME = 'aio-ade'
 const LEGACY_WSL_COMMAND_NAME = 'orca'
 const WSL_COMMAND_TIMEOUT_MS = 10_000
 
@@ -74,7 +75,7 @@ export class WslCliInstaller {
         state: 'not_installed',
         currentTarget: null,
         pathConfigured: ready.pathConfigured,
-        detail: `Register ${ready.commandPath} to use Orca from WSL.`
+        detail: `Register ${ready.commandPath} to use AIO-ADE from WSL.`
       })
     }
 
@@ -86,18 +87,19 @@ export class WslCliInstaller {
         state: 'conflict',
         currentTarget: null,
         pathConfigured: ready.pathConfigured,
-        detail: `${ready.commandPath} exists but is not an Orca launcher script.`
+        detail: `${ready.commandPath} exists but is not an AIO-ADE launcher script.`
       })
     }
 
     const expected = buildWslLauncher(ready.launcherPath, ready.bridgePath)
-    const managed = content.includes(MANAGED_MARKER)
+    const managed = isManagedWslScript(content, MANAGED_MARKER)
     const currentTarget = managed ? parseManagedLauncherTarget(content) : null
     if (managedScriptMatches(content, expected, managed)) {
       const bridgeContent = await this.readCommandFile(ready.distro, ready.bridgePath)
       const expectedBridge = buildWslBridgeScript()
       const bridgeManaged =
-        typeof bridgeContent === 'string' && bridgeContent.includes(BRIDGE_MANAGED_MARKER)
+        typeof bridgeContent === 'string' &&
+        isManagedWslScript(bridgeContent, BRIDGE_MANAGED_MARKER)
       if (
         typeof bridgeContent === 'string' &&
         managedScriptMatches(bridgeContent, expectedBridge, bridgeManaged)
@@ -123,7 +125,7 @@ export class WslCliInstaller {
         detail:
           bridgeContent === null || bridgeManaged
             ? `${ready.commandPath} is missing its PowerShell bridge.`
-            : `${ready.bridgePath} exists but is not managed by Orca.`
+            : `${ready.bridgePath} exists but is not managed by AIO-ADE.`
       })
     }
 
@@ -139,10 +141,10 @@ export class WslCliInstaller {
       currentTarget,
       pathConfigured: ready.pathConfigured,
       detail: !managed
-        ? `${ready.commandPath} exists but is not managed by Orca.`
+        ? `${ready.commandPath} exists but is not managed by AIO-ADE.`
         : bridgeConflict
-          ? `${ready.bridgePath} exists but is not managed by Orca.`
-          : `${ready.commandPath} points to a different Orca launcher.`
+          ? `${ready.bridgePath} exists but is not managed by AIO-ADE.`
+          : `${ready.commandPath} points to a different AIO-ADE launcher.`
     })
   }
 
@@ -151,7 +153,7 @@ export class WslCliInstaller {
     if (bridgeContent === null) {
       return false
     }
-    return bridgeContent === 'not_file' || !bridgeContent.includes(BRIDGE_MANAGED_MARKER)
+    return bridgeContent === 'not_file' || !isManagedWslScript(bridgeContent, BRIDGE_MANAGED_MARKER)
   }
 
   async repairManagedRegistration(): Promise<ManagedWslCliRepairResult> {
@@ -161,7 +163,7 @@ export class WslCliInstaller {
     }
     if (status.state === 'conflict') {
       // Why: a user-owned bridge conflicts with repair, but the launcher is
-      // still Orca-managed and must remain registered for future reconciliation.
+      // still AIO-ADE-managed and must remain registered for future reconciliation.
       return { changed: false, managed: status.currentTarget !== null, status }
     }
 
@@ -178,7 +180,7 @@ export class WslCliInstaller {
 
     const legacyContent = await this.readCommandFile(this.distro, legacyCommandPath)
     const legacyManaged =
-      typeof legacyContent === 'string' && legacyContent.includes(MANAGED_MARKER)
+      typeof legacyContent === 'string' && isManagedWslScript(legacyContent, MANAGED_MARKER)
     if (!legacyManaged) {
       return { changed: false, managed: status.state === 'installed', status }
     }
@@ -205,7 +207,7 @@ export class WslCliInstaller {
       throw new Error(status.detail ?? 'WSL CLI registration is unavailable.')
     }
     if (status.state === 'conflict') {
-      throw new Error(`Refusing to replace non-Orca command at ${status.commandPath}.`)
+      throw new Error(`Refusing to replace non-AIO-ADE command at ${status.commandPath}.`)
     }
 
     // Why: the launcher and PowerShell bridge are one registration; the
@@ -243,12 +245,12 @@ export class WslCliInstaller {
           getBridgePathFromCommandPath(status.commandPath),
           BRIDGE_MANAGED_MARKER
         ),
-        `cat > "$command_tmp" <<'ORCA_WSL_CLI'`,
+        `cat > "$command_tmp" <<'AIO_ADE_WSL_CLI'`,
         buildWslLauncher(status.launcherPath, getBridgePathFromCommandPath(status.commandPath)),
-        'ORCA_WSL_CLI',
-        `cat > "$bridge_tmp" <<'ORCA_WSL_BRIDGE'`,
+        'AIO_ADE_WSL_CLI',
+        `cat > "$bridge_tmp" <<'AIO_ADE_WSL_BRIDGE'`,
         buildWslBridgeScript(),
-        'ORCA_WSL_BRIDGE',
+        'AIO_ADE_WSL_BRIDGE',
         'chmod 755 "$command_tmp"',
         'chmod 644 "$bridge_tmp"',
         buildSafeReplaceGuard(status.commandPath, MANAGED_MARKER),
@@ -263,7 +265,7 @@ export class WslCliInstaller {
         'committed=1',
         'rm -f "$bridge_backup"',
         // Why: the command was renamed to avoid GNOME Orca; remove only the
-        // old Orca-managed WSL wrapper after the replacement has committed.
+        // old AIO-ADE-managed WSL wrapper after the replacement has committed.
         buildManagedLegacyRemoveCommand('"$legacy_command_path"'),
         'trap - EXIT'
       ].join('\n')
@@ -278,7 +280,7 @@ export class WslCliInstaller {
     }
     const legacyCommandPath = `${getPosixDirname(status.commandPath)}/${LEGACY_WSL_COMMAND_NAME}`
     if (status.state === 'not_installed') {
-      // Why: a managed legacy `orca` left behind would later be re-adopted by
+      // Why: a managed legacy `aio-ade` left behind would later be re-adopted by
       // startup reconciliation as opt-in proof, silently undoing this removal.
       await this.run(
         this.distro as string,
@@ -289,7 +291,7 @@ export class WslCliInstaller {
       return status
     }
     if (status.state === 'conflict') {
-      throw new Error(`Refusing to remove non-Orca command at ${status.commandPath}.`)
+      throw new Error(`Refusing to remove non-AIO-ADE command at ${status.commandPath}.`)
     }
 
     await this.run(
@@ -328,7 +330,7 @@ export class WslCliInstaller {
       return {
         status: this.unsupported(
           hostStatus.unsupportedReason ?? 'launcher_missing',
-          hostStatus.detail ?? 'The Windows Orca CLI launcher is missing.'
+          hostStatus.detail ?? 'The Windows AIO-ADE CLI launcher is missing.'
         )
       }
     }
@@ -351,13 +353,13 @@ export class WslCliInstaller {
       return {
         status: this.unsupported(
           'launcher_missing',
-          'WSL Windows interop is unavailable; Orca cannot launch the Windows CLI from WSL.'
+          'WSL Windows interop is unavailable; AIO-ADE cannot launch the Windows CLI from WSL.'
         )
       }
     }
 
     const pathDirectory = `${home}/.local/bin`
-    // Why: matches the Linux CLI rename to `orca-ide` (avoids GNOME Orca conflict).
+    // Why: matches the Linux CLI rename to `aio-ade` (avoids GNOME Orca conflict).
     const commandPath = `${pathDirectory}/${WSL_COMMAND_NAME}`
     const pathConfigured =
       (
@@ -384,20 +386,20 @@ export class WslCliInstaller {
       distro,
       [
         `if [ -L ${quoteShell(commandPath)} ]; then`,
-        '  printf __ORCA_NOT_FILE__',
+        '  printf __AIO_ADE_NOT_FILE__',
         `elif [ ! -e ${quoteShell(commandPath)} ]; then`,
-        '  printf __ORCA_MISSING__',
+        '  printf __AIO_ADE_MISSING__',
         `elif [ ! -f ${quoteShell(commandPath)} ]; then`,
-        '  printf __ORCA_NOT_FILE__',
+        '  printf __AIO_ADE_NOT_FILE__',
         'else',
         `  cat ${quoteShell(commandPath)}`,
         'fi'
       ].join('\n')
     )
-    if (output === '__ORCA_MISSING__') {
+    if (output === '__AIO_ADE_MISSING__') {
       return null
     }
-    if (output === '__ORCA_NOT_FILE__') {
+    if (output === '__AIO_ADE_NOT_FILE__') {
       return 'not_file'
     }
     return output

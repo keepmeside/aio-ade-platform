@@ -113,7 +113,7 @@ export default function TerminalPaneHeaderOverlay({
       data-pane-title-surface={titleUsesLightSurface ? 'light' : 'dark'}
       style={{
         display: terminalContentVisible ? undefined : 'none',
-        ['--orca-pane-title-bg' as string]: paneTitleBackground,
+        ['--aio-ade-pane-title-bg' as string]: paneTitleBackground,
         ...hiddenStartupStyle
       }}
     >

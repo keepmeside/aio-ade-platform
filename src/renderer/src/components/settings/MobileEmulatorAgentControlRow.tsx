@@ -1,12 +1,12 @@
 import { Import, Loader2 } from 'lucide-react'
 import {
-  ORCA_CLI_SKILL_INSTALL_COMMAND,
-  ORCA_CLI_SKILL_NAME,
-  ORCA_CLI_SKILL_UPDATE_COMMAND
+  AIO_ADE_CLI_SKILL_INSTALL_COMMAND,
+  AIO_ADE_CLI_SKILL_NAME,
+  AIO_ADE_CLI_SKILL_UPDATE_COMMAND
 } from '@/lib/agent-feature-install-commands'
 import {
   AGENT_SKILL_CLI_PREREQUISITE_NOTICE,
-  ensureOrcaCliAvailableForAgentSkillTerminal
+  ensureAioAdeCliAvailableForAgentSkillTerminal
 } from '@/lib/agent-skill-cli-prerequisite'
 import { cn } from '@/lib/utils'
 import { useMobileEmulatorAgentSetupState } from '../emulator-pane/use-mobile-emulator-agent-setup-state'
@@ -19,16 +19,16 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/
 import { translate } from '@/i18n/i18n'
 
 const EMULATOR_CLI_COMMANDS = [
-  'orca emulator list --json',
-  'orca emulator attach "iPhone 16 Pro" --json',
-  'orca emulator tap 0.5 0.7 --json',
-  'orca emulator type "hello" --json'
+  'aio-ade emulator list --json',
+  'aio-ade emulator attach "iPhone 16 Pro" --json',
+  'aio-ade emulator tap 0.5 0.7 --json',
+  'aio-ade emulator type "hello" --json'
 ] as const
 
 export function MobileEmulatorAgentControlRow(): React.JSX.Element {
   const setup = useMobileEmulatorAgentSetupState(true)
-  const cliSkillInstallCommand = buildSkillCommandForRuntime(ORCA_CLI_SKILL_INSTALL_COMMAND)
-  const cliSkillUpdateCommand = buildSkillCommandForRuntime(ORCA_CLI_SKILL_UPDATE_COMMAND)
+  const cliSkillInstallCommand = buildSkillCommandForRuntime(AIO_ADE_CLI_SKILL_INSTALL_COMMAND)
+  const cliSkillUpdateCommand = buildSkillCommandForRuntime(AIO_ADE_CLI_SKILL_UPDATE_COMMAND)
 
   const handleEnableCli = async (): Promise<void> => {
     await setup.handleEnableCli()
@@ -47,7 +47,7 @@ export function MobileEmulatorAgentControlRow(): React.JSX.Element {
           <p className="text-xs text-muted-foreground">
             {translate(
               'auto.components.settings.MobileEmulatorAgentControlRow.ff4b7e65d6',
-              'Let coding agents control the active mobile emulator with Orca CLI commands.'
+              'Let coding agents control the active mobile emulator with AIO-ADE CLI commands.'
             )}
           </p>
         </div>
@@ -72,13 +72,13 @@ export function MobileEmulatorAgentControlRow(): React.JSX.Element {
             <p className="text-sm font-medium">
               {translate(
                 'auto.components.settings.MobileEmulatorAgentControlRow.4f2205f3b6',
-                'Enable Orca CLI'
+                'Enable AIO-ADE CLI'
               )}
             </p>
             <p className="text-xs text-muted-foreground">
               {translate(
                 'auto.components.settings.MobileEmulatorAgentControlRow.2fef055608',
-                'Registers the Orca CLI command so agents can control the active emulator from their shell.'
+                'Registers the AIO-ADE CLI command so agents can control the active emulator from their shell.'
               )}
             </p>
             {setup.cliInstallStatus?.commandPath && setup.cliEnabled ? (
@@ -99,7 +99,7 @@ export function MobileEmulatorAgentControlRow(): React.JSX.Element {
               <p className="text-[11px] leading-snug text-muted-foreground">
                 {translate(
                   'auto.components.settings.MobileEmulatorAgentControlRow.3d34423e88',
-                  'Registering the Orca CLI'
+                  'Registering the AIO-ADE CLI'
                 )}{' '}
                 {setup.cliInstallStatus?.commandPath ? (
                   <code className="rounded bg-muted px-1 py-0.5">
@@ -147,17 +147,17 @@ export function MobileEmulatorAgentControlRow(): React.JSX.Element {
             variant="inline"
             title={translate(
               'auto.components.settings.MobileEmulatorAgentControlRow.67e19ee03c',
-              'Orca CLI skill'
+              'AIO-ADE CLI skill'
             )}
             description={translate(
               'auto.components.settings.MobileEmulatorAgentControlRow.d94ca6a623',
-              'Enables agents to use Orca CLI commands, including mobile emulator control.'
+              'Enables agents to use AIO-ADE CLI commands, including mobile emulator control.'
             )}
             command={cliSkillInstallCommand}
             installedCommand={cliSkillUpdateCommand}
-            terminalTitle="Orca CLI skill setup"
-            terminalAriaLabel="Orca CLI skill install terminal"
-            terminalWorktreeId="settings-mobile-emulator-orca-cli-skill-terminal"
+            terminalTitle="AIO-ADE CLI skill setup"
+            terminalAriaLabel="AIO-ADE CLI skill install terminal"
+            terminalWorktreeId="settings-mobile-emulator-aio-ade-cli-skill-terminal"
             installed={setup.cliSkillInstalled}
             loading={setup.cliSkillLoading}
             error={setup.cliSkillError}
@@ -166,15 +166,15 @@ export function MobileEmulatorAgentControlRow(): React.JSX.Element {
             preInstallNotice={AGENT_SKILL_CLI_PREREQUISITE_NOTICE}
             openingHint={translate(
               'auto.components.settings.MobileEmulatorAgentControlRow.3941719a56',
-              'Checking Orca CLI before opening skill setup.'
+              'Checking AIO-ADE CLI before opening skill setup.'
             )}
             onBeforeOpenTerminal={async () => {
-              await ensureOrcaCliAvailableForAgentSkillTerminal()
+              await ensureAioAdeCliAvailableForAgentSkillTerminal()
             }}
             onRecheck={setup.refreshCliSkill}
             // Why: this row builds its commands for the local host only, so the
             // local-host freshness scan can vouch for the copy it points at.
-            freshnessSkillName={ORCA_CLI_SKILL_NAME}
+            freshnessSkillName={AIO_ADE_CLI_SKILL_NAME}
           />
         </div>
 

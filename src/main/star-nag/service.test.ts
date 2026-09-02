@@ -16,8 +16,8 @@ type TestWindow = {
 const {
   appMock,
   browserWindowMock,
-  checkOrcaStarredMock,
-  starOrcaMock,
+  checkAioAdeStarredMock,
+  starAioAdeMock,
   trackMock,
   getCohortAtEmitMock,
   ipcMainHandleMock
@@ -28,8 +28,8 @@ const {
   browserWindowMock: {
     getAllWindows: vi.fn<() => TestWindow[]>(() => [])
   },
-  checkOrcaStarredMock: vi.fn(),
-  starOrcaMock: vi.fn(),
+  checkAioAdeStarredMock: vi.fn(),
+  starAioAdeMock: vi.fn(),
   trackMock: vi.fn(),
   getCohortAtEmitMock: vi.fn(() => ({ nth_repo_added: 3 })),
   ipcMainHandleMock: vi.fn()
@@ -44,8 +44,8 @@ vi.mock('electron', () => ({
 }))
 
 vi.mock('../github/client', () => ({
-  checkOrcaStarred: checkOrcaStarredMock,
-  starOrca: starOrcaMock
+  checkAioAdeStarred: checkAioAdeStarredMock,
+  starAioAde: starAioAdeMock
 }))
 
 vi.mock('../telemetry/client', () => ({
@@ -149,10 +149,10 @@ describe('StarNagService', () => {
     appMock.getVersion.mockReturnValue('1.2.3')
     browserWindowMock.getAllWindows.mockReset()
     browserWindowMock.getAllWindows.mockReturnValue([])
-    checkOrcaStarredMock.mockReset()
-    checkOrcaStarredMock.mockResolvedValue(false)
-    starOrcaMock.mockReset()
-    starOrcaMock.mockResolvedValue(true)
+    checkAioAdeStarredMock.mockReset()
+    checkAioAdeStarredMock.mockResolvedValue(false)
+    starAioAdeMock.mockReset()
+    starAioAdeMock.mockResolvedValue(true)
     trackMock.mockReset()
     getCohortAtEmitMock.mockReset()
     getCohortAtEmitMock.mockReturnValue({ nth_repo_added: 3 })
@@ -189,10 +189,10 @@ describe('StarNagService', () => {
     })
   })
 
-  it('shows the browser fallback when checkOrcaStarred cannot determine star state', async () => {
+  it('shows the browser fallback when checkAioAdeStarred cannot determine star state', async () => {
     const window = createWindow()
     browserWindowMock.getAllWindows.mockReturnValue([window])
-    checkOrcaStarredMock.mockResolvedValue(null)
+    checkAioAdeStarredMock.mockResolvedValue(null)
     const { service, emitAgentStarted } = createHarness()
 
     service.start()
@@ -221,10 +221,10 @@ describe('StarNagService', () => {
     })
   })
 
-  it('does not log a threshold exposure when checkOrcaStarred returns true', async () => {
+  it('does not log a threshold exposure when checkAioAdeStarred returns true', async () => {
     const window = createWindow()
     browserWindowMock.getAllWindows.mockReturnValue([window])
-    checkOrcaStarredMock.mockResolvedValue(true)
+    checkAioAdeStarredMock.mockResolvedValue(true)
     const { service, emitAgentStarted } = createHarness()
 
     service.start()
@@ -419,7 +419,7 @@ describe('StarNagService', () => {
   it('hides a superseded visible card when onboarding completion detects an existing star', async () => {
     const window = createWindow()
     browserWindowMock.getAllWindows.mockReturnValue([window])
-    checkOrcaStarredMock.mockResolvedValueOnce(true)
+    checkAioAdeStarredMock.mockResolvedValueOnce(true)
     const { service, ui } = createHarness()
 
     service.registerIpcHandlers()
@@ -439,7 +439,9 @@ describe('StarNagService', () => {
     const window = createWindow()
     browserWindowMock.getAllWindows.mockReturnValue([window])
     const deferredStarCheck = createDeferred<boolean | null>()
-    checkOrcaStarredMock.mockReturnValueOnce(deferredStarCheck.promise).mockResolvedValueOnce(null)
+    checkAioAdeStarredMock
+      .mockReturnValueOnce(deferredStarCheck.promise)
+      .mockResolvedValueOnce(null)
     const { service, emitAgentStarted, ui } = createHarness()
 
     service.start()
@@ -472,7 +474,9 @@ describe('StarNagService', () => {
     const window = createWindow()
     browserWindowMock.getAllWindows.mockReturnValue([window])
     const deferredStarCheck = createDeferred<boolean | null>()
-    checkOrcaStarredMock.mockReturnValueOnce(deferredStarCheck.promise).mockResolvedValueOnce(null)
+    checkAioAdeStarredMock
+      .mockReturnValueOnce(deferredStarCheck.promise)
+      .mockResolvedValueOnce(null)
     const { service, ui } = createHarness()
 
     service.registerIpcHandlers()
@@ -567,7 +571,7 @@ describe('StarNagService', () => {
     const window = createWindow()
     browserWindowMock.getAllWindows.mockReturnValue([window])
     const deferredStarCheck = createDeferred<boolean | null>()
-    checkOrcaStarredMock.mockReturnValue(deferredStarCheck.promise)
+    checkAioAdeStarredMock.mockReturnValue(deferredStarCheck.promise)
     const { service, emitAgentStarted } = createHarness()
 
     service.start()
@@ -596,7 +600,7 @@ describe('StarNagService', () => {
     const window = createWindow()
     browserWindowMock.getAllWindows.mockReturnValue([window])
     const firstStarCheck = createDeferred<boolean | null>()
-    checkOrcaStarredMock.mockReturnValueOnce(firstStarCheck.promise).mockResolvedValue(null)
+    checkAioAdeStarredMock.mockReturnValueOnce(firstStarCheck.promise).mockResolvedValue(null)
     const { service, emitAgentStarted } = createHarness()
 
     service.start()
@@ -639,7 +643,7 @@ describe('StarNagService', () => {
     const window = createWindow()
     browserWindowMock.getAllWindows.mockReturnValue([window])
     const deferredStarCheck = createDeferred<boolean | null>()
-    checkOrcaStarredMock.mockReturnValue(deferredStarCheck.promise)
+    checkAioAdeStarredMock.mockReturnValue(deferredStarCheck.promise)
     const { service, emitAgentStarted, ui } = createHarness()
 
     service.start()
@@ -660,7 +664,7 @@ describe('StarNagService', () => {
     const window = createWindow()
     browserWindowMock.getAllWindows.mockReturnValue([window])
     const deferredStarCheck = createDeferred<boolean | null>()
-    checkOrcaStarredMock.mockReturnValue(deferredStarCheck.promise)
+    checkAioAdeStarredMock.mockReturnValue(deferredStarCheck.promise)
     const { service, emitAgentStarted } = createHarness()
 
     service.start()
@@ -753,7 +757,7 @@ describe('StarNagService', () => {
     })
 
     trackMock.mockClear()
-    checkOrcaStarredMock.mockResolvedValue(true)
+    checkAioAdeStarredMock.mockResolvedValue(true)
     const next = createHarness()
     next.service.start()
     next.emitAgentStarted(45)
@@ -856,14 +860,14 @@ describe('StarNagService', () => {
     expect(later.ui.starNagDeferredUntil).toBeGreaterThan(Date.now())
   })
 
-  it('emits direct-star attempted and succeeded outcomes plus app_starred_orca', async () => {
+  it('emits direct-star attempted and succeeded outcomes plus app_starred_aio_ade', async () => {
     const window = createWindow()
     browserWindowMock.getAllWindows.mockReturnValue([window])
     const { service, ui } = createHarness()
 
     service.registerIpcHandlers()
     getIpcHandler('star-nag:forceShow')()
-    const ok = await getIpcHandler('star-nag:starOrca')()
+    const ok = await getIpcHandler('star-nag:starAioAde')()
 
     expect(ok).toBe(true)
     expect(ui.starNagCompleted).toBe(true)
@@ -875,7 +879,7 @@ describe('StarNagService', () => {
       'star_nag_outcome',
       expect.objectContaining({ outcome: 'direct_star_succeeded', mode: 'gh' })
     )
-    expect(trackMock).toHaveBeenCalledWith('app_starred_orca', {
+    expect(trackMock).toHaveBeenCalledWith('app_starred_aio_ade', {
       source: 'star_nag',
       nth_repo_added: 3
     })
@@ -888,9 +892,9 @@ describe('StarNagService', () => {
 
     service.registerIpcHandlers()
     await getIpcHandler('star-nag:onboardingCompleted')()
-    await getIpcHandler('star-nag:starOrca')()
+    await getIpcHandler('star-nag:starAioAde')()
 
-    expect(trackMock).toHaveBeenCalledWith('app_starred_orca', {
+    expect(trackMock).toHaveBeenCalledWith('app_starred_aio_ade', {
       source: 'onboarding_completed',
       nth_repo_added: 3
     })
@@ -899,7 +903,7 @@ describe('StarNagService', () => {
   it('does not emit confirmed star telemetry for web fallback handoff', async () => {
     const window = createWindow()
     browserWindowMock.getAllWindows.mockReturnValue([window])
-    checkOrcaStarredMock.mockResolvedValue(null)
+    checkAioAdeStarredMock.mockResolvedValue(null)
     const { service, ui } = createHarness()
 
     service.registerIpcHandlers()
@@ -911,14 +915,14 @@ describe('StarNagService', () => {
       expect.objectContaining({ outcome: 'opened_repo', source: 'onboarding_completed' })
     )
     expect(trackMock).not.toHaveBeenCalledWith(
-      'app_starred_orca',
+      'app_starred_aio_ade',
       expect.objectContaining({ source: 'onboarding_completed' })
     )
     expect(ui.starNagCompleted).toBeUndefined()
     expect(ui.starNagDeferredUntil).toBeGreaterThan(Date.now())
   })
 
-  it('uses fresh cohort context for canonical app_starred_orca success telemetry', async () => {
+  it('uses fresh cohort context for canonical app_starred_aio_ade success telemetry', async () => {
     const window = createWindow()
     browserWindowMock.getAllWindows.mockReturnValue([window])
     getCohortAtEmitMock
@@ -928,7 +932,7 @@ describe('StarNagService', () => {
 
     service.registerIpcHandlers()
     getIpcHandler('star-nag:forceShow')()
-    await getIpcHandler('star-nag:starOrca')()
+    await getIpcHandler('star-nag:starAioAde')()
 
     expect(trackMock).toHaveBeenCalledWith(
       'star_nag_outcome',
@@ -938,7 +942,7 @@ describe('StarNagService', () => {
       'star_nag_outcome',
       expect.objectContaining({ outcome: 'direct_star_succeeded', nth_repo_added: 2 })
     )
-    expect(trackMock).toHaveBeenCalledWith('app_starred_orca', {
+    expect(trackMock).toHaveBeenCalledWith('app_starred_aio_ade', {
       source: 'star_nag',
       nth_repo_added: 4
     })
@@ -948,12 +952,12 @@ describe('StarNagService', () => {
     const window = createWindow()
     browserWindowMock.getAllWindows.mockReturnValue([window])
     const deferredStar = createDeferred<boolean>()
-    starOrcaMock.mockReturnValue(deferredStar.promise)
+    starAioAdeMock.mockReturnValue(deferredStar.promise)
     const { service, ui } = createHarness()
 
     service.registerIpcHandlers()
     getIpcHandler('star-nag:forceShow')()
-    const starPromise = getIpcHandler('star-nag:starOrca')()
+    const starPromise = getIpcHandler('star-nag:starAioAde')()
     getIpcHandler('star-nag:dismiss')()
 
     deferredStar.resolve(true)
@@ -963,7 +967,7 @@ describe('StarNagService', () => {
       'star_nag_outcome',
       expect.objectContaining({ outcome: 'direct_star_succeeded', mode: 'gh' })
     )
-    expect(trackMock).toHaveBeenCalledWith('app_starred_orca', {
+    expect(trackMock).toHaveBeenCalledWith('app_starred_aio_ade', {
       source: 'star_nag',
       nth_repo_added: 3
     })
@@ -974,12 +978,12 @@ describe('StarNagService', () => {
     const window = createWindow()
     browserWindowMock.getAllWindows.mockReturnValue([window])
     const deferredStar = createDeferred<boolean>()
-    starOrcaMock.mockReturnValue(deferredStar.promise)
+    starAioAdeMock.mockReturnValue(deferredStar.promise)
     const { service, ui } = createHarness()
 
     service.registerIpcHandlers()
     getIpcHandler('star-nag:forceShow')()
-    const starPromise = getIpcHandler('star-nag:starOrca')()
+    const starPromise = getIpcHandler('star-nag:starAioAde')()
     getIpcHandler('star-nag:dismiss')()
 
     deferredStar.resolve(false)
@@ -997,17 +1001,17 @@ describe('StarNagService', () => {
   it('clears the in-flight direct-star guard after thrown attempts so the user can retry', async () => {
     const window = createWindow()
     browserWindowMock.getAllWindows.mockReturnValue([window])
-    starOrcaMock.mockRejectedValueOnce(new Error('gh failed')).mockResolvedValueOnce(true)
+    starAioAdeMock.mockRejectedValueOnce(new Error('gh failed')).mockResolvedValueOnce(true)
     const { service, ui } = createHarness()
 
     service.registerIpcHandlers()
     getIpcHandler('star-nag:forceShow')()
-    const starFromNag = getIpcHandler('star-nag:starOrca')
+    const starFromNag = getIpcHandler('star-nag:starAioAde')
 
     await expect(starFromNag()).rejects.toThrow('gh failed')
     await expect(starFromNag()).resolves.toBe(true)
 
-    expect(starOrcaMock).toHaveBeenCalledTimes(2)
+    expect(starAioAdeMock).toHaveBeenCalledTimes(2)
     expect(ui.starNagCompleted).toBe(true)
   })
 
@@ -1015,12 +1019,12 @@ describe('StarNagService', () => {
     const window = createWindow()
     browserWindowMock.getAllWindows.mockReturnValue([window])
     const deferredStar = createDeferred<boolean>()
-    starOrcaMock.mockReturnValue(deferredStar.promise)
+    starAioAdeMock.mockReturnValue(deferredStar.promise)
     const { service, ui } = createHarness()
 
     service.registerIpcHandlers()
     getIpcHandler('star-nag:forceShow')()
-    const starFromNag = getIpcHandler('star-nag:starOrca')
+    const starFromNag = getIpcHandler('star-nag:starAioAde')
     const first = starFromNag()
     const second = starFromNag()
 

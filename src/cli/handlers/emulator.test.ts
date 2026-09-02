@@ -11,7 +11,7 @@ vi.mock('../runtime-client', async () => {
     readonly isRemote: boolean
     call = callMock
     getCliStatus = vi.fn()
-    openOrca = vi.fn()
+    openAioAde = vi.fn()
 
     constructor() {
       this.isRemote = remoteMock()
@@ -28,7 +28,7 @@ vi.mock('../runtime-client', async () => {
 import { main } from '../index'
 import { okFixture, queueFixtures } from '../test-fixtures'
 
-describe('orca emulator CLI handlers', () => {
+describe('aio-ade emulator CLI handlers', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     callMock.mockReset()

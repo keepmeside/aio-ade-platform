@@ -4,7 +4,7 @@ import {
   type MessageType,
   type WorkerReportOutcome
 } from './types'
-import type { OrcaRuntimeService } from '../orca-runtime'
+import type { AioAdeRuntimeService } from '../aio-ade-runtime'
 import { OrchestrationError } from './orchestration-error'
 
 const MESSAGE_TYPE_SET = new Set<MessageType>(MESSAGE_TYPES)
@@ -33,7 +33,7 @@ type RelayedMessage = {
 }
 
 export async function syncFederatedDispatch(
-  runtime: OrcaRuntimeService,
+  runtime: AioAdeRuntimeService,
   dispatchId: string
 ): Promise<{ imported: number; acknowledgedThrough: number }> {
   const db = runtime.getOrchestrationDb()
@@ -49,7 +49,7 @@ export async function syncFederatedDispatch(
   if (currentServer.peerFingerprint !== federated.peer_fingerprint) {
     throw new OrchestrationError(
       'peer_changed',
-      `Saved environment ${federated.environment_name} now identifies a different Orca server.`
+      `Saved environment ${federated.environment_name} now identifies a different AIO-ADE server.`
     )
   }
 

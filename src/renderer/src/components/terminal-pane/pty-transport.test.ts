@@ -137,13 +137,13 @@ describe('createIpcPtyTransport', () => {
     const { createIpcPtyTransport } = await import('./pty-transport')
     const spawn = window.api.pty.spawn as unknown as ReturnType<typeof vi.fn>
     const transport = createIpcPtyTransport({
-      envToDelete: ['CODEX_HOME', 'ORCA_CODEX_HOME']
+      envToDelete: ['CODEX_HOME', 'AIO_ADE_CODEX_HOME']
     })
 
     await transport.connect({ url: '', callbacks: {} })
 
     expect(spawn).toHaveBeenCalledWith(
-      expect.objectContaining({ envToDelete: ['CODEX_HOME', 'ORCA_CODEX_HOME'] })
+      expect.objectContaining({ envToDelete: ['CODEX_HOME', 'AIO_ADE_CODEX_HOME'] })
     )
   })
 
@@ -2160,7 +2160,7 @@ describe('createIpcPtyTransport', () => {
     const { createIpcPtyTransport } = await import('./pty-transport')
     const spawnMock = vi
       .fn()
-      .mockRejectedValue(new Error('No PTY provider for connection runtime-ssh-orca-1'))
+      .mockRejectedValue(new Error('No PTY provider for connection runtime-ssh-aio-ade-1'))
     ;(globalThis as { window: typeof window }).window = {
       ...originalWindow,
       api: {
@@ -2179,7 +2179,7 @@ describe('createIpcPtyTransport', () => {
     } as unknown as typeof window
 
     const onError = vi.fn()
-    await createIpcPtyTransport({ connectionId: 'runtime-ssh-orca-1' }).connect({
+    await createIpcPtyTransport({ connectionId: 'runtime-ssh-aio-ade-1' }).connect({
       url: '',
       callbacks: { onError }
     })
@@ -2442,7 +2442,7 @@ describe('createRemoteRuntimePtyTransport', () => {
     const transport = createRemoteRuntimePtyTransport('env-1', {
       worktreeId: 'repo1::/remote/wt',
       command: 'claude',
-      env: { ORCA_TAB_ID: 'tab-1' },
+      env: { AIO_ADE_TAB_ID: 'tab-1' },
       tabId: 'tab-1',
       leafId: '11111111-1111-4111-8111-111111111111'
     })
@@ -2460,7 +2460,7 @@ describe('createRemoteRuntimePtyTransport', () => {
         worktree: 'id:repo1::/remote/wt',
         clientMutationId: expect.any(String),
         command: 'claude',
-        env: { ORCA_TAB_ID: 'tab-1' },
+        env: { AIO_ADE_TAB_ID: 'tab-1' },
         tabId: 'tab-1',
         leafId: '11111111-1111-4111-8111-111111111111',
         focus: false,

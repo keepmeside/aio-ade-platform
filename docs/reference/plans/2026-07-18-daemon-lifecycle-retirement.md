@@ -8,7 +8,7 @@ The earlier full ownership/audit prototype is preserved at:
 
 - branch: `Jinwoo-H/issue-9138-full-ownership-audit-snapshot`
 - commit: `7c915909bd26670b8af36aa683cff85077395dd1`
-- GitHub: <https://github.com/stablyai/orca/tree/Jinwoo-H/issue-9138-full-ownership-audit-snapshot>
+- GitHub: <https://github.com/keepmeside/aio-ade-platform/tree/Jinwoo-H/issue-9138-full-ownership-audit-snapshot>
 
 That branch is the recovery point for ownership persistence, cross-profile raw extraction, startup
 audit, the candidate journal, profile-transfer recovery, natural-exit reconciliation, and future
@@ -20,10 +20,10 @@ alongside v22 and older versions.
 
 ## Inputs and scope decision
 
-Issue: <https://github.com/stablyai/orca/issues/9138>
+Issue: <https://github.com/keepmeside/aio-ade-platform/issues/9138>
 
 Reviewed design comment by AmethystLiang:
-<https://github.com/stablyai/orca/issues/9138#issuecomment-5006601124>
+<https://github.com/keepmeside/aio-ade-platform/issues/9138#issuecomment-5006601124>
 
 The reviewed comment correctly identifies two different problems:
 
@@ -72,7 +72,7 @@ v23 and older ──> existing reattach behavior; no automatic retirement
 ```
 
 An end user with live terminals should notice no change. An end user who quits with no daemon-backed
-terminals should no longer accumulate the new v24 generation. If Orca crashes or loses its socket,
+terminals should no longer accumulate the new v24 generation. If AIO-ADE crashes or loses its socket,
 live terminals still keep the daemon alive indefinitely. An empty daemon exits immediately; a later
 app restart launches a fresh daemon instead of reusing an empty process.
 
@@ -193,7 +193,7 @@ steady-state disk writes. Results are recorded in the PR body.
 ### Local performance regression screen
 
 The final local host was not quiet enough for publication-grade absolute numbers: load averages were
-17-38 and unrelated Orca, browser, simulator, and VM processes occupied several cores. A paired
+17-38 and unrelated AIO-ADE, browser, simulator, and VM processes occupied several cores. A paired
 same-host screen still found no large regression. Five `main` v23 samples were bracketed by ten v24
 branch samples; medians across sample medians were:
 
@@ -253,7 +253,7 @@ byte and no steady-state persistence or polling.
 - full daemon test suite;
 - desktop and web production builds;
 - `git diff --check` and review of every changed file against `origin/main`;
-- independent review-until-clean, with review loops recorded in `.orca/bug-factory.json`;
+- independent review-until-clean, with review loops recorded in `.aio-ade/bug-factory.json`;
 - packaged Windows/Linux validation where CI is available; local macOS process E2E before publication.
 
 Final local results on macOS arm64 after the event-driven policy revision:

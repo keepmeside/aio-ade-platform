@@ -29,11 +29,11 @@ import { ALL_TUI_AGENTS } from './tui-agent-display-names'
 
 describe('keybindings', () => {
   it('accepts bounded plugin command action IDs and rejects malformed variants', () => {
-    expect(isKeybindingActionId('plugin:orca-samples.tasks/open')).toBe(true)
-    expect(isKeybindingActionId('plugin:orca-samples.tasks/task.open-latest')).toBe(true)
+    expect(isKeybindingActionId('plugin:aio-ade-samples.tasks/open')).toBe(true)
+    expect(isKeybindingActionId('plugin:aio-ade-samples.tasks/task.open-latest')).toBe(true)
     expect(isKeybindingActionId('plugin:tasks/open')).toBe(false)
-    expect(isKeybindingActionId('plugin:orca-samples.tasks/../open')).toBe(false)
-    expect(isKeybindingActionId(`plugin:orca-samples.tasks/${'a'.repeat(401)}`)).toBe(false)
+    expect(isKeybindingActionId('plugin:aio-ade-samples.tasks/../open')).toBe(false)
+    expect(isKeybindingActionId(`plugin:aio-ade-samples.tasks/${'a'.repeat(401)}`)).toBe(false)
   })
 
   it('normalizes editable shortcut input and rejects unsafe bindings', () => {
@@ -632,7 +632,7 @@ describe('keybindings', () => {
     expect(
       keybindingMatchesAction('tab.closeAll', linuxCloseAll, 'linux', undefined, {
         context: 'terminal',
-        terminalShortcutPolicy: 'orca-first'
+        terminalShortcutPolicy: 'aio-ade-first'
       })
     ).toBe(true)
     // Why: close-all is a workspace tab command, so terminal-first mode should
@@ -984,7 +984,7 @@ describe('keybindings', () => {
     })
   })
 
-  it('keeps Orca-first terminal context backward compatible', () => {
+  it('keeps AIO-ADE-first terminal context backward compatible', () => {
     const ctrlP = {
       key: 'p',
       code: 'KeyP',
@@ -998,7 +998,7 @@ describe('keybindings', () => {
     expect(
       keybindingMatchesAction('worktree.quickOpen', ctrlP, 'linux', undefined, {
         context: 'terminal',
-        terminalShortcutPolicy: 'orca-first'
+        terminalShortcutPolicy: 'aio-ade-first'
       })
     ).toBe(true)
     expect(
@@ -1702,7 +1702,7 @@ describe('digit-index shortcuts', () => {
         undefined,
         {
           context: 'terminal',
-          terminalShortcutPolicy: 'orca-first'
+          terminalShortcutPolicy: 'aio-ade-first'
         }
       )
     ).toBe(1)

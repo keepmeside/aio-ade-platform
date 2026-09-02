@@ -9,7 +9,7 @@
  * force the real-home lane inside a disposable HOME. It never appears in any
  * UI and no production path sets it.
  */
-const CODEX_REAL_HOME_ENV_FLAG = 'ORCA_CODEX_SYSTEM_DEFAULT_REAL_HOME'
+const CODEX_REAL_HOME_ENV_FLAG = 'AIO_ADE_CODEX_SYSTEM_DEFAULT_REAL_HOME'
 
 export function isCodexSystemDefaultRealHomeEnabled(): boolean {
   const envOverride = readCodexRealHomeEnvOverride()

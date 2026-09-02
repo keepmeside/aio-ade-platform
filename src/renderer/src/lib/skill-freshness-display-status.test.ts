@@ -10,7 +10,7 @@ import {
   hasSkillCopyNeedingAttention
 } from './skill-freshness-display-status'
 
-const SKILL_NAME = 'orca-cli'
+const SKILL_NAME = 'aio-ade-cli'
 
 function scanIssue(
   reason: SkillFreshnessScanIssueReason
@@ -114,7 +114,7 @@ describe('getSkillFreshnessDisplayStatus', () => {
     // recreate it. Amber here is clean-on-main turned permanently amber.
     ['outside-root']
   ] as const)('does not report attention for the %s traversal bound', (reason) => {
-    // Why: these are Orca's own bounds. A large but healthy plugin cache would
+    // Why: these are AIO-ADE's own bounds. A large but healthy plugin cache would
     // otherwise pin every skill amber with nothing the user could do about it.
     expect(
       getSkillFreshnessDisplayStatus(
@@ -125,7 +125,7 @@ describe('getSkillFreshnessDisplayStatus', () => {
   })
 
   // Why: the only reason left that is a fact about the user's own disk rather than a
-  // bound Orca chose, so the only one a person can actually clear.
+  // bound AIO-ADE chose, so the only one a person can actually clear.
   it('reports needs attention for the io-error scan fault', () => {
     expect(
       getSkillFreshnessDisplayStatus(
@@ -209,7 +209,7 @@ describe('hasSkillCopyNeedingAttention', () => {
     ).toBe(true)
   })
 
-  // Why: an unreadable plugin path could hide a copy of anything, but a skill Orca
+  // Why: an unreadable plugin path could hide a copy of anything, but a skill AIO-ADE
   // never found anywhere is not the one to blame for it — that reads as a problem
   // with a skill the user has not installed.
   it('does not blame a skill with no placement for a fault elsewhere in the cache', () => {

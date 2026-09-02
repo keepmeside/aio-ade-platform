@@ -8,12 +8,12 @@ const RESTRICTED_ENV_KEYS = new Set([
   'HOMEDRIVE',
   'HOMEPATH',
   'CODEX_HOME',
-  'ORCA_CODEX_HOME',
-  'ORCA_CODEX_SYSTEM_DEFAULT_REAL_HOME',
-  'ORCA_E2E_USER_DATA_DIR',
-  'ORCA_E2E_HOME_DIR',
+  'AIO_ADE_CODEX_HOME',
+  'AIO_ADE_CODEX_SYSTEM_DEFAULT_REAL_HOME',
+  'AIO_ADE_E2E_USER_DATA_DIR',
+  'AIO_ADE_E2E_HOME_DIR',
   'ZDOTDIR',
-  'ORCA_ORIG_ZDOTDIR',
+  'AIO_ADE_ORIG_ZDOTDIR',
   'BASH_ENV',
   'ENV'
 ])
@@ -71,13 +71,13 @@ export function createElectronHomeIsolation({
   realHome = os.homedir()
 }: ElectronHomeIsolationOptions): ElectronHomeIsolation {
   assertOverlayDoesNotReplaceIsolation(launchEnv, 'launchEnv')
-  assertOverlayDoesNotReplaceIsolation(extraEnv, 'orcaAppExtraEnv')
+  assertOverlayDoesNotReplaceIsolation(extraEnv, 'aioAdeAppExtraEnv')
 
   const requestedIsolatedHome = path.join(userDataDir, 'home')
   mkdirSync(requestedIsolatedHome, { recursive: true, mode: 0o700 })
   // Why: tmpdir-rooted paths are aliases (macOS /var symlink, Windows 8.3
   // short names). Git canonicalizes worktree paths, so a non-canonical HOME
-  // makes freshly created worktrees invisible to Orca's listing comparisons.
+  // makes freshly created worktrees invisible to AIO-ADE's listing comparisons.
   const isolatedHome = realpathSync.native(requestedIsolatedHome)
   // Why: a bad fixture path must fail before Electron can resolve a real Codex
   // home; userData isolation alone does not change app.getPath('home').
@@ -94,9 +94,9 @@ export function createElectronHomeIsolation({
       ...extraEnv,
       HOME: isolatedHome,
       USERPROFILE: isolatedHome,
-      ORCA_E2E_USER_DATA_DIR: userDataDir,
-      ORCA_E2E_HOME_DIR: isolatedHome,
-      ORCA_CODEX_SYSTEM_DEFAULT_REAL_HOME: codexRealHomeEnabled ? '1' : '0'
+      AIO_ADE_E2E_USER_DATA_DIR: userDataDir,
+      AIO_ADE_E2E_HOME_DIR: isolatedHome,
+      AIO_ADE_CODEX_SYSTEM_DEFAULT_REAL_HOME: codexRealHomeEnabled ? '1' : '0'
     }
   }
 }

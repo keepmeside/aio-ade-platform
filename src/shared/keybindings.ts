@@ -16,7 +16,7 @@ export type KeybindingContext = 'app' | 'terminal' | 'browser'
 
 export type KeybindingPlatform = 'darwin' | 'linux' | 'win32'
 
-export type TerminalShortcutPolicy = 'orca-first' | 'terminal-first'
+export type TerminalShortcutPolicy = 'aio-ade-first' | 'terminal-first'
 
 export type KeybindingMatchOptions = {
   context?: KeybindingContext
@@ -1071,7 +1071,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
       linux: [],
       win32: []
     },
-    // Why: macOS uses Shift+Space as an input-source shortcut; Orca otherwise rejects Shift-only bindings to avoid stealing typed text.
+    // Why: macOS uses Shift+Space as an input-source shortcut; AIO-ADE otherwise rejects Shift-only bindings to avoid stealing typed text.
     allowShiftOnlyKeybindings: true
   },
   ...buildAgentTabKeybindingDefinitions()
@@ -1861,7 +1861,7 @@ export function getKeybindingDefinition(actionId: KeybindingActionId): Keybindin
 export function normalizeTerminalShortcutPolicy(
   policy: TerminalShortcutPolicy | null | undefined
 ): TerminalShortcutPolicy {
-  return policy === 'terminal-first' ? 'terminal-first' : 'orca-first'
+  return policy === 'terminal-first' ? 'terminal-first' : 'aio-ade-first'
 }
 
 export function isKeybindingAllowedInTerminal(definition: KeybindingDefinition): boolean {
@@ -1879,8 +1879,8 @@ export function keybindingIsActiveInContext(
   if (options.context !== 'terminal') {
     return true
   }
-  // Why: Orca-first keeps app shortcuts inside terminals; terminal-first is the escape hatch for shells and TUIs.
-  if (normalizeTerminalShortcutPolicy(options.terminalShortcutPolicy) === 'orca-first') {
+  // Why: AIO-ADE-first keeps app shortcuts inside terminals; terminal-first is the escape hatch for shells and TUIs.
+  if (normalizeTerminalShortcutPolicy(options.terminalShortcutPolicy) === 'aio-ade-first') {
     return true
   }
   return isKeybindingAllowedInTerminal(definition)

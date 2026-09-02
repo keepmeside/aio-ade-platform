@@ -53,9 +53,11 @@ function parseArgs(argv) {
   return result
 }
 
-function withoutOrcaEnvironment(extra = {}) {
+function withoutAioAdeEnvironment(extra = {}) {
   return {
-    ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('ORCA_'))),
+    ...Object.fromEntries(
+      Object.entries(process.env).filter(([key]) => !key.startsWith('AIO_ADE_'))
+    ),
     ...extra
   }
 }
@@ -123,7 +125,7 @@ function assertProtocolStdout(fileName, stdout) {
 }
 
 function readGeneratedScripts(home, minMtime) {
-  const hooksDir = join(home, '.orca', 'agent-hooks')
+  const hooksDir = join(home, '.aio-ade', 'agent-hooks')
   return MANAGED_SCRIPTS.map(([fileName, source]) => {
     const path = join(hooksDir, fileName)
     const stats = statSync(path)
@@ -192,7 +194,7 @@ function nextRequest(server) {
 }
 
 async function verifyNoOpWrites(scripts, home, payload) {
-  const commandCodeBin = mkdtempSync(join(tmpdir(), 'orca-hook-command-code-bin-'))
+  const commandCodeBin = mkdtempSync(join(tmpdir(), 'aio-ade-hook-command-code-bin-'))
   symlinkSync('/bin/cat', join(commandCodeBin, 'cat'))
   try {
     for (const script of scripts) {
@@ -203,10 +205,10 @@ async function verifyNoOpWrites(scripts, home, payload) {
       const result = await runShell(
         ['/bin/sh ', JSON.stringify(script.path)].join(''),
         payload,
-        withoutOrcaEnvironment({
+        withoutAioAdeEnvironment({
           HOME: home,
           PATH: path,
-          ORCA_AGENT_HOOK_ENDPOINT: ''
+          AIO_ADE_AGENT_HOOK_ENDPOINT: ''
         })
       )
       assertSuccessfulWrite(result, [script.fileName, ' no-op'].join(''))
@@ -237,13 +239,13 @@ async function verifyClaudeDevinSkip(scripts, home, payload) {
     const result = await runShell(
       ['/bin/sh ', JSON.stringify(claude.path)].join(''),
       payload,
-      withoutOrcaEnvironment({
+      withoutAioAdeEnvironment({
         DEVIN_PROJECT_DIR: join(home, 'devin-project'),
         HOME: home,
-        ORCA_AGENT_HOOK_ENDPOINT: '',
-        ORCA_AGENT_HOOK_PORT: String(address.port),
-        ORCA_AGENT_HOOK_TOKEN: 'electron-verification-token',
-        ORCA_PANE_KEY: 'electron-verification-pane'
+        AIO_ADE_AGENT_HOOK_ENDPOINT: '',
+        AIO_ADE_AGENT_HOOK_PORT: String(address.port),
+        AIO_ADE_AGENT_HOOK_TOKEN: 'electron-verification-token',
+        AIO_ADE_PANE_KEY: 'electron-verification-pane'
       })
     )
     assertSuccessfulWrite(result, 'Claude Devin-import skip')
@@ -271,18 +273,18 @@ async function verifyForwarding(scripts, home, payload) {
       const result = await runShell(
         ['/bin/sh ', JSON.stringify(script.path)].join(''),
         payload,
-        withoutOrcaEnvironment({
+        withoutAioAdeEnvironment({
           HOME: home,
-          ORCA_AGENT_HOOK_ENDPOINT: '',
-          ORCA_AGENT_HOOK_PORT: String(address.port),
-          ORCA_AGENT_HOOK_TOKEN: 'electron-verification-token',
-          ORCA_PANE_KEY: 'electron-verification-pane',
-          ORCA_TAB_ID: 'electron-verification-tab',
-          ORCA_WORKTREE_ID: 'electron-verification-worktree',
-          ORCA_AGENT_HOOK_ENV: 'test',
-          ORCA_AGENT_HOOK_VERSION: '1',
-          ORCA_ANTIGRAVITY_EVENT: 'PostInvocation',
-          ORCA_COPILOT_HOOK_EVENT: 'PostToolUse'
+          AIO_ADE_AGENT_HOOK_ENDPOINT: '',
+          AIO_ADE_AGENT_HOOK_PORT: String(address.port),
+          AIO_ADE_AGENT_HOOK_TOKEN: 'electron-verification-token',
+          AIO_ADE_PANE_KEY: 'electron-verification-pane',
+          AIO_ADE_TAB_ID: 'electron-verification-tab',
+          AIO_ADE_WORKTREE_ID: 'electron-verification-worktree',
+          AIO_ADE_AGENT_HOOK_ENV: 'test',
+          AIO_ADE_AGENT_HOOK_VERSION: '1',
+          AIO_ADE_ANTIGRAVITY_EVENT: 'PostInvocation',
+          AIO_ADE_COPILOT_HOOK_EVENT: 'PostToolUse'
         })
       )
       assertSuccessfulWrite(result, [script.fileName, ' forwarding'].join(''))
@@ -296,7 +298,7 @@ async function verifyForwarding(scripts, home, payload) {
           )
         )
       }
-      if (request.headers['x-orca-agent-hook-token'] !== 'electron-verification-token') {
+      if (request.headers['x-aio-ade-agent-hook-token'] !== 'electron-verification-token') {
         throw new Error([script.fileName, ' lost the hook token header'].join(''))
       }
       if (form.get('payload') !== payload) {
@@ -331,13 +333,13 @@ async function verifyInstalledLauncher(home, payload) {
   if (!command || !command.includes('] && [ -r ') || !command.includes('else cat >/dev/null')) {
     throw new Error('Electron did not install the guarded Claude launcher')
   }
-  const scratch = mkdtempSync(join(tmpdir(), 'orca-hook-launcher-'))
+  const scratch = mkdtempSync(join(tmpdir(), 'aio-ade-hook-launcher-'))
   try {
     const missingPath = join(scratch, 'missing-hook.sh')
     const missingResult = await runShell(
       rewriteLauncherScriptPath(command, missingPath),
       payload,
-      withoutOrcaEnvironment({ HOME: home })
+      withoutAioAdeEnvironment({ HOME: home })
     )
     assertSuccessfulWrite(missingResult, 'installed missing-script launcher')
 
@@ -347,7 +349,7 @@ async function verifyInstalledLauncher(home, payload) {
     const failingResult = await runShell(
       rewriteLauncherScriptPath(command, failingPath),
       payload,
-      withoutOrcaEnvironment({ HOME: home })
+      withoutAioAdeEnvironment({ HOME: home })
     )
     if (failingResult.exitCode !== 7 || failingResult.stdinErrors.length > 0) {
       throw new Error('Installed launcher did not preserve a running script failure')

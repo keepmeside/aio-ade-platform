@@ -16,7 +16,7 @@ function makeSession(overrides: Partial<AiVaultSession>): AiVaultSession {
     agent: 'codex',
     sessionId: 'session-1',
     title: 'Find the pane',
-    cwd: '/repo/orca/src',
+    cwd: '/repo/aio-ade/src',
     branch: null,
     model: null,
     filePath: '/home/ada/.codex/session-1.jsonl',
@@ -37,10 +37,10 @@ function makeSession(overrides: Partial<AiVaultSession>): AiVaultSession {
 
 function makeWorktree(overrides: Partial<Worktree> = {}): Worktree {
   return {
-    id: 'repo-1::/repo/orca',
+    id: 'repo-1::/repo/aio-ade',
     repoId: 'repo-1',
-    displayName: 'orca',
-    path: '/repo/orca',
+    displayName: 'aio-ade',
+    path: '/repo/aio-ade',
     head: 'abc123',
     branch: 'main',
     isBare: false,
@@ -61,8 +61,8 @@ function makeWorktree(overrides: Partial<Worktree> = {}): Worktree {
 function makeRepo(overrides: Partial<Repo> = {}): Repo {
   return {
     id: 'repo-1',
-    path: '/repo/orca',
-    displayName: 'orca',
+    path: '/repo/aio-ade',
+    displayName: 'aio-ade',
     badgeColor: '#737373',
     addedAt: 1,
     connectionId: null,
@@ -109,10 +109,10 @@ describe('useAiVaultSessionWorktreeMap', () => {
 
   it('render-time stamping matches per-session resolution for every status case', () => {
     const sshWorktree = makeWorktree({
-      id: 'repo-ssh::/srv/orca',
+      id: 'repo-ssh::/srv/aio-ade',
       repoId: 'repo-ssh',
       displayName: 'ssh',
-      path: '/srv/orca',
+      path: '/srv/aio-ade',
       hostId: 'ssh:target-1'
     })
     const archivedWorktree = makeWorktree({
@@ -121,12 +121,12 @@ describe('useAiVaultSessionWorktreeMap', () => {
       isArchived: true
     })
     const allWorktrees = [...worktrees, sshWorktree, archivedWorktree]
-    const allRepos = [...repos, makeRepo({ id: 'repo-ssh', path: '/srv/orca' })]
+    const allRepos = [...repos, makeRepo({ id: 'repo-ssh', path: '/srv/aio-ade' })]
     const allSessions = [
       sessionInA, // active worktree
       sessionInB, // non-active worktree
       sessionUnmatched, // no worktree match
-      makeSession({ id: 'codex:ssh', cwd: '/srv/orca/src', executionHostId: 'ssh:target-1' }),
+      makeSession({ id: 'codex:ssh', cwd: '/srv/aio-ade/src', executionHostId: 'ssh:target-1' }),
       makeSession({ id: 'codex:attic', cwd: '/repo/attic' }),
       makeSession({ id: 'codex:no-cwd', cwd: null, branch: 'feature/x' })
     ]

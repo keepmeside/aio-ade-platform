@@ -3,7 +3,7 @@
 ## Problem
 
 Resource Manager scans every non-prunable worktree to calculate workspace disk usage. A fleet with
-hundreds of worktrees can make Orca and the host unresponsive while the scan is active.
+hundreds of worktrees can make AIO-ADE and the host unresponsive while the scan is active.
 
 Two independent resource failures are possible:
 
@@ -13,8 +13,8 @@ Two independent resource failures are possible:
   walker. The old walker allocated a promise and retained result node for every entry without a
   capacity limit, so a large worktree could exhaust the main or relay process heap.
 
-The July 27 incident occurred with 298 Orca worktrees. Renderer telemetry remained far below its
-heap limit, while quitting Orca immediately restored host responsiveness. The installed binary also
+The July 27 incident occurred with 298 AIO-ADE worktrees. Renderer telemetry remained far below its
+heap limit, while quitting AIO-ADE immediately restored host responsiveness. The installed binary also
 contained the uncapped portable fallback.
 
 ## Root Cause
@@ -62,7 +62,7 @@ active child process through the existing `AbortSignal`.
 ### Remote fallback admission
 
 The desktop-side request-by-request SSH fallback runs its traversal inside the desktop main
-process, so its budget is charged against Orca's heap rather than the remote host. Repository and
+process, so its budget is charged against AIO-ADE's heap rather than the remote host. Repository and
 worktree concurrency alone would let six of these traversals hold six independent budgets at once.
 A second scan-wide limiter admits at most two, capping aggregate admission at 2 × 64 MiB instead of
 6 × 64 MiB. Bulk relay scans stay outside this limiter: their traversal memory lives on the remote
@@ -106,7 +106,7 @@ admission limits, not post-allocation observations.
 The budget measures what the traversal is holding **right now**, not what it has ever seen. A
 directory listing is charged when admitted and released once every one of its entries has been
 dispatched, so the caps bound the widest concurrent frontier rather than total tree size. This
-distinction decides real workspaces: a cumulative counter charged an ordinary 76,788-entry Orca
+distinction decides real workspaces: a cumulative counter charged an ordinary 76,788-entry AIO-ADE
 worktree 61.2 MiB of its 64 MiB cap — 4% headroom, and tipping over purely because a longer branch
 name lengthens every absolute path. The same worktree peaks between 4 MiB and 8 MiB of live state.
 

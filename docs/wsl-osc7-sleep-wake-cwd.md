@@ -6,11 +6,11 @@ On native Windows, a WSL terminal can persist a fake UNC current working directo
 
 - `osc7-file-uri.ts` treats every non-local authority as a UNC server when parsing Win32 paths.
 - `Session` constructs its daemon `HeadlessEmulator` without the WSL execution context, so checkpoints can store `\\<machine-hostname>\home\...`.
-- `OrcaRuntimeService` likewise gives every local Windows PTY Win32 OSC 7 semantics; `remotePosixAuthority` only protects POSIX SSH PTYs.
+- `AioAdeRuntimeService` likewise gives every local Windows PTY Win32 OSC 7 semantics; `remotePosixAuthority` only protects POSIX SSH PTYs.
 - `HistoryReader.restoreFromIncrementalLog` creates a third context-free emulator. A log containing the OSC 7 can therefore re-create the bad CWD even if the base checkpoint is valid.
 - `DaemonPtyAdapter.doSpawn` prefers `restoreInfo.cwd` over the requested worktree CWD. `pty-subprocess.ts` later validates the fake UNC and rejects it before spawning WSL.
 
-Reproduction on Windows 11 build 26200, WSL 2.3.26.0, Ubuntu 24.04.1 LTS, and Orca 1.4.144-rc.4:
+Reproduction on Windows 11 build 26200, WSL 2.3.26.0, Ubuntu 24.04.1 LTS, and AIO-ADE 1.4.144-rc.4:
 
 1. Open a terminal in `\\wsl.localhost\Ubuntu\home\<user>\...`.
 2. Emit `OSC 7;file://<machine-hostname>/home/<user>/...`.
@@ -20,7 +20,7 @@ Both triggered attempts failed. The saved CWD became `\\<machine-hostname>\home\
 
 ## Root cause and invariant
 
-OSC 7 authority semantics follow the PTY's execution environment, not Electron's host OS. A native Windows shell may legitimately mean `\\server\share` by `file://server/share`; a WSL shell means a POSIX pathname inside its already-known distro. Orca currently classifies local WSL PTYs as generic Win32 PTYs.
+OSC 7 authority semantics follow the PTY's execution environment, not Electron's host OS. A native Windows shell may legitimately mean `\\server\share` by `file://server/share`; a WSL shell means a POSIX pathname inside its already-known distro. AIO-ADE currently classifies local WSL PTYs as generic Win32 PTYs.
 
 The fix must establish one immutable `wslDistro: string | null` per PTY incarnation before any OSC 7 bytes or recovered history are parsed. The same value must drive daemon live parsing, incremental-history replay, runtime parsing, and legacy CWD recovery. URI authority must never select a distro.
 
@@ -120,7 +120,7 @@ WSL cold restore + old checkpoint CWD
 - `terminal-host.test.ts`/`session.test.ts`: resolved context reaches the daemon emulator; attach returns the session's stored context and does not adopt a conflicting later preference.
 - `history-reader.test.ts`: incremental-log replay containing the exact hostname OSC 7 yields the correct WSL CWD.
 - `daemon-pty-adapter.test.ts`: cover every `detectColdRestore` branch plus sticky-cache output. Repair hostname UNC and POSIX CWDs; preserve matching WSL UNC and drive paths; reject mismatched distro, other UNC, relative, native, and SSH/non-WSL cases. Assert both create/attach CWD and `coldRestore.cwd`.
-- `orca-runtime.test.ts` and IPC PTY tests: context exists before early daemon output and before headless seeding; Windows-host worktree with a selected WSL distro; WSL UNC fallback after reconstruction; attach correction; PTY-ID reuse; simultaneous distros; local native and SSH isolation.
+- `aio-ade-runtime.test.ts` and IPC PTY tests: context exists before early daemon output and before headless seeding; Windows-host worktree with a selected WSL distro; WSL UNC fallback after reconstruction; attach correction; PTY-ID reuse; simultaneous distros; local native and SSH isolation.
 - Run focused tests, then `pnpm typecheck` and `pnpm lint`.
 - Electron on native Windows: in a real Ubuntu WSL pane, emit the exact hostname OSC 7, sleep/wake twice, run `pwd` after each wake, and verify no `DaemonProtocolError`. Native UNC semantics are covered by deterministic unit tests; a screenshot of an arbitrary UNC string is not meaningful validation.
 

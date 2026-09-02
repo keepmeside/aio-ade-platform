@@ -40,7 +40,7 @@ import {
 } from '../../shared/git-credential-prompt-env'
 import { TERMINAL_GIT_CREDENTIAL_GUARD_POLICY_ENV } from '../../shared/terminal-git-credential-guard'
 import { resolveWslSessionContext } from './wsl-session-context'
-import { addOrcaWslInteropEnv } from '../pty/wsl-orca-env'
+import { addAioAdeWslInteropEnv } from '../pty/wsl-aio-ade-env'
 import {
   POWERLEVEL10K_WIZARD_DISABLE_ENV,
   seedPowerlevel10kWizardEnv
@@ -62,15 +62,15 @@ import { isShellProcess } from '../../shared/shell-process-detection'
 import { parsePtySessionId } from './pty-session-id'
 import { getAgentForegroundContextPaths } from '../providers/agent-foreground-context-paths'
 import { assertSafeAgentStartupCwd, resolveSafePtyDefaultCwd } from '../providers/pty-default-cwd'
-import { ORCA_HERMES_STARTUP_QUERY_ENV } from '../../shared/hermes-startup-query'
+import { AIO_ADE_HERMES_STARTUP_QUERY_ENV } from '../../shared/hermes-startup-query'
 import type { TuiAgent } from '../../shared/types'
 import { forceKillPosixPtyProcessGroups } from '../pty/posix-pty-process-groups'
 
 const PANE_IDENTITY_ENV_KEYS = [
-  'ORCA_PANE_KEY',
-  'ORCA_TAB_ID',
-  'ORCA_WORKTREE_ID',
-  'ORCA_AGENT_LAUNCH_TOKEN'
+  'AIO_ADE_PANE_KEY',
+  'AIO_ADE_TAB_ID',
+  'AIO_ADE_WORKTREE_ID',
+  'AIO_ADE_AGENT_LAUNCH_TOKEN'
 ] as const
 const FOREGROUND_AGENT_CACHE_TTL_MS = 1000
 const SHELL_FOREGROUND_REFRESH_RETRY_MS = 5_000
@@ -120,16 +120,16 @@ function deleteRequestedDaemonEnvKeys(
   keys: readonly string[] | undefined
 ): void {
   // Why: the persistent daemon's inherited env can differ from Electron's.
-  // Compare ownership here so real-home routing neither leaks an Orca overlay
+  // Compare ownership here so real-home routing neither leaks an AIO-ADE overlay
   // nor deletes a user-owned CODEX_HOME chosen by the daemon's host context.
-  const deleteOrcaOwnedCodexHome =
-    keys?.includes('ORCA_CODEX_HOME') === true &&
-    env.ORCA_CODEX_HOME !== undefined &&
-    env.CODEX_HOME === env.ORCA_CODEX_HOME
+  const deleteAioAdeOwnedCodexHome =
+    keys?.includes('AIO_ADE_CODEX_HOME') === true &&
+    env.AIO_ADE_CODEX_HOME !== undefined &&
+    env.CODEX_HOME === env.AIO_ADE_CODEX_HOME
   for (const key of keys ?? []) {
     delete env[key]
   }
-  if (deleteOrcaOwnedCodexHome) {
+  if (deleteAioAdeOwnedCodexHome) {
     delete env.CODEX_HOME
   }
 }
@@ -162,7 +162,7 @@ function promoteAgentTeamsShimPath(
   env: Record<string, string>,
   requestedPath: string | undefined
 ): void {
-  if (!env.ORCA_AGENT_TEAMS_TEAM_ID || !requestedPath) {
+  if (!env.AIO_ADE_AGENT_TEAMS_TEAM_ID || !requestedPath) {
     return
   }
   const shimDir = requestedPath.split(delimiter)[0]
@@ -180,9 +180,12 @@ function removeInheritedDevAgentHookEndpoint(
   env: Record<string, string>,
   explicitEnv: Record<string, string> | undefined
 ): void {
-  if (explicitEnv?.ORCA_AGENT_HOOK_ENV === 'development' && !explicitEnv.ORCA_AGENT_HOOK_ENDPOINT) {
+  if (
+    explicitEnv?.AIO_ADE_AGENT_HOOK_ENV === 'development' &&
+    !explicitEnv.AIO_ADE_AGENT_HOOK_ENDPOINT
+  ) {
     // Why: strip only stale inherited endpoints; a fresh explicit one is needed by hooks that scrub token-like env vars before exec.
-    delete env.ORCA_AGENT_HOOK_ENDPOINT
+    delete env.AIO_ADE_AGENT_HOOK_ENDPOINT
   }
 }
 
@@ -202,7 +205,7 @@ function formatMissingDaemonPathError(kind: 'helper' | 'cwd', path: string): Dae
   const step = kind === 'helper' ? 'posix_spawn' : 'daemon_cwd'
   return new DaemonProtocolError(
     `Daemon's ${kind === 'helper' ? 'node-pty install' : 'working directory'} is gone ` +
-      `(worktree deleted?). Restart Orca. node-pty: ${step} failed: ENOENT ` +
+      `(worktree deleted?). Restart AIO-ADE. node-pty: ${step} failed: ENOENT ` +
       `(errno 2, No such file or directory) - ${detailName}='${path}'`
   )
 }
@@ -225,7 +228,7 @@ function isExistingDirectory(path: string | undefined): path is string {
  * Moves the daemon process to a stable cwd after its original cwd disappears.
  */
 function repairDaemonCwd(): string | null {
-  const candidates = [process.env.ORCA_USER_DATA_PATH]
+  const candidates = [process.env.AIO_ADE_USER_DATA_PATH]
   try {
     candidates.push(getDefaultCwd())
   } catch {
@@ -360,8 +363,8 @@ function formatPtySpawnError(err: unknown, shellPath: string, spawnCwd: string):
  * Runs one short native PTY spawn probe (spawn `/bin/sh -c 'exit 0'`).
  */
 function runSinglePtySpawnHealthProbe(): Promise<void> {
-  const cwd = isExistingDirectory(process.env.ORCA_USER_DATA_PATH)
-    ? process.env.ORCA_USER_DATA_PATH
+  const cwd = isExistingDirectory(process.env.AIO_ADE_USER_DATA_PATH)
+    ? process.env.AIO_ADE_USER_DATA_PATH
     : getDefaultCwd()
 
   let proc: pty.IPty
@@ -557,10 +560,10 @@ export function createPtySubprocess(opts: PtySubprocessOptions): SubprocessHandl
     ...mergeGitConfigEnvProtocol(stripInheritedBuildModeEnv(process.env), opts.env),
     TERM: 'xterm-256color',
     COLORTERM: 'truecolor',
-    TERM_PROGRAM: 'Orca',
-    // Why: TUIs feature-gate on TERM_PROGRAM_VERSION; ORCA_APP_VERSION is inherited from the forking main process.
-    TERM_PROGRAM_VERSION: process.env.ORCA_APP_VERSION ?? '0.0.0-dev',
-    // Why: `supports-hyperlinks` gates OSC 8 on a TERM_PROGRAM allowlist excluding Orca; force it since xterm.js parses OSC 8 for clickable links.
+    TERM_PROGRAM: 'AIO-ADE',
+    // Why: TUIs feature-gate on TERM_PROGRAM_VERSION; AIO_ADE_APP_VERSION is inherited from the forking main process.
+    TERM_PROGRAM_VERSION: process.env.AIO_ADE_APP_VERSION ?? '0.0.0-dev',
+    // Why: `supports-hyperlinks` gates OSC 8 on a TERM_PROGRAM allowlist excluding AIO-ADE; force it since xterm.js parses OSC 8 for clickable links.
     FORCE_HYPERLINK: '1'
   } as Record<string, string>
   composeGuardedDaemonGitConfigEnv(env, opts.env, opts.launchAgent)
@@ -663,12 +666,12 @@ export function createPtySubprocess(opts: PtySubprocessOptions): SubprocessHandl
         const launchWslDistro = resolvedWslContext?.distro
         if (launchWslDistro && launchWslDistro !== codexHomeWslInfo.distro) {
           delete env.CODEX_HOME
-          delete env.ORCA_CODEX_HOME
+          delete env.AIO_ADE_CODEX_HOME
         } else {
           env.CODEX_HOME = codexHomeWslInfo.linuxPath
-          env.ORCA_CODEX_HOME = codexHomeWslInfo.linuxPath
+          env.AIO_ADE_CODEX_HOME = codexHomeWslInfo.linuxPath
           // Why: wsl.exe only imports non-default env vars named in WSLENV.
-          addWslEnvKeys(env, ['CODEX_HOME', 'ORCA_CODEX_HOME'])
+          addWslEnvKeys(env, ['CODEX_HOME', 'AIO_ADE_CODEX_HOME'])
           if (!launchWslDistro) {
             const resolved = resolveWindowsShellLaunchArgs(
               shellPath,
@@ -689,25 +692,25 @@ export function createPtySubprocess(opts: PtySubprocessOptions): SubprocessHandl
       } else if (isHostCodexHomeForWsl(env.CODEX_HOME)) {
         // Why: host-local Codex home is unusable in WSL; let WSL Codex use its Linux-side ~/.codex.
         delete env.CODEX_HOME
-        delete env.ORCA_CODEX_HOME
+        delete env.AIO_ADE_CODEX_HOME
       } else if (env.CODEX_HOME) {
-        addWslEnvKeys(env, ['CODEX_HOME', 'ORCA_CODEX_HOME'])
+        addWslEnvKeys(env, ['CODEX_HOME', 'AIO_ADE_CODEX_HOME'])
       }
       if (env.CLAUDE_CONFIG_DIR) {
         // Why: non-default env vars need WSLENV import to cross Windows wsl.exe into the Linux side.
         addWslEnvKeys(env, ['CLAUDE_CONFIG_DIR'])
       }
-      if (env[ORCA_HERMES_STARTUP_QUERY_ENV] !== undefined) {
+      if (env[AIO_ADE_HERMES_STARTUP_QUERY_ENV] !== undefined) {
         // Why: wsl.exe drops custom Windows env vars unless named in WSLENV.
-        addWslEnvKeys(env, [ORCA_HERMES_STARTUP_QUERY_ENV])
+        addWslEnvKeys(env, [AIO_ADE_HERMES_STARTUP_QUERY_ENV])
       }
     } else if (codexHomeWslInfo || isWslCodexHomeForHost(env.CODEX_HOME)) {
-      // Why: WSL Codex homes are Linux paths; also drop ORCA_CODEX_HOME since shell-ready restores CODEX_HOME from it.
+      // Why: WSL Codex homes are Linux paths; also drop AIO_ADE_CODEX_HOME since shell-ready restores CODEX_HOME from it.
       delete env.CODEX_HOME
-      delete env.ORCA_CODEX_HOME
+      delete env.AIO_ADE_CODEX_HOME
     }
     if (pathWin32.basename(shellPath).toLowerCase() === 'wsl.exe') {
-      addOrcaWslInteropEnv(env)
+      addAioAdeWslInteropEnv(env)
     }
   } else {
     // Why: relay-side launch modes can ask for host defaults to stay scrubbed
@@ -740,7 +743,9 @@ export function createPtySubprocess(opts: PtySubprocessOptions): SubprocessHandl
       shellLaunch = getShellReadyLaunchConfig(shellPath)
     } else {
       shellLaunch =
-        env.ORCA_ATTRIBUTION_SHIM_DIR || env.ORCA_CODEX_HOME || env.ORCA_AGENT_TEAMS_SHIM_DIR
+        env.AIO_ADE_ATTRIBUTION_SHIM_DIR ||
+        env.AIO_ADE_CODEX_HOME ||
+        env.AIO_ADE_AGENT_TEAMS_SHIM_DIR
           ? getAttributionShellLaunchConfig(shellPath)
           : null
     }

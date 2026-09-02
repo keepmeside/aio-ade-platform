@@ -17,7 +17,7 @@ afterEach(() => {
 })
 
 function createUserDataDir(): string {
-  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'orca-home-isolation-test-'))
+  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'aio-ade-home-isolation-test-'))
   tempDirs.push(tempDir)
   return tempDir
 }
@@ -30,7 +30,7 @@ describe('createElectronHomeIsolation', () => {
         HOME: '/real/home',
         USERPROFILE: '/real/home',
         CODEX_HOME: '/real/codex',
-        ORCA_CODEX_HOME: '/real/orca-codex',
+        AIO_ADE_CODEX_HOME: '/real/aio-ade-codex',
         ZDOTDIR: '/real/zdotdir',
         PATH: '/bin'
       },
@@ -51,11 +51,11 @@ describe('createElectronHomeIsolation', () => {
       EXTRA_TEST_FLAG: '1',
       HOME: canonicalHome,
       USERPROFILE: canonicalHome,
-      ORCA_E2E_USER_DATA_DIR: userDataDir,
-      ORCA_CODEX_SYSTEM_DEFAULT_REAL_HOME: '0'
+      AIO_ADE_E2E_USER_DATA_DIR: userDataDir,
+      AIO_ADE_CODEX_SYSTEM_DEFAULT_REAL_HOME: '0'
     })
     expect(isolation.env.CODEX_HOME).toBeUndefined()
-    expect(isolation.env.ORCA_CODEX_HOME).toBeUndefined()
+    expect(isolation.env.AIO_ADE_CODEX_HOME).toBeUndefined()
     expect(isolation.env.ZDOTDIR).toBeUndefined()
   })
 
@@ -75,12 +75,12 @@ describe('createElectronHomeIsolation', () => {
       createElectronHomeIsolation({
         inheritedEnv: {},
         launchEnv: {},
-        extraEnv: { ORCA_E2E_USER_DATA_DIR: '/unsafe' },
+        extraEnv: { AIO_ADE_E2E_USER_DATA_DIR: '/unsafe' },
         userDataDir: createUserDataDir(),
         codexRealHomeEnabled: false,
         realHome: '/real/home'
       })
-    ).toThrow(/orcaAppExtraEnv\.ORCA_E2E_USER_DATA_DIR/)
+    ).toThrow(/aioAdeAppExtraEnv\.AIO_ADE_E2E_USER_DATA_DIR/)
   })
 
   it('keeps real-home routing inside the disposable home when explicitly enabled', () => {
@@ -93,7 +93,7 @@ describe('createElectronHomeIsolation', () => {
       realHome: '/real/home'
     })
 
-    expect(isolation.env.ORCA_CODEX_SYSTEM_DEFAULT_REAL_HOME).toBe('1')
+    expect(isolation.env.AIO_ADE_CODEX_SYSTEM_DEFAULT_REAL_HOME).toBe('1')
     expect(() =>
       assertElectronResolvedIsolatedHome(isolation.isolatedHome, isolation)
     ).not.toThrow()

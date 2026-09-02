@@ -9,11 +9,11 @@ import {
 function cliStatus(overrides: Partial<CliInstallStatus> = {}): CliInstallStatus {
   return {
     platform: 'darwin',
-    commandName: 'orca',
-    commandPath: '/usr/local/bin/orca',
+    commandName: 'aio-ade',
+    commandPath: '/usr/local/bin/aio-ade',
     pathDirectory: '/usr/local/bin',
     pathConfigured: true,
-    launcherPath: '/Applications/Orca.app/Contents/MacOS/orca',
+    launcherPath: '/Applications/AIO-ADE.app/Contents/MacOS/aio-ade',
     installMethod: 'symlink',
     supported: true,
     state: 'installed',

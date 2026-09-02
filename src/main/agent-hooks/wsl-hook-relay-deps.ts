@@ -57,7 +57,7 @@ export type WslHookRelayManagerDeps = {
   waitForSentinel: typeof waitForWslRelaySentinel
   ingest: (envelope: Record<string, unknown>, connectionId: string) => void
   installHooks: typeof installRemoteManagedAgentHooks
-  /** Plugin source strings shipped to the guest relay so an Orca update needn't redeploy the relay bundle. */
+  /** Plugin source strings shipped to the guest relay so an AIO-ADE update needn't redeploy the relay bundle. */
   warn: (message: string) => void
   transientRetryDelayMs: number
 }

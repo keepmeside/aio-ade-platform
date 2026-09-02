@@ -26,7 +26,7 @@ type AgentHookCommandResult = {
 }
 
 function getDataPath(): string {
-  return join(getDefaultUserDataPath(), 'orca-data.json')
+  return join(getDefaultUserDataPath(), 'aio-ade-data.json')
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

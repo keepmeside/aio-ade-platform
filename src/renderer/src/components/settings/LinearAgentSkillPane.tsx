@@ -6,12 +6,12 @@ import { Button } from '@/components/ui/button'
 import { useAppStore } from '@/store'
 import {
   LINEAR_AGENT_SKILL_NAMES,
-  ORCA_LINEAR_SKILL_INSTALL_COMMAND,
-  ORCA_LINEAR_SKILL_NAME
+  AIO_ADE_LINEAR_SKILL_INSTALL_COMMAND,
+  AIO_ADE_LINEAR_SKILL_NAME
 } from '@/lib/agent-feature-install-commands'
 import {
   AGENT_SKILL_CLI_PREREQUISITE_NOTICE,
-  ensureOrcaCliAvailableForAgentSkillTerminal
+  ensureAioAdeCliAvailableForAgentSkillTerminal
 } from '@/lib/agent-skill-cli-prerequisite'
 import { getLinearAgentSkillUpdateTarget } from '@/lib/linear-agent-skill-update-command'
 import { getLinearUsageExamples } from '@/lib/linear-usage-examples'
@@ -46,7 +46,7 @@ function resolveLinearExampleIcon(example: SkillUsageExample): LucideIcon {
 }
 
 // Why: this section is rendered as a Settings section only when the Linear
-// provider is connected, so the orca-linear agent skill sits beside the
+// provider is connected, so the aio-ade-linear agent skill sits beside the
 // connection that makes it useful.
 export function LinearAgentSkillPane(): React.JSX.Element {
   const activeSkillRuntime = useActiveProjectSkillRuntime()
@@ -72,9 +72,9 @@ export function LinearAgentSkillPane(): React.JSX.Element {
   const installCommand = useMemo(
     () =>
       activeSkillRuntime.installDisabledReason
-        ? ORCA_LINEAR_SKILL_INSTALL_COMMAND
+        ? AIO_ADE_LINEAR_SKILL_INSTALL_COMMAND
         : buildSkillCommandForRuntime(
-            ORCA_LINEAR_SKILL_INSTALL_COMMAND,
+            AIO_ADE_LINEAR_SKILL_INSTALL_COMMAND,
             activeSkillRuntime.agentRuntime
           ),
     [activeSkillRuntime.agentRuntime, activeSkillRuntime.installDisabledReason]
@@ -111,7 +111,7 @@ export function LinearAgentSkillPane(): React.JSX.Element {
         )}
         description={translate(
           'auto.components.settings.LinearAgentSkillPane.skillDescription',
-          'Enables agents to read linked tickets and post updates to Linear through Orca.'
+          'Enables agents to read linked tickets and post updates to Linear through AIO-ADE.'
         )}
         command={installCommand}
         installedCommand={updateCommand}
@@ -141,7 +141,7 @@ export function LinearAgentSkillPane(): React.JSX.Element {
         onBeforeOpenTerminal={async () => {
           await (activeSkillRuntime.agentRuntime?.runtime === 'wsl'
             ? ensureWslCliAvailableForAgentSkillTerminal(activeSkillRuntime.agentRuntime)
-            : ensureOrcaCliAvailableForAgentSkillTerminal())
+            : ensureAioAdeCliAvailableForAgentSkillTerminal())
         }}
         onRecheck={refreshLinearSkill}
         // Why: the local-host-only freshness scan cannot vouch for a WSL runtime,
@@ -162,7 +162,7 @@ export function LinearAgentSkillPane(): React.JSX.Element {
         )}
         examples={getLinearUsageExamples()}
         resolveIcon={resolveLinearExampleIcon}
-        slashCommand={`/${ORCA_LINEAR_SKILL_NAME}`}
+        slashCommand={`/${AIO_ADE_LINEAR_SKILL_NAME}`}
       />
 
       <p className="text-xs text-muted-foreground">

@@ -155,7 +155,7 @@ describe('PR workflow parallelism', () => {
     )
 
     expect(buildStep.run).not.toContain('ensure:electron-runtime')
-    expect(packageStep.env.ORCA_REUSE_PREPARED_NATIVE_RUNTIME).toBe('1')
+    expect(packageStep.env.AIO_ADE_REUSE_PREPARED_NATIVE_RUNTIME).toBe('1')
   })
 
   it('keeps verify as the aggregate required check', () => {

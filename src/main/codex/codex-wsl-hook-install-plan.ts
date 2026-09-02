@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process'
 import { posix as pathPosix, win32 as pathWin32 } from 'node:path'
 import { parseWslUncPath } from '../../shared/wsl-paths'
+import { APP_HOME_DIR_NAME, getPosixAppHomePath } from '../../shared/app-home-paths'
 
 export type CodexWslRuntimeHookTarget = {
   runtime?: 'host' | 'wsl'
@@ -47,7 +48,7 @@ function toDefaultWslLinuxPath(windowsPath: string): string {
 }
 
 const WSL_CANONICALIZE_TIMEOUT_MS = 5000
-const WSL_PATH_MISSING_OUTPUT = '__ORCA_WSL_PATH_MISSING__'
+const WSL_PATH_MISSING_OUTPUT = '__AIO_ADE_WSL_PATH_MISSING__'
 
 // Why: `readlink -f` over wsl.exe stalls up to the timeout on a cold or wedged
 // distro. Running it synchronously on the Electron main process froze the UI on
@@ -187,8 +188,8 @@ export function createCodexWslRuntimeHookInstallPlan(
   return {
     configPath: pathWin32.join(runtimeHomePath, 'hooks.json'),
     tomlPath: pathWin32.join(runtimeHomePath, 'config.toml'),
-    scriptPath: pathWin32.join(runtimeHomePath, '.orca', 'agent-hooks', 'codex-hook.sh'),
-    commandScriptPath: pathPosix.join(linuxRuntimeHome, '.orca', 'agent-hooks', 'codex-hook.sh'),
+    scriptPath: pathWin32.join(runtimeHomePath, APP_HOME_DIR_NAME, 'agent-hooks', 'codex-hook.sh'),
+    commandScriptPath: getPosixAppHomePath(linuxRuntimeHome, 'agent-hooks', 'codex-hook.sh'),
     trustConfigPath: pathPosix.join(linuxRuntimeHome, 'hooks.json'),
     wslDistro: distro,
     linuxRuntimeHome

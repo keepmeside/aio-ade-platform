@@ -1,5 +1,5 @@
 import type { Locator } from '@stablyai/playwright-test'
-import { test, expect } from './helpers/orca-app'
+import { test, expect } from './helpers/aio-ade-app'
 import { openChecks } from './helpers/source-control-ai-generation'
 import { seedPRCommentsSidebarFixture } from './helpers/pr-comments-sidebar-fixture'
 import { waitForActiveWorktree, waitForSessionReady } from './helpers/store'
@@ -43,27 +43,29 @@ async function expectOpenTextNotShiftedLeft(
 }
 
 test.describe('PR comments sidebar cards view', () => {
-  test.beforeEach(async ({ orcaPage }) => {
-    await waitForSessionReady(orcaPage)
-    await waitForActiveWorktree(orcaPage)
+  test.beforeEach(async ({ aioAdePage }) => {
+    await waitForSessionReady(aioAdePage)
+    await waitForActiveWorktree(aioAdePage)
   })
 
-  test('groups open, conversation, and resolved comments in cards layout', async ({ orcaPage }) => {
-    const { worktreeId } = await seedPRCommentsSidebarFixture(orcaPage)
-    await openChecks(orcaPage, worktreeId)
+  test('groups open, conversation, and resolved comments in cards layout', async ({
+    aioAdePage
+  }) => {
+    const { worktreeId } = await seedPRCommentsSidebarFixture(aioAdePage)
+    await openChecks(aioAdePage, worktreeId)
 
-    const commentsSection = orcaPage.getByText('Comments', { exact: true })
+    const commentsSection = aioAdePage.getByText('Comments', { exact: true })
     await expect(commentsSection).toBeVisible({ timeout: 10_000 })
 
-    await expect(orcaPage.getByText('Needs review · 1')).toBeVisible()
-    await expect(orcaPage.getByText('Please update this handler before merge.')).toBeVisible()
-    await expect(orcaPage.getByText('alice')).toBeVisible()
-    await expect(orcaPage.getByText('LGTM on the overall approach.')).toBeVisible()
+    await expect(aioAdePage.getByText('Needs review · 1')).toBeVisible()
+    await expect(aioAdePage.getByText('Please update this handler before merge.')).toBeVisible()
+    await expect(aioAdePage.getByText('alice')).toBeVisible()
+    await expect(aioAdePage.getByText('LGTM on the overall approach.')).toBeVisible()
 
-    const openThreadCard = orcaPage.getByTestId('pr-comment-group').filter({
+    const openThreadCard = aioAdePage.getByTestId('pr-comment-group').filter({
       hasText: 'Please update this handler before merge.'
     })
-    const conversationCard = orcaPage.getByTestId('pr-comment-group').filter({
+    const conversationCard = aioAdePage.getByTestId('pr-comment-group').filter({
       hasText: 'LGTM on the overall approach.'
     })
     await expect(openThreadCard).toBeVisible()
@@ -77,38 +79,38 @@ test.describe('PR comments sidebar cards view', () => {
     )
     await expectOpenTextNotShiftedLeft(openThreadCard, conversationCard, 'alice', 'bob')
 
-    const resolvedTrigger = orcaPage.getByRole('button', { name: 'Resolved · 1' })
+    const resolvedTrigger = aioAdePage.getByRole('button', { name: 'Resolved · 1' })
     await expect(resolvedTrigger).toBeVisible()
-    await expect(orcaPage.getByText('Already fixed upstream.')).toBeHidden()
+    await expect(aioAdePage.getByText('Already fixed upstream.')).toBeHidden()
 
     await resolvedTrigger.click()
-    await expect(orcaPage.getByText('Already fixed upstream.')).toBeVisible()
-    await expect(orcaPage.getByText('Resolved', { exact: true })).toBeVisible()
+    await expect(aioAdePage.getByText('Already fixed upstream.')).toBeVisible()
+    await expect(aioAdePage.getByText('Resolved', { exact: true })).toBeVisible()
     await expect(
-      orcaPage
+      aioAdePage
         .getByTestId('pr-comment-group')
         .filter({ hasText: 'Already fixed upstream.' })
         .getByRole('button', { name: 'Unresolve', exact: true })
     ).toBeVisible()
 
-    await expect(orcaPage.getByRole('button', { name: /^Add$/ })).toHaveCount(0)
+    await expect(aioAdePage.getByRole('button', { name: /^Add$/ })).toHaveCount(0)
   })
 
-  test('can switch from grouped to chronological timeline order', async ({ orcaPage }) => {
-    const { worktreeId } = await seedPRCommentsSidebarFixture(orcaPage)
-    await openChecks(orcaPage, worktreeId)
+  test('can switch from grouped to chronological timeline order', async ({ aioAdePage }) => {
+    const { worktreeId } = await seedPRCommentsSidebarFixture(aioAdePage)
+    await openChecks(aioAdePage, worktreeId)
 
-    await expect(orcaPage.getByText('Needs review · 1')).toBeVisible({ timeout: 10_000 })
-    await orcaPage.getByRole('button', { name: 'Comment display options' }).click()
-    await orcaPage.getByRole('menuitemradio', { name: 'Timeline' }).click()
+    await expect(aioAdePage.getByText('Needs review · 1')).toBeVisible({ timeout: 10_000 })
+    await aioAdePage.getByRole('button', { name: 'Comment display options' }).click()
+    await aioAdePage.getByRole('menuitemradio', { name: 'Timeline' }).click()
 
-    await expect(orcaPage.getByText('Needs review · 1')).toHaveCount(0)
-    await expect(orcaPage.getByText('Already fixed upstream.')).toBeVisible()
+    await expect(aioAdePage.getByText('Needs review · 1')).toHaveCount(0)
+    await expect(aioAdePage.getByText('Already fixed upstream.')).toBeVisible()
 
     const comments = [
-      orcaPage.getByText('Already fixed upstream.'),
-      orcaPage.getByText('Please update this handler before merge.'),
-      orcaPage.getByText('LGTM on the overall approach.')
+      aioAdePage.getByText('Already fixed upstream.'),
+      aioAdePage.getByText('Please update this handler before merge.'),
+      aioAdePage.getByText('LGTM on the overall approach.')
     ]
     const positions = await Promise.all(
       comments.map(async (comment) => {
@@ -125,14 +127,14 @@ test.describe('PR comments sidebar cards view', () => {
   })
 
   test('queues an open thread for the agent from the visible row action and menu fallback', async ({
-    orcaPage
+    aioAdePage
   }) => {
-    const { worktreeId } = await seedPRCommentsSidebarFixture(orcaPage)
-    await openChecks(orcaPage, worktreeId)
+    const { worktreeId } = await seedPRCommentsSidebarFixture(aioAdePage)
+    await openChecks(aioAdePage, worktreeId)
 
-    await expect(orcaPage.getByText('Needs review · 1')).toBeVisible({ timeout: 10_000 })
+    await expect(aioAdePage.getByText('Needs review · 1')).toBeVisible({ timeout: 10_000 })
 
-    const openThreadCard = orcaPage.getByTestId('pr-comment-group').filter({
+    const openThreadCard = aioAdePage.getByTestId('pr-comment-group').filter({
       hasText: 'Please update this handler before merge.'
     })
     await openThreadCard.hover()
@@ -141,13 +143,13 @@ test.describe('PR comments sidebar cards view', () => {
     await visibleQueueButton.click()
     await expect(visibleQueueButton).toBeHidden()
     await expect(
-      orcaPage.getByRole('button', { name: 'Send 1 queued comments to AI' })
+      aioAdePage.getByRole('button', { name: 'Send 1 queued comments to AI' })
     ).toBeVisible()
-    await expect(orcaPage.getByText('Queued', { exact: true })).toBeVisible()
+    await expect(aioAdePage.getByText('Queued', { exact: true })).toBeVisible()
 
-    await orcaPage.getByRole('button', { name: 'Clear queued comments' }).click()
+    await aioAdePage.getByRole('button', { name: 'Clear queued comments' }).click()
     await expect(
-      orcaPage.getByRole('button', { name: 'Send 1 queued comments to AI' })
+      aioAdePage.getByRole('button', { name: 'Send 1 queued comments to AI' })
     ).toBeHidden()
     await openThreadCard.hover()
     await expect(visibleQueueButton).toBeVisible()
@@ -155,20 +157,20 @@ test.describe('PR comments sidebar cards view', () => {
     const actionsMenu = openThreadCard.getByRole('button', { name: 'More comment actions' })
     await actionsMenu.evaluate((element) => (element as HTMLElement).focus())
     await actionsMenu.press('Enter')
-    const queueMenuItem = orcaPage.getByRole('menuitem', { name: 'Queue for agent' })
+    const queueMenuItem = aioAdePage.getByRole('menuitem', { name: 'Queue for agent' })
     await queueMenuItem.click({ force: true })
     await expect(queueMenuItem).toBeHidden()
 
     await expect(
-      orcaPage.getByRole('button', { name: 'Send 1 queued comments to AI' })
+      aioAdePage.getByRole('button', { name: 'Send 1 queued comments to AI' })
     ).toBeVisible()
-    await expect(orcaPage.getByText('Queued', { exact: true })).toBeVisible()
+    await expect(aioAdePage.getByText('Queued', { exact: true })).toBeVisible()
 
-    const queuedCard = orcaPage.getByTestId('pr-comment-group').filter({
+    const queuedCard = aioAdePage.getByTestId('pr-comment-group').filter({
       hasText: 'Please update this handler before merge.'
     })
     const queuedCardBox = await queuedCard.boundingBox()
-    const checkboxBox = await orcaPage
+    const checkboxBox = await aioAdePage
       .getByRole('checkbox', { name: 'Select comment' })
       .first()
       .boundingBox()
@@ -178,15 +180,15 @@ test.describe('PR comments sidebar cards view', () => {
     expect(checkboxBox.x - queuedCardBox.x).toBeGreaterThanOrEqual(8)
   })
 
-  test('keeps open card content aligned while the row menu is open', async ({ orcaPage }) => {
-    const { worktreeId } = await seedPRCommentsSidebarFixture(orcaPage)
-    await openChecks(orcaPage, worktreeId)
+  test('keeps open card content aligned while the row menu is open', async ({ aioAdePage }) => {
+    const { worktreeId } = await seedPRCommentsSidebarFixture(aioAdePage)
+    await openChecks(aioAdePage, worktreeId)
 
-    await expect(orcaPage.getByText('Needs review · 1')).toBeVisible({ timeout: 10_000 })
-    const openThreadCard = orcaPage.getByTestId('pr-comment-group').filter({
+    await expect(aioAdePage.getByText('Needs review · 1')).toBeVisible({ timeout: 10_000 })
+    const openThreadCard = aioAdePage.getByTestId('pr-comment-group').filter({
       hasText: 'Please update this handler before merge.'
     })
-    const conversationCard = orcaPage.getByTestId('pr-comment-group').filter({
+    const conversationCard = aioAdePage.getByTestId('pr-comment-group').filter({
       hasText: 'LGTM on the overall approach.'
     })
 
@@ -194,7 +196,7 @@ test.describe('PR comments sidebar cards view', () => {
     const actionsMenu = openThreadCard.getByRole('button', { name: 'More comment actions' })
     await actionsMenu.evaluate((element) => (element as HTMLElement).focus())
     await actionsMenu.press('Enter')
-    await expect(orcaPage.getByRole('menuitem', { name: 'Queue for agent' })).toBeVisible()
+    await expect(aioAdePage.getByRole('menuitem', { name: 'Queue for agent' })).toBeVisible()
 
     await expectOpenTextNotShiftedLeft(
       openThreadCard,

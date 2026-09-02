@@ -41,7 +41,7 @@ export function getSkillFreshnessDisplayStatus(
     return 'installed'
   }
   // Why: an unreadable plugin path could hide a copy of any known skill, so it stays
-  // fail-closed — but only for skills Orca actually found somewhere. Flagging a skill
+  // fail-closed — but only for skills AIO-ADE actually found somewhere. Flagging a skill
   // that isn't installed at all blames it for a fault in someone else's plugin.
   if (inventory?.scanIssues.some(isSkillScanIssueNeedingAttention)) {
     return 'needs-attention'

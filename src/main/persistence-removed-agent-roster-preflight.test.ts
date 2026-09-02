@@ -1,7 +1,7 @@
-/* Phase-01 safety net (plans/260730-0117-aio-ide-rebrand-and-integration/phase-01).
+/* Safety net: persisted agent ids and account paths survive a roster narrowing and a rebrand.
  *
  * These are characterization tests: they pin the behavior that phases 04 (roster narrowed to
- * claude|codex) and 05 (rebrand orca -> aio-ade) are most likely to break silently. They must
+ * claude|codex) and 05 (rebrand aio-ade -> aio-ade) are most likely to break silently. They must
  * pass BEFORE those phases start and keep passing after, so a regression shows up as a failing
  * assertion rather than a user losing their agent config or their account.
  *
@@ -47,7 +47,7 @@ vi.mock('./ssh/ssh-config-parser', () => ({
 const REMOVED_AGENT_IDS = ['gemini', 'droid', 'cursor', 'aider', 'opencode'] as const
 
 function dataFile(): string {
-  return join(testState.dir, 'orca-data.json')
+  return join(testState.dir, 'aio-ade-data.json')
 }
 
 function writeDataFile(data: unknown): void {
@@ -72,7 +72,7 @@ afterEach(() => {
   rmSync(testState.dir, { recursive: true, force: true })
 })
 
-describe('phase-01 safety net: persisted removed-agent ids', () => {
+describe('persisted removed-agent ids', () => {
   it('loads a profile whose roster-keyed fields are entirely removed agents without throwing', async () => {
     writeDataFile({
       schemaVersion: 1,
@@ -172,8 +172,8 @@ describe('phase-01 safety net: persisted removed-agent ids', () => {
   })
 })
 
-describe('phase-01 safety net: profile file identity', () => {
-  it('reads and writes the orca-data.json filename', async () => {
+describe('profile file identity', () => {
+  it('reads and writes the aio-ade-data.json filename', async () => {
     // Why pinned: phase 05 renames branding tokens. The on-disk profile name is a data
     // contract, so a rename here must be a deliberate migration with a dual-read, not a
     // side effect of a global find-and-replace.

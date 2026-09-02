@@ -153,7 +153,7 @@ function makeClipboardEvent(senderOverrides: Record<string, unknown> = {}): {
     sender: {
       id: 17,
       getType: () => 'window',
-      getURL: () => 'file:///orca/index.html',
+      getURL: () => 'file:///aio-ade/index.html',
       isDestroyed: () => false,
       ...senderOverrides
     }
@@ -310,9 +310,9 @@ describe('registerClipboardHandlers', () => {
   it('sweeps expired remote clipboard staging directories', async () => {
     const nowMs = 1760000000000
     fsReaddirMock.mockResolvedValue([
-      dirent('orca-clipboard-file-expired'),
-      dirent('orca-clipboard-file-fresh'),
-      dirent('orca-clipboard-file-plain-file', false),
+      dirent('aio-ade-clipboard-file-expired'),
+      dirent('aio-ade-clipboard-file-fresh'),
+      dirent('aio-ade-clipboard-file-plain-file', false),
       dirent('unrelated-temp')
     ])
     fsStatMock.mockImplementation(async (targetPath: string) => {
@@ -328,7 +328,7 @@ describe('registerClipboardHandlers', () => {
     await cleanupExpiredRemoteClipboardFiles(nowMs)
 
     expect(fsRmMock).toHaveBeenCalledTimes(1)
-    expect(fsRmMock).toHaveBeenCalledWith(join('/tmp', 'orca-clipboard-file-expired'), {
+    expect(fsRmMock).toHaveBeenCalledWith(join('/tmp', 'aio-ade-clipboard-file-expired'), {
       recursive: true,
       force: true
     })
@@ -345,7 +345,7 @@ describe('registerClipboardHandlers', () => {
     const handlers = getRegisteredHandlers()
     const tempDir = join(
       '/tmp',
-      'orca-clipboard-file-1760000000000-00000000-0000-4000-8000-000000000000'
+      'aio-ade-clipboard-file-1760000000000-00000000-0000-4000-8000-000000000000'
     )
     const tempPath = join(tempDir, 'report.pdf')
 
@@ -396,7 +396,7 @@ describe('registerClipboardHandlers', () => {
     const handlers = getRegisteredHandlers()
     const tempDir = join(
       '/tmp',
-      'orca-clipboard-file-1760000000000-00000000-0000-4000-8000-000000000000'
+      'aio-ade-clipboard-file-1760000000000-00000000-0000-4000-8000-000000000000'
     )
     const tempPath = join(tempDir, 'report.pdf')
 
@@ -554,7 +554,7 @@ describe('registerClipboardHandlers', () => {
     const png = Buffer.from([0, 1, 2, 3])
     const expectedPath = join(
       '/tmp',
-      'orca-paste-1760000000000-00000000-0000-4000-8000-000000000000.png'
+      'aio-ade-paste-1760000000000-00000000-0000-4000-8000-000000000000.png'
     )
     clipboardReadImageMock.mockReturnValue({
       getSize: () => ({ height: 1, width: 1 }),
@@ -631,7 +631,7 @@ describe('registerClipboardHandlers', () => {
 
       const handler = getRegisteredHandlers().get('clipboard:saveImageAsTempFile')
       await expect(handler?.(makeClipboardEvent(), { connectionId: 'ssh-1' })).resolves.toBe(
-        '/var/tmp/orca-paste-1760000000000-00000000-0000-4000-8000-000000000000.png'
+        '/var/tmp/aio-ade-paste-1760000000000-00000000-0000-4000-8000-000000000000.png'
       )
       expect(clipboardReadBufferMock).toHaveBeenCalledWith('FileNameW')
       expect(clipboardReadBufferMock).toHaveBeenCalledWith('Shell IDList Array')
@@ -639,7 +639,7 @@ describe('registerClipboardHandlers', () => {
       expect(nativeImageCreateFromBufferMock).toHaveBeenCalledWith(source)
       expect(close).toHaveBeenCalled()
       expect(writeFileBase64).toHaveBeenCalledWith(
-        '/var/tmp/orca-paste-1760000000000-00000000-0000-4000-8000-000000000000.png',
+        '/var/tmp/aio-ade-paste-1760000000000-00000000-0000-4000-8000-000000000000.png',
         png.toString('base64')
       )
       expect(fsWriteFileMock).not.toHaveBeenCalled()
@@ -670,7 +670,7 @@ describe('registerClipboardHandlers', () => {
       if (method === 'clipboard.commitImageUpload') {
         return {
           ok: true,
-          result: '/tmp/orca-paste-remote.png',
+          result: '/tmp/aio-ade-paste-remote.png',
           _meta: { runtimeId: 'runtime-1' }
         }
       }
@@ -684,7 +684,7 @@ describe('registerClipboardHandlers', () => {
       handlers.get('clipboard:saveImageAsTempFile')?.(makeClipboardEvent(), {
         runtimeEnvironmentId: 'remote-host-1'
       })
-    ).resolves.toBe('/tmp/orca-paste-remote.png')
+    ).resolves.toBe('/tmp/aio-ade-paste-remote.png')
     expect(callRuntimeEnvironmentMock).toHaveBeenNthCalledWith(
       1,
       '/tmp',
@@ -789,11 +789,11 @@ describe('registerClipboardHandlers', () => {
       handlers.get('clipboard:saveImageAsTempFile')?.(makeClipboardEvent(), {
         connectionId: 'ssh-1'
       })
-    ).resolves.toBe('/var/tmp/orca-paste-1760000000000-00000000-0000-4000-8000-000000000000.png')
+    ).resolves.toBe('/var/tmp/aio-ade-paste-1760000000000-00000000-0000-4000-8000-000000000000.png')
     expect(getSshFilesystemProviderMock).toHaveBeenCalledWith('ssh-1')
     expect(getTempDir).toHaveBeenCalled()
     expect(writeFileBase64).toHaveBeenCalledWith(
-      '/var/tmp/orca-paste-1760000000000-00000000-0000-4000-8000-000000000000.png',
+      '/var/tmp/aio-ade-paste-1760000000000-00000000-0000-4000-8000-000000000000.png',
       png.toString('base64')
     )
     expect(fsWriteFileMock).not.toHaveBeenCalled()
@@ -820,10 +820,10 @@ describe('registerClipboardHandlers', () => {
         connectionId: 'ssh-1'
       })
     ).resolves.toBe(
-      'C:\\Users\\alice\\AppData\\Local\\Temp\\orca-paste-1760000000000-00000000-0000-4000-8000-000000000000.png'
+      'C:\\Users\\alice\\AppData\\Local\\Temp\\aio-ade-paste-1760000000000-00000000-0000-4000-8000-000000000000.png'
     )
     expect(writeFileBase64).toHaveBeenCalledWith(
-      'C:\\Users\\alice\\AppData\\Local\\Temp\\orca-paste-1760000000000-00000000-0000-4000-8000-000000000000.png',
+      'C:\\Users\\alice\\AppData\\Local\\Temp\\aio-ade-paste-1760000000000-00000000-0000-4000-8000-000000000000.png',
       png.toString('base64')
     )
   })

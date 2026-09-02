@@ -60,17 +60,17 @@ import { canConfirmAgentFromConsolePresence } from './windows-console-foreground
 import { forceKillPosixPtyProcessGroups } from '../pty/posix-pty-process-groups'
 import { shouldUseShellReadyStartupDelivery } from '../../shared/codex-startup-delivery'
 import { assertSafeAgentStartupCwd, resolveSafePtyDefaultCwd } from './pty-default-cwd'
-import { ORCA_HERMES_STARTUP_QUERY_ENV } from '../../shared/hermes-startup-query'
+import { AIO_ADE_HERMES_STARTUP_QUERY_ENV } from '../../shared/hermes-startup-query'
 import { PhysicalExitTracker } from '../../shared/physical-exit-tracker'
 import { mergeGitConfigEnvProtocol } from '../../shared/git-credential-prompt-env'
 import { PtyStartupIngress, type PtyIngressEmission } from '../../shared/pty-startup-ingress'
 import { resolvePtyOwnerBackend } from '../../shared/pty-owner-backend'
 
 const PANE_IDENTITY_ENV_KEYS = [
-  'ORCA_PANE_KEY',
-  'ORCA_TAB_ID',
-  'ORCA_WORKTREE_ID',
-  'ORCA_AGENT_LAUNCH_TOKEN'
+  'AIO_ADE_PANE_KEY',
+  'AIO_ADE_TAB_ID',
+  'AIO_ADE_WORKTREE_ID',
+  'AIO_ADE_AGENT_LAUNCH_TOKEN'
 ] as const
 
 let ptyCounter = 0
@@ -155,7 +155,7 @@ function promoteAgentTeamsShimPath(
   env: Record<string, string>,
   requestedPath: string | undefined
 ): void {
-  if (!env.ORCA_AGENT_TEAMS_TEAM_ID || !requestedPath) {
+  if (!env.AIO_ADE_AGENT_TEAMS_TEAM_ID || !requestedPath) {
     return
   }
   const shimDir = requestedPath.split(delimiter)[0]
@@ -643,13 +643,13 @@ export class LocalPtyProvider implements IPtyProvider {
       ...mergeGitConfigEnvProtocol(stripInheritedBuildModeEnv(process.env), args.env),
       TERM: 'xterm-256color',
       COLORTERM: 'truecolor',
-      TERM_PROGRAM: 'Orca',
+      TERM_PROGRAM: 'AIO-ADE',
       // Why: TUIs feature-gate on TERM_PROGRAM_VERSION; the fallback keeps tests and non-Electron runs working.
-      TERM_PROGRAM_VERSION: process.env.ORCA_APP_VERSION ?? '0.0.0-dev',
-      // Why: supports-hyperlinks rejects TERM_PROGRAM=Orca, so tools drop OSC 8 links; force it since xterm.js parses them.
+      TERM_PROGRAM_VERSION: process.env.AIO_ADE_APP_VERSION ?? '0.0.0-dev',
+      // Why: supports-hyperlinks rejects TERM_PROGRAM=AIO-ADE, so tools drop OSC 8 links; force it since xterm.js parses them.
       FORCE_HYPERLINK: '1'
     } as Record<string, string>
-    // Why: Orca can be launched from an Orca terminal; pane identity belongs to the child PTY, not the parent shell.
+    // Why: AIO-ADE can be launched from an AIO-ADE terminal; pane identity belongs to the child PTY, not the parent shell.
     removeUnspecifiedPaneIdentityEnv(spawnEnv, args.env)
     removeAppImageRuntimeEnv(spawnEnv)
     removeInheritedNoColor(spawnEnv)
@@ -698,12 +698,12 @@ export class LocalPtyProvider implements IPtyProvider {
         if (codexHomeWslInfo) {
           if (launchWslDistro && launchWslDistro !== codexHomeWslInfo.distro) {
             delete finalEnv.CODEX_HOME
-            delete finalEnv.ORCA_CODEX_HOME
+            delete finalEnv.AIO_ADE_CODEX_HOME
           } else {
             finalEnv.CODEX_HOME = codexHomeWslInfo.linuxPath
-            finalEnv.ORCA_CODEX_HOME = codexHomeWslInfo.linuxPath
+            finalEnv.AIO_ADE_CODEX_HOME = codexHomeWslInfo.linuxPath
             // Why: wsl.exe only imports non-default env vars named in WSLENV.
-            addWslEnvKeys(finalEnv, ['CODEX_HOME', 'ORCA_CODEX_HOME'])
+            addWslEnvKeys(finalEnv, ['CODEX_HOME', 'AIO_ADE_CODEX_HOME'])
             if (!launchWslDistro) {
               const resolved = resolveWindowsShellLaunchArgs(shellPath, cwd, defaultCwd, {
                 distro: codexHomeWslInfo.distro
@@ -716,24 +716,24 @@ export class LocalPtyProvider implements IPtyProvider {
             }
           }
         } else if (isHostCodexHomeForWsl(finalEnv.CODEX_HOME)) {
-          // Why: Orca's Codex home is host-local; WSL Codex must use its Linux-side ~/.codex, not a Windows path.
+          // Why: AIO-ADE's Codex home is host-local; WSL Codex must use its Linux-side ~/.codex, not a Windows path.
           delete finalEnv.CODEX_HOME
-          delete finalEnv.ORCA_CODEX_HOME
+          delete finalEnv.AIO_ADE_CODEX_HOME
         } else if (finalEnv.CODEX_HOME) {
-          addWslEnvKeys(finalEnv, ['CODEX_HOME', 'ORCA_CODEX_HOME'])
+          addWslEnvKeys(finalEnv, ['CODEX_HOME', 'AIO_ADE_CODEX_HOME'])
         }
         if (finalEnv.CLAUDE_CONFIG_DIR) {
           // Why: managed WSL Claude passes a Linux CLAUDE_CONFIG_DIR through wsl.exe; non-default vars need WSLENV import.
           addWslEnvKeys(finalEnv, ['CLAUDE_CONFIG_DIR'])
         }
-        if (finalEnv[ORCA_HERMES_STARTUP_QUERY_ENV] !== undefined) {
+        if (finalEnv[AIO_ADE_HERMES_STARTUP_QUERY_ENV] !== undefined) {
           // Why: wsl.exe drops custom Windows env vars; the startup wrapper needs this imported inside WSL.
-          addWslEnvKeys(finalEnv, [ORCA_HERMES_STARTUP_QUERY_ENV])
+          addWslEnvKeys(finalEnv, [AIO_ADE_HERMES_STARTUP_QUERY_ENV])
         }
       } else if (codexHomeWslInfo || isWslCodexHomeForHost(finalEnv.CODEX_HOME)) {
-        // Why: WSL Codex homes are Linux paths Windows can't use; also drop ORCA_CODEX_HOME (shell-ready restores CODEX_HOME from it).
+        // Why: WSL Codex homes are Linux paths Windows can't use; also drop AIO_ADE_CODEX_HOME (shell-ready restores CODEX_HOME from it).
         delete finalEnv.CODEX_HOME
-        delete finalEnv.ORCA_CODEX_HOME
+        delete finalEnv.AIO_ADE_CODEX_HOME
       }
     }
     seedPowerlevel10kWizardEnv(finalEnv, { envToDelete: args.envToDelete })
@@ -747,9 +747,9 @@ export class LocalPtyProvider implements IPtyProvider {
     if (!wslInfo && process.platform !== 'win32') {
       // Why: Codex PATH restoration needs shell-ready code after user startup files run.
       const needsNoMarkerWrapper =
-        finalEnv.ORCA_ATTRIBUTION_SHIM_DIR ||
-        finalEnv.ORCA_CODEX_HOME ||
-        finalEnv.ORCA_AGENT_TEAMS_SHIM_DIR
+        finalEnv.AIO_ADE_ATTRIBUTION_SHIM_DIR ||
+        finalEnv.AIO_ADE_CODEX_HOME ||
+        finalEnv.AIO_ADE_AGENT_TEAMS_SHIM_DIR
       const isCodexStartupCommand = startupAgentRecognition?.agent === 'codex'
       let shellLaunch: ReturnType<typeof getShellReadyLaunchConfig> | null = null
       if (args.command && isCodexStartupCommand) {
@@ -856,8 +856,8 @@ export class LocalPtyProvider implements IPtyProvider {
       ptyAgentSessionIds.add(id)
     }
     ptyShellName.set(id, getSpawnedShellName(shellPath))
-    if (finalEnv.ORCA_TERMINAL_HANDLE) {
-      ptyTerminalHandle.set(id, finalEnv.ORCA_TERMINAL_HANDLE)
+    if (finalEnv.AIO_ADE_TERMINAL_HANDLE) {
+      ptyTerminalHandle.set(id, finalEnv.AIO_ADE_TERMINAL_HANDLE)
     }
     if (args.worktreeId) {
       ptyWorktreeId.set(id, args.worktreeId)

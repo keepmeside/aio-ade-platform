@@ -27,7 +27,7 @@ describe('persisted state file bounds', () => {
   let root = ''
 
   beforeEach(() => {
-    root = mkdtempSync(join(tmpdir(), 'orca-state-bounds-'))
+    root = mkdtempSync(join(tmpdir(), 'aio-ade-state-bounds-'))
   })
 
   afterEach(() => {
@@ -139,7 +139,7 @@ describe('persisted state file bounds', () => {
 
   it('atomically restores only a valid in-limit backup', () => {
     const backupPath = join(root, 'backup.json')
-    const targetPath = join(root, 'profile', 'orca-data.json')
+    const targetPath = join(root, 'profile', 'aio-ade-data.json')
     writeFileSync(backupPath, '{"repos":[{"id":"recovered"}]}')
 
     restorePersistedStateBackupSync(backupPath, targetPath, 1024)
@@ -158,7 +158,7 @@ describe('persisted state file bounds', () => {
 
   it('leaves the target untouched when a backup exceeds the cap', () => {
     const backupPath = join(root, 'backup.json')
-    const targetPath = join(root, 'orca-data.json')
+    const targetPath = join(root, 'aio-ade-data.json')
     writeFileSync(targetPath, '{"original":true}')
     writeFileSync(backupPath, '')
     truncateSync(backupPath, 1025)

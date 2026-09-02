@@ -136,7 +136,7 @@ describe('getSpawnArgsForWindows', () => {
 
 describe('resolveWindowsCommand', () => {
   it('finds package-manager .cmd shims on PATH before spawning fixed commands', () => {
-    const tempDir = mkdtempSync(join(tmpdir(), 'orca-win-command-'))
+    const tempDir = mkdtempSync(join(tmpdir(), 'aio-ade-win-command-'))
     try {
       const pnpmShim = join(tempDir, 'pnpm.cmd')
       writeFileSync(pnpmShim, '@echo off\r\n')

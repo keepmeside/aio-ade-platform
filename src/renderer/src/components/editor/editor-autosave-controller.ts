@@ -12,11 +12,11 @@ import {
   getOpenFilesForExternalFileChange,
   isAutosaveSuspendedForFile,
   normalizeAutoSaveDelayMs,
-  ORCA_EDITOR_EXTERNAL_FILE_CHANGE_EVENT,
-  ORCA_EDITOR_FILE_SAVED_EVENT,
-  ORCA_EDITOR_QUIESCE_FILE_SAVES_EVENT,
-  ORCA_EDITOR_SAVE_AND_CLOSE_EVENT,
-  ORCA_EDITOR_SAVE_FILE_EVENT,
+  AIO_ADE_EDITOR_EXTERNAL_FILE_CHANGE_EVENT,
+  AIO_ADE_EDITOR_FILE_SAVED_EVENT,
+  AIO_ADE_EDITOR_QUIESCE_FILE_SAVES_EVENT,
+  AIO_ADE_EDITOR_SAVE_AND_CLOSE_EVENT,
+  AIO_ADE_EDITOR_SAVE_FILE_EVENT,
   type EditorFileSavedDetail,
   type EditorPathMutationTarget,
   type EditorSaveFileDetail,
@@ -38,8 +38,8 @@ import {
   getDuplicateDirtySavePaths
 } from './editor-autosave-state-projections'
 import {
-  ORCA_EDITOR_PREPARE_HOT_EXIT_EVENT,
-  ORCA_EDITOR_SAVE_DIRTY_FILES_EVENT,
+  AIO_ADE_EDITOR_PREPARE_HOT_EXIT_EVENT,
+  AIO_ADE_EDITOR_SAVE_DIRTY_FILES_EVENT,
   type EditorPrepareHotExitDetail,
   type EditorSaveDirtyFilesDetail
 } from '../../../../shared/editor-save-events'
@@ -142,7 +142,7 @@ export function attachEditorAutosaveController(store: AppStoreApi): () => void {
         }
 
         window.dispatchEvent(
-          new CustomEvent<EditorFileSavedDetail>(ORCA_EDITOR_FILE_SAVED_EVENT, {
+          new CustomEvent<EditorFileSavedDetail>(AIO_ADE_EDITOR_FILE_SAVED_EVENT, {
             detail: { fileId: file.id, content: contentToSave }
           })
         )
@@ -389,7 +389,7 @@ export function attachEditorAutosaveController(store: AppStoreApi): () => void {
     const reloadingFiles = matchingFiles.filter((file) => !file.isDirty)
     for (const file of matchingFiles) {
       if (file.isDirty) {
-        // Why: skip Orca's own-save echo, which routes here bypassing the watch hook's echo verification.
+        // Why: skip AIO-ADE's own-save echo, which routes here bypassing the watch hook's echo verification.
         if (!hasRecentSelfWrite(file.filePath, file.runtimeEnvironmentId)) {
           markFileChangedOnDisk(state, file, {
             connectionId: getConnectionIdForFile(file.worktreeId, file.filePath) ?? undefined,
@@ -421,34 +421,43 @@ export function attachEditorAutosaveController(store: AppStoreApi): () => void {
   })
   syncAutoSave()
 
-  window.addEventListener(ORCA_EDITOR_SAVE_DIRTY_FILES_EVENT, handleSaveDirtyFiles as EventListener)
-  window.addEventListener(ORCA_EDITOR_PREPARE_HOT_EXIT_EVENT, handlePrepareHotExit as EventListener)
-  window.addEventListener(ORCA_EDITOR_SAVE_AND_CLOSE_EVENT, handleSaveAndClose as EventListener)
-  window.addEventListener(ORCA_EDITOR_SAVE_FILE_EVENT, handleSaveFile as EventListener)
-  window.addEventListener(ORCA_EDITOR_QUIESCE_FILE_SAVES_EVENT, handleQuiesce as EventListener)
   window.addEventListener(
-    ORCA_EDITOR_EXTERNAL_FILE_CHANGE_EVENT,
+    AIO_ADE_EDITOR_SAVE_DIRTY_FILES_EVENT,
+    handleSaveDirtyFiles as EventListener
+  )
+  window.addEventListener(
+    AIO_ADE_EDITOR_PREPARE_HOT_EXIT_EVENT,
+    handlePrepareHotExit as EventListener
+  )
+  window.addEventListener(AIO_ADE_EDITOR_SAVE_AND_CLOSE_EVENT, handleSaveAndClose as EventListener)
+  window.addEventListener(AIO_ADE_EDITOR_SAVE_FILE_EVENT, handleSaveFile as EventListener)
+  window.addEventListener(AIO_ADE_EDITOR_QUIESCE_FILE_SAVES_EVENT, handleQuiesce as EventListener)
+  window.addEventListener(
+    AIO_ADE_EDITOR_EXTERNAL_FILE_CHANGE_EVENT,
     handleExternalFileChange as EventListener
   )
 
   return () => {
     unsubscribe()
     window.removeEventListener(
-      ORCA_EDITOR_SAVE_DIRTY_FILES_EVENT,
+      AIO_ADE_EDITOR_SAVE_DIRTY_FILES_EVENT,
       handleSaveDirtyFiles as EventListener
     )
     window.removeEventListener(
-      ORCA_EDITOR_PREPARE_HOT_EXIT_EVENT,
+      AIO_ADE_EDITOR_PREPARE_HOT_EXIT_EVENT,
       handlePrepareHotExit as EventListener
     )
     window.removeEventListener(
-      ORCA_EDITOR_SAVE_AND_CLOSE_EVENT,
+      AIO_ADE_EDITOR_SAVE_AND_CLOSE_EVENT,
       handleSaveAndClose as EventListener
     )
-    window.removeEventListener(ORCA_EDITOR_SAVE_FILE_EVENT, handleSaveFile as EventListener)
-    window.removeEventListener(ORCA_EDITOR_QUIESCE_FILE_SAVES_EVENT, handleQuiesce as EventListener)
+    window.removeEventListener(AIO_ADE_EDITOR_SAVE_FILE_EVENT, handleSaveFile as EventListener)
     window.removeEventListener(
-      ORCA_EDITOR_EXTERNAL_FILE_CHANGE_EVENT,
+      AIO_ADE_EDITOR_QUIESCE_FILE_SAVES_EVENT,
+      handleQuiesce as EventListener
+    )
+    window.removeEventListener(
+      AIO_ADE_EDITOR_EXTERNAL_FILE_CHANGE_EVENT,
       handleExternalFileChange as EventListener
     )
     for (const timerId of autoSaveTimers.values()) {

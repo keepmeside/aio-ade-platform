@@ -126,15 +126,15 @@ function showDeleteFailureToast(): void {
   })
 }
 
-// Dev-only preview of the first-party Orca Cloud sign-in. The sidebar/titlebar
+// Dev-only preview of the first-party AIO-ADE Cloud sign-in. The sidebar/titlebar
 // account switcher is hidden in packaged builds while the feature is in
 // progress; this surfaces it (and its status) in dev when the env vars are set.
-function OrcaCloudDevSubsection(): React.JSX.Element {
-  const authStatus = useAppStore((s) => s.orcaProfileAuthStatus)
-  const connecting = useAppStore((s) => s.orcaProfileConnecting)
-  const connect = useAppStore((s) => s.connectCurrentOrcaProfile)
-  const signOut = useAppStore((s) => s.signOutCurrentOrcaProfile)
-  const refresh = useAppStore((s) => s.fetchOrcaProfileAuthStatus)
+function AioAdeCloudDevSubsection(): React.JSX.Element {
+  const authStatus = useAppStore((s) => s.aioAdeProfileAuthStatus)
+  const connecting = useAppStore((s) => s.aioAdeProfileConnecting)
+  const connect = useAppStore((s) => s.connectCurrentAioAdeProfile)
+  const signOut = useAppStore((s) => s.signOutCurrentAioAdeProfile)
+  const refresh = useAppStore((s) => s.fetchAioAdeProfileAuthStatus)
   const configured = authStatus?.configured === true
   const connected = authStatus?.state === 'connected'
 
@@ -142,10 +142,10 @@ function OrcaCloudDevSubsection(): React.JSX.Element {
     <section className="space-y-3">
       <div className="flex items-start justify-between gap-3">
         <SettingsSubsectionHeader
-          title={translate('auto.components.settings.DevToolsPane.orcaCloud', 'Orca Cloud')}
+          title={translate('auto.components.settings.DevToolsPane.aioAdeCloud', 'AIO-ADE Cloud')}
           description={translate(
-            'auto.components.settings.DevToolsPane.orcaCloudDescription',
-            'Dev-only preview of first-party cloud sign-in. Hidden in production; in dev it also appears in the sidebar account switcher once ORCA_CLOUD_API_URL and ORCA_CLOUD_CLIENT_ID are set.'
+            'auto.components.settings.DevToolsPane.aioAdeCloudDescription',
+            'Dev-only preview of first-party cloud sign-in. Hidden in production; in dev it also appears in the sidebar account switcher once AIO_ADE_CLOUD_API_URL and AIO_ADE_CLOUD_CLIENT_ID are set.'
           )}
         />
         <Badge variant="outline" className="mt-0.5">
@@ -156,7 +156,7 @@ function OrcaCloudDevSubsection(): React.JSX.Element {
       {configured ? (
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground">
-            {translate('auto.components.settings.DevToolsPane.orcaCloudStatus', 'Status')}:{' '}
+            {translate('auto.components.settings.DevToolsPane.aioAdeCloudStatus', 'Status')}:{' '}
             <span className="font-medium text-foreground">{authStatus?.state}</span>
           </p>
           <div className="flex flex-wrap gap-2">
@@ -168,7 +168,7 @@ function OrcaCloudDevSubsection(): React.JSX.Element {
                 disabled={connecting}
                 onClick={() => void signOut()}
               >
-                {translate('auto.components.settings.DevToolsPane.orcaCloudSignOut', 'Sign out')}
+                {translate('auto.components.settings.DevToolsPane.aioAdeCloudSignOut', 'Sign out')}
               </Button>
             ) : (
               <Button
@@ -179,14 +179,14 @@ function OrcaCloudDevSubsection(): React.JSX.Element {
                 onClick={() => void connect()}
               >
                 {translate(
-                  'auto.components.settings.DevToolsPane.orcaCloudConnect',
+                  'auto.components.settings.DevToolsPane.aioAdeCloudConnect',
                   'Connect profile'
                 )}
               </Button>
             )}
             <Button type="button" variant="ghost" size="sm" onClick={() => void refresh()}>
               {translate(
-                'auto.components.settings.DevToolsPane.orcaCloudRefresh',
+                'auto.components.settings.DevToolsPane.aioAdeCloudRefresh',
                 'Refresh status'
               )}
             </Button>
@@ -196,8 +196,8 @@ function OrcaCloudDevSubsection(): React.JSX.Element {
         <p className="text-xs text-muted-foreground">
           {authStatus?.setupMessage ??
             translate(
-              'auto.components.settings.DevToolsPane.orcaCloudNotConfigured',
-              'Set ORCA_CLOUD_API_URL and ORCA_CLOUD_CLIENT_ID to preview Orca Cloud sign-in in this dev build.'
+              'auto.components.settings.DevToolsPane.aioAdeCloudNotConfigured',
+              'Set AIO_ADE_CLOUD_API_URL and AIO_ADE_CLOUD_CLIENT_ID to preview AIO-ADE Cloud sign-in in this dev build.'
             )}
         </p>
       )}
@@ -327,7 +327,7 @@ export function DevToolsPane(): React.JSX.Element {
         </div>
       </section>
 
-      <OrcaCloudDevSubsection />
+      <AioAdeCloudDevSubsection />
     </div>
   )
 }

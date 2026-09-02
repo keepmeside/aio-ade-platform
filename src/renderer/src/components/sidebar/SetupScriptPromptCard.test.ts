@@ -20,8 +20,11 @@ describe('getRenderedSetupScriptPromptState', () => {
       getRenderedSetupScriptPromptState({
         promptState: current,
         activeRepoId: 'repo-local',
-        activeProjectId: 'github:stablyai/orca',
-        lastVisiblePrompt: { state: prompt('repo-ssh'), projectId: 'github:stablyai/orca' }
+        activeProjectId: 'github:keepmeside/aio-ade-platform',
+        lastVisiblePrompt: {
+          state: prompt('repo-ssh'),
+          projectId: 'github:keepmeside/aio-ade-platform'
+        }
       })
     ).toBe(current)
   })
@@ -33,8 +36,8 @@ describe('getRenderedSetupScriptPromptState', () => {
       getRenderedSetupScriptPromptState({
         promptState: null,
         activeRepoId: 'repo-ssh',
-        activeProjectId: 'github:stablyai/orca',
-        lastVisiblePrompt: { state: previous, projectId: 'github:stablyai/orca' }
+        activeProjectId: 'github:keepmeside/aio-ade-platform',
+        lastVisiblePrompt: { state: previous, projectId: 'github:keepmeside/aio-ade-platform' }
       })
     ).toBe(previous)
   })
@@ -44,8 +47,11 @@ describe('getRenderedSetupScriptPromptState', () => {
       getRenderedSetupScriptPromptState({
         promptState: null,
         activeRepoId: 'repo-other',
-        activeProjectId: 'github:stablyai/other',
-        lastVisiblePrompt: { state: prompt('repo-local'), projectId: 'github:stablyai/orca' }
+        activeProjectId: 'github:keepmeside/other',
+        lastVisiblePrompt: {
+          state: prompt('repo-local'),
+          projectId: 'github:keepmeside/aio-ade-platform'
+        }
       })
     ).toBeNull()
   })

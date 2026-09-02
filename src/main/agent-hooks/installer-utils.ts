@@ -11,6 +11,7 @@ import {
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { randomUUID } from 'node:crypto'
+import { getAppHomePath } from '../../shared/app-home-paths'
 import type { AgentHookSource } from '../../shared/agent-hook-relay'
 import { grantDirAcl, isPermissionError } from '../win32-utils'
 import { POSIX_HOOK_STDIN_DRAIN_COMMAND } from './hook-stdin-contract'
@@ -98,9 +99,9 @@ function decodePowerShellEncodedCommand(command: string): string | null {
   }
 }
 
-// Why: prod/dev/parallel Orca instances must write the same managed entry, not race between per-userData script paths.
+// Why: prod/dev/parallel AIO-ADE instances must write the same managed entry, not race between per-userData script paths.
 export function getSharedManagedScriptPath(scriptFileName: string): string {
-  return join(homedir(), '.orca', 'agent-hooks', scriptFileName)
+  return getAppHomePath(homedir(), 'agent-hooks', scriptFileName)
 }
 
 function quotePosixShellString(value: string): string {
@@ -164,16 +165,16 @@ export function buildWindowsAgentHookPostCommand(source: AgentHookSource): strin
   // Why: PowerShell startup makes inline per-turn Codex hooks visibly slow, so mirror the POSIX curl path.
   // Why: fully-qualify curl so a repo-local curl.exe can't hijack hook payloads.
   return [
-    `"%SystemRoot%\\System32\\curl.exe" -sS -X POST "http://127.0.0.1:%ORCA_AGENT_HOOK_PORT%/hook/${source}" ^`,
+    `"%SystemRoot%\\System32\\curl.exe" -sS -X POST "http://127.0.0.1:%AIO_ADE_AGENT_HOOK_PORT%/hook/${source}" ^`,
     '  --connect-timeout 0.5 --max-time 1.5 ^',
     '  -H "Content-Type: application/x-www-form-urlencoded" ^',
-    '  -H "X-Orca-Agent-Hook-Token: %ORCA_AGENT_HOOK_TOKEN%" ^',
-    '  --data-urlencode "paneKey=%ORCA_PANE_KEY%" ^',
-    '  --data-urlencode "tabId=%ORCA_TAB_ID%" ^',
-    '  --data-urlencode "launchToken=%ORCA_AGENT_LAUNCH_TOKEN%" ^',
-    '  --data-urlencode "worktreeId=%ORCA_WORKTREE_ID%" ^',
-    '  --data-urlencode "env=%ORCA_AGENT_HOOK_ENV%" ^',
-    '  --data-urlencode "version=%ORCA_AGENT_HOOK_VERSION%" ^',
+    '  -H "X-AIO-ADE-Agent-Hook-Token: %AIO_ADE_AGENT_HOOK_TOKEN%" ^',
+    '  --data-urlencode "paneKey=%AIO_ADE_PANE_KEY%" ^',
+    '  --data-urlencode "tabId=%AIO_ADE_TAB_ID%" ^',
+    '  --data-urlencode "launchToken=%AIO_ADE_AGENT_LAUNCH_TOKEN%" ^',
+    '  --data-urlencode "worktreeId=%AIO_ADE_WORKTREE_ID%" ^',
+    '  --data-urlencode "env=%AIO_ADE_AGENT_HOOK_ENV%" ^',
+    '  --data-urlencode "version=%AIO_ADE_AGENT_HOOK_VERSION%" ^',
     '  --data-urlencode "payload@-" >nul 2>nul'
   ].join('\r\n')
 }
@@ -182,16 +183,16 @@ export function buildWindowsAgentHookPostCommand(source: AgentHookSource): strin
 export function buildWindowsAgentHookCurlPostCommand(source: AgentHookSource): string {
   return [
     '"%SystemRoot%\\System32\\curl.exe" -sS -X POST',
-    `"http://127.0.0.1:%ORCA_AGENT_HOOK_PORT%/hook/${source}"`,
+    `"http://127.0.0.1:%AIO_ADE_AGENT_HOOK_PORT%/hook/${source}"`,
     '--connect-timeout 0.5 --max-time 1.5',
     '-H "Content-Type: application/x-www-form-urlencoded"',
-    '-H "X-Orca-Agent-Hook-Token: %ORCA_AGENT_HOOK_TOKEN%"',
-    '--data-urlencode "paneKey=%ORCA_PANE_KEY%"',
-    '--data-urlencode "tabId=%ORCA_TAB_ID%"',
-    '--data-urlencode "launchToken=%ORCA_AGENT_LAUNCH_TOKEN%"',
-    '--data-urlencode "worktreeId=%ORCA_WORKTREE_ID%"',
-    '--data-urlencode "env=%ORCA_AGENT_HOOK_ENV%"',
-    '--data-urlencode "version=%ORCA_AGENT_HOOK_VERSION%"',
+    '-H "X-AIO-ADE-Agent-Hook-Token: %AIO_ADE_AGENT_HOOK_TOKEN%"',
+    '--data-urlencode "paneKey=%AIO_ADE_PANE_KEY%"',
+    '--data-urlencode "tabId=%AIO_ADE_TAB_ID%"',
+    '--data-urlencode "launchToken=%AIO_ADE_AGENT_LAUNCH_TOKEN%"',
+    '--data-urlencode "worktreeId=%AIO_ADE_WORKTREE_ID%"',
+    '--data-urlencode "env=%AIO_ADE_AGENT_HOOK_ENV%"',
+    '--data-urlencode "version=%AIO_ADE_AGENT_HOOK_VERSION%"',
     '--data-urlencode "payload@-"',
     '>nul 2>&1'
   ].join(' ')

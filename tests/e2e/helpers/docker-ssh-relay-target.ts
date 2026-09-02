@@ -7,9 +7,9 @@ import { getDockerSshRelayImage } from './docker-ssh-relay-image'
 
 import type { TestInfo } from '@stablyai/playwright-test'
 
-export const DOCKER_SSH_RELAY_REMOTE_REPO_PATH = '/tmp/orca-docker-relay-perf-repo'
-export const DOCKER_SSH_PROXY_JUMP_REMOTE_REPO_PATH = '/tmp/orca-docker-proxy-jump-repo'
-export const DOCKER_SSH_SECOND_HUB_REMOTE_REPO_PATH = '/tmp/orca-docker-second-hub-repo'
+export const DOCKER_SSH_RELAY_REMOTE_REPO_PATH = '/tmp/aio-ade-docker-relay-perf-repo'
+export const DOCKER_SSH_PROXY_JUMP_REMOTE_REPO_PATH = '/tmp/aio-ade-docker-proxy-jump-repo'
+export const DOCKER_SSH_SECOND_HUB_REMOTE_REPO_PATH = '/tmp/aio-ade-docker-second-hub-repo'
 
 export type DockerSshRelayTarget = {
   containerName: string
@@ -101,10 +101,10 @@ function seedRemoteRepo(target: DockerSshRelayTarget, repoPath: string): void {
       `cd ${shellQuote(repoPath)}`,
       'git init',
       'git config user.email e2e@test.local',
-      'git config user.name "Orca Docker SSH E2E"',
-      `printf '%s\\n' ${shellQuote(sentinel)} > .orca-e2e-destination-id`,
+      'git config user.name "AIO-ADE Docker SSH E2E"',
+      `printf '%s\\n' ${shellQuote(sentinel)} > .aio-ade-e2e-destination-id`,
       `printf '%s\\n' ${shellQuote(`remote relay ${sentinel}`)} > README.md`,
-      'git add README.md .orca-e2e-destination-id',
+      'git add README.md .aio-ade-e2e-destination-id',
       'git commit -m initial'
     ].join(' && ')
   )
@@ -122,11 +122,11 @@ export function writeDockerSshRelayTargetFile(
 }
 
 export function startDockerSshRelayTarget(testInfo: TestInfo): DockerSshRelayTarget {
-  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'orca-ssh-docker-'))
+  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'aio-ade-ssh-docker-'))
   const identityFile = path.join(tempDir, 'id_ed25519')
   run('ssh-keygen', ['-t', 'ed25519', '-N', '', '-f', identityFile, '-q'])
   const publicKey = readFileSync(`${identityFile}.pub`, 'utf8').trim()
-  const containerName = `orca-ssh-e2e-${testInfo.workerIndex}-${Date.now()}-${randomUUID().slice(0, 8)}`
+  const containerName = `aio-ade-ssh-e2e-${testInfo.workerIndex}-${Date.now()}-${randomUUID().slice(0, 8)}`
   let target: DockerSshRelayTarget | null = null
 
   try {
@@ -149,7 +149,7 @@ export function startDockerSshRelayTarget(testInfo: TestInfo): DockerSshRelayTar
           'printf "%s\\n" "$AUTHORIZED_KEY" > /root/.ssh/authorized_keys',
           'chmod 600 /root/.ssh/authorized_keys',
           'git config --global user.email e2e@test.local',
-          'git config --global user.name "Orca Docker SSH E2E"',
+          'git config --global user.name "AIO-ADE Docker SSH E2E"',
           'exec /usr/sbin/sshd -D -e'
         ].join(' && ')
       ],

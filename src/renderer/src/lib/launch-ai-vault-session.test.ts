@@ -148,7 +148,7 @@ describe('launchAiVaultSessionInNewTab', () => {
       targetGroupId: 'group-1',
       command: "codex resume 'session-1'",
       env: { CODEX_PROFILE: 'runtime' },
-      envToDelete: ['CODEX_HOME', 'ORCA_CODEX_HOME'],
+      envToDelete: ['CODEX_HOME', 'AIO_ADE_CODEX_HOME'],
       launchConfig: {
         agentCommand: 'codex',
         agentArgs: '',
@@ -166,7 +166,7 @@ describe('launchAiVaultSessionInNewTab', () => {
       launchAgent: 'codex',
       command: "codex resume 'session-1'",
       env: { CODEX_PROFILE: 'runtime' },
-      envToDelete: ['CODEX_HOME', 'ORCA_CODEX_HOME'],
+      envToDelete: ['CODEX_HOME', 'AIO_ADE_CODEX_HOME'],
       launchConfig: {
         agentCommand: 'codex',
         agentArgs: '',

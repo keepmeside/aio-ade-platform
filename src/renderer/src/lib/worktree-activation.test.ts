@@ -24,7 +24,7 @@ function setSetupScriptLaunchMode(mode: SetupScriptLaunchMode | null): void {
 }
 
 afterEach(() => {
-  delete (globalThis as { __ORCA_WEB_CLIENT__?: boolean }).__ORCA_WEB_CLIENT__
+  delete (globalThis as { __AIO_ADE_WEB_CLIENT__?: boolean }).__AIO_ADE_WEB_CLIENT__
   useAppStore.setState((state) => ({
     settings: state.settings
       ? { ...state.settings, activeRuntimeEnvironmentId: null }
@@ -65,10 +65,10 @@ describe('ensureWorktreeHasInitialTerminal', () => {
     const store = createMockStore({ createTab })
 
     ensureWorktreeHasInitialTerminal(store, 'wt-1', undefined, {
-      runnerScriptPath: '/tmp/repo/.git/orca/setup-runner.sh',
+      runnerScriptPath: '/tmp/repo/.git/aio-ade/setup-runner.sh',
       envVars: {
-        ORCA_ROOT_PATH: '/tmp/repo',
-        ORCA_WORKTREE_PATH: '/tmp/worktrees/wt-1'
+        AIO_ADE_ROOT_PATH: '/tmp/repo',
+        AIO_ADE_WORKTREE_PATH: '/tmp/worktrees/wt-1'
       }
     })
 
@@ -79,10 +79,10 @@ describe('ensureWorktreeHasInitialTerminal', () => {
       recordInteraction: false
     })
     expect(store.queueTabStartupCommand).toHaveBeenCalledWith('tab-2', {
-      command: 'bash /tmp/repo/.git/orca/setup-runner.sh',
+      command: 'bash /tmp/repo/.git/aio-ade/setup-runner.sh',
       env: {
-        ORCA_ROOT_PATH: '/tmp/repo',
-        ORCA_WORKTREE_PATH: '/tmp/worktrees/wt-1'
+        AIO_ADE_ROOT_PATH: '/tmp/repo',
+        AIO_ADE_WORKTREE_PATH: '/tmp/worktrees/wt-1'
       }
     })
     expect(store.queueTabSetupSplit).not.toHaveBeenCalled()
@@ -151,8 +151,8 @@ describe('ensureWorktreeHasInitialTerminal', () => {
       'wt-1',
       undefined,
       {
-        runnerScriptPath: '/tmp/repo/.git/orca/setup-runner.sh',
-        envVars: { ORCA_WORKTREE_PATH: '/tmp/worktrees/wt-1' }
+        runnerScriptPath: '/tmp/repo/.git/aio-ade/setup-runner.sh',
+        envVars: { AIO_ADE_WORKTREE_PATH: '/tmp/worktrees/wt-1' }
       },
       undefined,
       {
@@ -178,8 +178,8 @@ describe('ensureWorktreeHasInitialTerminal', () => {
     })
     expect(store.queueTabStartupCommand).toHaveBeenCalledWith('tab-1', { command: 'pnpm dev' })
     expect(store.queueTabStartupCommand).toHaveBeenCalledWith('tab-2', {
-      command: 'bash /tmp/repo/.git/orca/setup-runner.sh',
-      env: { ORCA_WORKTREE_PATH: '/tmp/worktrees/wt-1' }
+      command: 'bash /tmp/repo/.git/aio-ade/setup-runner.sh',
+      env: { AIO_ADE_WORKTREE_PATH: '/tmp/worktrees/wt-1' }
     })
   })
 
@@ -220,7 +220,7 @@ describe('ensureWorktreeHasInitialTerminal', () => {
   })
 
   it('does not create a local fallback tab in the paired web runtime client', () => {
-    ;(globalThis as { __ORCA_WEB_CLIENT__?: boolean }).__ORCA_WEB_CLIENT__ = true
+    ;(globalThis as { __AIO_ADE_WEB_CLIENT__?: boolean }).__AIO_ADE_WEB_CLIENT__ = true
     useAppStore.setState((state) => ({
       settings: state.settings
         ? { ...state.settings, activeRuntimeEnvironmentId: 'web-runtime-1' }
@@ -246,7 +246,7 @@ describe('ensureWorktreeHasInitialTerminal', () => {
   })
 
   it('queues returned setup fallback on an existing web runtime tab', () => {
-    ;(globalThis as { __ORCA_WEB_CLIENT__?: boolean }).__ORCA_WEB_CLIENT__ = true
+    ;(globalThis as { __AIO_ADE_WEB_CLIENT__?: boolean }).__AIO_ADE_WEB_CLIENT__ = true
     useAppStore.setState((state) => ({
       settings: state.settings
         ? { ...state.settings, activeRuntimeEnvironmentId: 'web-runtime-1' }
@@ -276,8 +276,8 @@ describe('ensureWorktreeHasInitialTerminal', () => {
       'wt-1',
       { command: 'claude' },
       {
-        runnerScriptPath: '/tmp/repo/.git/orca/setup-runner.sh',
-        envVars: { ORCA_ROOT_PATH: '/tmp/repo' },
+        runnerScriptPath: '/tmp/repo/.git/aio-ade/setup-runner.sh',
+        envVars: { AIO_ADE_ROOT_PATH: '/tmp/repo' },
         waitForAgentStartup: true
       }
     )
@@ -291,7 +291,7 @@ describe('ensureWorktreeHasInitialTerminal', () => {
     expect(store.queueTabStartupCommand).toHaveBeenCalledWith(
       'tab-2',
       expect.objectContaining({
-        command: expect.stringContaining('bash /tmp/repo/.git/orca/setup-runner.sh')
+        command: expect.stringContaining('bash /tmp/repo/.git/aio-ade/setup-runner.sh')
       })
     )
     expect(store.queueTabStartupCommand).toHaveBeenCalledWith(
@@ -303,7 +303,7 @@ describe('ensureWorktreeHasInitialTerminal', () => {
   })
 
   it('holds the issue command for the first mirrored web runtime tab when none exists yet', () => {
-    ;(globalThis as { __ORCA_WEB_CLIENT__?: boolean }).__ORCA_WEB_CLIENT__ = true
+    ;(globalThis as { __AIO_ADE_WEB_CLIENT__?: boolean }).__AIO_ADE_WEB_CLIENT__ = true
     useAppStore.setState((state) => ({
       settings: state.settings
         ? { ...state.settings, activeRuntimeEnvironmentId: 'web-runtime-1' }
@@ -373,7 +373,7 @@ describe('ensureWorktreeHasInitialTerminal', () => {
     })
 
     ensureWorktreeHasInitialTerminal(store, 'wt-1', undefined, {
-      runnerScriptPath: '/tmp/repo/.git/orca/setup-runner.sh',
+      runnerScriptPath: '/tmp/repo/.git/aio-ade/setup-runner.sh',
       envVars: {}
     })
 
@@ -394,9 +394,9 @@ describe('ensureWorktreeHasInitialTerminal', () => {
     })
 
     const result = ensureWorktreeHasInitialTerminal(store, 'wt-1', undefined, {
-      runnerScriptPath: '/tmp/repo/.git/orca/setup-runner.sh',
+      runnerScriptPath: '/tmp/repo/.git/aio-ade/setup-runner.sh',
       command: 'bash -lc wrapped-setup',
-      envVars: { ORCA_ROOT_PATH: '/tmp/repo' }
+      envVars: { AIO_ADE_ROOT_PATH: '/tmp/repo' }
     })
 
     expect(result).toBe('tab-1')
@@ -407,7 +407,7 @@ describe('ensureWorktreeHasInitialTerminal', () => {
     })
     expect(store.queueTabStartupCommand).toHaveBeenCalledWith('tab-2', {
       command: 'bash -lc wrapped-setup',
-      env: { ORCA_ROOT_PATH: '/tmp/repo' }
+      env: { AIO_ADE_ROOT_PATH: '/tmp/repo' }
     })
     expect(store.queueTabSetupSplit).not.toHaveBeenCalled()
   })
@@ -426,8 +426,8 @@ describe('ensureWorktreeHasInitialTerminal', () => {
       'wt-1',
       { command: 'claude' },
       {
-        runnerScriptPath: '/tmp/repo/.git/orca/setup-runner.sh',
-        envVars: { ORCA_ROOT_PATH: '/tmp/repo' },
+        runnerScriptPath: '/tmp/repo/.git/aio-ade/setup-runner.sh',
+        envVars: { AIO_ADE_ROOT_PATH: '/tmp/repo' },
         waitForAgentStartup: true
       }
     )
@@ -437,7 +437,7 @@ describe('ensureWorktreeHasInitialTerminal', () => {
     expect(store.queueTabStartupCommand).toHaveBeenCalledWith(
       'tab-2',
       expect.objectContaining({
-        command: expect.stringContaining('bash /tmp/repo/.git/orca/setup-runner.sh')
+        command: expect.stringContaining('bash /tmp/repo/.git/aio-ade/setup-runner.sh')
       })
     )
     expect(store.queueTabStartupCommand).toHaveBeenCalledWith(
@@ -593,8 +593,8 @@ describe('ensureWorktreeHasInitialTerminal', () => {
       'wt-1',
       { command: 'claude' },
       {
-        runnerScriptPath: '/tmp/repo/.git/orca/setup-runner.sh',
-        envVars: { ORCA_ROOT_PATH: '/tmp/repo' },
+        runnerScriptPath: '/tmp/repo/.git/aio-ade/setup-runner.sh',
+        envVars: { AIO_ADE_ROOT_PATH: '/tmp/repo' },
         waitForAgentStartup: true
       }
     )
@@ -620,7 +620,7 @@ describe('ensureWorktreeHasInitialTerminal', () => {
     expect(store.queueTabStartupCommand).toHaveBeenCalledWith(
       'tab-2',
       expect.objectContaining({
-        command: expect.stringContaining('bash /tmp/repo/.git/orca/setup-runner.sh')
+        command: expect.stringContaining('bash /tmp/repo/.git/aio-ade/setup-runner.sh')
       })
     )
     expect(store.queueTabSetupSplit).not.toHaveBeenCalled()
@@ -637,8 +637,8 @@ describe('ensureWorktreeHasInitialTerminal', () => {
       'wt-1',
       { command: 'claude' },
       {
-        runnerScriptPath: '/tmp/repo/.git/orca/setup-runner.sh',
-        envVars: { ORCA_ROOT_PATH: '/tmp/repo' }
+        runnerScriptPath: '/tmp/repo/.git/aio-ade/setup-runner.sh',
+        envVars: { AIO_ADE_ROOT_PATH: '/tmp/repo' }
       }
     )
 
@@ -646,8 +646,8 @@ describe('ensureWorktreeHasInitialTerminal', () => {
       command: 'claude'
     })
     expect(store.queueTabStartupCommand).toHaveBeenCalledWith('tab-2', {
-      command: 'bash /tmp/repo/.git/orca/setup-runner.sh',
-      env: { ORCA_ROOT_PATH: '/tmp/repo' }
+      command: 'bash /tmp/repo/.git/aio-ade/setup-runner.sh',
+      env: { AIO_ADE_ROOT_PATH: '/tmp/repo' }
     })
   })
 
@@ -660,8 +660,8 @@ describe('ensureWorktreeHasInitialTerminal', () => {
       'wt-1',
       { command: 'claude' },
       {
-        runnerScriptPath: '/tmp/repo/.git/orca/setup-runner.sh',
-        envVars: { ORCA_ROOT_PATH: '/tmp/repo' },
+        runnerScriptPath: '/tmp/repo/.git/aio-ade/setup-runner.sh',
+        envVars: { AIO_ADE_ROOT_PATH: '/tmp/repo' },
         waitForAgentStartup: true
       }
     )
@@ -673,13 +673,13 @@ describe('ensureWorktreeHasInitialTerminal', () => {
       })
     )
     expect(store.queueTabSetupSplit).toHaveBeenCalledWith('tab-1', {
-      command: expect.stringContaining('bash /tmp/repo/.git/orca/setup-runner.sh'),
-      env: { ORCA_ROOT_PATH: '/tmp/repo' },
+      command: expect.stringContaining('bash /tmp/repo/.git/aio-ade/setup-runner.sh'),
+      env: { AIO_ADE_ROOT_PATH: '/tmp/repo' },
       direction: 'vertical'
     })
     expect(store.queueTabSetupSplit).toHaveBeenCalledWith('tab-1', {
       command: expect.stringContaining('printf'),
-      env: { ORCA_ROOT_PATH: '/tmp/repo' },
+      env: { AIO_ADE_ROOT_PATH: '/tmp/repo' },
       direction: 'vertical'
     })
   })
@@ -756,10 +756,10 @@ describe('ensureWorktreeHasInitialTerminal', () => {
     const store = createMockStore()
 
     ensureWorktreeHasInitialTerminal(store, 'wt-1', undefined, undefined, {
-      runnerScriptPath: '/tmp/repo/.git/orca/issue-command-runner.sh',
+      runnerScriptPath: '/tmp/repo/.git/aio-ade/issue-command-runner.sh',
       envVars: {
-        ORCA_ROOT_PATH: '/tmp/repo',
-        ORCA_WORKTREE_PATH: '/tmp/worktrees/wt-1'
+        AIO_ADE_ROOT_PATH: '/tmp/repo',
+        AIO_ADE_WORKTREE_PATH: '/tmp/worktrees/wt-1'
       }
     })
 
@@ -769,10 +769,10 @@ describe('ensureWorktreeHasInitialTerminal', () => {
     expect(store.setActiveTab).toHaveBeenCalledWith('tab-1')
     expect(store.queueTabSetupSplit).not.toHaveBeenCalled()
     expect(store.queueTabIssueCommandSplit).toHaveBeenCalledWith('tab-1', {
-      command: 'bash /tmp/repo/.git/orca/issue-command-runner.sh',
+      command: 'bash /tmp/repo/.git/aio-ade/issue-command-runner.sh',
       env: {
-        ORCA_ROOT_PATH: '/tmp/repo',
-        ORCA_WORKTREE_PATH: '/tmp/worktrees/wt-1'
+        AIO_ADE_ROOT_PATH: '/tmp/repo',
+        AIO_ADE_WORKTREE_PATH: '/tmp/worktrees/wt-1'
       }
     })
   })
@@ -786,24 +786,24 @@ describe('ensureWorktreeHasInitialTerminal', () => {
       'wt-1',
       undefined,
       {
-        runnerScriptPath: '/tmp/repo/.git/orca/setup-runner.sh',
-        envVars: { ORCA_ROOT_PATH: '/tmp/repo' }
+        runnerScriptPath: '/tmp/repo/.git/aio-ade/setup-runner.sh',
+        envVars: { AIO_ADE_ROOT_PATH: '/tmp/repo' }
       },
       {
-        runnerScriptPath: '/tmp/repo/.git/orca/issue-command-runner.sh',
-        envVars: { ORCA_ROOT_PATH: '/tmp/repo' }
+        runnerScriptPath: '/tmp/repo/.git/aio-ade/issue-command-runner.sh',
+        envVars: { AIO_ADE_ROOT_PATH: '/tmp/repo' }
       }
     )
 
     expect(store.queueTabStartupCommand).not.toHaveBeenCalled()
     expect(store.queueTabSetupSplit).toHaveBeenCalledWith('tab-1', {
-      command: 'bash /tmp/repo/.git/orca/setup-runner.sh',
-      env: { ORCA_ROOT_PATH: '/tmp/repo' },
+      command: 'bash /tmp/repo/.git/aio-ade/setup-runner.sh',
+      env: { AIO_ADE_ROOT_PATH: '/tmp/repo' },
       direction: 'vertical'
     })
     expect(store.queueTabIssueCommandSplit).toHaveBeenCalledWith('tab-1', {
-      command: 'bash /tmp/repo/.git/orca/issue-command-runner.sh',
-      env: { ORCA_ROOT_PATH: '/tmp/repo' }
+      command: 'bash /tmp/repo/.git/aio-ade/issue-command-runner.sh',
+      env: { AIO_ADE_ROOT_PATH: '/tmp/repo' }
     })
   })
 
@@ -821,13 +821,13 @@ describe('ensureWorktreeHasInitialTerminal', () => {
     const store = createMockStore()
 
     ensureWorktreeHasInitialTerminal(store, 'wt-1', undefined, {
-      runnerScriptPath: '/tmp/repo/.git/orca/setup-runner.sh',
-      envVars: { ORCA_ROOT_PATH: '/tmp/repo' }
+      runnerScriptPath: '/tmp/repo/.git/aio-ade/setup-runner.sh',
+      envVars: { AIO_ADE_ROOT_PATH: '/tmp/repo' }
     })
 
     expect(store.queueTabSetupSplit).toHaveBeenCalledWith('tab-1', {
-      command: 'bash /tmp/repo/.git/orca/setup-runner.sh',
-      env: { ORCA_ROOT_PATH: '/tmp/repo' },
+      command: 'bash /tmp/repo/.git/aio-ade/setup-runner.sh',
+      env: { AIO_ADE_ROOT_PATH: '/tmp/repo' },
       direction: 'vertical'
     })
   })
@@ -837,13 +837,13 @@ describe('ensureWorktreeHasInitialTerminal', () => {
     const store = createMockStore()
 
     ensureWorktreeHasInitialTerminal(store, 'wt-1', undefined, {
-      runnerScriptPath: '/tmp/repo/.git/orca/setup-runner.sh',
-      envVars: { ORCA_ROOT_PATH: '/tmp/repo' }
+      runnerScriptPath: '/tmp/repo/.git/aio-ade/setup-runner.sh',
+      envVars: { AIO_ADE_ROOT_PATH: '/tmp/repo' }
     })
 
     expect(store.queueTabSetupSplit).toHaveBeenCalledWith('tab-1', {
-      command: 'bash /tmp/repo/.git/orca/setup-runner.sh',
-      env: { ORCA_ROOT_PATH: '/tmp/repo' },
+      command: 'bash /tmp/repo/.git/aio-ade/setup-runner.sh',
+      env: { AIO_ADE_ROOT_PATH: '/tmp/repo' },
       direction: 'horizontal'
     })
   })
@@ -855,8 +855,8 @@ describe('ensureWorktreeHasInitialTerminal', () => {
     const store = createMockStore({ createTab })
 
     ensureWorktreeHasInitialTerminal(store, 'wt-1', undefined, {
-      runnerScriptPath: '/tmp/repo/.git/orca/setup-runner.sh',
-      envVars: { ORCA_ROOT_PATH: '/tmp/repo' }
+      runnerScriptPath: '/tmp/repo/.git/aio-ade/setup-runner.sh',
+      envVars: { AIO_ADE_ROOT_PATH: '/tmp/repo' }
     })
 
     expect(createTab).toHaveBeenCalledTimes(2)
@@ -868,8 +868,8 @@ describe('ensureWorktreeHasInitialTerminal', () => {
       recordInteraction: false
     })
     expect(store.queueTabStartupCommand).toHaveBeenCalledWith('tab-2', {
-      command: 'bash /tmp/repo/.git/orca/setup-runner.sh',
-      env: { ORCA_ROOT_PATH: '/tmp/repo' }
+      command: 'bash /tmp/repo/.git/aio-ade/setup-runner.sh',
+      env: { AIO_ADE_ROOT_PATH: '/tmp/repo' }
     })
     expect(store.queueTabSetupSplit).not.toHaveBeenCalled()
   })

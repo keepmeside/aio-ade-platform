@@ -2,7 +2,14 @@ import { execFile } from 'node:child_process'
 import { createHash } from 'node:crypto'
 
 const ACTIVE_CLAUDE_SERVICE = 'Claude Code-credentials'
-const ORCA_CLAUDE_SERVICE = 'Orca Claude Code Managed Credentials'
+/** Canonical service for credentials this app manages itself. */
+const MANAGED_CLAUDE_SERVICE = 'AIO-ADE Claude Code Managed Credentials'
+/* Why: the pre-rebrand service name. Managed credentials written by an older build live
+ * under it, and a Keychain entry is invisible to a diff review — renaming without reading
+ * both would log the user out of every managed account with nothing failing loudly. Reads
+ * fall back to it and deletes cover it; only writes move to the canonical name, so an
+ * account re-authenticated once migrates on its own. */
+const LEGACY_ORCA_CLAUDE_SERVICE = 'Orca Claude Code Managed Credentials'
 const KEYCHAIN_COMMAND_TIMEOUT_MS = 3_000
 
 type SecurityCommandResult = {
@@ -64,18 +71,28 @@ export async function deleteActiveClaudeKeychainCredentialsStrict(
 export async function readManagedClaudeKeychainCredentials(
   accountId: string
 ): Promise<string | null> {
-  return readKeychainPassword(ORCA_CLAUDE_SERVICE, accountId)
+  for (const service of [MANAGED_CLAUDE_SERVICE, LEGACY_ORCA_CLAUDE_SERVICE]) {
+    const credentials = await readKeychainPassword(service, accountId)
+    if (credentials) {
+      return credentials
+    }
+  }
+  return null
 }
 
 export async function writeManagedClaudeKeychainCredentials(
   accountId: string,
   contents: string
 ): Promise<void> {
-  await writeKeychainPassword(ORCA_CLAUDE_SERVICE, accountId, contents)
+  await writeKeychainPassword(MANAGED_CLAUDE_SERVICE, accountId, contents)
 }
 
 export async function deleteManagedClaudeKeychainCredentials(accountId: string): Promise<void> {
-  await deleteKeychainPassword(ORCA_CLAUDE_SERVICE, accountId)
+  // Why: both services, or forgetting an account leaves its credential readable under the
+  // legacy name.
+  for (const service of [MANAGED_CLAUDE_SERVICE, LEGACY_ORCA_CLAUDE_SERVICE]) {
+    await deleteKeychainPassword(service, accountId)
+  }
 }
 
 function getKeychainUser(): string {

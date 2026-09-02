@@ -132,7 +132,7 @@ describe('submitFolderWorkspaceCreate', () => {
       autoRenameBranchFromWork: true,
       agentCmdOverrides: {},
       agentArgs: '--model gpt-5.4',
-      agentEnv: { ORCA_AGENT_PROFILE: 'review' },
+      agentEnv: { AIO_ADE_AGENT_PROFILE: 'review' },
       launchSource: 'new_workspace_composer',
       runtimeEnvironmentId: 'env-1',
       createFolderWorkspace,
@@ -153,7 +153,7 @@ describe('submitFolderWorkspaceCreate', () => {
         runtimeEnvironmentId: 'env-1',
         startup: expect.objectContaining({
           command: expect.stringContaining('codex'),
-          env: { ORCA_AGENT_PROFILE: 'review' },
+          env: { AIO_ADE_AGENT_PROFILE: 'review' },
           telemetry: expect.objectContaining({
             launch_source: 'new_workspace_composer'
           })
@@ -198,7 +198,7 @@ describe('submitFolderWorkspaceCreate', () => {
       type: 'issue' as const,
       number: 42,
       title: 'Restore checkout polish',
-      url: 'https://github.com/stablyai/orca/issues/42',
+      url: 'https://github.com/keepmeside/aio-ade-platform/issues/42',
       repoId: 'repo-1'
     }
 
@@ -231,7 +231,7 @@ describe('submitFolderWorkspaceCreate', () => {
       type: 'pr' as const,
       number: 91,
       title: 'Restore linked quick-create',
-      url: 'https://github.com/stablyai/orca/pull/91',
+      url: 'https://github.com/keepmeside/aio-ade-platform/pull/91',
       repoId: 'repo-1'
     }
 
@@ -288,7 +288,7 @@ describe('submitFolderWorkspaceCreate', () => {
       type: 'pr' as const,
       number: 92,
       title: 'Trust remote folder draft',
-      url: 'https://github.com/stablyai/orca/pull/92',
+      url: 'https://github.com/keepmeside/aio-ade-platform/pull/92',
       repoId: 'repo-1'
     }
     const projectGroup = {
@@ -344,13 +344,13 @@ describe('submitFolderWorkspaceCreate', () => {
     })
 
     const startup = mocks.activateAndRevealFolderWorkspace.mock.calls[0]?.[1]?.startup
-    expect(startup?.command).toBe('orca-ide claude-teams')
+    expect(startup?.command).toBe('aio-ade claude-teams')
     expect(mocks.ensureAgentStartupInTerminal).toHaveBeenCalledWith({
       worktreeId: folderWorkspaceKey('folder-workspace-1'),
       primaryTabId: 'tab-1',
       startup: expect.objectContaining({
         agent: 'claude-agent-teams',
-        launchCommand: 'orca-ide claude-teams',
+        launchCommand: 'aio-ade claude-teams',
         followupPrompt: 'Fix the failing folder prompt flow'
       })
     })
@@ -445,7 +445,7 @@ describe('submitFolderWorkspaceCreate', () => {
     )
     expect(startup?.command).not.toContain('Distinctive folder Linear body.')
     expect(startup?.command).not.toContain('--- BEGIN LINKED WORK ITEM CONTEXT ---')
-    expect(startup?.command).not.toContain('orca linear')
+    expect(startup?.command).not.toContain('aio-ade linear')
     expect(mocks.ensureAgentStartupInTerminal).not.toHaveBeenCalled()
   })
 
@@ -456,7 +456,7 @@ describe('submitFolderWorkspaceCreate', () => {
       type: 'issue' as const,
       number: 42,
       title: 'Restore checkout polish',
-      url: 'https://github.com/stablyai/orca/issues/42',
+      url: 'https://github.com/keepmeside/aio-ade-platform/issues/42',
       repoId: 'repo-1'
     }
 
@@ -644,7 +644,7 @@ describe('buildFolderWorkspaceLinkedStartupPlan', () => {
         type: 'issue',
         number: 42,
         title: 'Restore linked quick-create',
-        url: 'https://github.com/stablyai/orca/issues/42',
+        url: 'https://github.com/keepmeside/aio-ade-platform/issues/42',
         repoId: 'repo-1'
       },
       note: '',

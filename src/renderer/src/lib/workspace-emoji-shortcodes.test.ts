@@ -40,7 +40,7 @@ describe('workspace emoji shortcodes', () => {
   })
 
   it('leaves unknown completed shortcodes unchanged', () => {
-    expect(replaceCompletedWorkspaceEmojiShortcode(':orca_custom:', 13)).toBeNull()
+    expect(replaceCompletedWorkspaceEmojiShortcode(':aio_ade_custom:', 13)).toBeNull()
   })
 
   it('applies a selected suggestion to the active shortcode range', () => {

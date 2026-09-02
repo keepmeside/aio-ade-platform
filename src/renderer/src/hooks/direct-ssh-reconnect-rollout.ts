@@ -1,4 +1,5 @@
-export const DIRECT_SSH_RECONNECT_SESSION_ROUTE_KEY = 'orca.directSshReconnectCoordinator.enabled'
+export const DIRECT_SSH_RECONNECT_SESSION_ROUTE_KEY =
+  'aio-ade.directSshReconnectCoordinator.enabled'
 
 export function resolveDirectSshReconnectCoordinatorRouting(args: {
   buildValue?: string

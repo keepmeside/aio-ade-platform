@@ -90,8 +90,8 @@ vi.mock('./SshDisconnectedDialog', () => ({
 
 vi.mock('./WorktreeContextMenu', () => ({
   default: ({ children }: { children: ReactNode }) => <>{children}</>,
-  CLOSE_ALL_CONTEXT_MENUS_EVENT: 'orca:test-close-context-menus',
-  WORKTREE_CONTEXT_MENU_SCOPE_ATTR: 'data-orca-context-menu-scope',
+  CLOSE_ALL_CONTEXT_MENUS_EVENT: 'aio-ade:test-close-context-menus',
+  WORKTREE_CONTEXT_MENU_SCOPE_ATTR: 'data-aio-ade-context-menu-scope',
   WORKTREE_NATIVE_CONTEXT_MENU_ATTR: 'data-worktree-native-context-menu'
 }))
 
@@ -173,7 +173,7 @@ describe('WorktreeCard SSH reconnect prompt', () => {
     expect(markup).toContain('Remote Mac disconnected')
   })
 
-  it('distinguishes connected worktrees on different Orca servers', () => {
+  it('distinguishes connected worktrees on different AIO-ADE servers', () => {
     runtimeEnvironments = [
       { id: 'env-1', name: 'Remote Mac' },
       { id: 'env-2', name: 'Build Linux' }

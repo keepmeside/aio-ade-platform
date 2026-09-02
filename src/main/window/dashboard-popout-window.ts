@@ -19,7 +19,7 @@ const MIN_HEIGHT = 360
 const DEFAULT_WIDTH = 960
 const DEFAULT_HEIGHT = 720
 const DEFAULT_VIEW = 'kanban'
-const DASHBOARD_POPOUT_PARTITION = 'orca-dashboard-popout'
+const DASHBOARD_POPOUT_PARTITION = 'aio-ade-dashboard-popout'
 
 // Why: singleton — the dashboard is a companion surface, so a second "Pop Out"
 // request focuses the existing window rather than spawning duplicates.
@@ -157,7 +157,7 @@ export function createOrFocusDashboardPopout(
     ...(savedBounds ? { x: savedBounds.x, y: savedBounds.y } : {}),
     minWidth: MIN_WIDTH,
     minHeight: MIN_HEIGHT,
-    title: 'Orca Agent Dashboard',
+    title: 'AIO-ADE Agent Dashboard',
     show: false,
     autoHideMenuBar: true,
     backgroundColor: nativeTheme.shouldUseDarkColors ? '#0a0a0a' : '#ffffff',

@@ -7,6 +7,7 @@ import { createServer, type Server, type Socket } from 'node:net'
 import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { APP_HOME_DIR_NAME, getPosixAppHomePath } from '../../shared/app-home-paths'
 import type { SFTPWrapper } from 'ssh2'
 import type * as osModule from 'node:os'
 
@@ -16,7 +17,7 @@ const { homedirMock } = vi.hoisted(() => ({
 
 vi.mock('electron', () => ({
   app: {
-    getPath: () => '/tmp/orca-user-data'
+    getPath: () => '/tmp/aio-ade-user-data'
   }
 }))
 
@@ -51,11 +52,11 @@ const JSON_INSTALLERS = [
   }
 ] as const
 
-const MANAGED_HOOKS_DIR_NEEDLE = '/.orca/agent-hooks/'
+const MANAGED_HOOKS_DIR_NEEDLE = `/${APP_HOME_DIR_NAME}/agent-hooks/`
 // Why: statusLine is not a hook — Claude's schema has no timeout field (type/command/padding/refreshInterval), and a slow statusline can't block agent turns.
 const STATUSLINE_SCRIPT_NEEDLE = '-statusline.'
 
-// Walk the parsed config and assert every Orca-managed command carrier (a node
+// Walk the parsed config and assert every AIO-ADE-managed command carrier (a node
 // with a `command`/`bash`/`powershell` string pointing at the managed script
 // dir) has a positive config-level timeout sibling (`timeout` or the
 // provider-specific `timeoutSec`). Returns the count of managed carriers found
@@ -162,12 +163,12 @@ describe('managed agent hook timeouts', () => {
         const child = spawn('sh', [scriptPath], {
           env: {
             ...process.env,
-            ORCA_AGENT_HOOK_ENDPOINT: '',
-            ORCA_AGENT_HOOK_PORT: String(port),
-            ORCA_AGENT_HOOK_TOKEN: 'test-token',
-            ORCA_PANE_KEY: 'pane-1',
-            ORCA_TAB_ID: 'tab-1',
-            ORCA_WORKTREE_ID: 'wt-1'
+            AIO_ADE_AGENT_HOOK_ENDPOINT: '',
+            AIO_ADE_AGENT_HOOK_PORT: String(port),
+            AIO_ADE_AGENT_HOOK_TOKEN: 'test-token',
+            AIO_ADE_PANE_KEY: 'pane-1',
+            AIO_ADE_TAB_ID: 'tab-1',
+            AIO_ADE_WORKTREE_ID: 'wt-1'
           },
           stdio: ['pipe', 'ignore', 'ignore']
         })
@@ -198,9 +199,11 @@ describe('managed agent hook timeouts', () => {
         // Reuse a real generated POSIX wrapper rather than re-deriving the script.
         const { sftp, fs } = createFakeSftp()
         await new CodexHookService().installRemote(sftp, REMOTE_HOME)
-        const wrapperBody = fs.files.get(`${REMOTE_HOME}/.orca/agent-hooks/codex-hook.sh`)!
+        const wrapperBody = fs.files.get(
+          getPosixAppHomePath(REMOTE_HOME, 'agent-hooks', 'codex-hook.sh')
+        )!
 
-        tempDir = mkdtempSync(join(tmpdir(), 'orca-hook-timeout-'))
+        tempDir = mkdtempSync(join(tmpdir(), 'aio-ade-hook-timeout-'))
         const scriptPath = join(tempDir, 'codex-hook.sh')
         writeFileSync(scriptPath, wrapperBody, 'utf8')
         chmodSync(scriptPath, 0o755)

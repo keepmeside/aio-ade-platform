@@ -1,7 +1,7 @@
 // Install-owner identity for relay uploads that cross a split shell/SFTP namespace.
 //
 // The shell and SFTP paths share one validated home-relative suffix
-// (`.orca-remote/relay-<fullVersion>`); a random marker inside the install lock
+// (`.aio-ade-remote/relay-<fullVersion>`); a random marker inside the install lock
 // lets each SFTP session prove it is looking at THIS install's directory.
 //
 // See: docs/ssh-relay-sftp-namespace.md

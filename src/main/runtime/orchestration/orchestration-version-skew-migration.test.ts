@@ -17,7 +17,7 @@ describe('OrchestrationDb version-skew migration', () => {
   })
 
   function createLegacySchemaClaimingVersion17(): string {
-    tempDir = mkdtempSync(join(tmpdir(), 'orca-db-version-skew-'))
+    tempDir = mkdtempSync(join(tmpdir(), 'aio-ade-db-version-skew-'))
     const dbPath = join(tempDir, 'orchestration.db')
     const raw = new Database(dbPath)
     raw.exec(`

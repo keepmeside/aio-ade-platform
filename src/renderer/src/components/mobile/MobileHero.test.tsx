@@ -148,7 +148,7 @@ describe('HeroFlow height', () => {
     // nodes in a flex row cannot shrink below max-content and overflow the track.
     expect(notice.querySelector('.min-w-0')).not.toBeNull()
     expect(notice.className).toMatch(/\bmin-w-0\b/)
-    expect(screen.getByText('Orca Relay is in beta.')).toBeInTheDocument()
+    expect(screen.getByText('AIO-ADE Relay is in beta.')).toBeInTheDocument()
   })
 
   it('hides the degradation notice when the code encodes what was selected', () => {
@@ -159,7 +159,7 @@ describe('HeroFlow height', () => {
   it('shows an encoder error while keeping the copy fallback enabled', () => {
     renderFlow(1, {
       pairingQrError: true,
-      pairingUrl: 'orca://pair?code=copy-fallback'
+      pairingUrl: 'aio-ade://pair?code=copy-fallback'
     })
 
     expect(screen.getByRole('alert')).toHaveTextContent('couldn’t be rendered as a QR code')

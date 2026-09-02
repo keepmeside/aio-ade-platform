@@ -1,6 +1,6 @@
-/* Phase-02 guard (plans/260730-0117-aio-ide-rebrand-and-integration/phase-02).
+/* Guard: the React Native companion tree stays deleted.
  *
- * The phase-02 success criterion is written as `Test-Path mobile` = false, which is PowerShell and
+ * The success criterion is written as `Test-Path mobile` = false, which is PowerShell and
  * only runs on one OS. This is the portable form, and it checks the thing that actually matters:
  * the React Native companion tree is gone AND nothing left behind still points at it.
  *
@@ -33,7 +33,7 @@ function trackedPaths(pathspec: string): string[] {
   return stdout.split('\n').filter(Boolean)
 }
 
-describe('phase-02 guard: the React Native companion tree is gone', () => {
+describe('the React Native companion tree is gone', () => {
   it('tracks no files under mobile/', () => {
     expect(trackedPaths('mobile/**')).toEqual([])
   })
@@ -45,7 +45,7 @@ describe('phase-02 guard: the React Native companion tree is gone', () => {
   })
 })
 
-describe('phase-02 guard: nothing points at the deleted tree', () => {
+describe('nothing points at the deleted tree', () => {
   it('does not pass a literal mobile path to oxlint', () => {
     // `oxlint … src config tests mobile` exits non-zero on a nonexistent path, taking `pnpm lint` with it.
     const pkg = JSON.parse(repoFile('package.json')) as { scripts: Record<string, string> }
@@ -90,7 +90,7 @@ describe('phase-02 guard: nothing points at the deleted tree', () => {
   })
 })
 
-describe('phase-02 guard: the desktop web and remote runtime survive', () => {
+describe('the desktop web and remote runtime survive', () => {
   it.each(['build:web', 'build:web-from-renderer', 'dev:web', 'build:desktop'])(
     'keeps the %s script',
     (script) => {

@@ -22,7 +22,7 @@ export function buildPosixHookPayloadCapture(
   ]
 }
 
-export const WINDOWS_HOOK_STDIN_DRAIN_LABEL = 'orca_agent_hook_drain_stdin'
+export const WINDOWS_HOOK_STDIN_DRAIN_LABEL = 'aio_ade_agent_hook_drain_stdin'
 // Why: qualify the stdin reader because Windows searches the worktree for
 // executables before PATH and hook payloads must not reach repo-local code.
 export const WINDOWS_HOOK_STDIN_READER = '"%SystemRoot%\\System32\\more.com"'
@@ -33,9 +33,9 @@ export const WINDOWS_HOOK_STDIN_DRAIN_COMMAND = `${WINDOWS_HOOK_STDIN_READER} >n
 export function buildWindowsHookEnvironmentGuardLines(): string[] {
   const drainTarget = `goto :${WINDOWS_HOOK_STDIN_DRAIN_LABEL}`
   return [
-    `if "%ORCA_AGENT_HOOK_PORT%"=="" ${drainTarget}`,
-    `if "%ORCA_AGENT_HOOK_TOKEN%"=="" ${drainTarget}`,
-    `if "%ORCA_PANE_KEY%"=="" ${drainTarget}`
+    `if "%AIO_ADE_AGENT_HOOK_PORT%"=="" ${drainTarget}`,
+    `if "%AIO_ADE_AGENT_HOOK_TOKEN%"=="" ${drainTarget}`,
+    `if "%AIO_ADE_PANE_KEY%"=="" ${drainTarget}`
   ]
 }
 

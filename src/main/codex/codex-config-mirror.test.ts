@@ -46,10 +46,10 @@ function getRuntimeConfigPath(): string {
 }
 
 beforeEach(() => {
-  fakeHomeDir = mkdtempSync(join(tmpdir(), 'orca-codex-config-home-'))
-  userDataDir = mkdtempSync(join(tmpdir(), 'orca-codex-config-user-data-'))
-  previousUserDataPath = process.env.ORCA_USER_DATA_PATH
-  process.env.ORCA_USER_DATA_PATH = userDataDir
+  fakeHomeDir = mkdtempSync(join(tmpdir(), 'aio-ade-codex-config-home-'))
+  userDataDir = mkdtempSync(join(tmpdir(), 'aio-ade-codex-config-user-data-'))
+  previousUserDataPath = process.env.AIO_ADE_USER_DATA_PATH
+  process.env.AIO_ADE_USER_DATA_PATH = userDataDir
   homedirMock.mockReturnValue(fakeHomeDir)
   getPathMock.mockImplementation((name: string) => {
     if (name === 'userData') {
@@ -64,9 +64,9 @@ afterEach(() => {
   rmSync(fakeHomeDir, { recursive: true, force: true })
   rmSync(userDataDir, { recursive: true, force: true })
   if (previousUserDataPath === undefined) {
-    delete process.env.ORCA_USER_DATA_PATH
+    delete process.env.AIO_ADE_USER_DATA_PATH
   } else {
-    process.env.ORCA_USER_DATA_PATH = previousUserDataPath
+    process.env.AIO_ADE_USER_DATA_PATH = previousUserDataPath
   }
   vi.clearAllMocks()
 })
@@ -379,7 +379,7 @@ describe('syncSystemConfigIntoManagedCodexHome', () => {
 
   it('deduplicates a CRLF system project header against an LF runtime header', () => {
     mkdirSync(join(userDataDir, 'codex-runtime-home', 'home'), { recursive: true })
-    const projectHeader = '[projects."C:/Users/jinwo/orca/workspaces/orca/repo"]'
+    const projectHeader = '[projects."C:/Users/jinwo/aio-ade/workspaces/aio-ade/repo"]'
     writeFileSync(
       getRuntimeConfigPath(),
       [projectHeader, 'trust_level = "trusted"', ''].join('\n'),
@@ -400,7 +400,7 @@ describe('syncSystemConfigIntoManagedCodexHome', () => {
 
   it('self-heals duplicate project tables in a CRLF runtime config', () => {
     mkdirSync(join(userDataDir, 'codex-runtime-home', 'home'), { recursive: true })
-    const projectHeader = '[projects."C:/Users/jinwo/orca/workspaces/orca/repo"]'
+    const projectHeader = '[projects."C:/Users/jinwo/aio-ade/workspaces/aio-ade/repo"]'
     writeFileSync(
       getRuntimeConfigPath(),
       [

@@ -148,7 +148,7 @@ async function withPlatform<T>(platform: NodeJS.Platform, fn: () => Promise<T>):
 }
 
 function dataFile(): string {
-  return join(testState.dir, 'orca-data.json')
+  return join(testState.dir, 'aio-ade-data.json')
 }
 
 function writeDataFile(data: unknown): void {
@@ -318,7 +318,7 @@ function makeBalancedLegacyPaneLayout(start: number, end: number): TerminalPaneL
 
 describe('Store', () => {
   beforeEach(() => {
-    testState.dir = mkdtempSync(join(tmpdir(), 'orca-test-'))
+    testState.dir = mkdtempSync(join(tmpdir(), 'aio-ade-test-'))
     trackMock.mockReset()
     getCohortAtEmitMock.mockReset()
     getCohortAtEmitMock.mockReturnValue({ nth_repo_added: 2 })
@@ -458,7 +458,7 @@ describe('Store', () => {
 
   it('loads state from an explicit profile data file path', async () => {
     const profileDataDirectory = join(testState.dir, 'profiles', 'local-default')
-    const profileDataFile = join(profileDataDirectory, 'orca-data.json')
+    const profileDataFile = join(profileDataDirectory, 'aio-ade-data.json')
     mkdirSync(profileDataDirectory, { recursive: true })
     writeDataFile({
       schemaVersion: 1,
@@ -487,16 +487,16 @@ describe('Store', () => {
       repos: [
         makeRepo({
           id: 'local-repo',
-          path: '/Users/alice/orca',
-          displayName: 'Orca',
-          upstream: { owner: 'StablyAI', repo: 'Orca' }
+          path: '/Users/alice/aio-ade',
+          displayName: 'AIO-ADE',
+          upstream: { owner: 'KeepMeSide', repo: 'AIO-ADE-Platform' }
         }),
         makeRepo({
           id: 'remote-repo',
-          path: '/home/alice/orca',
-          displayName: 'orca',
+          path: '/home/alice/aio-ade',
+          displayName: 'aio-ade',
           connectionId: 'gpu-vm',
-          upstream: { owner: 'stablyai', repo: 'orca' }
+          upstream: { owner: 'keepmeside', repo: 'aio-ade-platform' }
         })
       ]
     })
@@ -505,22 +505,22 @@ describe('Store', () => {
 
     expect(store.getProjects()).toEqual([
       expect.objectContaining({
-        id: 'github:stablyai/orca',
+        id: 'github:keepmeside/aio-ade-platform',
         sourceRepoIds: ['local-repo', 'remote-repo']
       })
     ])
     expect(store.getProjectHostSetups()).toEqual([
       expect.objectContaining({
         id: 'local-repo',
-        projectId: 'github:stablyai/orca',
+        projectId: 'github:keepmeside/aio-ade-platform',
         hostId: 'local',
-        path: '/Users/alice/orca'
+        path: '/Users/alice/aio-ade'
       }),
       expect.objectContaining({
         id: 'remote-repo',
-        projectId: 'github:stablyai/orca',
+        projectId: 'github:keepmeside/aio-ade-platform',
         hostId: 'ssh:gpu-vm',
-        path: '/home/alice/orca'
+        path: '/home/alice/aio-ade'
       })
     ])
 
@@ -1849,7 +1849,7 @@ describe('Store', () => {
     const store = await createStore()
     store.addRepo(
       makeRepo({
-        upstream: { owner: 'stablyai', repo: 'orca' },
+        upstream: { owner: 'keepmeside', repo: 'aio-ade-platform' },
         connectionId: 'builder'
       })
     )
@@ -1867,7 +1867,7 @@ describe('Store', () => {
 
     expect(automation.runContext).toMatchObject({
       kind: 'workspace-run',
-      projectId: 'github:stablyai/orca',
+      projectId: 'github:keepmeside/aio-ade-platform',
       hostId: toSshExecutionHostId('builder'),
       projectHostSetupId: 'r1',
       repoId: 'r1',
@@ -1876,11 +1876,11 @@ describe('Store', () => {
     expect(automation.sourceContext).toMatchObject({
       kind: 'task-source',
       provider: 'github',
-      projectId: 'github:stablyai/orca',
+      projectId: 'github:keepmeside/aio-ade-platform',
       hostId: toSshExecutionHostId('builder'),
       projectHostSetupId: 'r1',
       repoId: 'r1',
-      providerIdentity: { provider: 'github', owner: 'stablyai', repo: 'orca' }
+      providerIdentity: { provider: 'github', owner: 'keepmeside', repo: 'aio-ade-platform' }
     })
   })
 
@@ -1889,7 +1889,7 @@ describe('Store', () => {
     store.addRepo(
       makeRepo({
         executionHostId: toRuntimeExecutionHostId('gpu-server'),
-        upstream: { owner: 'stablyai', repo: 'orca' }
+        upstream: { owner: 'keepmeside', repo: 'aio-ade-platform' }
       })
     )
 
@@ -1912,7 +1912,7 @@ describe('Store', () => {
 
   it('snapshots automation contexts onto runs', async () => {
     const store = await createStore()
-    store.addRepo(makeRepo({ upstream: { owner: 'stablyai', repo: 'orca' } }))
+    store.addRepo(makeRepo({ upstream: { owner: 'keepmeside', repo: 'aio-ade-platform' } }))
     const automation = store.createAutomation({
       name: 'Nightly',
       prompt: 'Run checks',
@@ -1940,7 +1940,7 @@ describe('Store', () => {
     const store = await createStore()
     store.addRepo(
       makeRepo({
-        upstream: { owner: 'stablyai', repo: 'orca' },
+        upstream: { owner: 'keepmeside', repo: 'aio-ade-platform' },
         connectionId: 'builder'
       })
     )
@@ -1975,7 +1975,7 @@ describe('Store', () => {
 
     expect(migratedAutomation?.runContext).toMatchObject({
       kind: 'workspace-run',
-      projectId: 'github:stablyai/orca',
+      projectId: 'github:keepmeside/aio-ade-platform',
       hostId: toSshExecutionHostId('builder'),
       projectHostSetupId: 'r1',
       repoId: 'r1',
@@ -1984,11 +1984,11 @@ describe('Store', () => {
     expect(migratedAutomation?.sourceContext).toMatchObject({
       kind: 'task-source',
       provider: 'github',
-      projectId: 'github:stablyai/orca',
+      projectId: 'github:keepmeside/aio-ade-platform',
       hostId: toSshExecutionHostId('builder'),
       projectHostSetupId: 'r1',
       repoId: 'r1',
-      providerIdentity: { provider: 'github', owner: 'stablyai', repo: 'orca' }
+      providerIdentity: { provider: 'github', owner: 'keepmeside', repo: 'aio-ade-platform' }
     })
     expect(migratedRun?.runContext).toEqual(migratedAutomation?.runContext)
     expect(migratedRun?.sourceContext).toEqual(migratedAutomation?.sourceContext)
@@ -1998,7 +1998,7 @@ describe('Store', () => {
     const seed = await createStore()
     seed.addRepo(
       makeRepo({
-        upstream: { owner: 'stablyai', repo: 'orca' },
+        upstream: { owner: 'keepmeside', repo: 'aio-ade-platform' },
         connectionId: 'builder'
       })
     )
@@ -2060,7 +2060,7 @@ describe('Store', () => {
     const store = await createStore()
     store.addRepo(
       makeRepo({
-        upstream: { owner: 'stablyai', repo: 'orca' },
+        upstream: { owner: 'keepmeside', repo: 'aio-ade-platform' },
         connectionId: 'builder'
       })
     )
@@ -2603,7 +2603,7 @@ describe('Store', () => {
       customAgentCommand: 'claude'
     })
     store.flush()
-    const persisted = JSON.parse(readFileSync(join(testState.dir, 'orca-data.json'), 'utf-8'))
+    const persisted = JSON.parse(readFileSync(join(testState.dir, 'aio-ade-data.json'), 'utf-8'))
     expect(persisted.settings.sourceControlAi.actions.commitMessage).toEqual({
       agentId: 'claude',
       commandInputTemplate: '{basePrompt}\n\nRollback commit prompt'
@@ -2762,7 +2762,7 @@ describe('Store', () => {
     })
 
     const store = await createStore()
-    expect(store.getSettings().terminalShortcutPolicy).toBe('orca-first')
+    expect(store.getSettings().terminalShortcutPolicy).toBe('aio-ade-first')
   })
 
   it('normalizes malformed source control group order on load', async () => {
@@ -4136,10 +4136,10 @@ describe('Store', () => {
     const store = await createStore()
     store.addRepo({
       ...makeRepo({ id: 'r1', displayName: 'Cloud Project' }),
-      upstream: { owner: 'stablyai', repo: 'cloud-project' }
+      upstream: { owner: 'keepmeside', repo: 'cloud-project' }
     })
     store.createProjectHostSetup({
-      projectId: 'github:stablyai/cloud-project',
+      projectId: 'github:keepmeside/cloud-project',
       hostId: 'ssh:ssh-old',
       setupId: 'cloud-project::ssh-old',
       setupMethod: 'provisioned'
@@ -4157,16 +4157,16 @@ describe('Store', () => {
     const store = await createStore()
     store.addRepo({
       ...makeRepo({ id: 'r1', displayName: 'Cloud Project' }),
-      upstream: { owner: 'stablyai', repo: 'cloud-project' }
+      upstream: { owner: 'keepmeside', repo: 'cloud-project' }
     })
     store.createProjectHostSetup({
-      projectId: 'github:stablyai/cloud-project',
+      projectId: 'github:keepmeside/cloud-project',
       hostId: 'ssh:ssh-old',
       setupId: 'setup-old',
       setupMethod: 'provisioned'
     })
     store.createProjectHostSetup({
-      projectId: 'github:stablyai/cloud-project',
+      projectId: 'github:keepmeside/cloud-project',
       hostId: 'ssh:ssh-new',
       setupId: 'setup-new',
       setupMethod: 'provisioned'
@@ -4198,12 +4198,12 @@ describe('Store', () => {
     store.updateRepo('r1', {
       displayName: 'renamed',
       worktreeBasePath: '../new-worktrees',
-      upstream: { owner: 'stablyai', repo: 'orca' }
+      upstream: { owner: 'keepmeside', repo: 'aio-ade-platform' }
     })
 
     expect(store.getProjects()).toEqual([
       expect.objectContaining({
-        id: 'github:stablyai/orca',
+        id: 'github:keepmeside/aio-ade-platform',
         displayName: 'renamed',
         sourceRepoIds: ['r1']
       })
@@ -4211,7 +4211,7 @@ describe('Store', () => {
     expect(store.getProjectHostSetups()).toEqual([
       expect.objectContaining({
         id: 'r1',
-        projectId: 'github:stablyai/orca',
+        projectId: 'github:keepmeside/aio-ade-platform',
         displayName: 'renamed',
         worktreeBasePath: '../new-worktrees'
       })
@@ -4303,11 +4303,11 @@ describe('Store', () => {
     const store = await createStore()
     store.addRepo({
       ...makeRepo({ id: 'r1', displayName: 'Cloud Project' }),
-      upstream: { owner: 'stablyai', repo: 'cloud-project' }
+      upstream: { owner: 'keepmeside', repo: 'cloud-project' }
     })
 
     const result = store.createProjectHostSetup({
-      projectId: 'github:stablyai/cloud-project',
+      projectId: 'github:keepmeside/cloud-project',
       hostId: 'runtime:gpu-vm',
       setupId: 'cloud-project::gpu-vm',
       displayName: 'GPU VM',
@@ -4316,12 +4316,12 @@ describe('Store', () => {
     })
 
     expect(result?.project).toMatchObject({
-      id: 'github:stablyai/cloud-project',
+      id: 'github:keepmeside/cloud-project',
       displayName: 'Cloud Project'
     })
     expect(result?.setup).toMatchObject({
       id: 'cloud-project::gpu-vm',
-      projectId: 'github:stablyai/cloud-project',
+      projectId: 'github:keepmeside/cloud-project',
       hostId: 'runtime:gpu-vm',
       repoId: '',
       path: '',
@@ -4340,11 +4340,11 @@ describe('Store', () => {
     const store = await createStore()
     store.addRepo({
       ...makeRepo({ id: 'r1', displayName: 'Cloud Project' }),
-      upstream: { owner: 'stablyai', repo: 'cloud-project' }
+      upstream: { owner: 'keepmeside', repo: 'cloud-project' }
     })
     const independentSetup = makeProjectHostSetup({
       id: 'cloud-project::gpu-vm',
-      projectId: 'github:stablyai/cloud-project',
+      projectId: 'github:keepmeside/cloud-project',
       hostId: 'runtime:gpu-vm'
     })
     store.createProjectHostSetup({
@@ -4355,7 +4355,7 @@ describe('Store', () => {
 
     expect(() =>
       store.createProjectHostSetup({
-        projectId: 'github:stablyai/cloud-project',
+        projectId: 'github:keepmeside/cloud-project',
         hostId: 'runtime:gpu-vm',
         setupId: 'duplicate'
       })
@@ -4521,9 +4521,9 @@ describe('Store', () => {
     store.addRepo(makeRepo())
 
     const updated = store.updateRepo('r1', {
-      upstream: { owner: ' stablyai ', repo: ' orca ' }
+      upstream: { owner: ' keepmeside ', repo: ' aio-ade-platform ' }
     })
-    expect(updated!.upstream).toEqual({ owner: 'stablyai', repo: 'orca' })
+    expect(updated!.upstream).toEqual({ owner: 'keepmeside', repo: 'aio-ade-platform' })
 
     store.updateRepo('r1', { upstream: null })
     store.flush()
@@ -4537,15 +4537,15 @@ describe('Store', () => {
 
     const updated = store.updateRepo('r1', {
       gitRemoteIdentity: {
-        canonicalKey: 'gitlab.example.com/team/orca',
+        canonicalKey: 'gitlab.example.com/team/aio-ade',
         remoteName: 'origin',
-        remoteUrl: 'git@gitlab.example.com:team/orca.git'
+        remoteUrl: 'git@gitlab.example.com:team/aio-ade.git'
       }
     })
     expect(updated!.gitRemoteIdentity).toEqual({
-      canonicalKey: 'gitlab.example.com/team/orca',
+      canonicalKey: 'gitlab.example.com/team/aio-ade',
       remoteName: 'origin',
-      remoteUrl: 'git@gitlab.example.com:team/orca.git'
+      remoteUrl: 'git@gitlab.example.com:team/aio-ade.git'
     })
 
     store.updateRepo('r1', { gitRemoteIdentity: null })
@@ -5291,7 +5291,7 @@ describe('Store', () => {
 
   it('normalizes disabled TUI agents on load and update', async () => {
     writeFileSync(
-      join(testState.dir, 'orca-data.json'),
+      join(testState.dir, 'aio-ade-data.json'),
       JSON.stringify({
         settings: {
           disabledTuiAgents: ['codex', 'not-real', 'codex', 'claude']
@@ -5415,7 +5415,7 @@ describe('Store', () => {
 
   it('migrates yolo default args onto untouched agent launch settings', async () => {
     writeFileSync(
-      join(testState.dir, 'orca-data.json'),
+      join(testState.dir, 'aio-ade-data.json'),
       JSON.stringify({
         settings: {
           agentCmdOverrides: {}
@@ -5433,7 +5433,7 @@ describe('Store', () => {
 
   it('does not add yolo defaults for legacy agents with command overrides', async () => {
     writeFileSync(
-      join(testState.dir, 'orca-data.json'),
+      join(testState.dir, 'aio-ade-data.json'),
       JSON.stringify({
         settings: {
           agentCmdOverrides: {
@@ -5450,7 +5450,7 @@ describe('Store', () => {
 
   it('normalizes app icon on load and update', async () => {
     writeFileSync(
-      join(testState.dir, 'orca-data.json'),
+      join(testState.dir, 'aio-ade-data.json'),
       JSON.stringify({
         settings: {
           appIcon: 'not-real'
@@ -5604,7 +5604,7 @@ describe('Store', () => {
     expect(store.getSettings().terminalShortcutPolicy).toBe('terminal-first')
 
     store.updateSettings({ terminalShortcutPolicy: 'terminal-maybe' as never })
-    expect(store.getSettings().terminalShortcutPolicy).toBe('orca-first')
+    expect(store.getSettings().terminalShortcutPolicy).toBe('aio-ade-first')
   })
 
   it('reloads sourceControlViewMode from global settings without touching workspace state', async () => {
@@ -5953,7 +5953,7 @@ describe('Store', () => {
     const store = await createStore()
     store.setGitHubCache({ pr: { 'o/r#7': { fetchedAt: 7 } as never }, issue: {} })
     store.flush()
-    expect(existsSync(join(testState.dir, 'orca-github-cache.json'))).toBe(true)
+    expect(existsSync(join(testState.dir, 'aio-ade-github-cache.json'))).toBe(true)
 
     const restarted = await createStore()
     expect(restarted.getGitHubCache().pr['o/r#7']).toEqual({ fetchedAt: 7 })
@@ -5962,8 +5962,8 @@ describe('Store', () => {
   it('keeps GitHub cache sidecars scoped to explicit profile data files', async () => {
     const profileADir = join(testState.dir, 'profiles', 'a')
     const profileBDir = join(testState.dir, 'profiles', 'b')
-    const profileADataFile = join(profileADir, 'orca-data.json')
-    const profileBDataFile = join(profileBDir, 'orca-data.json')
+    const profileADataFile = join(profileADir, 'aio-ade-data.json')
+    const profileBDataFile = join(profileBDir, 'aio-ade-data.json')
     mkdirSync(profileADir, { recursive: true })
     mkdirSync(profileBDir, { recursive: true })
 
@@ -7441,7 +7441,7 @@ describe('Store', () => {
 
   it('stores terminal scrollback snapshots beside explicit profile data files', async () => {
     const profileDataDirectory = join(testState.dir, 'profiles', 'local-default')
-    const profileDataFile = join(profileDataDirectory, 'orca-data.json')
+    const profileDataFile = join(profileDataDirectory, 'aio-ade-data.json')
     mkdirSync(profileDataDirectory, { recursive: true })
 
     vi.resetModules()
@@ -7467,7 +7467,7 @@ describe('Store', () => {
 
   it('reads legacy terminal scrollback snapshots for explicit profile data files', async () => {
     const profileDataDirectory = join(testState.dir, 'profiles', 'local-default')
-    const profileDataFile = join(profileDataDirectory, 'orca-data.json')
+    const profileDataFile = join(profileDataDirectory, 'aio-ade-data.json')
     const ref = 'v1-11111111111111111111111111111111'
     const legacySnapshotDir = join(testState.dir, 'terminal-scrollback')
     mkdirSync(profileDataDirectory, { recursive: true })
@@ -10720,7 +10720,7 @@ describe('Store.migrateTabSwitchKeybindings', () => {
   // Freezes the tab-switch cohort on first load, keying on `fileExistedOnLoad` (not field presence) so the verdict survives later launches.
 
   beforeEach(() => {
-    testState.dir = mkdtempSync(join(tmpdir(), 'orca-test-'))
+    testState.dir = mkdtempSync(join(tmpdir(), 'aio-ade-test-'))
   })
 
   afterEach(() => {
@@ -10777,7 +10777,7 @@ describe('Store.migrateWorktreeIdentity', () => {
   const NEW_WORKSPACE_KEY = worktreeWorkspaceKey(NEW)
 
   beforeEach(() => {
-    testState.dir = mkdtempSync(join(tmpdir(), 'orca-test-'))
+    testState.dir = mkdtempSync(join(tmpdir(), 'aio-ade-test-'))
   })
 
   afterEach(() => {
@@ -10968,7 +10968,7 @@ describe('Store.migrateWorktreeIdentity', () => {
 
 describe('Store host-partitioned workspace sessions', () => {
   beforeEach(() => {
-    testState.dir = mkdtempSync(join(tmpdir(), 'orca-test-'))
+    testState.dir = mkdtempSync(join(tmpdir(), 'aio-ade-test-'))
   })
 
   afterEach(() => {
@@ -11264,7 +11264,7 @@ describe('Store host-partitioned workspace sessions', () => {
 
 describe('Store native-chat tab viewMode persistence', () => {
   beforeEach(() => {
-    testState.dir = mkdtempSync(join(tmpdir(), 'orca-test-'))
+    testState.dir = mkdtempSync(join(tmpdir(), 'aio-ade-test-'))
   })
 
   afterEach(() => {

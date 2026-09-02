@@ -1,4 +1,4 @@
-/* Phase-03 gate (plans/260730-0117-aio-ade-rebrand-and-integration/phase-03).
+/* Guard: headless `serve` ships feature-flagged off.
  *
  * Decision 2026-08-21: headless `serve` ships **feature-flagged OFF** in the first release. The code
  * stays — the real delete decision is deferred to phase 09, pending whether remote development is a
@@ -18,26 +18,26 @@ import { COMMAND_SPECS } from '../specs'
 import { HANDLER_COMMAND_KEYS } from '../dispatch'
 import { SERVE_DISABLED_MESSAGE, isServeEnabled } from '../serve-feature-flag'
 
-const ORIGINAL = process.env.ORCA_ENABLE_SERVE
+const ORIGINAL = process.env.AIO_ADE_ENABLE_SERVE
 
 function withServeEnv<T>(value: string | undefined, fn: () => T): T {
   if (value === undefined) {
-    delete process.env.ORCA_ENABLE_SERVE
+    delete process.env.AIO_ADE_ENABLE_SERVE
   } else {
-    process.env.ORCA_ENABLE_SERVE = value
+    process.env.AIO_ADE_ENABLE_SERVE = value
   }
   try {
     return fn()
   } finally {
     if (ORIGINAL === undefined) {
-      delete process.env.ORCA_ENABLE_SERVE
+      delete process.env.AIO_ADE_ENABLE_SERVE
     } else {
-      process.env.ORCA_ENABLE_SERVE = ORIGINAL
+      process.env.AIO_ADE_ENABLE_SERVE = ORIGINAL
     }
   }
 }
 
-describe('phase-03: serve is feature-flagged off by default', () => {
+describe('serve is feature-flagged off by default', () => {
   it('reports disabled when the flag is unset', () => {
     expect(withServeEnv(undefined, isServeEnabled)).toBe(false)
   })
@@ -68,11 +68,11 @@ describe('phase-03: serve is feature-flagged off by default', () => {
   })
 
   it('names the opt-in variable in the rejection so the message is actionable', () => {
-    expect(SERVE_DISABLED_MESSAGE).toContain('ORCA_ENABLE_SERVE')
+    expect(SERVE_DISABLED_MESSAGE).toContain('AIO_ADE_ENABLE_SERVE')
   })
 })
 
-describe('phase-03: gating serve does not break the CLI registries', () => {
+describe('gating serve does not break the CLI registries', () => {
   it('keeps the serve spec registered so help and registry parity stay intact', () => {
     expect(COMMAND_SPECS.some((spec) => spec.path.join(' ') === 'serve')).toBe(true)
   })

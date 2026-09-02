@@ -31,19 +31,19 @@ function placement(
 
 describe('groupSkillFreshness', () => {
   it('marks an eligible outdated skill as update-available with one location', () => {
-    const groups = groupSkillFreshness([placement('orca-cli')], ['orca-cli'])
+    const groups = groupSkillFreshness([placement('aio-ade-cli')], ['aio-ade-cli'])
     expect(groups).toHaveLength(1)
-    expect(groups[0]).toMatchObject({ name: 'orca-cli', status: 'update-available' })
+    expect(groups[0]).toMatchObject({ name: 'aio-ade-cli', status: 'update-available' })
     expect(groups[0]?.locations).toEqual([
-      { id: expect.any(String), path: '/home/.agents/skills/orca-cli', chip: null }
+      { id: expect.any(String), path: '/home/.agents/skills/aio-ade-cli', chip: null }
     ])
   })
 
   it('hides skills whose every copy is current', () => {
     const groups = groupSkillFreshness(
       [
-        placement('orca-cli', { status: 'current' }),
-        placement('orca-cli', { status: 'current', topology: 'provider-alias' })
+        placement('aio-ade-cli', { status: 'current' }),
+        placement('aio-ade-cli', { status: 'current', topology: 'provider-alias' })
       ],
       []
     )

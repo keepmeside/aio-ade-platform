@@ -35,7 +35,11 @@ import {
   type CodexTrustEntry
 } from './config-toml-trust'
 
-// Why: captured from a real Codex 0.129 `/hooks` approval; fails loudly if Codex's serialization drifts.
+/* Why: captured verbatim from a real Codex 0.129 `/hooks` approval; fails loudly if Codex's
+ * serialization drifts. The temp path keeps its pre-rebrand spelling because the hash below is a
+ * digest OF this exact string — editing the input without recomputing the digest turns a real
+ * captured pair into a fabricated one, and the test would then only prove the code is
+ * self-consistent. */
 const REAL_APPROVED_COMMAND = '/bin/sh "/tmp/orca-case-b-mCmCe6/agent-hooks/codex-hook.sh"'
 const REAL_APPROVED_HASH = 'sha256:bc013489dba495431d3790fda62ee5a7d907a7c491e29ad26238c3a5d6d2b163'
 
@@ -43,7 +47,7 @@ let tmpDir: string
 let configPath: string
 
 beforeEach(() => {
-  tmpDir = mkdtempSync(join(tmpdir(), 'orca-codex-trust-test-'))
+  tmpDir = mkdtempSync(join(tmpdir(), 'aio-ade-codex-trust-test-'))
   configPath = join(tmpDir, 'config.toml')
 })
 
@@ -317,7 +321,7 @@ describe('computeTrustKey', () => {
 
   it('uses native Windows backslashes in the trust key Codex looks up', () => {
     // Why: Codex 0.140 writes approved Windows hook trust keys as raw native paths under [hooks.state].
-    const winPath = 'C:\\Users\\Rod\\AppData\\Roaming\\orca\\hooks.json'
+    const winPath = 'C:\\Users\\Rod\\AppData\\Roaming\\aio-ade\\hooks.json'
     const key = computeTrustKey({
       sourcePath: winPath,
       eventLabel: 'session_start',
@@ -326,7 +330,7 @@ describe('computeTrustKey', () => {
       command: 'echo'
     })
     expect(key).toContain('\\')
-    expect(key.startsWith('C:\\Users\\Rod\\AppData\\Roaming\\orca\\hooks.json:')).toBe(true)
+    expect(key.startsWith('C:\\Users\\Rod\\AppData\\Roaming\\aio-ade\\hooks.json:')).toBe(true)
   })
 
   it('preserves literal backslashes in non-Windows-style fallback paths', () => {
@@ -450,10 +454,11 @@ describe('upsertHookTrustEntries', () => {
   })
 
   it('collapses duplicate blocks for the same hook key while preserving unrelated hook state', () => {
-    const sourcePath = 'C:\\Users\\me\\AppData\\Roaming\\orca\\codex-runtime-home\\home\\hooks.json'
+    const sourcePath =
+      'C:\\Users\\me\\AppData\\Roaming\\aio-ade\\codex-runtime-home\\home\\hooks.json'
     const key = `${sourcePath}:session_start:0:0`
     const unrelatedSourcePath =
-      'C:\\Users\\me\\AppData\\Roaming\\orca\\codex-runtime-home\\home\\hooks.json'
+      'C:\\Users\\me\\AppData\\Roaming\\aio-ade\\codex-runtime-home\\home\\hooks.json'
     const unrelatedKey = `${unrelatedSourcePath}:stop:0:0`
     const original = [
       `[hooks.state."${escapeTomlString(key)}"]`,
@@ -495,7 +500,8 @@ describe('upsertHookTrustEntries', () => {
   })
 
   it('collapses a literal-string hook table before writing the canonical Codex literal table', () => {
-    const sourcePath = 'C:\\Users\\me\\AppData\\Roaming\\orca\\codex-runtime-home\\home\\hooks.json'
+    const sourcePath =
+      'C:\\Users\\me\\AppData\\Roaming\\aio-ade\\codex-runtime-home\\home\\hooks.json'
     const key = `${sourcePath}:session_start:0:0`
     const original = [
       `[hooks.state.'${key}']`,
@@ -942,9 +948,9 @@ describe('upsertHookTrustEntries', () => {
     expect(written).not.toContain('sha256:OLD')
   })
 
-  it('finds and replaces a legacy forward-slash block when Orca upserts with native backslash key', () => {
+  it('finds and replaces a legacy forward-slash block when AIO-ADE upserts with native backslash key', () => {
     // Why: Codex 0.140 exposes Windows keys with either separator depending on cwd, so replace both.
-    const backslashPath = 'C:\\Users\\Rod\\AppData\\Roaming\\orca\\hooks.json'
+    const backslashPath = 'C:\\Users\\Rod\\AppData\\Roaming\\aio-ade\\hooks.json'
     const legacyKey = `${backslashPath.replace(/\\/g, '/')}:session_start:0:0`
     const original = [
       `[hooks.state."${legacyKey}"]`,
@@ -974,7 +980,7 @@ describe('upsertHookTrustEntries', () => {
   it('produces exactly one Windows separator pair after two consecutive upserts', () => {
     // Why: idempotency guard — repeated auto-install must not accumulate duplicate blocks.
     const entry: CodexTrustEntry = {
-      sourcePath: 'C:\\Users\\Rod\\AppData\\Roaming\\orca\\hooks.json',
+      sourcePath: 'C:\\Users\\Rod\\AppData\\Roaming\\aio-ade\\hooks.json',
       eventLabel: 'session_start',
       groupIndex: 0,
       handlerIndex: 0,
@@ -991,7 +997,7 @@ describe('upsertHookTrustEntries', () => {
   it('falls back to TOML basic-string headers when a Windows path contains an apostrophe', () => {
     // Why: TOML literal-string keys can't hold apostrophes, but Windows profile paths can.
     const entry: CodexTrustEntry = {
-      sourcePath: "C:\\Users\\O'Connor\\AppData\\Roaming\\orca\\hooks.json",
+      sourcePath: "C:\\Users\\O'Connor\\AppData\\Roaming\\aio-ade\\hooks.json",
       eventLabel: 'session_start',
       groupIndex: 0,
       handlerIndex: 0,
@@ -1002,18 +1008,18 @@ describe('upsertHookTrustEntries', () => {
     const written = readFileSync(configPath, 'utf-8')
     expect((written.match(/\[hooks\.state\."/g) ?? []).length).toBe(2)
     expect(written).toContain(
-      `[hooks.state."C:\\\\Users\\\\O'Connor\\\\AppData\\\\Roaming\\\\orca\\\\hooks.json:session_start:0:0"]`
+      `[hooks.state."C:\\\\Users\\\\O'Connor\\\\AppData\\\\Roaming\\\\aio-ade\\\\hooks.json:session_start:0:0"]`
     )
     expect(written).toContain(
-      `[hooks.state."C:/Users/O'Connor/AppData/Roaming/orca/hooks.json:session_start:0:0"]`
+      `[hooks.state."C:/Users/O'Connor/AppData/Roaming/aio-ade/hooks.json:session_start:0:0"]`
     )
     expect(written).not.toContain(`[hooks.state.'C:\\Users\\O'Connor`)
   })
 
-  it('finds a Codex-written block with lowercased username when Orca key has mixed-case username', () => {
+  it('finds a Codex-written block with lowercased username when AIO-ADE key has mixed-case username', () => {
     // Why: realpathSync.native casing can differ from what Codex wrote, so case-fold to replace not duplicate.
-    const lowercasePath = 'C:\\Users\\rod\\AppData\\Roaming\\orca\\hooks.json'
-    const mixedCasePath = 'C:\\Users\\Rod\\AppData\\Roaming\\orca\\hooks.json'
+    const lowercasePath = 'C:\\Users\\rod\\AppData\\Roaming\\aio-ade\\hooks.json'
+    const mixedCasePath = 'C:\\Users\\Rod\\AppData\\Roaming\\aio-ade\\hooks.json'
     const literalKey = `${lowercasePath}:session_start:0:0`
     const original = [
       `[hooks.state.'${literalKey}']`,
@@ -1131,7 +1137,7 @@ describe('upsertProjectTrustLevel', () => {
   })
 
   it('updates an existing legacy Windows forward-slash project block', () => {
-    // Why: older Orca builds normalized to forward slashes; backslash fixes must not duplicate them.
+    // Why: older AIO-ADE builds normalized to forward slashes; backslash fixes must not duplicate them.
     const original = [
       '[projects."C:/Users/nw/repo"]',
       'notes = "keep"',
@@ -1639,7 +1645,7 @@ describe('readHookTrustEntries', () => {
         'trusted_hash = "sha256:USER"',
         '',
         `[hooks.state.'${key}']`,
-        'trusted_hash = "sha256:ORCA"',
+        'trusted_hash = "sha256:AIO_ADE"',
         ''
       ].join('\n'),
       'utf-8'
@@ -1684,13 +1690,13 @@ describe('readHookTrustEntries', () => {
     const key = '/x/hooks.json:stop:0:0'
     const content = [
       `\uFEFF[hooks.state."${key}"]`,
-      'trusted_hash = "sha256:ORCA"',
+      'trusted_hash = "sha256:AIO_ADE"',
       '[other]',
       'value = true',
       ''
     ].join('\n')
 
-    expect(readHookTrustEntriesFromContent(content).get(key)?.trustedHash).toBe('sha256:ORCA')
+    expect(readHookTrustEntriesFromContent(content).get(key)?.trustedHash).toBe('sha256:AIO_ADE')
     expect(removeHookTrustEntriesFromContent(content, [key])).toBe('[other]\nvalue = true\n')
   })
 
@@ -1760,8 +1766,8 @@ describe('readHookTrustEntries', () => {
 
   it('supports case-insensitive lookups for Windows hook trust keys read from config', () => {
     // Why: Codex and realpathSync.native can disagree on path casing, but lookups must still match.
-    const rawKey = 'C:\\Users\\rod\\AppData\\Roaming\\orca\\hooks.json:session_start:0:0'
-    const lookupKey = 'C:/Users/Rod/AppData/Roaming/orca/hooks.json:session_start:0:0'
+    const rawKey = 'C:\\Users\\rod\\AppData\\Roaming\\aio-ade\\hooks.json:session_start:0:0'
+    const lookupKey = 'C:/Users/Rod/AppData/Roaming/aio-ade/hooks.json:session_start:0:0'
     const original = [
       `[hooks.state.'${rawKey}']`,
       'enabled = true',

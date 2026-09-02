@@ -6,6 +6,7 @@ import type { LinearClient } from '@linear/sdk'
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
+import { getAppHomeDir } from '../../shared/app-home-paths'
 import { loadLinearSdk } from './linear-sdk'
 import {
   CredentialDecryptionError,
@@ -75,24 +76,24 @@ let legacyViewerLoadedFromDisk = false
 let cachedWorkspaceFile: LinearWorkspaceFile | null = null
 let workspaceFileLoadedFromDisk = false
 
-function getOrcaDir(): string {
-  return join(homedir(), '.orca')
+function getAppDataDir(): string {
+  return getAppHomeDir(homedir())
 }
 
 function getLegacyTokenPath(): string {
-  return join(getOrcaDir(), 'linear-token.enc')
+  return join(getAppDataDir(), 'linear-token.enc')
 }
 
 function getLegacyViewerPath(): string {
-  return join(getOrcaDir(), 'linear-viewer.json')
+  return join(getAppDataDir(), 'linear-viewer.json')
 }
 
 function getWorkspaceFilePath(): string {
-  return join(getOrcaDir(), 'linear-workspaces.json')
+  return join(getAppDataDir(), 'linear-workspaces.json')
 }
 
 function getWorkspaceTokenDir(): string {
-  return join(getOrcaDir(), 'linear-tokens')
+  return join(getAppDataDir(), 'linear-tokens')
 }
 
 function getWorkspaceTokenPath(workspaceId: string): string {
@@ -102,8 +103,8 @@ function getWorkspaceTokenPath(workspaceId: string): string {
   return join(getWorkspaceTokenDir(), `${Buffer.from(workspaceId).toString('base64url')}.enc`)
 }
 
-function ensureOrcaDir(): void {
-  const dir = getOrcaDir()
+function ensureAppDataDir(): void {
+  const dir = getAppDataDir()
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true })
   }
@@ -235,7 +236,7 @@ function getWorkspaceFile(): LinearWorkspaceFile {
 }
 
 function writeWorkspaceFile(file: LinearWorkspaceFile): void {
-  ensureOrcaDir()
+  ensureAppDataDir()
   const persistedWorkspaces = file.workspaces.filter(
     (workspace) => workspace.id !== LEGACY_WORKSPACE_ID
   )
@@ -332,7 +333,7 @@ function writeEncryptedToken(path: string, apiKey: string): void {
 }
 
 function saveWorkspaceToken(workspaceId: string, apiKey: string): void {
-  ensureOrcaDir()
+  ensureAppDataDir()
   if (workspaceId !== LEGACY_WORKSPACE_ID) {
     ensureWorkspaceTokenDir()
   }

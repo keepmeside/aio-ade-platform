@@ -35,7 +35,7 @@ export function parseRuntimeMetadataJson(serialized: string): RuntimeMetadata {
   return JSON.parse(serialized) as RuntimeMetadata
 }
 
-// Why: the CLI must handle metadata files written by older Orca versions that
+// Why: the CLI must handle metadata files written by older AIO-ADE versions that
 // used a singular `transport` field. This helper extracts the first transport
 // matching the given kinds from either the new `transports` array or the
 // legacy `transport` field.
@@ -55,7 +55,7 @@ export function findTransport(
   return null
 }
 
-const PRIMARY_RUNTIME_METADATA_FILE = 'orca-runtime.json'
+const PRIMARY_RUNTIME_METADATA_FILE = 'aio-ade-runtime.json'
 
 export function getRuntimeMetadataPath(userDataPath: string): string {
   return join(userDataPath, PRIMARY_RUNTIME_METADATA_FILE)

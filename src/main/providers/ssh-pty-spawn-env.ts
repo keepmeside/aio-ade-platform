@@ -18,10 +18,10 @@ export function buildSshPtySpawnEnv(args: {
           ? `${args.remoteCliBridgeEnv.binDir}${pathDelimiter}${pathValue}`
           : args.remoteCliBridgeEnv.binDir
     }
-    merged.ORCA_REMOTE_CLI_BIN_DIR = args.remoteCliBridgeEnv.binDir
-    merged.ORCA_RELAY_DIR = args.remoteCliBridgeEnv.relayDir
-    merged.ORCA_RELAY_NODE_PATH = args.remoteCliBridgeEnv.nodePath
-    merged.ORCA_RELAY_SOCKET_PATH = args.remoteCliBridgeEnv.sockPath
+    merged.AIO_ADE_REMOTE_CLI_BIN_DIR = args.remoteCliBridgeEnv.binDir
+    merged.AIO_ADE_RELAY_DIR = args.remoteCliBridgeEnv.relayDir
+    merged.AIO_ADE_RELAY_NODE_PATH = args.remoteCliBridgeEnv.nodePath
+    merged.AIO_ADE_RELAY_SOCKET_PATH = args.remoteCliBridgeEnv.sockPath
   }
   // Why: match local/daemon precedence—managed defaults cannot restore explicitly removed values.
   for (const key of args.envToDelete ?? []) {

@@ -120,7 +120,7 @@ function repairElectronPathFile() {
 
 async function installElectronPackageBinary() {
   const electronDistDir = resolve(electronPackageDir, 'dist')
-  const tempDir = mkdtempSync(resolve(tmpdir(), 'orca-electron-'))
+  const tempDir = mkdtempSync(resolve(tmpdir(), 'aio-ade-electron-'))
   const cacheRoot = join(tempDir, 'cache')
   const extractDir = join(tempDir, 'extract')
 
@@ -183,14 +183,14 @@ async function downloadElectronArtifactWithRetry(downloadOptions) {
 }
 
 function getDownloadRetryDelays() {
-  const configured = process.env.ORCA_ELECTRON_PACKAGE_RETRY_DELAYS_MS
+  const configured = process.env.AIO_ADE_ELECTRON_PACKAGE_RETRY_DELAYS_MS
   if (!configured) {
     return [1_000, 3_000]
   }
 
   const delays = configured.split(',').map(Number)
   if (delays.some((delay) => !Number.isSafeInteger(delay) || delay < 0)) {
-    throw new Error('ORCA_ELECTRON_PACKAGE_RETRY_DELAYS_MS must contain non-negative integers')
+    throw new Error('AIO_ADE_ELECTRON_PACKAGE_RETRY_DELAYS_MS must contain non-negative integers')
   }
   return delays
 }
@@ -273,17 +273,17 @@ function moveExtractedElectronDist(extractDir, electronDistDir) {
 }
 
 function getExtractorCommand(zipPath, extractDir) {
-  if (process.env.ORCA_ELECTRON_PACKAGE_EXTRACTOR) {
+  if (process.env.AIO_ADE_ELECTRON_PACKAGE_EXTRACTOR) {
     return {
       file: process.execPath,
-      args: [process.env.ORCA_ELECTRON_PACKAGE_EXTRACTOR, zipPath, extractDir],
-      label: `node ${process.env.ORCA_ELECTRON_PACKAGE_EXTRACTOR}`
+      args: [process.env.AIO_ADE_ELECTRON_PACKAGE_EXTRACTOR, zipPath, extractDir],
+      label: `node ${process.env.AIO_ADE_ELECTRON_PACKAGE_EXTRACTOR}`
     }
   }
 
   if (osPlatform() === 'win32') {
     return {
-      file: process.env.ORCA_POWERSHELL_BIN || 'powershell',
+      file: process.env.AIO_ADE_POWERSHELL_BIN || 'powershell',
       args: [
         '-NoProfile',
         '-NonInteractive',
@@ -300,7 +300,7 @@ function getExtractorCommand(zipPath, extractDir) {
   }
 
   return {
-    file: process.env.ORCA_UNZIP_BIN || 'unzip',
+    file: process.env.AIO_ADE_UNZIP_BIN || 'unzip',
     args: ['-q', zipPath, '-d', extractDir],
     label: 'unzip'
   }

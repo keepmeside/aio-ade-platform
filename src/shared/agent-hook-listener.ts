@@ -1,4 +1,4 @@
-/* eslint-disable max-lines -- Why: canonical transport-agnostic listener; parser, normalizer, per-CLI extractors, and endpoint writer share invariants that must not drift between Orca's main process and the relay. */
+/* eslint-disable max-lines -- Why: canonical transport-agnostic listener; parser, normalizer, per-CLI extractors, and endpoint writer share invariants that must not drift between AIO-ADE's main process and the relay. */
 
 // Why: extracted from src/main/agent-hooks/server.ts so the relay can host the pipeline without Electron (Node builtins only). See docs/design/agent-status-over-ssh.md §3.
 import type { IncomingMessage } from 'node:http'
@@ -50,7 +50,7 @@ import {
   reconcileCodexSubagentTranscript,
   type CodexSubagentTranscriptState
 } from './codex-subagent-transcript'
-import { ORCA_HOOK_PROTOCOL_VERSION } from './agent-hook-types'
+import { AIO_ADE_HOOK_PROTOCOL_VERSION } from './agent-hook-types'
 import { REMOTE_AGENT_HOOK_ENV, type AgentHookSource } from './agent-hook-relay'
 import {
   extractAgentProviderSession,
@@ -92,7 +92,7 @@ function capOpenCodeHookText(text: string): string {
 /** Bound paneKey size (real keys are well under 200); caps per-pane caches against pathological input. Exported so non-HTTP ingest (`ingestRemote`) applies the same cap as defense-in-depth. */
 export const MAX_PANE_KEY_LEN = 200
 
-/** Per-listener-instance caches needing per-PTY teardown; Orca's main process and the relay each get their own, never shared. */
+/** Per-listener-instance caches needing per-PTY teardown; AIO-ADE's main process and the relay each get their own, never shared. */
 export type HookListenerState = {
   warnedVersions: Set<string>
   warnedEnvs: Set<string>
@@ -244,13 +244,13 @@ export function warnOnHookEnvOrVersionMismatch(
   const { version, env, expectedEnv } = fields
   if (
     version &&
-    version !== ORCA_HOOK_PROTOCOL_VERSION &&
+    version !== AIO_ADE_HOOK_PROTOCOL_VERSION &&
     !state.warnedVersions.has(version) &&
     state.warnedVersions.size < MAX_WARNED_KEYS
   ) {
     state.warnedVersions.add(version)
     console.warn(
-      `[agent-hooks] received hook v${version}; server expects v${ORCA_HOOK_PROTOCOL_VERSION}. ` +
+      `[agent-hooks] received hook v${version}; server expects v${AIO_ADE_HOOK_PROTOCOL_VERSION}. ` +
         'Reinstall agent hooks from Settings to upgrade the managed script.'
     )
   }
@@ -260,7 +260,7 @@ export function warnOnHookEnvOrVersionMismatch(
       state.warnedEnvs.add(key)
       console.warn(
         `[agent-hooks] received ${env} hook on ${expectedEnv} server. ` +
-          'Likely a stale terminal from another Orca install.'
+          'Likely a stale terminal from another AIO-ADE install.'
       )
     }
   }
@@ -268,7 +268,7 @@ export function warnOnHookEnvOrVersionMismatch(
 
 export type AgentHookEventPayload = {
   paneKey: string
-  /** Ephemeral Orca launch identity stamped into the PTY env for this process. */
+  /** Ephemeral AIO-ADE launch identity stamped into the PTY env for this process. */
   launchToken?: string
   tabId?: string
   worktreeId?: string
@@ -1126,7 +1126,7 @@ export function markClaudeLeadTurnInterrupted(state: HookListenerState, paneKey:
   state.claudeLeadStateByPaneKey.set(paneKey, { state: 'done', interrupted: true })
 }
 
-/** Rebuild a pane's working roster from a persisted snapshot; live activity confirms a seed, a complete task inventory may reap an unconfirmed one whose finish hook arrived while Orca was offline. */
+/** Rebuild a pane's working roster from a persisted snapshot; live activity confirms a seed, a complete task inventory may reap an unconfirmed one whose finish hook arrived while AIO-ADE was offline. */
 export function seedClaudeSubagentRosterFromSnapshots(
   state: HookListenerState,
   paneKey: string,
@@ -1146,7 +1146,7 @@ export function seedClaudeSubagentRosterFromSnapshots(
       startedAt: snapshot.startedAt,
       agentType: snapshot.agentType,
       description: snapshot.description,
-      // Why: the seed can be a phantom (child finished while Orca was down, SubagentStop lost); let a PRESENT background_tasks list omitting the id remove it, not gate the pane 'working' forever.
+      // Why: the seed can be a phantom (child finished while AIO-ADE was down, SubagentStop lost); let a PRESENT background_tasks list omitting the id remove it, not gate the pane 'working' forever.
       backgroundTasksAuthoritative: true
     })
   }
@@ -1196,7 +1196,7 @@ function buildClaudeChildDrivenStatusPayload(
   paneKey: string,
   hookPayload: Record<string, unknown>
 ): ParsedAgentStatusPayload | null {
-  // Why: default 'working' — a spawn proves activity even before the lead's first state-bearing event (e.g. Orca restarted mid-session).
+  // Why: default 'working' — a spawn proves activity even before the lead's first state-bearing event (e.g. AIO-ADE restarted mid-session).
   const lead = state.claudeLeadStateByPaneKey.get(paneKey)
   const leadState = lead?.state ?? 'working'
   const roster = state.claudeSubagentRosterByPaneKey.get(paneKey)
@@ -1796,10 +1796,10 @@ export function writeEndpointFile(
   const tmpPath = join(endpointDir, `.endpoint-${process.pid}-${randomUUID()}.tmp`)
   const prefix = process.platform === 'win32' ? 'set ' : ''
   const valuesToWrite: [string, string][] = [
-    ['ORCA_AGENT_HOOK_PORT', String(fields.port)],
-    ['ORCA_AGENT_HOOK_TOKEN', fields.token],
-    ['ORCA_AGENT_HOOK_ENV', fields.env],
-    ['ORCA_AGENT_HOOK_VERSION', fields.version]
+    ['AIO_ADE_AGENT_HOOK_PORT', String(fields.port)],
+    ['AIO_ADE_AGENT_HOOK_TOKEN', fields.token],
+    ['AIO_ADE_AGENT_HOOK_ENV', fields.env],
+    ['AIO_ADE_AGENT_HOOK_VERSION', fields.version]
   ]
   for (const [key, value] of valuesToWrite) {
     if (!isShellSafeEndpointValue(value)) {

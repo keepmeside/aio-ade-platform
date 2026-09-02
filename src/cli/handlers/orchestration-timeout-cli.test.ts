@@ -19,8 +19,8 @@ describe('orchestration timeout flag validation', () => {
 
   beforeEach(() => {
     callMock.mockReset()
-    delete process.env.ORCA_TERMINAL_HANDLE
-    delete process.env.ORCA_PANE_KEY
+    delete process.env.AIO_ADE_TERMINAL_HANDLE
+    delete process.env.AIO_ADE_PANE_KEY
   })
 
   const invokeCheck = (flags: Map<string, string | boolean>) =>
@@ -52,7 +52,7 @@ describe('orchestration timeout flag validation', () => {
   })
 
   it('passes a parsed check timeout and peek mode into the RPC payload', async () => {
-    process.env.ORCA_TERMINAL_HANDLE = 'term_worker'
+    process.env.AIO_ADE_TERMINAL_HANDLE = 'term_worker'
     callMock.mockResolvedValue({ result: { messages: [], count: 0 } })
     await invokeCheck(
       new Map<string, string | boolean>([
@@ -77,7 +77,7 @@ describe('orchestration timeout flag validation', () => {
   })
 
   it('filters already-read rows from a peek response for pre-peek runtimes', async () => {
-    process.env.ORCA_TERMINAL_HANDLE = 'term_worker'
+    process.env.AIO_ADE_TERMINAL_HANDLE = 'term_worker'
     callMock.mockResolvedValue({
       result: {
         messages: [
@@ -99,7 +99,7 @@ describe('orchestration timeout flag validation', () => {
   })
 
   it('rejects combined read modes before calling the runtime', async () => {
-    process.env.ORCA_TERMINAL_HANDLE = 'term_worker'
+    process.env.AIO_ADE_TERMINAL_HANDLE = 'term_worker'
     await expect(
       invokeCheck(
         new Map<string, string | boolean>([
@@ -115,7 +115,7 @@ describe('orchestration timeout flag validation', () => {
   })
 
   it('warns when a pre-peek runtime returned a full 100-row page', async () => {
-    process.env.ORCA_TERMINAL_HANDLE = 'term_worker'
+    process.env.AIO_ADE_TERMINAL_HANDLE = 'term_worker'
     const rows = Array.from({ length: 100 }, (_, index) => ({
       id: `msg_${index}`,
       from_handle: 'a',
@@ -130,7 +130,7 @@ describe('orchestration timeout flag validation', () => {
   })
 
   it('fails --peek --wait against a runtime that returned only read rows', async () => {
-    process.env.ORCA_TERMINAL_HANDLE = 'term_worker'
+    process.env.AIO_ADE_TERMINAL_HANDLE = 'term_worker'
     callMock.mockResolvedValue({
       result: {
         messages: [{ id: 'msg_old', from_handle: 'a', subject: 'seen', read: 1 }],
@@ -161,7 +161,7 @@ describe('orchestration timeout flag validation', () => {
   })
 
   it('uses the parsed ask timeout for both runtime wait and client timeout', async () => {
-    process.env.ORCA_TERMINAL_HANDLE = 'term_worker'
+    process.env.AIO_ADE_TERMINAL_HANDLE = 'term_worker'
     callMock.mockResolvedValue({
       result: { answer: 'yes', messageId: 'msg_1', threadId: 'thread_1', timedOut: false }
     })
@@ -189,7 +189,7 @@ describe('orchestration timeout flag validation', () => {
   })
 
   it('passes an ask resume without creating a new question payload', async () => {
-    process.env.ORCA_TERMINAL_HANDLE = 'term_worker'
+    process.env.AIO_ADE_TERMINAL_HANDLE = 'term_worker'
     callMock.mockResolvedValue({
       result: {
         answer: 'yes',
@@ -216,7 +216,7 @@ describe('orchestration timeout flag validation', () => {
   })
 
   it('rejects ambiguous ask create/resume input before RPC', async () => {
-    process.env.ORCA_TERMINAL_HANDLE = 'term_worker'
+    process.env.AIO_ADE_TERMINAL_HANDLE = 'term_worker'
     await expect(
       invokeAsk(
         new Map<string, string | boolean>([

@@ -13,6 +13,7 @@ import {
 } from 'node:fs'
 import { rename, mkdir, rm, copyFile, open } from 'node:fs/promises'
 import { renameDurable, writeFileDurableSync } from './durable-file-write'
+import { USER_DATA_FILE_NAME } from '../shared/user-data-dir-names'
 import { join, dirname, isAbsolute, resolve, sep } from 'node:path'
 import { homedir } from 'node:os'
 import { createHash, randomUUID } from 'node:crypto'
@@ -55,7 +56,7 @@ import type {
   WorkspaceLineage,
   WorkspaceKey,
   GlobalSettings,
-  OrcaWorkspaceLayout,
+  AioAdeWorkspaceLayout,
   NotificationSettings,
   OnboardingChecklistState,
   OnboardingOutcome,
@@ -85,7 +86,7 @@ import { sanitizeWorkspaceSessionTerminalRetirements } from './runtime/mobile-se
 import {
   removeRepoFromHostWorkspaceSessions,
   removeRepoFromWorkspaceSession
-} from './orca-profiles/profile-project-session-state'
+} from './aio-ade-profiles/profile-project-session-state'
 import { hardenExistingSecureFile } from '../shared/secure-file'
 import {
   LEGACY_DEFAULT_SSH_RELAY_GRACE_PERIOD_SECONDS,
@@ -333,14 +334,14 @@ function retireLegacyInstructionsForClearedTextActionRecipes(
 }
 
 // Why capture once (not a module const, not per-call): a const resolves before configureDevUserDataPath() redirects userData (dev/prod collide);
-// per-call resolves after app.setName('Orca') flips path case and loses data on case-sensitive FS. index.ts calls initDataPath() at the right moment.
+// per-call resolves after app.setName('AIO-ADE') flips path case and loses data on case-sensitive FS. index.ts calls initDataPath() at the right moment.
 let _dataFile: string | null = null
 let _userDataDir: string | null = null
 
 export function initDataPath(): void {
   const userDataDir = app.getPath('userData')
   _userDataDir = userDataDir
-  _dataFile = join(userDataDir, 'orca-data.json')
+  _dataFile = join(userDataDir, USER_DATA_FILE_NAME)
 }
 
 function getDataFile(): string {
@@ -348,18 +349,18 @@ function getDataFile(): string {
     // Safety fallback — should not be hit in normal startup.
     const userDataDir = app.getPath('userData')
     _userDataDir = userDataDir
-    _dataFile = join(userDataDir, 'orca-data.json')
+    _dataFile = join(userDataDir, USER_DATA_FILE_NAME)
   }
   return _dataFile
 }
 
-// Why a sidecar: githubCache refreshes every poll and would rewrite the whole multi-MB orca-data.json each cycle.
+// Why a sidecar: githubCache refreshes every poll and would rewrite the whole multi-MB data file each cycle.
 // Snapshotted best-effort at quit for instant badges next launch; safe to lose.
 function getGithubCacheFile(dataFile = getDataFile()): string {
-  return join(dirname(dataFile), 'orca-github-cache.json')
+  return join(dirname(dataFile), 'aio-ade-github-cache.json')
 }
 
-// Why: worktrees deleted outside Orca orphan their worktreeMeta, so the map grew monotonically (63% dead on a heavy install).
+// Why: worktrees deleted outside AIO-ADE orphan their worktreeMeta, so the map grew monotonically (63% dead on a heavy install).
 // GC stays narrow: local-host entries only (a local existsSync would falsely condemn SSH/WSL remote paths) and only after a 30-day idle grace.
 const WORKTREE_META_GC_GRACE_MS = 30 * 24 * 60 * 60 * 1000
 
@@ -440,7 +441,7 @@ function readGithubCacheSnapshot(dataFile: string): PersistedState['githubCache'
 /**
  * Return the userData directory captured at initDataPath() time, before app.setName() can change how app.getPath('userData') resolves.
  *
- * Subsystems sharing storage with orca-data.json read this instead of resolving late, which on case-sensitive FS can lose paired devices.
+ * Subsystems sharing storage with the main data file read this instead of resolving late, which on case-sensitive FS can lose paired devices.
  */
 export function getCanonicalUserDataPath(): string {
   if (!_userDataDir) {
@@ -539,7 +540,7 @@ function backupPath(dataFile: string, index: number): string {
 function buildWorkspaceDirHistoryForUpdate(
   current: GlobalSettings,
   updates: Partial<GlobalSettings>
-): OrcaWorkspaceLayout[] | null {
+): AioAdeWorkspaceLayout[] | null {
   if (!('workspaceDir' in updates) && !('nestWorkspaces' in updates)) {
     return null
   }
@@ -631,7 +632,7 @@ function migrateTerminalTuiScrollSensitivityDefault(settings: GlobalSettings | u
   }
 }
 
-function getWorkspaceLayoutHistoryKey(layout: OrcaWorkspaceLayout): string {
+function getWorkspaceLayoutHistoryKey(layout: AioAdeWorkspaceLayout): string {
   return `${normalizeRuntimePathForComparison(layout.path)}:${layout.nestWorkspaces}`
 }
 
@@ -885,7 +886,7 @@ function normalizeNotificationSettings(value: unknown): NotificationSettings {
     rawSoundId === 'beep' ||
     rawSoundId === 'custom'
       ? rawSoundId
-      : rawSoundId === 'orca' || rawSoundId === 'chime'
+      : rawSoundId === 'aio-ade' || rawSoundId === 'chime'
         ? 'two-tone'
         : rawSoundId === 'pop'
           ? 'blop'
@@ -2852,7 +2853,7 @@ export class Store {
   }
 
   private load(allowBackupRecovery = true): PersistedState {
-    // Capture "has run Orca before?" for telemetry cohort; the telemetry field is new, so field inference misclassifies old users as fresh.
+    // Capture "has run AIO-ADE before?" for telemetry cohort; the telemetry field is new, so field inference misclassifies old users as fresh.
     const dataFile = this.dataFile
     const fileExistedOnLoad = existsSync(dataFile)
     logPersistenceStartupMilestone('persistence-load-start', {
@@ -3643,7 +3644,7 @@ export class Store {
       if (blob === plaintext) {
         return blob
       }
-      const sentinel = `orca-secret-slot-${randomUUID()}`
+      const sentinel = `aio-ade-secret-slot-${randomUUID()}`
       secretSubs.push({ sentinel, blob, plaintext })
       return sentinel
     }

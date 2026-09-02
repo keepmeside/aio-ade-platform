@@ -18,7 +18,7 @@ const mockSshConnect = vi.fn()
 
 const setupLaunch = {
   runnerScriptPath: '/tmp/setup.sh',
-  envVars: { ORCA_WORKTREE_PATH: '/repo/worktree' }
+  envVars: { AIO_ADE_WORKTREE_PATH: '/repo/worktree' }
 }
 
 const createdWorktree = {

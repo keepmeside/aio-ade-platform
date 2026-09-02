@@ -7,33 +7,33 @@ import {
 } from '../../runtime/runtime-compatibility-test-fixture'
 import { clearRuntimeCompatibilityCacheForTests } from '../../runtime/runtime-rpc-client'
 
-// Mirrors the real report: one project name ("orca") set up on the local Mac and on a
-// remote Orca server, where only the local repo row carries the user's chosen color.
-const SHARED_PROJECT_ID = 'github:stablyai/orca'
+// Mirrors the real report: one project name ("aio-ade") set up on the local Mac and on a
+// remote AIO-ADE server, where only the local repo row carries the user's chosen color.
+const SHARED_PROJECT_ID = 'github:keepmeside/aio-ade-platform'
 const LOCAL_GREEN = '#22c55e'
 const REMOTE_NEUTRAL = '#737373'
 
 const localRepo: Repo = {
   id: 'local-repo',
-  path: '/local/orca',
-  displayName: 'orca',
+  path: '/local/aio-ade',
+  displayName: 'aio-ade',
   badgeColor: LOCAL_GREEN,
-  upstream: { owner: 'stablyai', repo: 'orca' },
+  upstream: { owner: 'keepmeside', repo: 'aio-ade-platform' },
   addedAt: 1
 }
 
 const remoteRepo: Repo = {
   id: 'remote-repo',
-  path: '/srv/orca',
-  displayName: 'orca',
+  path: '/srv/aio-ade',
+  displayName: 'aio-ade',
   badgeColor: REMOTE_NEUTRAL,
-  upstream: { owner: 'stablyai', repo: 'orca' },
+  upstream: { owner: 'keepmeside', repo: 'aio-ade-platform' },
   addedAt: 1
 }
 
 const localProject: Project = {
   id: SHARED_PROJECT_ID,
-  displayName: 'orca',
+  displayName: 'aio-ade',
   badgeColor: LOCAL_GREEN,
   sourceRepoIds: ['local-repo'],
   createdAt: 1,
@@ -42,7 +42,7 @@ const localProject: Project = {
 
 const remoteProject: Project = {
   id: SHARED_PROJECT_ID,
-  displayName: 'orca',
+  displayName: 'aio-ade',
   badgeColor: REMOTE_NEUTRAL,
   sourceRepoIds: ['remote-repo'],
   createdAt: 2,
@@ -56,7 +56,7 @@ function setup(projectId: string, repoId: string, path: string): ProjectHostSetu
     hostId: 'local',
     repoId,
     path,
-    displayName: 'orca',
+    displayName: 'aio-ade',
     setupState: 'ready',
     setupMethod: 'imported-existing-folder',
     createdAt: 1,
@@ -80,7 +80,7 @@ function runtimeResult(method: string): unknown {
     return { projects: [remoteProject] }
   }
   if (method === 'projectHostSetup.list') {
-    return { setups: [setup(SHARED_PROJECT_ID, 'remote-repo', '/srv/orca')] }
+    return { setups: [setup(SHARED_PROJECT_ID, 'remote-repo', '/srv/aio-ade')] }
   }
   return {}
 }
@@ -101,7 +101,7 @@ beforeEach(() => {
     ...updates
   }))
   projectsList.mockResolvedValue([localProject])
-  listHostSetups.mockResolvedValue([setup(SHARED_PROJECT_ID, 'local-repo', '/local/orca')])
+  listHostSetups.mockResolvedValue([setup(SHARED_PROJECT_ID, 'local-repo', '/local/aio-ade')])
   runtimeEnvironmentsList.mockResolvedValue([{ id: 'env-1', name: 'awin' }])
   runtimeEnvironmentCall.mockImplementation((args: RuntimeEnvironmentCallRequest) => ({
     id: `rpc-${args.method}`,

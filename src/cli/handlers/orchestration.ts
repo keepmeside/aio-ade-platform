@@ -35,7 +35,7 @@ function getLifecycleGroupRecipientError(type: 'worker_done' | 'heartbeat'): str
 
 // Why: test-only escape hatch so subprocess tests avoid the full 15 s window; bogus values fall back to the default.
 function resolveKeepaliveIntervalMs(): number {
-  const raw = process.env.ORCA_KEEPALIVE_INTERVAL_MS ?? process.env.ORCA_HEARTBEAT_INTERVAL_MS
+  const raw = process.env.AIO_ADE_KEEPALIVE_INTERVAL_MS ?? process.env.AIO_ADE_HEARTBEAT_INTERVAL_MS
   if (!raw) {
     return DEFAULT_KEEPALIVE_INTERVAL_MS
   }
@@ -142,7 +142,7 @@ function formatLegacyAwareCheckMessages(
       if (!legacyReadOnly) {
         const replyFrom = message.to_handle ?? checkedTerminal
         lines.push(
-          `[Reply: orca orchestration reply --id ${message.id} --from ${replyFrom} --body "..."]`
+          `[Reply: aio-ade orchestration reply --id ${message.id} --from ${replyFrom} --body "..."]`
         )
       }
       return lines.join('\n')
@@ -239,10 +239,10 @@ async function resolveOrchestrationTerminalHandle(
   if (explicit) {
     return explicit
   }
-  const envHandle = process.env.ORCA_TERMINAL_HANDLE
+  const envHandle = process.env.AIO_ADE_TERMINAL_HANDLE
   if (envHandle && envHandle.length > 0) {
     if (flagName === 'from' && options.validateEnvHandle) {
-      // Why: long-lived shells can retain a stale ORCA_TERMINAL_HANDLE after remint; don't bake it into coordinator preambles.
+      // Why: long-lived shells can retain a stale AIO_ADE_TERMINAL_HANDLE after remint; don't bake it into coordinator preambles.
       const live = await isLiveTerminalHandle(envHandle, client)
       if (!live) {
         const reminted = await resolveOrchestrationPaneTerminalHandle(client)
@@ -296,7 +296,7 @@ async function resolveOrchestrationPaneTerminalHandle(
   client: Parameters<CommandHandler>[0]['client'],
   options: { optional?: boolean } = {}
 ): Promise<string | undefined> {
-  const paneKey = process.env.ORCA_PANE_KEY
+  const paneKey = process.env.AIO_ADE_PANE_KEY
   if (!paneKey || paneKey.length === 0) {
     return undefined
   }
@@ -374,14 +374,14 @@ function throwNoActiveSenderTerminal(): never {
   throw new RuntimeClientError(
     'no_active_sender_terminal',
     'Could not determine the sender terminal for this orchestration command. ' +
-      'Pass --from <terminal-handle> or run the command inside a live Orca terminal with ORCA_TERMINAL_HANDLE set.'
+      'Pass --from <terminal-handle> or run the command inside a live AIO-ADE terminal with AIO_ADE_TERMINAL_HANDLE set.'
   )
 }
 
 function isDevCliInvocation(): boolean {
   return (
-    process.env.ORCA_DEV_CLI_INVOCATION === '1' ||
-    (process.env.ORCA_USER_DATA_PATH?.includes('orca-dev') ?? false)
+    process.env.AIO_ADE_DEV_CLI_INVOCATION === '1' ||
+    (process.env.AIO_ADE_USER_DATA_PATH?.includes('aio-ade-dev') ?? false)
   )
 }
 
@@ -558,13 +558,13 @@ export const ORCHESTRATION_HANDLERS: Record<string, CommandHandler> = {
     if (
       (type === 'worker_done' || type === 'heartbeat') &&
       !getOptionalStringFlag(flags, 'from') &&
-      !process.env.ORCA_TERMINAL_HANDLE
+      !process.env.AIO_ADE_TERMINAL_HANDLE
     ) {
       // Why: focus isn't lifecycle authority — an identity-less subprocess must fail closed rather than guess the worker.
       throwNoActiveSenderTerminal()
     }
 
-    // Why: lifecycle senders keep ORCA_TERMINAL_HANDLE verbatim — no liveness probe (worker_done must survive the mid-restart window) and no remint (older runtimes require from === the stale assignee_handle).
+    // Why: lifecycle senders keep AIO_ADE_TERMINAL_HANDLE verbatim — no liveness probe (worker_done must survive the mid-restart window) and no remint (older runtimes require from === the stale assignee_handle).
     const from = await resolveOrchestrationTerminalHandle(flags, cwd, client, 'from')
     const sendParams = {
       from,
@@ -577,7 +577,7 @@ export const ORCHESTRATION_HANDLERS: Record<string, CommandHandler> = {
       threadId: getOptionalStringFlag(flags, 'thread-id'),
       payload: getOptionalStructuredMessagePayload(flags),
       // Why: pane key is the remint-stable sender identity the runtime verifies lifecycle ownership against; older runtimes strip it.
-      senderPaneKey: process.env.ORCA_PANE_KEY || undefined,
+      senderPaneKey: process.env.AIO_ADE_PANE_KEY || undefined,
       devMode: isDevCliInvocation()
     }
     const dispatchCapability = getOptionalStringFlag(flags, 'dispatch-capability')
@@ -639,7 +639,7 @@ export const ORCHESTRATION_HANDLERS: Record<string, CommandHandler> = {
     try {
       result = await callMutation<CheckResult>(client, flags, 'orchestration.check', {
         terminal,
-        terminalPaneKey: explicitTerminal ? undefined : process.env.ORCA_PANE_KEY || undefined,
+        terminalPaneKey: explicitTerminal ? undefined : process.env.AIO_ADE_PANE_KEY || undefined,
         // Why: peek also sends unread:false so pre-peek runtimes degrade to non-consuming all mode instead of destructive mark-read.
         unread: flags.has('unread') ? true : peek ? false : undefined,
         peek: peek ? true : undefined,

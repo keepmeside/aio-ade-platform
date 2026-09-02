@@ -3,7 +3,7 @@ import type { SFTPWrapper } from 'ssh2'
 
 vi.mock('electron', () => ({
   app: {
-    getPath: () => '/tmp/orca-user-data'
+    getPath: () => '/tmp/aio-ade-user-data'
   }
 }))
 
@@ -116,11 +116,11 @@ describe('remote hook service installers', () => {
     try {
       const installers = [
         {
-          path: '/home/dev/.orca/agent-hooks/claude-hook.sh',
+          path: '/home/dev/.aio-ade/agent-hooks/claude-hook.sh',
           install: (sftp: SFTPWrapper) => new ClaudeHookService().installRemote(sftp, '/home/dev')
         },
         {
-          path: '/home/dev/.orca/agent-hooks/codex-hook.sh',
+          path: '/home/dev/.aio-ade/agent-hooks/codex-hook.sh',
           install: (sftp: SFTPWrapper) => new CodexHookService().installRemote(sftp, '/home/dev')
         }
       ]
@@ -176,18 +176,18 @@ describe('remote hook service installers', () => {
       'Stop'
     ]) {
       const command = hooks.hooks[eventName]?.[0]?.hooks?.[0]?.command
-      expect(command).toContain('/home/dev/.orca/agent-hooks/codex-hook.sh')
+      expect(command).toContain('/home/dev/.aio-ade/agent-hooks/codex-hook.sh')
       expect(command).toMatch(/^if \[ -f /)
     }
-    expect(fs.files.get('/home/dev/.orca/agent-hooks/codex-hook.sh')).toContain('#!/bin/sh')
-    expect(fs.modes.get('/home/dev/.orca/agent-hooks/codex-hook.sh')).toBe(0o755)
+    expect(fs.files.get('/home/dev/.aio-ade/agent-hooks/codex-hook.sh')).toContain('#!/bin/sh')
+    expect(fs.modes.get('/home/dev/.aio-ade/agent-hooks/codex-hook.sh')).toBe(0o755)
     const toml = fs.files.get('/home/dev/.codex/config.toml')
     expect(toml).toContain('/home/dev/.codex/hooks.json:permission_request:0:0')
     expect(toml).toContain('trusted_hash = "sha256:')
   })
 
   it('installs Codex hooks into an explicit redirected CODEX_HOME (WSL managed runtime home)', async () => {
-    const runtimeHome = '/home/dev/.local/share/orca/codex-runtime-home/home'
+    const runtimeHome = '/home/dev/.local/share/aio-ade/codex-runtime-home/home'
     const { sftp, fs } = createFakeSftp({
       [`${runtimeHome}/config.toml`]: 'model = "gpt-5.2-codex"\n'
     })
@@ -204,7 +204,7 @@ describe('remote hook service installers', () => {
       hooks: Record<string, { hooks: { command: string }[] }[]>
     }
     expect(hooks.hooks.Stop?.[0]?.hooks?.[0]?.command).toContain(
-      '/home/dev/.orca/agent-hooks/codex-hook.sh'
+      '/home/dev/.aio-ade/agent-hooks/codex-hook.sh'
     )
     const toml = fs.files.get(`${runtimeHome}/config.toml`)
     expect(toml).toContain('model = "gpt-5.2-codex"')
@@ -212,7 +212,7 @@ describe('remote hook service installers', () => {
   })
 
   it('defers Codex trust writes until the redirected config.toml exists (launch-path seed race)', async () => {
-    const runtimeHome = '/home/dev/.local/share/orca/codex-runtime-home/home'
+    const runtimeHome = '/home/dev/.local/share/aio-ade/codex-runtime-home/home'
     const { sftp, fs } = createFakeSftp()
 
     const status = await new CodexHookService().installRemote(sftp, '/home/dev', {
@@ -238,7 +238,7 @@ describe('remote hook service installers', () => {
     expect(status.managedHooksPresent).toBe(true)
     expect(status.detail).toContain('trust entries could not be written')
     expect(fs.files.get('/home/dev/.codex/hooks.json')).toContain('codex-hook.sh')
-    expect(fs.files.get('/home/dev/.orca/agent-hooks/codex-hook.sh')).toContain('#!/bin/sh')
+    expect(fs.files.get('/home/dev/.aio-ade/agent-hooks/codex-hook.sh')).toContain('#!/bin/sh')
   })
 
   it('registers every managed agent that implements installRemote in the remote installer', () => {

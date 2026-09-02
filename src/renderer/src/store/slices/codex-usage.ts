@@ -32,7 +32,7 @@ export const createCodexUsageSlice: StateCreator<AppState, [], [], CodexUsageSli
   set,
   get
 ) => ({
-  codexUsageScope: 'orca',
+  codexUsageScope: 'aio-ade',
   codexUsageRange: '30d',
   codexUsageScanState: null,
   codexUsageSummary: null,

@@ -166,7 +166,7 @@ function formatSparseDirectoryPreview(directories: string[]): string {
 }
 
 function isWebClient(): boolean {
-  return Boolean((window as unknown as { __ORCA_WEB_CLIENT__?: boolean }).__ORCA_WEB_CLIENT__)
+  return Boolean((window as unknown as { __AIO_ADE_WEB_CLIENT__?: boolean }).__AIO_ADE_WEB_CLIENT__)
 }
 
 function getDirectoryName(folderPath: string): string {
@@ -381,7 +381,7 @@ const WorktreeCard = React.memo(function WorktreeCard({
   const runtimeHostLabel = runtimeHostId
     ? (getHostDisplayLabelOverrides(settings).get(runtimeHostId) ?? runtimeEnvironmentName)
     : null
-  // Why: runtime ("Orca server") hosts get the same disconnected dimming as SSH when their environment has no live status.
+  // Why: runtime ("AIO-ADE server") hosts get the same disconnected dimming as SSH when their environment has no live status.
   const isRuntimeDisconnected = useAppStore((s) => {
     if (!runtimeOwnerEnvironmentId) {
       return false
@@ -678,7 +678,7 @@ const WorktreeCard = React.memo(function WorktreeCard({
         staleWhileRevalidate: true
       })
     }
-    // Why: PRs created outside Orca (e.g. `gh pr create`) emit no renderer event; poll visible cards to discover them.
+    // Why: PRs created outside AIO-ADE (e.g. `gh pr create`) emit no renderer event; poll visible cards to discover them.
     return installWindowVisibilityInterval({
       run: refreshHostedReview,
       intervalMs: HOSTED_REVIEW_CARD_REFRESH_INTERVAL_MS
@@ -1068,7 +1068,7 @@ const WorktreeCard = React.memo(function WorktreeCard({
     agentActivityDisplayMode === 'compact' &&
     compactInlineAgentRows.length > 0
   const showAggregateCacheTimer = !compactCards && !compactInlineAgentRowsVisible
-  const handleOpenGitHubIssueInOrca = useCallback(
+  const handleOpenGitHubIssueInAioAde = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation()
       const issueUrl = hoverIssue && 'url' in hoverIssue ? hoverIssue.url : undefined
@@ -1091,7 +1091,7 @@ const WorktreeCard = React.memo(function WorktreeCard({
     },
     [hoverIssue, openTaskPage, repo]
   )
-  const handleOpenReviewInOrca = useCallback(
+  const handleOpenReviewInAioAde = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation()
       if (!repo || !hoverReview?.url || hoverReview.provider !== 'github') {
@@ -1143,7 +1143,7 @@ const WorktreeCard = React.memo(function WorktreeCard({
         break
     }
   }, [hoverReviewProvider, updateWorktreeMeta, worktree.id])
-  const handleOpenLinearIssueInOrca = useCallback(
+  const handleOpenLinearIssueInAioAde = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation()
       if (!linearIssue) {
@@ -1260,15 +1260,15 @@ const WorktreeCard = React.memo(function WorktreeCard({
             // plug force-open the wider title card and race it closed (#9304), so let this title hover own its state.
             onEditIssue={affiliateListMode ? undefined : handleEditIssue}
             onEditComment={affiliateListMode ? undefined : handleEditComment}
-            onOpenGitHubIssueInOrca={
+            onOpenGitHubIssueInAioAde={
               metaIssue && 'url' in metaIssue && metaIssue.url
-                ? handleOpenGitHubIssueInOrca
+                ? handleOpenGitHubIssueInAioAde
                 : undefined
             }
-            onOpenLinearIssueInOrca={linearIssue?.url ? handleOpenLinearIssueInOrca : undefined}
-            onOpenReviewInOrca={
+            onOpenLinearIssueInAioAde={linearIssue?.url ? handleOpenLinearIssueInAioAde : undefined}
+            onOpenReviewInAioAde={
               metaReview?.url && metaReview.provider === 'github'
-                ? handleOpenReviewInOrca
+                ? handleOpenReviewInAioAde
                 : undefined
             }
             onOpenAutomation={affiliateListMode ? undefined : handleOpenAutomation}
@@ -1325,12 +1325,14 @@ const WorktreeCard = React.memo(function WorktreeCard({
         hoverControl={detailsHoverControl}
         onEditIssue={affiliateListMode ? undefined : handleEditIssue}
         onEditComment={affiliateListMode ? undefined : handleEditComment}
-        onOpenGitHubIssueInOrca={
-          metaIssue && 'url' in metaIssue && metaIssue.url ? handleOpenGitHubIssueInOrca : undefined
+        onOpenGitHubIssueInAioAde={
+          metaIssue && 'url' in metaIssue && metaIssue.url
+            ? handleOpenGitHubIssueInAioAde
+            : undefined
         }
-        onOpenLinearIssueInOrca={linearIssue?.url ? handleOpenLinearIssueInOrca : undefined}
-        onOpenReviewInOrca={
-          metaReview?.url && metaReview.provider === 'github' ? handleOpenReviewInOrca : undefined
+        onOpenLinearIssueInAioAde={linearIssue?.url ? handleOpenLinearIssueInAioAde : undefined}
+        onOpenReviewInAioAde={
+          metaReview?.url && metaReview.provider === 'github' ? handleOpenReviewInAioAde : undefined
         }
         onOpenAutomation={affiliateListMode ? undefined : handleOpenAutomation}
         onOpenAutomationRun={affiliateListMode ? undefined : handleOpenAutomationRun}
@@ -1466,7 +1468,7 @@ const WorktreeCard = React.memo(function WorktreeCard({
                         )
                       : translate(
                           'auto.components.sidebar.WorktreeCard.runtimeHostProject',
-                          'Project on Orca server'
+                          'Project on AIO-ADE server'
                         )}
                 </TooltipContent>
               </Tooltip>
@@ -1826,14 +1828,16 @@ const WorktreeCard = React.memo(function WorktreeCard({
         onRenameWorkspaceTitle={affiliateListMode ? undefined : handleRenameTitle}
         onEditIssue={affiliateListMode ? undefined : handleEditIssue}
         onEditComment={affiliateListMode ? undefined : handleEditComment}
-        onOpenGitHubIssueInOrca={
+        onOpenGitHubIssueInAioAde={
           hoverIssue && 'url' in hoverIssue && hoverIssue.url
-            ? handleOpenGitHubIssueInOrca
+            ? handleOpenGitHubIssueInAioAde
             : undefined
         }
-        onOpenLinearIssueInOrca={linearIssue?.url ? handleOpenLinearIssueInOrca : undefined}
-        onOpenReviewInOrca={
-          hoverReview?.url && hoverReview.provider === 'github' ? handleOpenReviewInOrca : undefined
+        onOpenLinearIssueInAioAde={linearIssue?.url ? handleOpenLinearIssueInAioAde : undefined}
+        onOpenReviewInAioAde={
+          hoverReview?.url && hoverReview.provider === 'github'
+            ? handleOpenReviewInAioAde
+            : undefined
         }
         onOpenAutomation={affiliateListMode ? undefined : handleOpenAutomation}
         onOpenAutomationRun={affiliateListMode ? undefined : handleOpenAutomationRun}

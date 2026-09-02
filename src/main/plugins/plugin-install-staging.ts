@@ -2,10 +2,11 @@ import { existsSync } from 'node:fs'
 import { cp, mkdir, rm } from 'node:fs/promises'
 import { join, relative, resolve, sep } from 'node:path'
 import {
+  getPluginHostVersionRange,
   PLUGIN_MANIFEST_FILENAME,
   parsePluginManifest,
   qualifiedPluginKey,
-  satisfiesOrcaEngineRange,
+  satisfiesHostEngineRange,
   type PluginManifest
 } from '../../shared/plugins/plugin-manifest'
 import { fingerprintPluginConsent } from '../../shared/plugins/plugin-consent-fingerprint'
@@ -70,10 +71,11 @@ async function readInstallManifest(
   if (!parsed.ok) {
     return { ok: false, error: `invalid manifest: ${parsed.error}` }
   }
-  if (!satisfiesOrcaEngineRange(hostVersion, parsed.manifest.engines.orca)) {
+  const hostVersionRange = getPluginHostVersionRange(parsed.manifest)
+  if (!satisfiesHostEngineRange(hostVersion, hostVersionRange)) {
     return {
       ok: false,
-      error: `plugin requires Orca ${parsed.manifest.engines.orca} (this is ${hostVersion})`
+      error: `plugin requires host ${hostVersionRange} (this is ${hostVersion})`
     }
   }
   return { ok: true, manifest: parsed.manifest }
@@ -140,7 +142,7 @@ export async function installStagedPluginTree(input: {
   }
   const blockedReason = input.blockedPluginReason?.(sourceInspection.pluginKey)
   if (blockedReason) {
-    return { ok: false, error: `plugin is blocked by Orca's safety list: ${blockedReason}` }
+    return { ok: false, error: `plugin is blocked by AIO-ADE's safety list: ${blockedReason}` }
   }
   let manifest = sourceInspection.manifest
   const pluginKey = sourceInspection.pluginKey

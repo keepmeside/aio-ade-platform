@@ -68,7 +68,7 @@ import { onOnboardingReopened } from './components/onboarding/show-onboarding-ev
 import { shouldShowOnboarding } from './components/onboarding/should-show-onboarding'
 import { MarkdownTemplatePicker } from './components/editor/MarkdownTemplatePicker'
 import { FloatingTerminalToggleButton } from './components/floating-terminal/FloatingTerminalToggleButton'
-import { OrcaProfileSwitcher } from './components/orca-profiles/OrcaProfileSwitcher'
+import { AioAdeProfileSwitcher } from './components/aio-ade-profiles/AioAdeProfileSwitcher'
 import {
   TOGGLE_FLOATING_TERMINAL_EVENT,
   requestFloatingTerminalOpenMaximized
@@ -114,10 +114,10 @@ import { MacosTccPromptNoticeHost } from './hooks/MacosTccPromptNoticeHost'
 import { useRadixBodyPointerEventsRecovery } from './hooks/useRadixBodyPointerEventsRecovery'
 import { registerUpdaterBeforeUnloadBypass } from './lib/updater-beforeunload'
 import {
-  ORCA_APP_RESTART_ABORTED_EVENT,
-  ORCA_UPDATER_QUIT_AND_INSTALL_ABORTED_EVENT
+  AIO_ADE_APP_RESTART_ABORTED_EVENT,
+  AIO_ADE_UPDATER_QUIT_AND_INSTALL_ABORTED_EVENT
 } from '../../shared/updater-renderer-events'
-import { ORCA_RENDERER_UNLOAD_PREVENTED_EVENT } from '../../shared/renderer-shutdown-events'
+import { AIO_ADE_RENDERER_UNLOAD_PREVENTED_EVENT } from '../../shared/renderer-shutdown-events'
 import {
   buildWorkspaceSessionPayload,
   shouldPersistWorkspaceSession
@@ -174,7 +174,7 @@ import {
 } from './components/feature-tips/feature-tip-startup-gate'
 import {
   trackCmdJPaletteFeatureTipShown,
-  trackOrcaCliFeatureTipShown
+  trackAioAdeCliFeatureTipShown
 } from './components/feature-tips/feature-tip-telemetry'
 import {
   keybindingMatchesAction,
@@ -451,7 +451,7 @@ function App(): React.JSX.Element {
       fetchAllWorktrees: s.fetchAllWorktrees,
       fetchWorktrees: s.fetchWorktrees,
       fetchWorktreeLineage: s.fetchWorktreeLineage,
-      fetchOrcaProfiles: s.fetchOrcaProfiles,
+      fetchAioAdeProfiles: s.fetchAioAdeProfiles,
       fetchSettings: s.fetchSettings,
       fetchKeybindings: s.fetchKeybindings,
       initGitHubCache: s.initGitHubCache,
@@ -816,8 +816,8 @@ function App(): React.JSX.Element {
     }
 
     featureTipsPromptedThisSessionRef.current = true
-    if (featureTipsDecision.tipId === 'orca-cli') {
-      trackOrcaCliFeatureTipShown('app_open')
+    if (featureTipsDecision.tipId === 'aio-ade-cli') {
+      trackAioAdeCliFeatureTipShown('app_open')
     } else if (featureTipsDecision.tipId === 'cmd-j-palette') {
       trackCmdJPaletteFeatureTipShown('app_open')
     }
@@ -859,7 +859,7 @@ function App(): React.JSX.Element {
       logRendererStartupDiagnostic('startup-chain-start')
       try {
         // Why: nothing in the hydration chain reads profile state synchronously, so don't let it add a serial IPC round-trip before fetchSettings.
-        void actions.fetchOrcaProfiles()
+        void actions.fetchAioAdeProfiles()
         // Why: repo/worktree hydration routes through settings.activeRuntimeEnvironmentId; load settings first so a persisted remote runtime doesn't hydrate stale local state.
         await timeRendererStartupStep('fetch-settings', () => actions.fetchSettings())
         // Why: hidden-at-launch PTYs can query OSC 10/11 before any pane mounts; publish view attributes as soon as settings exist so main's silent-until-push responder has data.
@@ -1301,17 +1301,20 @@ function App(): React.JSX.Element {
     })
     const persistBeforeUnload = createShutdownCheckpointBeforeUnloadHandler(shutdownCheckpoint)
     window.addEventListener('beforeunload', persistBeforeUnload)
-    window.addEventListener(ORCA_APP_RESTART_ABORTED_EVENT, shutdownCheckpoint.reset)
-    window.addEventListener(ORCA_UPDATER_QUIT_AND_INSTALL_ABORTED_EVENT, shutdownCheckpoint.reset)
-    window.addEventListener(ORCA_RENDERER_UNLOAD_PREVENTED_EVENT, shutdownCheckpoint.reset)
+    window.addEventListener(AIO_ADE_APP_RESTART_ABORTED_EVENT, shutdownCheckpoint.reset)
+    window.addEventListener(
+      AIO_ADE_UPDATER_QUIT_AND_INSTALL_ABORTED_EVENT,
+      shutdownCheckpoint.reset
+    )
+    window.addEventListener(AIO_ADE_RENDERER_UNLOAD_PREVENTED_EVENT, shutdownCheckpoint.reset)
     return () => {
       window.removeEventListener('beforeunload', persistBeforeUnload)
-      window.removeEventListener(ORCA_APP_RESTART_ABORTED_EVENT, shutdownCheckpoint.reset)
+      window.removeEventListener(AIO_ADE_APP_RESTART_ABORTED_EVENT, shutdownCheckpoint.reset)
       window.removeEventListener(
-        ORCA_UPDATER_QUIT_AND_INSTALL_ABORTED_EVENT,
+        AIO_ADE_UPDATER_QUIT_AND_INSTALL_ABORTED_EVENT,
         shutdownCheckpoint.reset
       )
-      window.removeEventListener(ORCA_RENDERER_UNLOAD_PREVENTED_EVENT, shutdownCheckpoint.reset)
+      window.removeEventListener(AIO_ADE_RENDERER_UNLOAD_PREVENTED_EVENT, shutdownCheckpoint.reset)
     }
   }, [])
 
@@ -1559,7 +1562,7 @@ function App(): React.JSX.Element {
         if (
           input &&
           keybindingContext === 'terminal' &&
-          (terminalShortcutPolicy ?? 'orca-first') === 'orca-first'
+          (terminalShortcutPolicy ?? 'aio-ade-first') === 'aio-ade-first'
         ) {
           showTerminalShortcutCaptureNotification({
             actionId,
@@ -1762,7 +1765,10 @@ function App(): React.JSX.Element {
           terminalShortcutPolicy
         })
       const notifyTerminalCapture = (actionId: KeybindingActionId): void => {
-        if (context !== 'terminal' || (terminalShortcutPolicy ?? 'orca-first') !== 'orca-first') {
+        if (
+          context !== 'terminal' ||
+          (terminalShortcutPolicy ?? 'aio-ade-first') !== 'aio-ade-first'
+        ) {
           return
         }
         showTerminalShortcutCaptureNotification({
@@ -2035,10 +2041,10 @@ function App(): React.JSX.Element {
                 <ContextMenuTrigger asChild>
                   <div
                     className="titlebar-app-name"
-                    aria-label={translate('auto.App.5096cbbc86', 'Orca')}
+                    aria-label={translate('auto.App.5096cbbc86', 'AIO-ADE')}
                   >
                     <span className="titlebar-app-name-main">
-                      {translate('auto.App.5096cbbc86', 'Orca')}
+                      {translate('auto.App.5096cbbc86', 'AIO-ADE')}
                     </span>
                   </div>
                 </ContextMenuTrigger>
@@ -2163,7 +2169,7 @@ function App(): React.JSX.Element {
           </TooltipContent>
         </Tooltip>
       )}
-      {showProfileSwitcherInTopRight ? <OrcaProfileSwitcher /> : null}
+      {showProfileSwitcherInTopRight ? <AioAdeProfileSwitcher /> : null}
       {/* Why: the open right sidebar's header renders its own close button, so hide this duplicate. */}
       {!rightSidebarOpen && rightSidebarToggle}
       {/* Why: reserve space so the Windows/Linux window-controls overlay doesn't obscure content. */}
@@ -2186,7 +2192,7 @@ function App(): React.JSX.Element {
           } as React.CSSProperties
         }
       >
-        <OrcaProfileSwitcher />
+        <AioAdeProfileSwitcher />
       </div>
     ) : null
 
@@ -2357,7 +2363,7 @@ function App(): React.JSX.Element {
                               title={translate('auto.App.b7a714db1e', 'This page hit an error.')}
                               description={translate(
                                 'auto.App.03a14f6b5b',
-                                'Retry the page or navigate to another Orca surface.'
+                                'Retry the page or navigate to another AIO-ADE surface.'
                               )}
                             >
                               {activeView === 'settings' ? <Settings /> : null}

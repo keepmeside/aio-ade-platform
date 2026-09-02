@@ -4,14 +4,14 @@ import { toast } from 'sonner'
 import type { CliInstallStatus } from '../../../../shared/cli-install-types'
 import type { GlobalSettings } from '../../../../shared/types'
 import {
-  ORCA_CLI_SKILL_INSTALL_COMMAND,
-  ORCA_CLI_SKILL_NAME,
-  ORCA_CLI_SKILL_UPDATE_COMMAND
+  AIO_ADE_CLI_SKILL_INSTALL_COMMAND,
+  AIO_ADE_CLI_SKILL_NAME,
+  AIO_ADE_CLI_SKILL_UPDATE_COMMAND
 } from '@/lib/agent-feature-install-commands'
 import {
   AGENT_SKILL_CLI_PREREQUISITE_NOTICE,
-  ensureOrcaCliAvailableForAgentSkillTerminal,
-  isOrcaCliAvailableOnPath
+  ensureAioAdeCliAvailableForAgentSkillTerminal,
+  isAioAdeCliAvailableOnPath
 } from '@/lib/agent-skill-cli-prerequisite'
 import {
   GLOBAL_AGENT_SKILL_SOURCE_KINDS,
@@ -54,19 +54,19 @@ function getRevealLabel(platform: string): string {
 
 function getInstallDescription(platform: string): string {
   if (platform === 'darwin') {
-    return 'Register `orca` in /usr/local/bin.'
+    return 'Register `aio-ade` in /usr/local/bin.'
   }
   if (platform === 'linux') {
-    return 'Register `orca-ide` in ~/.local/bin.'
+    return 'Register `aio-ade` in ~/.local/bin.'
   }
   if (platform === 'win32') {
-    return 'Register `orca` in your user PATH.'
+    return 'Register `aio-ade` in your user PATH.'
   }
   return 'CLI registration is not yet available on this platform.'
 }
 
 function getFallbackCommandName(platform: string): string {
-  return platform === 'linux' ? 'orca-ide' : 'orca'
+  return platform === 'linux' ? 'aio-ade' : 'aio-ade'
 }
 
 export function CliSection({
@@ -95,16 +95,16 @@ export function CliSection({
     loading: cliSkillLoading,
     error: cliSkillError,
     refresh: refreshCliSkill
-  } = useInstalledAgentSkill(ORCA_CLI_SKILL_NAME, {
+  } = useInstalledAgentSkill(AIO_ADE_CLI_SKILL_NAME, {
     discoveryTarget: cliSkillDiscoveryTarget,
     sourceKinds: GLOBAL_AGENT_SKILL_SOURCE_KINDS
   })
   const cliSkillInstallCommand = buildSkillCommandForRuntime(
-    ORCA_CLI_SKILL_INSTALL_COMMAND,
+    AIO_ADE_CLI_SKILL_INSTALL_COMMAND,
     agentRuntime
   )
   const cliSkillUpdateCommand = buildSkillCommandForRuntime(
-    ORCA_CLI_SKILL_UPDATE_COMMAND,
+    AIO_ADE_CLI_SKILL_UPDATE_COMMAND,
     agentRuntime
   )
   const cliSkillTerminalShellOverride = getAgentSkillTerminalShellOverride(
@@ -236,12 +236,12 @@ export function CliSection({
     <section className="space-y-4" data-settings-section="cli">
       <div className="space-y-1">
         <h2 className="text-sm font-semibold">
-          {translate('auto.components.settings.CliSection.c5c0f2641d', 'Orca CLI')}
+          {translate('auto.components.settings.CliSection.c5c0f2641d', 'AIO-ADE CLI')}
         </h2>
         <p className="text-xs text-muted-foreground">
           {translate(
             'auto.components.settings.CliSection.6930feda9e',
-            'Use Orca from your terminal to open the app, manage worktrees, and interact with Orca terminals.'
+            'Use AIO-ADE from your terminal to open the app, manage worktrees, and interact with AIO-ADE terminals.'
           )}
         </p>
       </div>
@@ -362,7 +362,7 @@ export function CliSection({
               <p className="text-xs text-muted-foreground">
                 {translate(
                   'auto.components.settings.CliSection.36a6f919ba',
-                  'Give agents Orca-aware workspace, terminal, and progress workflows.'
+                  'Give agents AIO-ADE-aware workspace, terminal, and progress workflows.'
                 )}
               </p>
             </div>
@@ -373,7 +373,7 @@ export function CliSection({
               title={translate('auto.components.settings.CliSection.6053cf736c', 'CLI skill')}
               description={translate(
                 'auto.components.settings.CliSection.e8012c03a1',
-                'Enables agents to use Orca workspace, terminal, and progress commands.'
+                'Enables agents to use AIO-ADE workspace, terminal, and progress commands.'
               )}
               command={cliSkillInstallCommand}
               installedCommand={cliSkillUpdateCommand}
@@ -386,16 +386,18 @@ export function CliSection({
               error={cliSkillError}
               preInstallNotice={AGENT_SKILL_CLI_PREREQUISITE_NOTICE}
               getPrerequisiteStatus={getCliSkillPrerequisiteStatus}
-              isPrerequisiteAvailable={isOrcaCliAvailableOnPath}
+              isPrerequisiteAvailable={isAioAdeCliAvailableOnPath}
               onBeforeOpenTerminal={async () => {
                 await (agentRuntime.runtime === 'wsl'
                   ? ensureWslCliAvailableForAgentSkillTerminal(agentRuntime)
-                  : ensureOrcaCliAvailableForAgentSkillTerminal({
+                  : ensureAioAdeCliAvailableForAgentSkillTerminal({
                       onStatusChange: handleStatusChange
                     }))
               }}
               onRecheck={refreshCliSkill}
-              freshnessSkillName={agentRuntime.runtime === 'host' ? ORCA_CLI_SKILL_NAME : undefined}
+              freshnessSkillName={
+                agentRuntime.runtime === 'host' ? AIO_ADE_CLI_SKILL_NAME : undefined
+              }
             />
           </div>
         ) : null}

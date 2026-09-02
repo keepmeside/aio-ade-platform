@@ -9,7 +9,7 @@ describe('PowerShell OSC 133 bootstrap', () => {
     const script = getPowerShellOsc133Bootstrap()
 
     expect(script).toContain('[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()')
-    expect(script).toContain('ORCA_CODEX_HOME')
+    expect(script).toContain('AIO_ADE_CODEX_HOME')
     expect(script).toContain('function Global:prompt')
     expect(script).toContain('function Global:PSConsoleHostReadLine')
     expect(script).toContain('Esc = [char]27')

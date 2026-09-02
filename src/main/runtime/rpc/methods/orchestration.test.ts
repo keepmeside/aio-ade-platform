@@ -5,7 +5,7 @@ import { RpcDispatcher } from '../dispatcher'
 import { buildRegistry, type RpcContext, type RpcRequest } from '../core'
 import { OrchestrationDb } from '../../orchestration/db'
 import { reconcileLifecycleMessage } from '../../orchestration/lifecycle-reconciliation'
-import { OrcaRuntimeService } from '../../orca-runtime'
+import { AioAdeRuntimeService } from '../../aio-ade-runtime'
 import type { RuntimeTerminalSummary } from '../../../../shared/runtime-types'
 import { ORCHESTRATION_ASK_MAX_TIMEOUT_MS } from '../../../../shared/orchestration-ask-timeout'
 import { ORCHESTRATION_CONTRACT_VERSION } from '../../../../shared/protocol-version'
@@ -17,7 +17,7 @@ function lifecycleGroupRecipientError(type: 'worker_done' | 'heartbeat'): string
 describe('orchestration RPC methods', () => {
   let db: OrchestrationDb
   let dbOpen = false
-  let runtime: OrcaRuntimeService
+  let runtime: AioAdeRuntimeService
   let ctx: RpcContext
   let activeRunId: string | undefined
 
@@ -26,7 +26,7 @@ describe('orchestration RPC methods', () => {
   function setup(withBoundRun = true): void {
     db = new OrchestrationDb(':memory:')
     dbOpen = true
-    runtime = new OrcaRuntimeService()
+    runtime = new AioAdeRuntimeService()
     runtime.setOrchestrationDb(db)
     vi.spyOn(runtime, 'getTerminalPaneKey').mockImplementation((handle) =>
       handle === 'term_coord' ? coordinatorPaneKey : null
@@ -1972,14 +1972,14 @@ describe('orchestration RPC methods', () => {
 
       expect(send).toHaveBeenCalledWith(
         'term_a',
-        expect.stringContaining('orca-dev orchestration send')
+        expect.stringContaining('aio-ade-dev orchestration send')
       )
     })
 
     it('uses the target pane CLI command for the returned preamble', async () => {
       setup()
       const task = db.createTask({ spec: 'work' })
-      vi.spyOn(runtime, 'getTerminalOrchestrationCliCommand').mockReturnValue('orca-ide')
+      vi.spyOn(runtime, 'getTerminalOrchestrationCliCommand').mockReturnValue('aio-ade')
 
       const result = (await call('orchestration.dispatch', {
         task: task.id,
@@ -1987,9 +1987,12 @@ describe('orchestration RPC methods', () => {
         returnPreamble: true
       })) as { preamble: string }
 
-      expect(runtime.getTerminalOrchestrationCliCommand).toHaveBeenCalledWith('term_wsl')
-      expect(result.preamble).toContain('orca-ide orchestration send')
-      expect(result.preamble).not.toMatch(/(^|\s)orca orchestration/m)
+      /* No handle argument any more: one CLI name is installed on every host, so the resolver has
+       * nothing per-pane to decide. What still matters is that the resolved name reaches the
+       * preamble and no pre-rebrand name appears beside it. */
+      expect(runtime.getTerminalOrchestrationCliCommand).toHaveBeenCalled()
+      expect(result.preamble).toContain('aio-ade orchestration send')
+      expect(result.preamble).not.toMatch(/(^|\s)orca(-ide)? orchestration/m)
     })
 
     it('injects preamble through the agent prompt path instead of raw terminal send', async () => {
@@ -2119,7 +2122,7 @@ describe('orchestration RPC methods', () => {
       vi.mocked(runtime.getTerminalProcessIncarnation).mockImplementation((handle) =>
         handle === 'term_worker' ? 'runtime_test:term_worker:1' : null
       )
-      vi.spyOn(runtime, 'getTerminalOrchestrationCliCommand').mockReturnValue('orca')
+      vi.spyOn(runtime, 'getTerminalOrchestrationCliCommand').mockReturnValue('aio-ade')
       vi.spyOn(runtime, 'sendTerminalAgentPrompt').mockResolvedValue({
         handle: 'term_worker',
         accepted: true,

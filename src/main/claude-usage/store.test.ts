@@ -3,7 +3,7 @@ import type { ClaudeUsagePersistedState } from './types'
 
 vi.mock('electron', () => ({
   app: {
-    getPath: vi.fn(() => '/tmp/orca-test-userdata')
+    getPath: vi.fn(() => '/tmp/aio-ade-test-userdata')
   }
 }))
 
@@ -39,7 +39,7 @@ describe('ClaudeUsageStore', () => {
     vi.setSystemTime(new Date('2026-04-09T12:00:00.000-04:00'))
   })
 
-  it('reports no data for Orca scope when only non-Orca usage exists', async () => {
+  it('reports no data for AIO-ADE scope when only non-AIO-ADE usage exists', async () => {
     const store = createStoreWithState({
       sessions: [
         {
@@ -89,7 +89,7 @@ describe('ClaudeUsageStore', () => {
       ]
     })
 
-    const summary = await store.getSummary('orca', '30d')
+    const summary = await store.getSummary('aio-ade', '30d')
 
     expect(summary.hasAnyClaudeData).toBe(false)
     expect(summary.sessions).toBe(0)
@@ -147,7 +147,7 @@ describe('ClaudeUsageStore', () => {
       ]
     })
 
-    const recentSessions = await store.getRecentSessions('orca', '7d', 10)
+    const recentSessions = await store.getRecentSessions('aio-ade', '7d', 10)
 
     expect(recentSessions).toHaveLength(1)
     expect(recentSessions[0]?.sessionId).toBe('session-1')
@@ -173,7 +173,7 @@ describe('ClaudeUsageStore', () => {
       ]
     })
 
-    const summary = await store.getSummary('orca', '30d')
+    const summary = await store.getSummary('aio-ade', '30d')
 
     expect(summary.turns).toBe(5)
     expect(summary.zeroCacheReadTurns).toBe(2)
@@ -199,8 +199,8 @@ describe('ClaudeUsageStore', () => {
       ]
     })
 
-    const summary = await store.getSummary('orca', '30d')
-    const breakdown = await store.getBreakdown('orca', '30d', 'model')
+    const summary = await store.getSummary('aio-ade', '30d')
+    const breakdown = await store.getBreakdown('aio-ade', '30d', 'model')
 
     expect(summary.estimatedCostUsd).toBeCloseTo(36.75)
     expect(
@@ -242,8 +242,8 @@ describe('ClaudeUsageStore', () => {
       ]
     })
 
-    const summary = await store.getSummary('orca', '30d')
-    const breakdown = await store.getBreakdown('orca', '30d', 'model')
+    const summary = await store.getSummary('aio-ade', '30d')
+    const breakdown = await store.getBreakdown('aio-ade', '30d', 'model')
 
     expect(summary.estimatedCostUsd).toBeCloseTo(73.5)
     expect(
@@ -302,7 +302,7 @@ describe('ClaudeUsageStore', () => {
       ]
     })
 
-    const breakdown = await store.getBreakdown('orca', '30d', 'model')
+    const breakdown = await store.getBreakdown('aio-ade', '30d', 'model')
 
     expect(breakdown.find((row) => row.key === 'claude-opus-5')?.estimatedCostUsd).toBeCloseTo(
       36.75
@@ -335,7 +335,7 @@ describe('ClaudeUsageStore', () => {
       ]
     })
 
-    const summary = await store.getSummary('orca', '30d')
+    const summary = await store.getSummary('aio-ade', '30d')
 
     // Why: Sonnet 4.6 and earlier bill above 200k at a premium; Sonnet 5 does not.
     expect(summary.estimatedCostUsd).toBeCloseTo(6.615)
@@ -359,7 +359,7 @@ describe('ClaudeUsageStore', () => {
       }))
     })
 
-    const breakdown = await store.getBreakdown('orca', '30d', 'model')
+    const breakdown = await store.getBreakdown('aio-ade', '30d', 'model')
 
     // Why: the 4.5 tier premium only survives if `-4-5-` never matches the `-5`
     // family regex, so this doubles as the digit-boundary proof for both families.
@@ -407,7 +407,7 @@ describe('ClaudeUsageStore', () => {
       ]
     })
 
-    const summary = await store.getSummary('orca', '30d')
+    const summary = await store.getSummary('aio-ade', '30d')
 
     expect(summary.estimatedCostUsd).toBeCloseTo(73.5)
   })
@@ -446,7 +446,7 @@ describe('ClaudeUsageStore', () => {
       ]
     })
 
-    const summary = await store.getSummary('orca', '30d')
+    const summary = await store.getSummary('aio-ade', '30d')
 
     expect(summary.estimatedCostUsd).toBeCloseTo(220.5)
   })
@@ -471,7 +471,7 @@ describe('ClaudeUsageStore', () => {
       ]
     })
 
-    const summary = await store.getSummary('orca', '30d')
+    const summary = await store.getSummary('aio-ade', '30d')
 
     expect(summary.estimatedCostUsd).toBeCloseTo(8.07)
   })

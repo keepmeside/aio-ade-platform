@@ -12,18 +12,18 @@ import {
   writeStartupCommandWhenShellReady
 } from './local-pty-shell-ready'
 
-// Why: can't import electron (bundled into the plain-node daemon-entry fork), so tests set the wrapper root via ORCA_USER_DATA_PATH instead of mocking app.
+// Why: can't import electron (bundled into the plain-node daemon-entry fork), so tests set the wrapper root via AIO_ADE_USER_DATA_PATH instead of mocking app.
 function setTestUserDataPath(path: string): void {
-  process.env.ORCA_USER_DATA_PATH = path
+  process.env.AIO_ADE_USER_DATA_PATH = path
 }
 
-const ORIGINAL_ORCA_USER_DATA_PATH = process.env.ORCA_USER_DATA_PATH
+const ORIGINAL_AIO_ADE_USER_DATA_PATH = process.env.AIO_ADE_USER_DATA_PATH
 
 afterEach(() => {
-  if (ORIGINAL_ORCA_USER_DATA_PATH === undefined) {
-    delete process.env.ORCA_USER_DATA_PATH
+  if (ORIGINAL_AIO_ADE_USER_DATA_PATH === undefined) {
+    delete process.env.AIO_ADE_USER_DATA_PATH
   } else {
-    process.env.ORCA_USER_DATA_PATH = ORIGINAL_ORCA_USER_DATA_PATH
+    process.env.AIO_ADE_USER_DATA_PATH = ORIGINAL_AIO_ADE_USER_DATA_PATH
   }
 })
 
@@ -219,8 +219,8 @@ describe('scanForShellReady', () => {
   it('flushes marker-like output when the full marker is not BEL-terminated', () => {
     const state = createShellReadyScanState()
 
-    expect(scanForShellReady(state, 'before \x1b]777;orca-shell-readyx')).toEqual({
-      output: 'before \x1b]777;orca-shell-readyx',
+    expect(scanForShellReady(state, 'before \x1b]777;aio-ade-shell-readyx')).toEqual({
+      output: 'before \x1b]777;aio-ade-shell-readyx',
       matched: false,
       postMarkerBytesObserved: false
     })
@@ -233,21 +233,21 @@ describe('scanForShellReady', () => {
 
   it('reports post-marker bytes only when bytes follow the BEL terminator in the matching call', () => {
     let state = createShellReadyScanState()
-    expect(scanForShellReady(state, 'before \x1b]777;orca-shell-ready\x07')).toEqual({
+    expect(scanForShellReady(state, 'before \x1b]777;aio-ade-shell-ready\x07')).toEqual({
       output: 'before ',
       matched: true,
       postMarkerBytesObserved: false
     })
 
     state = createShellReadyScanState()
-    expect(scanForShellReady(state, 'before \x1b]777;orca-shell-ready\x07% ')).toEqual({
+    expect(scanForShellReady(state, 'before \x1b]777;aio-ade-shell-ready\x07% ')).toEqual({
       output: 'before % ',
       matched: true,
       postMarkerBytesObserved: true
     })
 
     state = createShellReadyScanState()
-    expect(scanForShellReady(state, 'before \x1b]777;orca-shell-ready')).toEqual({
+    expect(scanForShellReady(state, 'before \x1b]777;aio-ade-shell-ready')).toEqual({
       output: 'before ',
       matched: false,
       postMarkerBytesObserved: false
@@ -259,7 +259,7 @@ describe('scanForShellReady', () => {
     })
 
     state = createShellReadyScanState()
-    expect(scanForShellReady(state, '\x1b]777;orca-shell-ready')).toEqual({
+    expect(scanForShellReady(state, '\x1b]777;aio-ade-shell-ready')).toEqual({
       output: '',
       matched: false,
       postMarkerBytesObserved: false
@@ -273,9 +273,9 @@ describe('scanForShellReady', () => {
 })
 
 describe('shell-ready wrapper root resolution', () => {
-  // Why: daemon-entry fork is plain Node (no electron), so the wrapper root resolves from ORCA_USER_DATA_PATH, not app.getPath.
-  it('resolves the wrapper root from ORCA_USER_DATA_PATH', async () => {
-    const root = mkdtempSync(join(tmpdir(), 'orca-userdata-env-'))
+  // Why: daemon-entry fork is plain Node (no electron), so the wrapper root resolves from AIO_ADE_USER_DATA_PATH, not app.getPath.
+  it('resolves the wrapper root from AIO_ADE_USER_DATA_PATH', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'aio-ade-userdata-env-'))
     try {
       setTestUserDataPath(root)
       const { getShellReadyLaunchConfig } = await importFreshLocalPtyShellReady()
@@ -304,7 +304,7 @@ function runInteractiveBashRcfile(rcfileContent: string, tempDir: string): strin
       env: {
         ...process.env,
         HOME: tempDir,
-        ORCA_SHELL_READY_MARKER: '1',
+        AIO_ADE_SHELL_READY_MARKER: '1',
         TERM: process.env.TERM || 'xterm'
       },
       timeout: 5000
@@ -332,48 +332,48 @@ function expectBashOsc133Lifecycle(output: string): void {
 }
 
 function expectZdotdirSourceContext(content: string, fileName: '.zprofile' | '.zshrc' | '.zlogin') {
-  expect(content).toContain('export ZDOTDIR="$_orca_home"')
-  expect(content).toContain(`source "$_orca_home/${fileName}"`)
-  expect(content).toContain('export ZDOTDIR="$_orca_wrapper_zdotdir"')
+  expect(content).toContain('export ZDOTDIR="$_aio_ade_home"')
+  expect(content).toContain(`source "$_aio_ade_home/${fileName}"`)
+  expect(content).toContain('export ZDOTDIR="$_aio_ade_wrapper_zdotdir"')
 }
 
 function expectFinalZdotdirRestoreContext(content: string) {
-  expect(content).toContain("after Orca's last wrapper file has loaded")
-  expect(content).toContain('export ZDOTDIR="$_orca_home"')
+  expect(content).toContain("after AIO-ADE's last wrapper file has loaded")
+  expect(content).toContain('export ZDOTDIR="$_aio_ade_home"')
 }
 
 describePosix('local PTY shell-ready launch config', () => {
   let userDataPath: string
-  let previousOrcaOrigZdotdir: string | undefined
+  let previousAioAdeOrigZdotdir: string | undefined
 
   beforeEach(() => {
-    previousOrcaOrigZdotdir = process.env.ORCA_ORIG_ZDOTDIR
-    delete process.env.ORCA_ORIG_ZDOTDIR
+    previousAioAdeOrigZdotdir = process.env.AIO_ADE_ORIG_ZDOTDIR
+    delete process.env.AIO_ADE_ORIG_ZDOTDIR
     userDataPath = mkdtempSync(join(tmpdir(), 'local-pty-shell-ready-test-'))
     setTestUserDataPath(userDataPath)
   })
 
   afterEach(() => {
-    if (previousOrcaOrigZdotdir === undefined) {
-      delete process.env.ORCA_ORIG_ZDOTDIR
+    if (previousAioAdeOrigZdotdir === undefined) {
+      delete process.env.AIO_ADE_ORIG_ZDOTDIR
     } else {
-      process.env.ORCA_ORIG_ZDOTDIR = previousOrcaOrigZdotdir
+      process.env.AIO_ADE_ORIG_ZDOTDIR = previousAioAdeOrigZdotdir
     }
     rmSync(userDataPath, { recursive: true, force: true })
     vi.restoreAllMocks()
   })
 
-  it('falls back to HOME for ORCA_ORIG_ZDOTDIR when inherited ZDOTDIR points at a wrapper dir', async () => {
-    // Why: mirrors the daemon path — guards the same zsh recursion loop for renderer/local PTYs spawned inside an Orca terminal.
+  it('falls back to HOME for AIO_ADE_ORIG_ZDOTDIR when inherited ZDOTDIR points at a wrapper dir', async () => {
+    // Why: mirrors the daemon path — guards the same zsh recursion loop for renderer/local PTYs spawned inside an AIO-ADE terminal.
     const previousZdotdir = process.env.ZDOTDIR
     const previousHome = process.env.HOME
-    process.env.ZDOTDIR = '/some/other/orca/shell-ready/zsh'
+    process.env.ZDOTDIR = '/some/other/aio-ade/shell-ready/zsh'
     process.env.HOME = '/Users/alice'
     try {
       const { getShellReadyLaunchConfig } = await importFreshLocalPtyShellReady()
       const config = getShellReadyLaunchConfig('/bin/zsh')
-      expect(config.env.ORCA_ORIG_ZDOTDIR).toBe('/Users/alice')
-      expect(config.env.ORCA_ZSHENV_SOURCE_DIR).toBe('/Users/alice')
+      expect(config.env.AIO_ADE_ORIG_ZDOTDIR).toBe('/Users/alice')
+      expect(config.env.AIO_ADE_ZSHENV_SOURCE_DIR).toBe('/Users/alice')
     } finally {
       if (previousZdotdir === undefined) {
         delete process.env.ZDOTDIR
@@ -388,18 +388,18 @@ describePosix('local PTY shell-ready launch config', () => {
     }
   })
 
-  it('uses inherited ORCA_ORIG_ZDOTDIR when ZDOTDIR is an Orca wrapper dir', async () => {
+  it('uses inherited AIO_ADE_ORIG_ZDOTDIR when ZDOTDIR is an AIO-ADE wrapper dir', async () => {
     const previousZdotdir = process.env.ZDOTDIR
-    const previousOrigZdotdir = process.env.ORCA_ORIG_ZDOTDIR
+    const previousOrigZdotdir = process.env.AIO_ADE_ORIG_ZDOTDIR
     const previousHome = process.env.HOME
-    process.env.ZDOTDIR = '/some/other/orca/shell-ready/zsh'
-    process.env.ORCA_ORIG_ZDOTDIR = '/Users/alice/.config/zsh'
+    process.env.ZDOTDIR = '/some/other/aio-ade/shell-ready/zsh'
+    process.env.AIO_ADE_ORIG_ZDOTDIR = '/Users/alice/.config/zsh'
     process.env.HOME = '/Users/alice'
     try {
       const { getShellReadyLaunchConfig } = await importFreshLocalPtyShellReady()
       const config = getShellReadyLaunchConfig('/bin/zsh')
-      expect(config.env.ORCA_ORIG_ZDOTDIR).toBe('/Users/alice/.config/zsh')
-      expect(config.env.ORCA_ZSHENV_SOURCE_DIR).toBe('/Users/alice')
+      expect(config.env.AIO_ADE_ORIG_ZDOTDIR).toBe('/Users/alice/.config/zsh')
+      expect(config.env.AIO_ADE_ZSHENV_SOURCE_DIR).toBe('/Users/alice')
     } finally {
       if (previousZdotdir === undefined) {
         delete process.env.ZDOTDIR
@@ -407,9 +407,9 @@ describePosix('local PTY shell-ready launch config', () => {
         process.env.ZDOTDIR = previousZdotdir
       }
       if (previousOrigZdotdir === undefined) {
-        delete process.env.ORCA_ORIG_ZDOTDIR
+        delete process.env.AIO_ADE_ORIG_ZDOTDIR
       } else {
-        process.env.ORCA_ORIG_ZDOTDIR = previousOrigZdotdir
+        process.env.AIO_ADE_ORIG_ZDOTDIR = previousOrigZdotdir
       }
       if (previousHome === undefined) {
         delete process.env.HOME
@@ -419,18 +419,18 @@ describePosix('local PTY shell-ready launch config', () => {
     }
   })
 
-  it('falls back to HOME when inherited ORCA_ORIG_ZDOTDIR points at a wrapper dir', async () => {
+  it('falls back to HOME when inherited AIO_ADE_ORIG_ZDOTDIR points at a wrapper dir', async () => {
     const previousZdotdir = process.env.ZDOTDIR
-    const previousOrigZdotdir = process.env.ORCA_ORIG_ZDOTDIR
+    const previousOrigZdotdir = process.env.AIO_ADE_ORIG_ZDOTDIR
     const previousHome = process.env.HOME
     delete process.env.ZDOTDIR
-    process.env.ORCA_ORIG_ZDOTDIR = '/some/other/orca/shell-ready/zsh'
+    process.env.AIO_ADE_ORIG_ZDOTDIR = '/some/other/aio-ade/shell-ready/zsh'
     process.env.HOME = '/Users/alice'
     try {
       const { getShellReadyLaunchConfig } = await importFreshLocalPtyShellReady()
       const config = getShellReadyLaunchConfig('/bin/zsh')
-      expect(config.env.ORCA_ORIG_ZDOTDIR).toBe('/Users/alice')
-      expect(config.env.ORCA_ZSHENV_SOURCE_DIR).toBe('/Users/alice')
+      expect(config.env.AIO_ADE_ORIG_ZDOTDIR).toBe('/Users/alice')
+      expect(config.env.AIO_ADE_ZSHENV_SOURCE_DIR).toBe('/Users/alice')
     } finally {
       if (previousZdotdir === undefined) {
         delete process.env.ZDOTDIR
@@ -438,9 +438,9 @@ describePosix('local PTY shell-ready launch config', () => {
         process.env.ZDOTDIR = previousZdotdir
       }
       if (previousOrigZdotdir === undefined) {
-        delete process.env.ORCA_ORIG_ZDOTDIR
+        delete process.env.AIO_ADE_ORIG_ZDOTDIR
       } else {
-        process.env.ORCA_ORIG_ZDOTDIR = previousOrigZdotdir
+        process.env.AIO_ADE_ORIG_ZDOTDIR = previousOrigZdotdir
       }
       if (previousHome === undefined) {
         delete process.env.HOME
@@ -450,7 +450,7 @@ describePosix('local PTY shell-ready launch config', () => {
     }
   })
 
-  it('writes zsh wrappers that guard against ORCA_ORIG_ZDOTDIR self-loops', async () => {
+  it('writes zsh wrappers that guard against AIO_ADE_ORIG_ZDOTDIR self-loops', async () => {
     const { getShellReadyLaunchConfig } = await importFreshLocalPtyShellReady()
 
     getShellReadyLaunchConfig('/bin/zsh')
@@ -459,9 +459,9 @@ describePosix('local PTY shell-ready launch config', () => {
     const zprofile = readFileSync(join(userDataPath, 'shell-ready', 'zsh', '.zprofile'), 'utf8')
     const zshrc = readFileSync(join(userDataPath, 'shell-ready', 'zsh', '.zshrc'), 'utf8')
     const zlogin = readFileSync(join(userDataPath, 'shell-ready', 'zsh', '.zlogin'), 'utf8')
-    expect(zshenv).toContain('_orca_user_zdotdir="${_orca_spawn_orig_zdotdir:-$HOME}"')
-    expect(zshenv).toContain('*/shell-ready/zsh) _orca_user_zdotdir="$HOME" ;;')
-    expect(zshenv).toContain('""|*/shell-ready/zsh) export ORCA_ORIG_ZDOTDIR="$HOME" ;;')
+    expect(zshenv).toContain('_aio_ade_user_zdotdir="${_aio_ade_spawn_orig_zdotdir:-$HOME}"')
+    expect(zshenv).toContain('*/shell-ready/zsh) _aio_ade_user_zdotdir="$HOME" ;;')
+    expect(zshenv).toContain('""|*/shell-ready/zsh) export AIO_ADE_ORIG_ZDOTDIR="$HOME" ;;')
     expectZdotdirSourceContext(zprofile, '.zprofile')
     expectZdotdirSourceContext(zshrc, '.zshrc')
     expectZdotdirSourceContext(zlogin, '.zlogin')
@@ -475,13 +475,13 @@ describePosix('local PTY shell-ready launch config', () => {
     getShellReadyLaunchConfig('/bin/zsh')
 
     const zlogin = readFileSync(join(userDataPath, 'shell-ready', 'zsh', '.zlogin'), 'utf8')
-    expect(zlogin).toContain('zle -N zle-line-init __orca_prompt_mark')
-    expect(zlogin).toContain('__orca_prev_line_init_fn="${widgets[zle-line-init]#user:}"')
-    expect(zlogin).toContain('printf "\\033]777;orca-shell-ready\\007"')
+    expect(zlogin).toContain('zle -N zle-line-init __aio_ade_prompt_mark')
+    expect(zlogin).toContain('__aio_ade_prev_line_init_fn="${widgets[zle-line-init]#user:}"')
+    expect(zlogin).toContain('printf "\\033]777;aio-ade-shell-ready\\007"')
     // Why: add-zle-hook-widget aborts its chain on a non-zero earlier hook (e.g. oh-my-zsh vi-mode); don't register the marker through it.
     expect(zlogin).not.toContain('add-zle-hook-widget line-init')
     // Why: re-source guard — skip re-capturing when already the bound widget so the prior chain survives a second source.
-    expect(zlogin).toContain('== "user:__orca_prompt_mark"')
+    expect(zlogin).toContain('== "user:__aio_ade_prompt_mark"')
   })
 
   it('restores only the Codex and Agent Teams plumbing after user startup files', async () => {
@@ -494,8 +494,8 @@ describePosix('local PTY shell-ready launch config', () => {
     const zlogin = readFileSync(join(userDataPath, 'shell-ready', 'zsh', '.zlogin'), 'utf8')
     const bashRc = getBashShellReadyRcfileContent()
     const codexRestoreLine =
-      '[[ -n "${ORCA_CODEX_HOME:-}" ]] && export CODEX_HOME="${ORCA_CODEX_HOME}"'
-    const agentTeamsPathRestoreLine = '[[ -n "${ORCA_AGENT_TEAMS_SHIM_DIR:-}" ]] || return 0'
+      '[[ -n "${AIO_ADE_CODEX_HOME:-}" ]] && export CODEX_HOME="${AIO_ADE_CODEX_HOME}"'
+    const agentTeamsPathRestoreLine = '[[ -n "${AIO_ADE_AGENT_TEAMS_SHIM_DIR:-}" ]] || return 0'
     expect(zshrc).toContain(codexRestoreLine)
     expect(zlogin).toContain(codexRestoreLine)
     expect(bashRc).toContain(codexRestoreLine)
@@ -506,7 +506,7 @@ describePosix('local PTY shell-ready launch config', () => {
       expect(content).not.toContain('OPENCODE_CONFIG_DIR')
       expect(content).not.toContain('MIMOCODE_HOME')
       expect(content).not.toContain('PI_CODING_AGENT_DIR')
-      expect(content).not.toContain('ORCA_OMP_STATUS_EXTENSION')
+      expect(content).not.toContain('AIO_ADE_OMP_STATUS_EXTENSION')
     }
   })
 
@@ -522,10 +522,10 @@ describePosix('local PTY shell-ready launch config', () => {
     expect(bashRc).toContain('printf "\\033]133;D;%s\\007"')
     expect(bashRc).toContain('printf "\\033]133;C\\007"')
     expect(bashRc).toContain(
-      'PROMPT_COMMAND="__orca_osc133_precmd${PROMPT_COMMAND:+;${PROMPT_COMMAND}}"'
+      'PROMPT_COMMAND="__aio_ade_osc133_precmd${PROMPT_COMMAND:+;${PROMPT_COMMAND}}"'
     )
-    expect(bashRc.indexOf("trap '__orca_osc133_preexec' DEBUG")).toBeGreaterThan(
-      bashRc.indexOf('if [[ "${ORCA_SHELL_READY_MARKER:-0}" == "1" ]]; then')
+    expect(bashRc.indexOf("trap '__aio_ade_osc133_preexec' DEBUG")).toBeGreaterThan(
+      bashRc.indexOf('if [[ "${AIO_ADE_SHELL_READY_MARKER:-0}" == "1" ]]; then')
     )
     // Sanity: zsh wrapper emits the same markers — both branches must stay in sync.
     expect(zshRc).toContain('printf "\\033]133;D;%s\\007"')
@@ -573,14 +573,14 @@ describePosix('local PTY shell-ready launch config', () => {
     expectBashOsc133Lifecycle(output)
   })
 
-  it('preserves a real inherited ZDOTDIR as ORCA_ORIG_ZDOTDIR', async () => {
+  it('preserves a real inherited ZDOTDIR as AIO_ADE_ORIG_ZDOTDIR', async () => {
     const previousZdotdir = process.env.ZDOTDIR
     process.env.ZDOTDIR = '/Users/alice/.config/zsh'
     try {
       const { getShellReadyLaunchConfig } = await importFreshLocalPtyShellReady()
       const config = getShellReadyLaunchConfig('/bin/zsh')
-      expect(config.env.ORCA_ORIG_ZDOTDIR).toBe('/Users/alice/.config/zsh')
-      expect(config.env.ORCA_ZSHENV_SOURCE_DIR).toBe('/Users/alice/.config/zsh')
+      expect(config.env.AIO_ADE_ORIG_ZDOTDIR).toBe('/Users/alice/.config/zsh')
+      expect(config.env.AIO_ADE_ZSHENV_SOURCE_DIR).toBe('/Users/alice/.config/zsh')
     } finally {
       if (previousZdotdir === undefined) {
         delete process.env.ZDOTDIR
@@ -593,12 +593,12 @@ describePosix('local PTY shell-ready launch config', () => {
   it('rejects inherited ZDOTDIR ending in /shell-ready/zsh even with a trailing slash', async () => {
     const previousZdotdir = process.env.ZDOTDIR
     const previousHome = process.env.HOME
-    process.env.ZDOTDIR = '/some/other/orca/shell-ready/zsh/'
+    process.env.ZDOTDIR = '/some/other/aio-ade/shell-ready/zsh/'
     process.env.HOME = '/Users/alice'
     try {
       const { getShellReadyLaunchConfig } = await importFreshLocalPtyShellReady()
       const config = getShellReadyLaunchConfig('/bin/zsh')
-      expect(config.env.ORCA_ORIG_ZDOTDIR).toBe('/Users/alice')
+      expect(config.env.AIO_ADE_ORIG_ZDOTDIR).toBe('/Users/alice')
     } finally {
       if (previousZdotdir === undefined) {
         delete process.env.ZDOTDIR
@@ -621,7 +621,7 @@ describePosix('local PTY shell-ready launch config', () => {
     try {
       const { getShellReadyLaunchConfig } = await importFreshLocalPtyShellReady()
       const config = getShellReadyLaunchConfig('/bin/zsh')
-      expect(config.env.ORCA_ORIG_ZDOTDIR).toBe('/Users/alice')
+      expect(config.env.AIO_ADE_ORIG_ZDOTDIR).toBe('/Users/alice')
     } finally {
       if (previousZdotdir === undefined) {
         delete process.env.ZDOTDIR
@@ -642,7 +642,7 @@ describePosix('local PTY shell-ready launch config', () => {
     try {
       const { getShellReadyLaunchConfig } = await importFreshLocalPtyShellReady()
       const config = getShellReadyLaunchConfig('/bin/zsh')
-      expect(config.env.ORCA_ORIG_ZDOTDIR).toBe('/Users/alice/shell-ready/zsh-custom')
+      expect(config.env.AIO_ADE_ORIG_ZDOTDIR).toBe('/Users/alice/shell-ready/zsh-custom')
     } finally {
       if (previousZdotdir === undefined) {
         delete process.env.ZDOTDIR
@@ -661,17 +661,17 @@ describePosix('local PTY shell-ready launch config', () => {
     const zshenv = readFileSync(join(userDataPath, 'shell-ready', 'zsh', '.zshenv'), 'utf8')
 
     expect(zshenv).toContain('unset ZDOTDIR')
-    expect(zshenv).toContain('_orca_zshenv_source_dir="${ORCA_ZSHENV_SOURCE_DIR:-$HOME}"')
-    expect(zshenv).toContain('source "${_orca_zshenv_path}"')
-    expect(zshenv).toContain('_orca_discovered_zdotdir="${ZDOTDIR:-}"')
+    expect(zshenv).toContain('_aio_ade_zshenv_source_dir="${AIO_ADE_ZSHENV_SOURCE_DIR:-$HOME}"')
+    expect(zshenv).toContain('source "${_aio_ade_zshenv_path}"')
+    expect(zshenv).toContain('_aio_ade_discovered_zdotdir="${ZDOTDIR:-}"')
     expect(zshenv).toContain(
-      'export ORCA_ORIG_ZDOTDIR="${_orca_discovered_zdotdir:-${_orca_user_zdotdir:-$HOME}}"'
+      'export AIO_ADE_ORIG_ZDOTDIR="${_aio_ade_discovered_zdotdir:-${_aio_ade_user_zdotdir:-$HOME}}"'
     )
     expect(zshenv).toContain('export ZDOTDIR=')
   })
 
-  it('preserves spawn-env ORCA_ORIG_ZDOTDIR as fallback when discovery yields nothing', async () => {
-    // Why: if user .zshenv returns early or doesn't set ZDOTDIR, fall back to spawn-env ORCA_ORIG_ZDOTDIR, then HOME.
+  it('preserves spawn-env AIO_ADE_ORIG_ZDOTDIR as fallback when discovery yields nothing', async () => {
+    // Why: if user .zshenv returns early or doesn't set ZDOTDIR, fall back to spawn-env AIO_ADE_ORIG_ZDOTDIR, then HOME.
     const { getShellReadyLaunchConfig } = await importFreshLocalPtyShellReady()
 
     getShellReadyLaunchConfig('/bin/zsh')
@@ -679,10 +679,10 @@ describePosix('local PTY shell-ready launch config', () => {
     const zshenv = readFileSync(join(userDataPath, 'shell-ready', 'zsh', '.zshenv'), 'utf8')
 
     // Save spawn-env value before sourcing user .zshenv
-    expect(zshenv).toContain('_orca_spawn_orig_zdotdir="${ORCA_ORIG_ZDOTDIR:-}"')
+    expect(zshenv).toContain('_aio_ade_spawn_orig_zdotdir="${AIO_ADE_ORIG_ZDOTDIR:-}"')
 
     // Fallback chain: discovered → normalized spawn-env path → HOME
-    expect(zshenv).toContain('${_orca_discovered_zdotdir:-${_orca_user_zdotdir:-$HOME}}')
+    expect(zshenv).toContain('${_aio_ade_discovered_zdotdir:-${_aio_ade_user_zdotdir:-$HOME}}')
   })
 
   it('restores wrapper ZDOTDIR from the runtime sourced path, not the baked literal', async () => {
@@ -694,23 +694,23 @@ describePosix('local PTY shell-ready launch config', () => {
     const zshenv = readFileSync(join(userDataPath, 'shell-ready', 'zsh', '.zshenv'), 'utf8')
 
     // Why: derive wrapper dir from %x, not env $ZDOTDIR — zsh corrupts non-ASCII usernames in its 0x84-0x9D token range.
-    expect(zshenv).toContain('_orca_wrapper_zdotdir_self="${${(%):-%x}:h}"')
+    expect(zshenv).toContain('_aio_ade_wrapper_zdotdir_self="${${(%):-%x}:h}"')
     // Keep $ZDOTDIR only as a fallback when %x yields nothing; the final restore re-validates with -f, so no stat here.
     expect(zshenv).toContain(
-      'if [[ -z "${_orca_wrapper_zdotdir_self:-}" ]]; then\n' +
-        '  _orca_wrapper_zdotdir_self="${ZDOTDIR:-}"\n' +
+      'if [[ -z "${_aio_ade_wrapper_zdotdir_self:-}" ]]; then\n' +
+        '  _aio_ade_wrapper_zdotdir_self="${ZDOTDIR:-}"\n' +
         'fi'
     )
     // Trust the runtime path only when it still holds a wrapper .zshenv; else fall back to the generation-time literal.
     expect(zshenv).toContain(
-      'if [[ -n "${_orca_wrapper_zdotdir_self:-}" && -f "${_orca_wrapper_zdotdir_self:-}/.zshenv" ]]; then\n' +
-        '  export ZDOTDIR="${_orca_wrapper_zdotdir_self:-}"\n' +
+      'if [[ -n "${_aio_ade_wrapper_zdotdir_self:-}" && -f "${_aio_ade_wrapper_zdotdir_self:-}/.zshenv" ]]; then\n' +
+        '  export ZDOTDIR="${_aio_ade_wrapper_zdotdir_self:-}"\n' +
         'else\n' +
         `  export ZDOTDIR='${join(userDataPath, 'shell-ready', 'zsh')}'\n` +
         'fi'
     )
     // Capture must happen before the wrapper unsets ZDOTDIR to source user files.
-    expect(zshenv.indexOf('_orca_wrapper_zdotdir_self="${${(%):-%x}:h}"')).toBeLessThan(
+    expect(zshenv.indexOf('_aio_ade_wrapper_zdotdir_self="${${(%):-%x}:h}"')).toBeLessThan(
       zshenv.indexOf('unset ZDOTDIR')
     )
   })
@@ -730,8 +730,8 @@ describePosix('live zsh subprocess tests', () => {
     let userDataPath: string
 
     beforeEach(async () => {
-      testHome = mkdtempSync(join(tmpdir(), 'orca-zsh-test-home-'))
-      userDataPath = mkdtempSync(join(tmpdir(), 'orca-zsh-test-userdata-'))
+      testHome = mkdtempSync(join(tmpdir(), 'aio-ade-zsh-test-home-'))
+      userDataPath = mkdtempSync(join(tmpdir(), 'aio-ade-zsh-test-userdata-'))
       setTestUserDataPath(userDataPath)
     })
 
@@ -758,7 +758,7 @@ path=(/custom/bin $path)
 `
       )
 
-      // Generate the Orca wrapper
+      // Generate the AIO-ADE wrapper
       const { getShellReadyLaunchConfig } = await importFreshLocalPtyShellReady()
       const config = getShellReadyLaunchConfig('/bin/zsh')
 
@@ -769,17 +769,17 @@ path=(/custom/bin $path)
         PATH: '/usr/bin:/bin'
       }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       // Why: this test isolates zsh top-level path scoping, not attribution shim ordering.
-      delete cleanEnv.ORCA_ATTRIBUTION_SHIM_DIR
-      cleanEnv.ZDOTDIR = config.env.ZDOTDIR // Point to Orca wrapper dir
+      delete cleanEnv.AIO_ADE_ATTRIBUTION_SHIM_DIR
+      cleanEnv.ZDOTDIR = config.env.ZDOTDIR // Point to AIO-ADE wrapper dir
 
       const result = spawnSync(
         'zsh',
         [
           '-i',
           '-c',
-          'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}" && echo "PATH_HAS_CUSTOM=${PATH%%:*}"'
+          'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}" && echo "PATH_HAS_CUSTOM=${PATH%%:*}"'
         ],
         {
           env: cleanEnv as NodeJS.ProcessEnv,
@@ -789,7 +789,7 @@ path=(/custom/bin $path)
 
       expect(result.status).toBe(0)
       const output = result.stdout
-      expect(output).toContain(`ORCA_ORIG_ZDOTDIR=${xdgZshDir}`)
+      expect(output).toContain(`AIO_ADE_ORIG_ZDOTDIR=${xdgZshDir}`)
       expect(output).toContain('PATH_HAS_CUSTOM=/custom/bin')
     })
 
@@ -809,8 +809,8 @@ path=(/custom/bin $path)
           PATH: '/usr/bin:/bin'
         }
         delete cleanEnv.ZDOTDIR
-        delete cleanEnv.ORCA_ORIG_ZDOTDIR
-        delete cleanEnv.ORCA_ATTRIBUTION_SHIM_DIR
+        delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
+        delete cleanEnv.AIO_ADE_ATTRIBUTION_SHIM_DIR
         delete cleanEnv.USER_ZSHRC_LOADED
         cleanEnv.ZDOTDIR = join(movedUserData, 'shell-ready', 'zsh')
 
@@ -857,8 +857,8 @@ path=(/custom/bin $path)
           PATH: '/usr/bin:/bin'
         }
         delete cleanEnv.ZDOTDIR
-        delete cleanEnv.ORCA_ORIG_ZDOTDIR
-        delete cleanEnv.ORCA_ATTRIBUTION_SHIM_DIR
+        delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
+        delete cleanEnv.AIO_ADE_ATTRIBUTION_SHIM_DIR
         delete cleanEnv.USER_ZSHRC_LOADED
         cleanEnv.ZDOTDIR = join(nonAsciiUserData, 'shell-ready', 'zsh')
 
@@ -889,7 +889,7 @@ path=(/custom/bin $path)
         `typeset -U path
 path=(/env/bin $path)
 export MY_VAR=from-zshenv
-orca_zshenv_func() { echo "from-zshenv-function"; }
+aio_ade_zshenv_func() { echo "from-zshenv-function"; }
 export ZDOTDIR="$HOME/.config/zsh"
 `
       )
@@ -903,7 +903,7 @@ export ZDOTDIR="$HOME/.config/zsh"
         PATH: '/usr/bin:/bin'
       }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       delete cleanEnv.MY_VAR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
@@ -911,7 +911,7 @@ export ZDOTDIR="$HOME/.config/zsh"
         'zsh',
         [
           '-c',
-          'echo "PATH_HEAD=${PATH%%:*}" && echo "MY_VAR=${MY_VAR:-unset}" && orca_zshenv_func'
+          'echo "PATH_HEAD=${PATH%%:*}" && echo "MY_VAR=${MY_VAR:-unset}" && aio_ade_zshenv_func'
         ],
         {
           env: cleanEnv as NodeJS.ProcessEnv,
@@ -949,7 +949,7 @@ export ZDOTDIR="$HOME/.config/zsh"
 
       const cleanEnv: Record<string, string | undefined> = { ...process.env, HOME: testHome }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
       const result = spawnSync(
@@ -986,15 +986,15 @@ export ZDOTDIR="$HOME/.config/zsh"
       const { getShellReadyLaunchConfig } = await importFreshLocalPtyShellReady()
       const config = getShellReadyLaunchConfig('/bin/zsh')
 
-      // Build clean env: use wrapper ZDOTDIR but let wrapper discover ORCA_ORIG_ZDOTDIR at runtime
+      // Build clean env: use wrapper ZDOTDIR but let wrapper discover AIO_ADE_ORIG_ZDOTDIR at runtime
       const cleanEnv: Record<string, string | undefined> = { ...process.env, HOME: testHome }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
-      cleanEnv.ZDOTDIR = config.env.ZDOTDIR // Point to Orca wrapper dir
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
+      cleanEnv.ZDOTDIR = config.env.ZDOTDIR // Point to AIO-ADE wrapper dir
 
       const result = spawnSync(
         'zsh',
-        ['-c', 'echo "survived" && echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'],
+        ['-c', 'echo "survived" && echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'],
         {
           env: cleanEnv as NodeJS.ProcessEnv,
           encoding: 'utf8'
@@ -1004,7 +1004,7 @@ export ZDOTDIR="$HOME/.config/zsh"
       expect(result.status).toBe(0)
       expect(result.stdout).toContain('survived')
       // ZDOTDIR discovery yields nothing (early return before export), fallback to HOME
-      expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${testHome}`)
+      expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${testHome}`)
     })
 
     it('falls back to HOME when user .zshenv does not set ZDOTDIR', async () => {
@@ -1019,19 +1019,23 @@ export MY_VAR=foo
       const { getShellReadyLaunchConfig } = await importFreshLocalPtyShellReady()
       const config = getShellReadyLaunchConfig('/bin/zsh')
 
-      // Build clean env: use wrapper ZDOTDIR but let wrapper discover ORCA_ORIG_ZDOTDIR at runtime
+      // Build clean env: use wrapper ZDOTDIR but let wrapper discover AIO_ADE_ORIG_ZDOTDIR at runtime
       const cleanEnv: Record<string, string | undefined> = { ...process.env, HOME: testHome }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
-      cleanEnv.ZDOTDIR = config.env.ZDOTDIR // Point to Orca wrapper dir
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
+      cleanEnv.ZDOTDIR = config.env.ZDOTDIR // Point to AIO-ADE wrapper dir
 
-      const result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
-        env: cleanEnv as NodeJS.ProcessEnv,
-        encoding: 'utf8'
-      })
+      const result = spawnSync(
+        'zsh',
+        ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'],
+        {
+          env: cleanEnv as NodeJS.ProcessEnv,
+          encoding: 'utf8'
+        }
+      )
 
       expect(result.status).toBe(0)
-      expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${testHome}`)
+      expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${testHome}`)
     })
   })
 
@@ -1040,8 +1044,8 @@ export MY_VAR=foo
     let userDataPath: string
 
     beforeEach(async () => {
-      testHome = mkdtempSync(join(tmpdir(), 'orca-zsh-edge-'))
-      userDataPath = mkdtempSync(join(tmpdir(), 'orca-zsh-userdata-'))
+      testHome = mkdtempSync(join(tmpdir(), 'aio-ade-zsh-edge-'))
+      userDataPath = mkdtempSync(join(tmpdir(), 'aio-ade-zsh-userdata-'))
       setTestUserDataPath(userDataPath)
     })
 
@@ -1065,16 +1069,20 @@ export MY_VAR=foo
 
       const cleanEnv: Record<string, string | undefined> = { ...process.env, HOME: testHome }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-      const result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
-        env: cleanEnv as NodeJS.ProcessEnv,
-        encoding: 'utf8'
-      })
+      const result = spawnSync(
+        'zsh',
+        ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'],
+        {
+          env: cleanEnv as NodeJS.ProcessEnv,
+          encoding: 'utf8'
+        }
+      )
 
       expect(result.status).toBe(0)
-      expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${xdgZshDir}`)
+      expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${xdgZshDir}`)
     })
 
     it('preserves ZDOTDIR with spaces in path', async () => {
@@ -1087,16 +1095,20 @@ export MY_VAR=foo
 
       const cleanEnv: Record<string, string | undefined> = { ...process.env, HOME: testHome }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-      const result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
-        env: cleanEnv as NodeJS.ProcessEnv,
-        encoding: 'utf8'
-      })
+      const result = spawnSync(
+        'zsh',
+        ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'],
+        {
+          env: cleanEnv as NodeJS.ProcessEnv,
+          encoding: 'utf8'
+        }
+      )
 
       expect(result.status).toBe(0)
-      expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${spacePath}`)
+      expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${spacePath}`)
     })
 
     it('falls back when .zshenv has syntax error', async () => {
@@ -1107,17 +1119,21 @@ export MY_VAR=foo
 
       const cleanEnv: Record<string, string | undefined> = { ...process.env, HOME: testHome }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-      const result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
-        env: cleanEnv as NodeJS.ProcessEnv,
-        encoding: 'utf8'
-      })
+      const result = spawnSync(
+        'zsh',
+        ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'],
+        {
+          env: cleanEnv as NodeJS.ProcessEnv,
+          encoding: 'utf8'
+        }
+      )
 
       expect(result.status).toBe(0)
       // Syntax error causes discovery to fail, falls back to HOME
-      expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${testHome}`)
+      expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${testHome}`)
     })
 
     it('handles framework pattern with ${ZDOTDIR:-$HOME}', async () => {
@@ -1131,17 +1147,21 @@ export MY_VAR=foo
 
       const cleanEnv: Record<string, string | undefined> = { ...process.env, HOME: testHome }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-      const result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
-        env: cleanEnv as NodeJS.ProcessEnv,
-        encoding: 'utf8'
-      })
+      const result = spawnSync(
+        'zsh',
+        ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'],
+        {
+          env: cleanEnv as NodeJS.ProcessEnv,
+          encoding: 'utf8'
+        }
+      )
 
       expect(result.status).toBe(0)
       // Framework pattern defaults to HOME when ZDOTDIR unset
-      expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${testHome}`)
+      expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${testHome}`)
     })
 
     it('captures last ZDOTDIR value when set multiple times', async () => {
@@ -1160,16 +1180,20 @@ export MY_VAR=foo
 
       const cleanEnv: Record<string, string | undefined> = { ...process.env, HOME: testHome }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-      const result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
-        env: cleanEnv as NodeJS.ProcessEnv,
-        encoding: 'utf8'
-      })
+      const result = spawnSync(
+        'zsh',
+        ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'],
+        {
+          env: cleanEnv as NodeJS.ProcessEnv,
+          encoding: 'utf8'
+        }
+      )
 
       expect(result.status).toBe(0)
-      expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${lastPath}`)
+      expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${lastPath}`)
     })
 
     it('handles conditional ZDOTDIR based on environment', async () => {
@@ -1189,31 +1213,31 @@ export MY_VAR=foo
       // Test without SSH_CONNECTION
       let cleanEnv: Record<string, string | undefined> = { ...process.env, HOME: testHome }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       delete cleanEnv.SSH_CONNECTION
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-      let result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
+      let result = spawnSync('zsh', ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'], {
         env: cleanEnv as NodeJS.ProcessEnv,
         encoding: 'utf8'
       })
 
       expect(result.status).toBe(0)
-      expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${localPath}`)
+      expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${localPath}`)
 
       // Test with SSH_CONNECTION
       cleanEnv = { ...process.env, HOME: testHome, SSH_CONNECTION: '10.0.0.1 12345 10.0.0.2 22' }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-      result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
+      result = spawnSync('zsh', ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'], {
         env: cleanEnv as NodeJS.ProcessEnv,
         encoding: 'utf8'
       })
 
       expect(result.status).toBe(0)
-      expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${remotePath}`)
+      expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${remotePath}`)
     })
 
     it('preserves explicit ZDOTDIR="$HOME" from user .zshenv', async () => {
@@ -1224,16 +1248,20 @@ export MY_VAR=foo
 
       const cleanEnv: Record<string, string | undefined> = { ...process.env, HOME: testHome }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-      const result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
-        env: cleanEnv as NodeJS.ProcessEnv,
-        encoding: 'utf8'
-      })
+      const result = spawnSync(
+        'zsh',
+        ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'],
+        {
+          env: cleanEnv as NodeJS.ProcessEnv,
+          encoding: 'utf8'
+        }
+      )
 
       expect(result.status).toBe(0)
-      expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${testHome}`)
+      expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${testHome}`)
     })
 
     it('falls back when discovered ZDOTDIR does not exist', async () => {
@@ -1245,17 +1273,21 @@ export MY_VAR=foo
 
       const cleanEnv: Record<string, string | undefined> = { ...process.env, HOME: testHome }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-      const result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
-        env: cleanEnv as NodeJS.ProcessEnv,
-        encoding: 'utf8'
-      })
+      const result = spawnSync(
+        'zsh',
+        ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'],
+        {
+          env: cleanEnv as NodeJS.ProcessEnv,
+          encoding: 'utf8'
+        }
+      )
 
       expect(result.status).toBe(0)
       // Validation rejects non-existent path, falls back to HOME
-      expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${testHome}`)
+      expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${testHome}`)
     })
 
     it('does not source /.zshenv when HOME is empty', async () => {
@@ -1266,7 +1298,7 @@ export MY_VAR=foo
       const zshenv = readFileSync(join(userDataPath, 'shell-ready', 'zsh', '.zshenv'), 'utf8')
 
       // Verify wrapper checks the resolved source root is non-empty before sourcing
-      expect(zshenv).toContain('if [[ -n "${_orca_zshenv_source_dir:-}"')
+      expect(zshenv).toContain('if [[ -n "${_aio_ade_zshenv_source_dir:-}"')
     })
 
     it('handles ZDOTDIR with single quote in path', async () => {
@@ -1279,16 +1311,20 @@ export MY_VAR=foo
 
       const cleanEnv: Record<string, string | undefined> = { ...process.env, HOME: testHome }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-      const result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
-        env: cleanEnv as NodeJS.ProcessEnv,
-        encoding: 'utf8'
-      })
+      const result = spawnSync(
+        'zsh',
+        ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'],
+        {
+          env: cleanEnv as NodeJS.ProcessEnv,
+          encoding: 'utf8'
+        }
+      )
 
       expect(result.status).toBe(0)
-      expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${quotePath}`)
+      expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${quotePath}`)
     })
 
     it('does not evaluate command substitution in ZDOTDIR', async () => {
@@ -1302,17 +1338,21 @@ export MY_VAR=foo
 
       const cleanEnv: Record<string, string | undefined> = { ...process.env, HOME: testHome }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-      const result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
-        env: cleanEnv as NodeJS.ProcessEnv,
-        encoding: 'utf8'
-      })
+      const result = spawnSync(
+        'zsh',
+        ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'],
+        {
+          env: cleanEnv as NodeJS.ProcessEnv,
+          encoding: 'utf8'
+        }
+      )
 
       expect(result.status).toBe(0)
       // Should contain the safe path, not any command-substituted value
-      expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${safePath}`)
+      expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${safePath}`)
     })
 
     it('handles whitespace-only ZDOTDIR (tabs and newlines)', async () => {
@@ -1323,17 +1363,21 @@ export MY_VAR=foo
 
       const cleanEnv: Record<string, string | undefined> = { ...process.env, HOME: testHome }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-      const result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
-        env: cleanEnv as NodeJS.ProcessEnv,
-        encoding: 'utf8'
-      })
+      const result = spawnSync(
+        'zsh',
+        ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'],
+        {
+          env: cleanEnv as NodeJS.ProcessEnv,
+          encoding: 'utf8'
+        }
+      )
 
       expect(result.status).toBe(0)
       // Whitespace-only should be normalized to empty, fall back to HOME
-      expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${testHome}`)
+      expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${testHome}`)
     })
 
     it('handles ZDOTDIR with multiple trailing slashes', async () => {
@@ -1346,17 +1390,21 @@ export MY_VAR=foo
 
       const cleanEnv: Record<string, string | undefined> = { ...process.env, HOME: testHome }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-      const result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
-        env: cleanEnv as NodeJS.ProcessEnv,
-        encoding: 'utf8'
-      })
+      const result = spawnSync(
+        'zsh',
+        ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'],
+        {
+          env: cleanEnv as NodeJS.ProcessEnv,
+          encoding: 'utf8'
+        }
+      )
 
       expect(result.status).toBe(0)
       // Should normalize to path without trailing slashes
-      expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${cleanPath}`)
+      expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${cleanPath}`)
     })
   })
 
@@ -1365,8 +1413,8 @@ export MY_VAR=foo
     let userDataPath: string
 
     beforeEach(async () => {
-      testHome = mkdtempSync(join(tmpdir(), 'orca-term-'))
-      userDataPath = mkdtempSync(join(tmpdir(), 'orca-term-userdata-'))
+      testHome = mkdtempSync(join(tmpdir(), 'aio-ade-term-'))
+      userDataPath = mkdtempSync(join(tmpdir(), 'aio-ade-term-userdata-'))
       setTestUserDataPath(userDataPath)
     })
 
@@ -1390,16 +1438,20 @@ export MY_VAR=foo
         TMUX_PANE: '%0'
       }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-      const result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
-        env: cleanEnv as NodeJS.ProcessEnv,
-        encoding: 'utf8'
-      })
+      const result = spawnSync(
+        'zsh',
+        ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'],
+        {
+          env: cleanEnv as NodeJS.ProcessEnv,
+          encoding: 'utf8'
+        }
+      )
 
       expect(result.status).toBe(0)
-      expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${xdgZshDir}`)
+      expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${xdgZshDir}`)
     })
 
     it('discovers ZDOTDIR when launched from SSH session', async () => {
@@ -1418,16 +1470,20 @@ export MY_VAR=foo
         LC_CTYPE: 'C.UTF-8'
       }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-      const result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
-        env: cleanEnv as NodeJS.ProcessEnv,
-        encoding: 'utf8'
-      })
+      const result = spawnSync(
+        'zsh',
+        ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'],
+        {
+          env: cleanEnv as NodeJS.ProcessEnv,
+          encoding: 'utf8'
+        }
+      )
 
       expect(result.status).toBe(0)
-      expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${xdgZshDir}`)
+      expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${xdgZshDir}`)
     })
 
     it('handles sudo -E where HOME and ZDOTDIR mismatch', async () => {
@@ -1443,7 +1499,7 @@ export MY_VAR=foo
         const config = getShellReadyLaunchConfig('/bin/zsh')
 
         // Should preserve user's ZDOTDIR from spawn env, not fall back to /root
-        expect(config.env.ORCA_ORIG_ZDOTDIR).toBe(userZdotdir)
+        expect(config.env.AIO_ADE_ORIG_ZDOTDIR).toBe(userZdotdir)
       } finally {
         if (previousZdotdir === undefined) {
           delete process.env.ZDOTDIR
@@ -1458,13 +1514,13 @@ export MY_VAR=foo
       }
     })
 
-    it('re-discovers ZDOTDIR despite stale ORCA_ORIG_ZDOTDIR from previous session', async () => {
+    it('re-discovers ZDOTDIR despite stale AIO_ADE_ORIG_ZDOTDIR from previous session', async () => {
       const currentZdotdir = join(testHome, '.config', 'zsh-current')
       mkdirSync(currentZdotdir, { recursive: true })
       writeFileSync(join(testHome, '.zshenv'), `export ZDOTDIR="${currentZdotdir}"\n`)
 
-      const previousOrcaZdotdir = process.env.ORCA_ORIG_ZDOTDIR
-      process.env.ORCA_ORIG_ZDOTDIR = '/opt/orca-old/shell-ready/zsh' // stale wrapper path
+      const previousAioAdeZdotdir = process.env.AIO_ADE_ORIG_ZDOTDIR
+      process.env.AIO_ADE_ORIG_ZDOTDIR = '/opt/aio-ade-old/shell-ready/zsh' // stale wrapper path
 
       try {
         const { getShellReadyLaunchConfig } = await importFreshLocalPtyShellReady()
@@ -1473,36 +1529,40 @@ export MY_VAR=foo
         const cleanEnv: Record<string, string | undefined> = {
           ...process.env,
           HOME: testHome,
-          ORCA_ORIG_ZDOTDIR: '/opt/orca-old/shell-ready/zsh'
+          AIO_ADE_ORIG_ZDOTDIR: '/opt/aio-ade-old/shell-ready/zsh'
         }
         delete cleanEnv.ZDOTDIR
         cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-        const result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
-          env: cleanEnv as NodeJS.ProcessEnv,
-          encoding: 'utf8'
-        })
+        const result = spawnSync(
+          'zsh',
+          ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'],
+          {
+            env: cleanEnv as NodeJS.ProcessEnv,
+            encoding: 'utf8'
+          }
+        )
 
         expect(result.status).toBe(0)
         // Should discover fresh value from .zshenv, not use stale wrapper path
-        expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${currentZdotdir}`)
+        expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${currentZdotdir}`)
       } finally {
-        if (previousOrcaZdotdir === undefined) {
-          delete process.env.ORCA_ORIG_ZDOTDIR
+        if (previousAioAdeZdotdir === undefined) {
+          delete process.env.AIO_ADE_ORIG_ZDOTDIR
         } else {
-          process.env.ORCA_ORIG_ZDOTDIR = previousOrcaZdotdir
+          process.env.AIO_ADE_ORIG_ZDOTDIR = previousAioAdeZdotdir
         }
       }
     })
 
-    it('prioritizes fresh discovery over inherited ORCA_ORIG_ZDOTDIR', async () => {
+    it('prioritizes fresh discovery over inherited AIO_ADE_ORIG_ZDOTDIR', async () => {
       const freshZdotdir = join(testHome, '.config', 'zsh-updated')
       mkdirSync(freshZdotdir, { recursive: true })
       writeFileSync(join(testHome, '.zshenv'), `export ZDOTDIR="${freshZdotdir}"\n`)
 
-      const previousOrcaZdotdir = process.env.ORCA_ORIG_ZDOTDIR
+      const previousAioAdeZdotdir = process.env.AIO_ADE_ORIG_ZDOTDIR
       const oldZdotdir = join(testHome, '.config', 'zsh-old')
-      process.env.ORCA_ORIG_ZDOTDIR = oldZdotdir
+      process.env.AIO_ADE_ORIG_ZDOTDIR = oldZdotdir
 
       try {
         const { getShellReadyLaunchConfig } = await importFreshLocalPtyShellReady()
@@ -1511,24 +1571,28 @@ export MY_VAR=foo
         const cleanEnv: Record<string, string | undefined> = {
           ...process.env,
           HOME: testHome,
-          ORCA_ORIG_ZDOTDIR: oldZdotdir
+          AIO_ADE_ORIG_ZDOTDIR: oldZdotdir
         }
         delete cleanEnv.ZDOTDIR
         cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-        const result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
-          env: cleanEnv as NodeJS.ProcessEnv,
-          encoding: 'utf8'
-        })
+        const result = spawnSync(
+          'zsh',
+          ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'],
+          {
+            env: cleanEnv as NodeJS.ProcessEnv,
+            encoding: 'utf8'
+          }
+        )
 
         expect(result.status).toBe(0)
         // Should use fresh discovery (user updated .zshenv)
-        expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${freshZdotdir}`)
+        expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${freshZdotdir}`)
       } finally {
-        if (previousOrcaZdotdir === undefined) {
-          delete process.env.ORCA_ORIG_ZDOTDIR
+        if (previousAioAdeZdotdir === undefined) {
+          delete process.env.AIO_ADE_ORIG_ZDOTDIR
         } else {
-          process.env.ORCA_ORIG_ZDOTDIR = previousOrcaZdotdir
+          process.env.AIO_ADE_ORIG_ZDOTDIR = previousAioAdeZdotdir
         }
       }
     })
@@ -1555,7 +1619,7 @@ export MY_VAR=foo
       try {
         const { getShellReadyLaunchConfig } = await importFreshLocalPtyShellReady()
         const config = getShellReadyLaunchConfig('/bin/zsh')
-        expect(config.env.ORCA_ZSHENV_SOURCE_DIR).toBe(inheritedZdotdir)
+        expect(config.env.AIO_ADE_ZSHENV_SOURCE_DIR).toBe(inheritedZdotdir)
 
         const cleanEnv: Record<string, string | undefined> = {
           ...process.env,
@@ -1567,7 +1631,7 @@ export MY_VAR=foo
           'zsh',
           [
             '-c',
-            'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}" && echo "SOURCE_MARKER=${SOURCE_MARKER:-unset}"'
+            'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}" && echo "SOURCE_MARKER=${SOURCE_MARKER:-unset}"'
           ],
           {
             env: cleanEnv as NodeJS.ProcessEnv,
@@ -1576,7 +1640,7 @@ export MY_VAR=foo
         )
 
         expect(result.status).toBe(0)
-        expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${inheritedZdotdir}`)
+        expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${inheritedZdotdir}`)
         expect(result.stdout).toContain('SOURCE_MARKER=inherited')
       } finally {
         if (previousZdotdir === undefined) {
@@ -1598,8 +1662,8 @@ export MY_VAR=foo
     let userDataPath: string
 
     beforeEach(async () => {
-      testHome = mkdtempSync(join(tmpdir(), 'orca-auto-'))
-      userDataPath = mkdtempSync(join(tmpdir(), 'orca-auto-userdata-'))
+      testHome = mkdtempSync(join(tmpdir(), 'aio-ade-auto-'))
+      userDataPath = mkdtempSync(join(tmpdir(), 'aio-ade-auto-userdata-'))
       setTestUserDataPath(userDataPath)
     })
 
@@ -1616,7 +1680,7 @@ export MY_VAR=foo
 
       const cleanEnv: Record<string, string | undefined> = { ...process.env, HOME: testHome }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
       const result = spawnSync('zsh', ['-c', 'echo "survived"'], {
@@ -1639,17 +1703,21 @@ export MY_VAR=foo
 
       const cleanEnv: Record<string, string | undefined> = { ...process.env, HOME: testHome }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-      const result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
-        env: cleanEnv as NodeJS.ProcessEnv,
-        encoding: 'utf8'
-      })
+      const result = spawnSync(
+        'zsh',
+        ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'],
+        {
+          env: cleanEnv as NodeJS.ProcessEnv,
+          encoding: 'utf8'
+        }
+      )
 
       expect(result.status).toBe(0)
       // No ZDOTDIR was reached after the failing command, so we fall back.
-      expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${testHome}`)
+      expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${testHome}`)
     })
 
     it('survives user .zshenv with set -u before ZDOTDIR is set', async () => {
@@ -1662,17 +1730,21 @@ export MY_VAR=foo
 
       const cleanEnv: Record<string, string | undefined> = { ...process.env, HOME: testHome }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-      const result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
-        env: cleanEnv as NodeJS.ProcessEnv,
-        encoding: 'utf8'
-      })
+      const result = spawnSync(
+        'zsh',
+        ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'],
+        {
+          env: cleanEnv as NodeJS.ProcessEnv,
+          encoding: 'utf8'
+        }
+      )
 
       expect(result.status).toBe(0)
       // Should work because wrapper uses ${ZDOTDIR:-} which is safe with set -u
-      expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${xdgZshDir}`)
+      expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${xdgZshDir}`)
     })
 
     it('survives user .zshenv with nullglob set', async () => {
@@ -1688,16 +1760,20 @@ export MY_VAR=foo
 
       const cleanEnv: Record<string, string | undefined> = { ...process.env, HOME: testHome }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-      const result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
-        env: cleanEnv as NodeJS.ProcessEnv,
-        encoding: 'utf8'
-      })
+      const result = spawnSync(
+        'zsh',
+        ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'],
+        {
+          env: cleanEnv as NodeJS.ProcessEnv,
+          encoding: 'utf8'
+        }
+      )
 
       expect(result.status).toBe(0)
-      expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${xdgZshDir}`)
+      expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${xdgZshDir}`)
     })
 
     it('survives user .zshenv with extendedglob set', async () => {
@@ -1713,16 +1789,20 @@ export MY_VAR=foo
 
       const cleanEnv: Record<string, string | undefined> = { ...process.env, HOME: testHome }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-      const result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
-        env: cleanEnv as NodeJS.ProcessEnv,
-        encoding: 'utf8'
-      })
+      const result = spawnSync(
+        'zsh',
+        ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'],
+        {
+          env: cleanEnv as NodeJS.ProcessEnv,
+          encoding: 'utf8'
+        }
+      )
 
       expect(result.status).toBe(0)
-      expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${xdgZshDir}`)
+      expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${xdgZshDir}`)
     })
 
     it('preserves exported .zshenv environment changes in the wrapper shell', async () => {
@@ -1739,7 +1819,7 @@ export MY_VAR=foo
 
       const cleanEnv: Record<string, string | undefined> = { ...process.env, HOME: testHome }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       delete cleanEnv.MY_VAR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
@@ -1759,17 +1839,21 @@ export MY_VAR=foo
 
       const cleanEnv: Record<string, string | undefined> = { HOME: '' }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-      const result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
-        env: cleanEnv as NodeJS.ProcessEnv,
-        encoding: 'utf8'
-      })
+      const result = spawnSync(
+        'zsh',
+        ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'],
+        {
+          env: cleanEnv as NodeJS.ProcessEnv,
+          encoding: 'utf8'
+        }
+      )
 
       expect(result.status).toBe(0)
-      // Empty HOME falls back to empty ORCA_ORIG_ZDOTDIR
-      expect(result.stdout).toContain('ORCA_ORIG_ZDOTDIR=\n')
+      // Empty HOME falls back to empty AIO_ADE_ORIG_ZDOTDIR
+      expect(result.stdout).toContain('AIO_ADE_ORIG_ZDOTDIR=\n')
     })
 
     it('handles unset HOME gracefully', async () => {
@@ -1780,17 +1864,21 @@ export MY_VAR=foo
       const cleanEnv: Record<string, string | undefined> = {}
       delete cleanEnv.HOME
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-      const result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
-        env: cleanEnv as NodeJS.ProcessEnv,
-        encoding: 'utf8'
-      })
+      const result = spawnSync(
+        'zsh',
+        ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'],
+        {
+          env: cleanEnv as NodeJS.ProcessEnv,
+          encoding: 'utf8'
+        }
+      )
 
       expect(result.status).toBe(0)
       // zsh initializes HOME from passwd, wrapper discovers ZDOTDIR normally
-      expect(result.stdout).toMatch(/ORCA_ORIG_ZDOTDIR=.+/)
+      expect(result.stdout).toMatch(/AIO_ADE_ORIG_ZDOTDIR=.+/)
     })
 
     it('handles ZDOTDIR containing only "/"', async () => {
@@ -1801,17 +1889,21 @@ export MY_VAR=foo
 
       const cleanEnv: Record<string, string | undefined> = { ...process.env, HOME: testHome }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-      const result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
-        env: cleanEnv as NodeJS.ProcessEnv,
-        encoding: 'utf8'
-      })
+      const result = spawnSync(
+        'zsh',
+        ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'],
+        {
+          env: cleanEnv as NodeJS.ProcessEnv,
+          encoding: 'utf8'
+        }
+      )
 
       expect(result.status).toBe(0)
       // Single slash normalizes to empty after %/, falls back to HOME
-      expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${testHome}`)
+      expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${testHome}`)
     })
 
     it('handles ZDOTDIR containing only slashes "///"', async () => {
@@ -1822,17 +1914,21 @@ export MY_VAR=foo
 
       const cleanEnv: Record<string, string | undefined> = { ...process.env, HOME: testHome }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-      const result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
-        env: cleanEnv as NodeJS.ProcessEnv,
-        encoding: 'utf8'
-      })
+      const result = spawnSync(
+        'zsh',
+        ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'],
+        {
+          env: cleanEnv as NodeJS.ProcessEnv,
+          encoding: 'utf8'
+        }
+      )
 
       expect(result.status).toBe(0)
       // Multiple slashes normalize to "/" then to empty after %/, falls back to HOME
-      expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${testHome}`)
+      expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${testHome}`)
     })
 
     it('handles user .zshenv that unsets HOME', async () => {
@@ -1845,17 +1941,21 @@ export MY_VAR=foo
 
       const cleanEnv: Record<string, string | undefined> = { ...process.env, HOME: testHome }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-      const result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
-        env: cleanEnv as NodeJS.ProcessEnv,
-        encoding: 'utf8'
-      })
+      const result = spawnSync(
+        'zsh',
+        ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'],
+        {
+          env: cleanEnv as NodeJS.ProcessEnv,
+          encoding: 'utf8'
+        }
+      )
 
       expect(result.status).toBe(0)
       // Subshell unsets HOME but wrapper HOME is in parent scope
-      expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${xdgZshDir}`)
+      expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${xdgZshDir}`)
     })
 
     it('handles user .zshenv that sets ZDOTDIR to empty string', async () => {
@@ -1866,17 +1966,21 @@ export MY_VAR=foo
 
       const cleanEnv: Record<string, string | undefined> = { ...process.env, HOME: testHome }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-      const result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
-        env: cleanEnv as NodeJS.ProcessEnv,
-        encoding: 'utf8'
-      })
+      const result = spawnSync(
+        'zsh',
+        ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'],
+        {
+          env: cleanEnv as NodeJS.ProcessEnv,
+          encoding: 'utf8'
+        }
+      )
 
       expect(result.status).toBe(0)
       // Empty string should be normalized away, fall back to HOME
-      expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${testHome}`)
+      expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${testHome}`)
     })
 
     it('handles conditional unset of ZDOTDIR', async () => {
@@ -1897,32 +2001,32 @@ export MY_VAR=foo
         TERM: 'dumb'
       }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-      let result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
+      let result = spawnSync('zsh', ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'], {
         env: cleanEnv as NodeJS.ProcessEnv,
         encoding: 'utf8'
       })
 
       expect(result.status).toBe(0)
       // ZDOTDIR unset conditionally, falls back to HOME
-      expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${testHome}`)
+      expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${testHome}`)
 
       // Test with TERM=xterm
       cleanEnv = { ...process.env, HOME: testHome, TERM: 'xterm-256color' }
       delete cleanEnv.ZDOTDIR
-      delete cleanEnv.ORCA_ORIG_ZDOTDIR
+      delete cleanEnv.AIO_ADE_ORIG_ZDOTDIR
       cleanEnv.ZDOTDIR = config.env.ZDOTDIR
 
-      result = spawnSync('zsh', ['-c', 'echo "ORCA_ORIG_ZDOTDIR=${ORCA_ORIG_ZDOTDIR}"'], {
+      result = spawnSync('zsh', ['-c', 'echo "AIO_ADE_ORIG_ZDOTDIR=${AIO_ADE_ORIG_ZDOTDIR}"'], {
         env: cleanEnv as NodeJS.ProcessEnv,
         encoding: 'utf8'
       })
 
       expect(result.status).toBe(0)
       // ZDOTDIR not unset, uses discovered value
-      expect(result.stdout).toContain(`ORCA_ORIG_ZDOTDIR=${xdgZshDir}`)
+      expect(result.stdout).toContain(`AIO_ADE_ORIG_ZDOTDIR=${xdgZshDir}`)
     })
   })
 })

@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import type * as Os from 'node:os'
 import { join } from 'node:path'
+import { getAppHomeDir } from '../../shared/app-home-paths'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const safeStorageMock = vi.hoisted(() => ({
@@ -25,7 +26,7 @@ async function loadStoreModule() {
 }
 
 beforeEach(() => {
-  tempHome = mkdtempLike('orca-openai-key-store-')
+  tempHome = mkdtempLike('aio-ade-openai-key-store-')
   safeStorageMock.decryptString.mockClear()
   safeStorageMock.encryptString.mockClear()
   safeStorageMock.isEncryptionAvailable.mockClear()
@@ -37,9 +38,9 @@ function mkdtempLike(prefix: string): string {
 }
 
 function writeStoredOpenAiKey(value: string): void {
-  const orcaDir = join(tempHome, '.orca')
-  mkdirSync(orcaDir, { recursive: true })
-  writeFileSync(join(orcaDir, 'openai-speech-token.enc'), value)
+  const appDataDir = getAppHomeDir(tempHome)
+  mkdirSync(appDataDir, { recursive: true })
+  writeFileSync(join(appDataDir, 'openai-speech-token.enc'), value)
 }
 
 describe('OpenAI speech API key store', () => {
@@ -82,7 +83,7 @@ describe('OpenAI speech API key store', () => {
     const store = await loadStoreModule()
 
     expect(store.hasOpenAiSpeechApiKey()).toBe(false)
-    expect(existsSync(join(tempHome, '.orca'))).toBe(false)
+    expect(existsSync(getAppHomeDir(tempHome))).toBe(false)
     expect(safeStorageMock.decryptString).not.toHaveBeenCalled()
   })
 })

@@ -85,7 +85,7 @@ function remoteCodexSources(
       remoteHome,
       '.local',
       'share',
-      'orca',
+      'aio-ade',
       'codex-runtime-home',
       'home'
     )

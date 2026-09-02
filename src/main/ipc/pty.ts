@@ -12,7 +12,7 @@ import {
   powerMonitor
 } from 'electron'
 export { getBashShellReadyRcfileContent } from '../providers/local-pty-shell-ready'
-import type { OrcaRuntimeService } from '../runtime/orca-runtime'
+import type { AioAdeRuntimeService } from '../runtime/aio-ade-runtime'
 import type { Store } from '../persistence'
 import type { GlobalSettings, TuiAgent } from '../../shared/types'
 import { toSshExecutionHostId } from '../../shared/execution-host'
@@ -89,7 +89,7 @@ import {
   applyTerminalAttributionEnv,
   resolveAttributionShellFamily
 } from '../attribution/terminal-attribution'
-import { ensureLinuxTerminalOrcaCliShimDir } from '../cli/linux-terminal-orca-cli-shim'
+import { ensureLinuxTerminalAioAdeCliShimDir } from '../cli/linux-terminal-aio-ade-cli-shim'
 import { registerPty, unregisterPty } from '../memory/pty-registry'
 import { advertisedUrlWatcher } from '../ports/advertised-url-watcher'
 import { track } from '../telemetry/client'
@@ -131,7 +131,7 @@ import {
 } from '../agent-hooks/migration-unsupported-pty-state'
 import { parseWslPath } from '../wsl'
 import { mergePersistedWindowsPath } from '../pty/windows-environment-path'
-import { addOrcaWslInteropEnv } from '../pty/wsl-orca-env'
+import { addAioAdeWslInteropEnv } from '../pty/wsl-aio-ade-env'
 import { PtyProducerFlowController } from './pty-producer-flow-control'
 import { beginTerminalInstall } from './watcher-removal-gate'
 import {
@@ -237,16 +237,16 @@ const ptyPaneKey = new Map<string, string>()
 const paneKeyPtyId = new Map<string, string>()
 
 const AGENT_HOOK_RUNTIME_ENV_KEYS = [
-  'ORCA_AGENT_HOOK_PORT',
-  'ORCA_AGENT_HOOK_TOKEN',
-  'ORCA_AGENT_HOOK_ENV',
-  'ORCA_AGENT_HOOK_VERSION',
-  'ORCA_AGENT_HOOK_ENDPOINT',
+  'AIO_ADE_AGENT_HOOK_PORT',
+  'AIO_ADE_AGENT_HOOK_TOKEN',
+  'AIO_ADE_AGENT_HOOK_ENV',
+  'AIO_ADE_AGENT_HOOK_VERSION',
+  'AIO_ADE_AGENT_HOOK_ENDPOINT',
   // Why: PR 2778 briefly exported this path; keep deleting stale inherited values so older PTYs can't leak the reverted path.
-  'ORCA_CLAUDE_AGENT_STATUS_SETTINGS'
+  'AIO_ADE_CLAUDE_AGENT_STATUS_SETTINGS'
 ] as const
 
-// Why: Orca never sets these, so an inherited value means a pty host launched from inside a Claude session — Claude reads it as a nested child and silently stops persisting the transcript.
+// Why: AIO-ADE never sets these, so an inherited value means a pty host launched from inside a Claude session — Claude reads it as a nested child and silently stops persisting the transcript.
 const CLAUDE_CHILD_SESSION_STAMP_ENV_KEYS = [
   'CLAUDE_CODE_CHILD_SESSION',
   'CLAUDE_CODE_SESSION_ID',
@@ -534,18 +534,18 @@ function stripRemotePaneEnvWhenHooksDisabled(
   }
   if (
     !env ||
-    (!('ORCA_PANE_KEY' in env) &&
-      !('ORCA_TAB_ID' in env) &&
-      !('ORCA_WORKTREE_ID' in env) &&
-      !('ORCA_AGENT_LAUNCH_TOKEN' in env))
+    (!('AIO_ADE_PANE_KEY' in env) &&
+      !('AIO_ADE_TAB_ID' in env) &&
+      !('AIO_ADE_WORKTREE_ID' in env) &&
+      !('AIO_ADE_AGENT_LAUNCH_TOKEN' in env))
   ) {
     return env
   }
   const stripped = { ...env }
-  delete stripped.ORCA_PANE_KEY
-  delete stripped.ORCA_TAB_ID
-  delete stripped.ORCA_WORKTREE_ID
-  delete stripped.ORCA_AGENT_LAUNCH_TOKEN
+  delete stripped.AIO_ADE_PANE_KEY
+  delete stripped.AIO_ADE_TAB_ID
+  delete stripped.AIO_ADE_WORKTREE_ID
+  delete stripped.AIO_ADE_AGENT_LAUNCH_TOKEN
   return stripped
 }
 
@@ -683,9 +683,9 @@ export type BuildPtyHostEnvOptions = {
   selectedCodexHomePath: string | null
   skipCodexHomeEnv?: boolean
   /** System-default real-home routing (flag ON): inject no managed CODEX_HOME,
-   *  and strip only an inherited Orca-owned override so nested Orca panes do not
+   *  and strip only an inherited AIO-ADE-owned override so nested AIO-ADE panes do not
    *  leak the parent's managed home. A user-set CODEX_HOME is preserved. */
-  stripInheritedOrcaCodexHome?: boolean
+  stripInheritedAioAdeCodexHome?: boolean
   githubAttributionEnabled: boolean
   /** Launch command the renderer chose (e.g. 'pi', 'omp', 'claude'); resolves the per-agent
    *  extension target for Pi/OMP. Undefined for bare shells → defaults to Pi. NEVER infer from
@@ -716,7 +716,7 @@ function promoteAgentTeamsShimPath(
   env: Record<string, string> | undefined,
   requestedPath: string | undefined
 ): void {
-  if (!env?.ORCA_AGENT_TEAMS_TEAM_ID) {
+  if (!env?.AIO_ADE_AGENT_TEAMS_TEAM_ID) {
     return
   }
   const shimPath = firstPathEntry(requestedPath)
@@ -728,7 +728,7 @@ function promoteAgentTeamsShimPath(
   const remaining = currentPath
     .split(delimiter)
     .filter((entry) => entry.length > 0 && entry !== shimPath)
-  // Why: host env injection prepends Orca's shims; Claude Agent Teams must still resolve our fake tmux before any real tmux.
+  // Why: host env injection prepends AIO-ADE's shims; Claude Agent Teams must still resolve our fake tmux before any real tmux.
   env[currentPathKey] = [shimPath, ...remaining].join(delimiter)
 }
 
@@ -752,9 +752,9 @@ function shouldSkipCodexHomeEnvForWindowsShell(
 }
 
 // Why: with the real-home flag ON, a host system-default launch resolves to a
-// null managed home. Signal the env builder to strip a nested-Orca-inherited
+// null managed home. Signal the env builder to strip a nested-AIO-ADE-inherited
 // override instead of injecting one, so Codex runs on the user's own ~/.codex.
-function shouldStripInheritedOrcaCodexHome(args: {
+function shouldStripInheritedAioAdeCodexHome(args: {
   target: CodexAccountSelectionTarget
   selectedCodexHomePath: string | null
   skipCodexHomeEnv: boolean
@@ -768,26 +768,26 @@ function shouldStripInheritedOrcaCodexHome(args: {
   )
 }
 
-const CODEX_HOME_ENV_KEYS = ['CODEX_HOME', 'ORCA_CODEX_HOME'] as const
+const CODEX_HOME_ENV_KEYS = ['CODEX_HOME', 'AIO_ADE_CODEX_HOME'] as const
 
 // Why: system-default real-home routing runs Codex on the user's own ~/.codex.
-// Nested Orca panes inherit the parent's Orca-owned override; strip only that
-// (CODEX_HOME matching Orca's private ORCA_CODEX_HOME marker), and always drop
+// Nested AIO-ADE panes inherit the parent's AIO-ADE-owned override; strip only that
+// (CODEX_HOME matching AIO-ADE's private AIO_ADE_CODEX_HOME marker), and always drop
 // the marker so a shell-ready wrapper cannot restore the managed home. A
-// user-set CODEX_HOME with no Orca marker is preserved untouched (see #8606).
-function stripInheritedOrcaCodexHomeOverride(baseEnv: Record<string, string>): void {
-  for (const key of getLocalOrcaCodexHomeEnvKeysToDelete(baseEnv)) {
+// user-set CODEX_HOME with no AIO-ADE marker is preserved untouched (see #8606).
+function stripInheritedAioAdeCodexHomeOverride(baseEnv: Record<string, string>): void {
+  for (const key of getLocalAioAdeCodexHomeEnvKeysToDelete(baseEnv)) {
     delete baseEnv[key]
   }
 }
 
 // Why: in-process spawns share main's inherited environment, so equality with
 // the private marker is authoritative here. Persistent daemons compare locally.
-function getLocalOrcaCodexHomeEnvKeysToDelete(env: Record<string, string>): string[] {
-  const inheritedOrcaOverride = env.ORCA_CODEX_HOME ?? process.env.ORCA_CODEX_HOME
+function getLocalAioAdeCodexHomeEnvKeysToDelete(env: Record<string, string>): string[] {
+  const inheritedAioAdeOverride = env.AIO_ADE_CODEX_HOME ?? process.env.AIO_ADE_CODEX_HOME
   const inheritedCodexHome = env.CODEX_HOME ?? process.env.CODEX_HOME
-  const keysToDelete = ['ORCA_CODEX_HOME']
-  if (inheritedOrcaOverride && inheritedCodexHome === inheritedOrcaOverride) {
+  const keysToDelete = ['AIO_ADE_CODEX_HOME']
+  if (inheritedAioAdeOverride && inheritedCodexHome === inheritedAioAdeOverride) {
     keysToDelete.push('CODEX_HOME')
   }
   return keysToDelete
@@ -883,7 +883,7 @@ function mergePtyEnvDeletions(
 
 function removeCodexHomeDeletionRequests(keys: string[] | undefined): string[] | undefined {
   // Why: resume provenance is launch-authoritative; late deletions must not fall back to the current account.
-  const filtered = keys?.filter((key) => key !== 'CODEX_HOME' && key !== 'ORCA_CODEX_HOME')
+  const filtered = keys?.filter((key) => key !== 'CODEX_HOME' && key !== 'AIO_ADE_CODEX_HOME')
   return filtered?.length ? filtered : undefined
 }
 
@@ -938,43 +938,43 @@ export function buildPtyHostEnv(
       wslHookRelayManager.ensureForDistro(distro)
       const guestEndpoint = wslHookRelayManager.getGuestEndpointFilePath(distro)
       if (guestEndpoint) {
-        baseEnv.ORCA_AGENT_HOOK_ENDPOINT = guestEndpoint
+        baseEnv.AIO_ADE_AGENT_HOOK_ENDPOINT = guestEndpoint
       }
     }
   }
 
-  // Why: keep the Codex home override PTY-scoped so dev/prod Orcas don't share hooks through ~/.codex.
+  // Why: keep the Codex home override PTY-scoped so dev/prod AioAdes don't share hooks through ~/.codex.
   if (opts.skipCodexHomeEnv) {
     delete baseEnv.CODEX_HOME
-    delete baseEnv.ORCA_CODEX_HOME
+    delete baseEnv.AIO_ADE_CODEX_HOME
   } else if (opts.selectedCodexHomePath) {
     baseEnv.CODEX_HOME = opts.selectedCodexHomePath
     // Why: user startup files may re-export CODEX_HOME; shell-ready wrappers restore this runtime home before Codex launches.
-    baseEnv.ORCA_CODEX_HOME = opts.selectedCodexHomePath
-  } else if (opts.stripInheritedOrcaCodexHome) {
-    stripInheritedOrcaCodexHomeOverride(baseEnv)
+    baseEnv.AIO_ADE_CODEX_HOME = opts.selectedCodexHomePath
+  } else if (opts.stripInheritedAioAdeCodexHome) {
+    stripInheritedAioAdeCodexHomeOverride(baseEnv)
   }
 
-  // Why: WSL shells need the managed userData root for shell-ready wrappers; dev-mode terminals need the same export so `orca` targets the live dev instance.
+  // Why: WSL shells need the managed userData root for shell-ready wrappers; dev-mode terminals need the same export so `aio-ade` targets the live dev instance.
   if (opts.isWsl) {
-    baseEnv.ORCA_USER_DATA_PATH = opts.userDataPath
-    // Why: managed WSL registration uses `orca-ide`; exposing that literal scopes agent guidance to WSL without a bare-orca shim.
-    baseEnv.ORCA_CLI_COMMAND = opts.isPackaged ? 'orca-ide' : 'orca-dev'
+    baseEnv.AIO_ADE_USER_DATA_PATH = opts.userDataPath
+    // Why: managed WSL registration uses `aio-ade`; exposing that literal scopes agent guidance to WSL without a bare-aio-ade shim.
+    baseEnv.AIO_ADE_CLI_COMMAND = opts.isPackaged ? 'aio-ade' : 'aio-ade-dev'
   } else {
     if (!opts.isPackaged) {
-      baseEnv.ORCA_USER_DATA_PATH ??= opts.userDataPath
+      baseEnv.AIO_ADE_USER_DATA_PATH ??= opts.userDataPath
     }
-    delete baseEnv.ORCA_CLI_COMMAND
+    delete baseEnv.AIO_ADE_CLI_COMMAND
   }
-  // Why: dev mode needs the launcher PATH override so `orca` resolves to the dev build instead of the production binary at /usr/local/bin/orca.
+  // Why: dev mode needs the launcher PATH override so `aio-ade` resolves to the dev build instead of the production binary at /usr/local/bin/aio-ade.
   if (!opts.isPackaged) {
     const devCliBin = join(opts.userDataPath, 'cli', 'bin')
     const inheritedPath = readInheritedPath(baseEnv)
     // Why: an empty PATH segment resolves as `.` in some shells (commands run from cwd); avoid a trailing delimiter.
     baseEnv.PATH = inheritedPath ? `${devCliBin}${delimiter}${inheritedPath}` : devCliBin
   } else if (process.platform === 'linux') {
-    // Why: bare-`orca` shim scoped to Orca PTYs — Linux CLI installs as `orca-ide` to avoid shadowing GNOME's /usr/bin/orca screen reader (stablyai/orca#7904).
-    const shimDir = ensureLinuxTerminalOrcaCliShimDir({ userDataPath: opts.userDataPath })
+    // Why: bare-`aio-ade` shim scoped to AIO-ADE PTYs — Linux CLI installs as `aio-ade` to avoid shadowing GNOME's /usr/bin/orca screen reader (keepmeside/aio-ade-platform#7904).
+    const shimDir = ensureLinuxTerminalAioAdeCliShimDir({ userDataPath: opts.userDataPath })
     if (shimDir) {
       const inheritedEntries = readInheritedPath(baseEnv)
         .split(delimiter)
@@ -983,13 +983,13 @@ export function buildPtyHostEnv(
     }
   }
 
-  // Why: PATH shims keep GitHub attribution scoped to Orca's own PTYs without rewriting user git config.
+  // Why: PATH shims keep GitHub attribution scoped to AIO-ADE's own PTYs without rewriting user git config.
   if (!opts.githubAttributionEnabled) {
-    delete baseEnv.ORCA_ENABLE_GIT_ATTRIBUTION
-    delete baseEnv.ORCA_GIT_COMMIT_TRAILER
-    delete baseEnv.ORCA_GH_PR_FOOTER
-    delete baseEnv.ORCA_GH_ISSUE_FOOTER
-    delete baseEnv.ORCA_ATTRIBUTION_SHIM_DIR
+    delete baseEnv.AIO_ADE_ENABLE_GIT_ATTRIBUTION
+    delete baseEnv.AIO_ADE_GIT_COMMIT_TRAILER
+    delete baseEnv.AIO_ADE_GH_PR_FOOTER
+    delete baseEnv.AIO_ADE_GH_ISSUE_FOOTER
+    delete baseEnv.AIO_ADE_ATTRIBUTION_SHIM_DIR
   }
   applyTerminalAttributionEnv(baseEnv, {
     enabled: opts.githubAttributionEnabled,
@@ -1415,7 +1415,7 @@ export function unbindLocalProviderListeners(): void {
 
 export function registerPtyHandlers(
   mainWindow: BrowserWindow,
-  runtime?: OrcaRuntimeService,
+  runtime?: AioAdeRuntimeService,
   getSelectedCodexHomePath?: GetSelectedCodexHomePath,
   getSettings?: () => GlobalSettings,
   prepareClaudeAuth?: PrepareClaudeAuth,
@@ -1510,7 +1510,7 @@ export function registerPtyHandlers(
           userDataPath: app.getPath('userData'),
           selectedCodexHomePath,
           skipCodexHomeEnv,
-          stripInheritedOrcaCodexHome: shouldStripInheritedOrcaCodexHome({
+          stripInheritedAioAdeCodexHome: shouldStripInheritedAioAdeCodexHome({
             target: codexSelectionTarget,
             selectedCodexHomePath,
             skipCodexHomeEnv,
@@ -1526,19 +1526,19 @@ export function registerPtyHandlers(
           networkProxySettings: getSettings?.()
         })
         // Why: agents need their terminal handle at process start to self-identify in orchestration messages without an extra RPC.
-        const requestedHandle = baseEnv.ORCA_TERMINAL_HANDLE
+        const requestedHandle = baseEnv.AIO_ADE_TERMINAL_HANDLE
         const preAllocatedHandle =
           requestedHandle && trustedTerminalHandleEnv.has(requestedHandle)
             ? requestedHandle
             : runtime?.preAllocateHandleForPty(id)
         if (requestedHandle && requestedHandle !== preAllocatedHandle) {
-          delete env.ORCA_TERMINAL_HANDLE
+          delete env.AIO_ADE_TERMINAL_HANDLE
         }
         if (preAllocatedHandle) {
-          env.ORCA_TERMINAL_HANDLE = preAllocatedHandle
+          env.AIO_ADE_TERMINAL_HANDLE = preAllocatedHandle
         }
         if (ctx?.isWsl === true) {
-          addOrcaWslInteropEnv(env)
+          addAioAdeWslInteropEnv(env)
         }
         return env
       },
@@ -3067,7 +3067,7 @@ export function registerPtyHandlers(
       }
     })
 
-  /** Why: buildPtyHostEnv prefers ORCA_SEQUENCED_STARTUP_COMMAND over the launch command
+  /** Why: buildPtyHostEnv prefers AIO_ADE_SEQUENCED_STARTUP_COMMAND over the launch command
    *  and the sequenced wrapper `eval`s it, so a dropped resume argv has to go there too. */
   const stripSequencedStartupResumeArgv = <T extends Record<string, string> | undefined>(
     env: T,
@@ -3199,10 +3199,10 @@ export function registerPtyHandlers(
       let env: Record<string, string> | undefined = claudeAuth
         ? { ...sshScopedEnv, ...claudeAuth.envPatch }
         : sshScopedEnv
-      const requestedAgentTeamsPath = env?.ORCA_AGENT_TEAMS_TEAM_ID ? env.PATH : undefined
+      const requestedAgentTeamsPath = env?.AIO_ADE_AGENT_TEAMS_TEAM_ID ? env.PATH : undefined
       env = stripSequencedStartupResumeArgv(env, codexResumeLaunch)
       if (args.preAllocatedHandle) {
-        env = { ...env, ORCA_TERMINAL_HANDLE: args.preAllocatedHandle }
+        env = { ...env, AIO_ADE_TERMINAL_HANDLE: args.preAllocatedHandle }
       }
       const selectedCodexHomePath = isDaemonHostSpawn
         ? getCompatibleSelectedCodexHomePath(
@@ -3219,9 +3219,9 @@ export function registerPtyHandlers(
         isDaemonHostSpawn &&
         shouldSkipCodexHomeEnvForWindowsShell(daemonShellOverride, cwd) &&
         !selectedCodexHomePath
-      const stripInheritedOrcaCodexHome =
+      const stripInheritedAioAdeCodexHome =
         isDaemonHostSpawn &&
-        shouldStripInheritedOrcaCodexHome({
+        shouldStripInheritedAioAdeCodexHome({
           target: codexSelectionTarget,
           selectedCodexHomePath,
           skipCodexHomeEnv,
@@ -3236,7 +3236,7 @@ export function registerPtyHandlers(
           userDataPath: app.getPath('userData'),
           selectedCodexHomePath,
           skipCodexHomeEnv,
-          stripInheritedOrcaCodexHome,
+          stripInheritedAioAdeCodexHome,
           githubAttributionEnabled: getSettings?.()?.enableGitHubAttribution ?? false,
           launchCommand,
           launchAgent: isTuiAgent(args.launchAgent) ? args.launchAgent : undefined,
@@ -3290,11 +3290,11 @@ export function registerPtyHandlers(
           spawnOptions.envToDelete,
           CODEX_HOME_ENV_KEYS
         )
-      } else if (stripInheritedOrcaCodexHome) {
+      } else if (stripInheritedAioAdeCodexHome) {
         // Why: the daemon owns a persistent inherited environment that may
-        // differ from main. ORCA_CODEX_HOME asks it to compare/delete the pair.
+        // differ from main. AIO_ADE_CODEX_HOME asks it to compare/delete the pair.
         spawnOptions.envToDelete = mergePtyEnvDeletions(spawnOptions.envToDelete, [
-          'ORCA_CODEX_HOME'
+          'AIO_ADE_CODEX_HOME'
         ])
       }
       if (codexResumeHome?.codexHomePath) {
@@ -3724,7 +3724,7 @@ export function registerPtyHandlers(
           }
         }
         // Why: runtime-owned CLI PTYs bypass the renderer pty:spawn handler; record paneKey here too since hook titles and cache cleanup need this reverse lookup.
-        const paneKey = rememberPaneKeyForPty(result.id, env?.ORCA_PANE_KEY)
+        const paneKey = rememberPaneKeyForPty(result.id, env?.AIO_ADE_PANE_KEY)
         const pendingSerializer = paneKey ? pendingByPaneKey.get(paneKey) : undefined
         const inheritRendererReadiness =
           result.isReattach === true &&
@@ -4250,7 +4250,7 @@ export function registerPtyHandlers(
       const baseEnvWithAuth = claudeAuth
         ? { ...sshSourceEnv, ...claudeAuth.envPatch }
         : sshSourceEnv
-      const spawnPaneKey = baseEnvWithAuth?.ORCA_PANE_KEY
+      const spawnPaneKey = baseEnvWithAuth?.AIO_ADE_PANE_KEY
       const parsedSpawnPaneKey = parseValidPaneKey(spawnPaneKey)
       const verifiedPaneKey =
         parsedSpawnPaneKey &&
@@ -4317,31 +4317,33 @@ export function registerPtyHandlers(
           }
         }
       }
-      const requestedAgentTeamsPath = baseEnv?.ORCA_AGENT_TEAMS_TEAM_ID ? baseEnv.PATH : undefined
+      const requestedAgentTeamsPath = baseEnv?.AIO_ADE_AGENT_TEAMS_TEAM_ID
+        ? baseEnv.PATH
+        : undefined
       const agentTeamsEnvToDelete = shouldRefreshAgentTeamsEnv
-        ? ['TERM_PROGRAM', 'ORCA_ATTRIBUTION_SHIM_DIR']
+        ? ['TERM_PROGRAM', 'AIO_ADE_ATTRIBUTION_SHIM_DIR']
         : undefined
       if (baseEnv && stablePaneKey) {
-        baseEnv.ORCA_PANE_KEY = stablePaneKey
+        baseEnv.AIO_ADE_PANE_KEY = stablePaneKey
         if (typeof args.tabId === 'string') {
-          baseEnv.ORCA_TAB_ID = args.tabId
+          baseEnv.AIO_ADE_TAB_ID = args.tabId
         } else if (!args.connectionId) {
-          delete baseEnv.ORCA_TAB_ID
+          delete baseEnv.AIO_ADE_TAB_ID
         }
         if (typeof args.worktreeId === 'string') {
-          baseEnv.ORCA_WORKTREE_ID = args.worktreeId
+          baseEnv.AIO_ADE_WORKTREE_ID = args.worktreeId
         } else if (!args.connectionId) {
-          delete baseEnv.ORCA_WORKTREE_ID
+          delete baseEnv.AIO_ADE_WORKTREE_ID
         }
       } else if (baseEnv) {
-        // Why: ORCA_PANE_KEY crosses into shells/hook registries; only a key proven to match this spawn's tab+leaf may cross the IPC boundary.
-        delete baseEnv.ORCA_PANE_KEY
-        delete baseEnv.ORCA_TAB_ID
-        delete baseEnv.ORCA_WORKTREE_ID
-        delete baseEnv.ORCA_AGENT_LAUNCH_TOKEN
+        // Why: AIO_ADE_PANE_KEY crosses into shells/hook registries; only a key proven to match this spawn's tab+leaf may cross the IPC boundary.
+        delete baseEnv.AIO_ADE_PANE_KEY
+        delete baseEnv.AIO_ADE_TAB_ID
+        delete baseEnv.AIO_ADE_WORKTREE_ID
+        delete baseEnv.AIO_ADE_AGENT_LAUNCH_TOKEN
       }
       const validatedPaneKey = stablePaneKey
-      // Why: SSH can strip ORCA_PANE_KEY when remote hooks are off; IPC tab/leaf metadata still names the pane.
+      // Why: SSH can strip AIO_ADE_PANE_KEY when remote hooks are off; IPC tab/leaf metadata still names the pane.
       const reservationPaneKey = metadataPaneKey ?? validatedPaneKey
       const validatedLeafId = verifiedLeafId ?? metadataLeafId
       const effectiveShellOverride = terminalRuntimeOptions.shellOverride
@@ -4387,9 +4389,9 @@ export function registerPtyHandlers(
         isDaemonHostSpawn &&
         shouldSkipCodexHomeEnvForWindowsShell(effectiveShellOverride, cwd) &&
         !selectedCodexHomePath
-      const stripInheritedOrcaCodexHome =
+      const stripInheritedAioAdeCodexHome =
         isDaemonHostSpawn &&
-        shouldStripInheritedOrcaCodexHome({
+        shouldStripInheritedAioAdeCodexHome({
           target: codexSelectionTarget,
           selectedCodexHomePath,
           skipCodexHomeEnv,
@@ -4413,7 +4415,7 @@ export function registerPtyHandlers(
             userDataPath: app.getPath('userData'),
             selectedCodexHomePath,
             skipCodexHomeEnv,
-            stripInheritedOrcaCodexHome,
+            stripInheritedAioAdeCodexHome,
             githubAttributionEnabled: getSettings?.()?.enableGitHubAttribution ?? false,
             launchCommand,
             launchAgent: isTuiAgent(args.launchAgent) ? args.launchAgent : undefined,
@@ -4437,7 +4439,7 @@ export function registerPtyHandlers(
       }
       spawnTiming.mark('host_env')
       const spawnEnv = preAllocatedHandle
-        ? { ...env, ORCA_TERMINAL_HANDLE: preAllocatedHandle }
+        ? { ...env, AIO_ADE_TERMINAL_HANDLE: preAllocatedHandle }
         : env
       const envToDelete = claudeAuth?.stripAuthEnv
         ? [...CLAUDE_AUTH_ENV_VARS, 'ANTHROPIC_CUSTOM_HEADERS']
@@ -4451,7 +4453,7 @@ export function registerPtyHandlers(
         skipCodexHomeEnv ? CODEX_HOME_ENV_KEYS : [],
         // Why: the persistent daemon compares its own merged CODEX_HOME pair;
         // main cannot safely decide ownership for a process it may not parent.
-        stripInheritedOrcaCodexHome ? ['ORCA_CODEX_HOME'] : []
+        stripInheritedAioAdeCodexHome ? ['AIO_ADE_CODEX_HOME'] : []
       )
       if (codexResumeHome?.codexHomePath) {
         combinedEnvToDelete = removeCodexHomeDeletionRequests(combinedEnvToDelete)
@@ -4710,7 +4712,7 @@ export function registerPtyHandlers(
         }
         const relayResultId = getRelayPtyId(args.connectionId, result.id)
         if (store && args.connectionId) {
-          // Why: remote PTYs live in the SSH relay grace window after Orca detaches; persist IDs immediately so reconnect reattaches instead of spawning a fresh shell.
+          // Why: remote PTYs live in the SSH relay grace window after AIO-ADE detaches; persist IDs immediately so reconnect reattaches instead of spawning a fresh shell.
           store.upsertSshRemotePtyLease({
             targetId: args.connectionId,
             ptyId: relayResultId,
@@ -5692,14 +5694,14 @@ export function registerPtyHandlers(
 }
 
 export function registerHeadlessPtyRuntime(
-  runtime: OrcaRuntimeService,
+  runtime: AioAdeRuntimeService,
   getSelectedCodexHomePath?: GetSelectedCodexHomePath,
   getSettings?: () => GlobalSettings,
   prepareClaudeAuth?: PrepareClaudeAuth,
   store?: Store,
   prepareCodexSessionResume?: PrepareCodexSessionResume
 ): void {
-  // Why: headless `orca serve` has no renderer window but still needs the same PTY handlers so remote clients can drive terminals.
+  // Why: headless `aio-ade serve` has no renderer window but still needs the same PTY handlers so remote clients can drive terminals.
   const headlessWindow = {
     isDestroyed: () => true,
     webContents: {

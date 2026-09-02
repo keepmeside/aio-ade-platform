@@ -114,11 +114,12 @@ describe('simulator-palette-search', () => {
   })
 
   it('searches worktree and repo metadata', () => {
+    const repoName = 'aio-ade/mobile-client'
     const entries = [
       {
         tab: makeTab({ label: 'Phone Preview' }),
         worktree: makeWorktree({ displayName: 'Checkout Flow' }),
-        repoName: 'orca/mobile-client',
+        repoName,
         worktreeSortIndex: 1,
         isCurrentTab: false,
         isCurrentWorktree: false
@@ -127,9 +128,14 @@ describe('simulator-palette-search', () => {
 
     expect(searchSimulatorTabs(entries, 'checkout')[0]?.worktreeRange).toEqual({
       start: 0,
-      end: 8
+      end: 'Checkout'.length
     })
-    expect(searchSimulatorTabs(entries, 'client')[0]?.repoRange).toEqual({ start: 12, end: 18 })
+    // Derived from the fixture: renaming the repo shifts this offset silently.
+    const clientStart = repoName.indexOf('client')
+    expect(searchSimulatorTabs(entries, 'client')[0]?.repoRange).toEqual({
+      start: clientStart,
+      end: clientStart + 'client'.length
+    })
   })
 
   it('marks the current simulator tab from the active unified group', () => {
@@ -185,7 +191,7 @@ describe('simulator-palette-search', () => {
           displayName: undefined as unknown as string,
           branch: 'refs/heads/feature/mobile-emulator'
         }),
-        repoName: 'orca',
+        repoName: 'aio-ade',
         worktreeSortIndex: 0,
         isCurrentTab: false,
         isCurrentWorktree: false
@@ -207,7 +213,7 @@ describe('simulator-palette-search', () => {
           branch: undefined as unknown as string,
           path: '/repos/design-review'
         }),
-        repoName: 'orca',
+        repoName: 'aio-ade',
         worktreeSortIndex: 0,
         isCurrentTab: false,
         isCurrentWorktree: false

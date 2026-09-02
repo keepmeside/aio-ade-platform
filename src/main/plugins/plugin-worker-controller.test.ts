@@ -17,19 +17,19 @@ afterEach(async () => {
 })
 
 async function plugin(): Promise<ValidDiscoveredPlugin> {
-  const rootDir = await mkdtemp(join(tmpdir(), 'orca-plugin-worker-controller-'))
+  const rootDir = await mkdtemp(join(tmpdir(), 'aio-ade-plugin-worker-controller-'))
   roots.push(rootDir)
   await writeFile(join(rootDir, 'main.mjs'), 'export default function activate() {}')
   return {
-    pluginKey: 'orca-samples.demo',
+    pluginKey: 'aio-ade-samples.demo',
     rootDir,
     manifest: pluginManifestSchema.parse({
       manifestVersion: 1,
       id: 'demo',
-      publisher: 'orca-samples',
+      publisher: 'aio-ade-samples',
       name: 'Demo',
       version: '1.0.0',
-      engines: { orca: '>=1.0.0' },
+      engines: { 'aio-ade': '>=1.0.0' },
       pluginApi: 1,
       main: 'main.mjs',
       contributes: {

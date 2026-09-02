@@ -94,7 +94,7 @@ export function MobilePairingQrSection({
             <span>
               {translate(
                 'auto.components.settings.MobilePane.pairingQrError',
-                'This pairing code couldn’t be rendered as a QR code. Copy it into Orca Mobile instead.'
+                'This pairing code couldn’t be rendered as a QR code. Copy it into AIO-ADE Mobile instead.'
               )}
             </span>
           </p>
@@ -102,7 +102,7 @@ export function MobilePairingQrSection({
           <p className="text-muted-foreground max-w-xs text-center text-xs">
             {translate(
               'auto.components.settings.MobilePane.310924ad2c',
-              'Scan this code with the Orca mobile app. Each code creates a unique device token.'
+              'Scan this code with the AIO-ADE mobile app. Each code creates a unique device token.'
             )}
           </p>
         )}
@@ -139,7 +139,7 @@ export function MobilePairingQrSection({
               <DialogTitle>
                 {translate(
                   'auto.components.settings.MobilePane.dd3cd78d04',
-                  'Scan with Orca Mobile'
+                  'Scan with AIO-ADE Mobile'
                 )}
               </DialogTitle>
             </DialogHeader>

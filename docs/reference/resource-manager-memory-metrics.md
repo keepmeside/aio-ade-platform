@@ -1,7 +1,7 @@
 # Resource Manager memory metrics
 
-Resource Manager reports two different kinds of memory data. Process totals describe Orca and
-locally managed terminal processes; host totals describe the machine running Orca. They are not
+Resource Manager reports two different kinds of memory data. Process totals describe AIO-ADE and
+locally managed terminal processes; host totals describe the machine running AIO-ADE. They are not
 interchangeable.
 
 ## Process memory
@@ -13,7 +13,7 @@ Each snapshot declares one `processMemoryMetric`:
 | macOS, Linux | `rss`         | `ps` resident set size                                     |
 | Windows      | `working-set` | CIM `WorkingSetSize`, with a Typeperf working-set fallback |
 
-Orca walks each registered local PTY subtree and claims every PID at most once. App, session,
+AIO-ADE walks each registered local PTY subtree and claims every PID at most once. App, session,
 worktree, history, and snapshot memory values are sums of those per-process samples.
 
 RSS and working set are not unique physical-memory measurements. Shared pages can appear in more

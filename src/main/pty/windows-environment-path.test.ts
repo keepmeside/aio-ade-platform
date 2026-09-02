@@ -257,7 +257,7 @@ describe('mergePersistedWindowsPath', () => {
         [
           '',
           'HKEY_CURRENT_USER\\Environment',
-          '    Path    REG_EXPAND_SZ    C:\\Users\\me\\AppData\\Local\\Orca\\bin;C:\\Existing',
+          '    Path    REG_EXPAND_SZ    C:\\Users\\me\\AppData\\Local\\AIO-ADE\\bin;C:\\Existing',
           ''
         ].join('\r\n')
       )
@@ -266,7 +266,7 @@ describe('mergePersistedWindowsPath', () => {
     mergePersistedWindowsPath(env, { platform: 'win32', execFileSync })
 
     expect(env.Path).toBe(
-      'C:\\Existing;C:\\Windows\\System32;C:\\Users\\me\\AppData\\Local\\Orca\\bin'
+      'C:\\Existing;C:\\Windows\\System32;C:\\Users\\me\\AppData\\Local\\AIO-ADE\\bin'
     )
   })
 

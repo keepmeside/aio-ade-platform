@@ -27,48 +27,48 @@ beforeEach(() => {
 describe('repo slice runtime project groups', () => {
   it('keeps runtime copies of a grouped canonical project in the same project group', async () => {
     const gitRemoteIdentity = {
-      canonicalKey: 'github.com/stablyai/orca',
+      canonicalKey: 'github.com/keepmeside/aio-ade-platform',
       remoteName: 'origin',
-      remoteUrl: 'https://github.com/stablyai/orca.git'
+      remoteUrl: 'https://github.com/keepmeside/aio-ade-platform.git'
     }
-    const localOrca: Repo = {
-      id: 'local-orca',
-      path: '/Users/alice/stably/orca',
-      displayName: 'orca',
+    const localAioAde: Repo = {
+      id: 'local-aio-ade',
+      path: '/Users/alice/stably/aio-ade',
+      displayName: 'aio-ade',
       badgeColor: '#000',
       addedAt: 1,
       executionHostId: 'local',
       gitRemoteIdentity,
-      projectGroupId: 'group-orca'
+      projectGroupId: 'group-aio-ade'
     }
-    const runtimeOrca: Repo = {
-      id: 'runtime-orca',
-      path: '/vercel/sandbox/orca',
-      displayName: 'orca',
+    const runtimeAioAde: Repo = {
+      id: 'runtime-aio-ade',
+      path: '/vercel/sandbox/aio-ade',
+      displayName: 'aio-ade',
       badgeColor: '#111',
       addedAt: 2,
       gitRemoteIdentity
     }
     runtimeEnvironmentCall.mockResolvedValue({
-      id: 'rpc-runtime-orca',
+      id: 'rpc-runtime-aio-ade',
       ok: true,
-      result: { repos: [runtimeOrca] },
+      result: { repos: [runtimeAioAde] },
       _meta: { runtimeId: 'runtime-remote' }
     })
     const store = createTestStore()
     store.setState({
       settings: { activeRuntimeEnvironmentId: 'env-1' } as never,
-      repos: [localOrca]
+      repos: [localAioAde]
     })
 
     await store.getState().fetchRepos()
 
     expect(store.getState().repos).toEqual([
-      localOrca,
+      localAioAde,
       {
-        ...runtimeOrca,
+        ...runtimeAioAde,
         executionHostId: 'runtime:env-1',
-        projectGroupId: 'group-orca'
+        projectGroupId: 'group-aio-ade'
       }
     ])
   })

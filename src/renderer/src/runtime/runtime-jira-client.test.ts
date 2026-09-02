@@ -51,7 +51,7 @@ describe('runtime Jira client search bounds', () => {
     await expect(
       jiraListAssignableUsers(
         { activeRuntimeEnvironmentId: 'env-1' },
-        'ORCA-1',
+        'AIO-ADE-1',
         'x'.repeat(9 * 1024),
         'site-1'
       )
@@ -66,7 +66,7 @@ describe('runtime Jira client search bounds', () => {
       async (args: RuntimeSubscribeArgs, callbacks: RuntimeSubscribeCallbacks) => {
         const payload =
           args.method === 'jira.getIssueStream'
-            ? { key: 'ORCA-1', description: '![shot](data:image/png;base64,abc)' }
+            ? { key: 'AIO-ADE-1', description: '![shot](data:image/png;base64,abc)' }
             : [{ id: 'comment-1', body: '![shot](data:image/png;base64,abc)' }]
         callbacks.onResponse({
           id: 'rpc-1',
@@ -85,10 +85,10 @@ describe('runtime Jira client search bounds', () => {
     )
 
     await expect(
-      jiraGetIssue({ activeRuntimeEnvironmentId: 'env-1' }, 'ORCA-1', 'site-1')
-    ).resolves.toMatchObject({ key: 'ORCA-1' })
+      jiraGetIssue({ activeRuntimeEnvironmentId: 'env-1' }, 'AIO-ADE-1', 'site-1')
+    ).resolves.toMatchObject({ key: 'AIO-ADE-1' })
     await expect(
-      jiraIssueComments({ activeRuntimeEnvironmentId: 'env-1' }, 'ORCA-1', 'site-1')
+      jiraIssueComments({ activeRuntimeEnvironmentId: 'env-1' }, 'AIO-ADE-1', 'site-1')
     ).resolves.toMatchObject([{ id: 'comment-1' }])
 
     expect(runtimeSubscribe).toHaveBeenNthCalledWith(
@@ -96,7 +96,7 @@ describe('runtime Jira client search bounds', () => {
       {
         selector: 'env-1',
         method: 'jira.getIssueStream',
-        params: { key: 'ORCA-1', siteId: 'site-1' },
+        params: { key: 'AIO-ADE-1', siteId: 'site-1' },
         timeoutMs: 60_000
       },
       expect.anything()
@@ -106,7 +106,7 @@ describe('runtime Jira client search bounds', () => {
       {
         selector: 'env-1',
         method: 'jira.issueCommentsStream',
-        params: { key: 'ORCA-1', siteId: 'site-1' },
+        params: { key: 'AIO-ADE-1', siteId: 'site-1' },
         timeoutMs: 60_000
       },
       expect.anything()

@@ -118,36 +118,36 @@ describe('WorkspaceDirectorySetting', () => {
 
     typePath('o')
     typePath('or')
-    typePath('orca-workspaces')
+    typePath('aio-ade-workspaces')
 
     expect(updateSettings).not.toHaveBeenCalled()
 
     blurInput()
 
     expect(updateSettings).toHaveBeenCalledTimes(1)
-    expect(updateSettings).toHaveBeenCalledWith({ workspaceDir: 'orca-workspaces' })
+    expect(updateSettings).toHaveBeenCalledWith({ workspaceDir: 'aio-ade-workspaces' })
   })
 
   it('commits Enter once even though Enter also blurs the input', () => {
     const updateSettings = vi.fn()
     renderWorkspaceDirectorySetting({ updateSettings })
 
-    typePath('orca-workspaces')
+    typePath('aio-ade-workspaces')
     pressInputKey('Enter')
     blurInput()
 
     expect(updateSettings).toHaveBeenCalledTimes(1)
-    expect(updateSettings).toHaveBeenCalledWith({ workspaceDir: 'orca-workspaces' })
+    expect(updateSettings).toHaveBeenCalledWith({ workspaceDir: 'aio-ade-workspaces' })
   })
 
   it('does not commit Enter while IME composition is active', () => {
     const updateSettings = vi.fn()
     renderWorkspaceDirectorySetting({ updateSettings })
 
-    typePath('orca-workspaces')
+    typePath('aio-ade-workspaces')
     pressInputKey('Enter', { isComposing: true })
 
-    expect(getInput().value).toBe('orca-workspaces')
+    expect(getInput().value).toBe('aio-ade-workspaces')
     expect(updateSettings).not.toHaveBeenCalled()
   })
 
@@ -155,7 +155,7 @@ describe('WorkspaceDirectorySetting', () => {
     const updateSettings = vi.fn()
     renderWorkspaceDirectorySetting({ updateSettings })
 
-    typePath('orca-workspaces')
+    typePath('aio-ade-workspaces')
     pressInputKey('Escape')
     blurInput()
 
@@ -167,10 +167,10 @@ describe('WorkspaceDirectorySetting', () => {
     const updateSettings = vi.fn()
     renderWorkspaceDirectorySetting({ updateSettings })
 
-    typePath('orca-workspaces')
+    typePath('aio-ade-workspaces')
     pressInputKey('Escape', { isComposing: true })
 
-    expect(getInput().value).toBe('orca-workspaces')
+    expect(getInput().value).toBe('aio-ade-workspaces')
     expect(updateSettings).not.toHaveBeenCalled()
   })
 
@@ -179,7 +179,7 @@ describe('WorkspaceDirectorySetting', () => {
     pickFolderMock.mockResolvedValue('/Users/alice/workspaces')
     renderWorkspaceDirectorySetting({ updateSettings })
 
-    typePath('orca-w')
+    typePath('aio-ade-w')
     await clickBrowseAfterInputBlur()
 
     expect(updateSettings).toHaveBeenCalledTimes(1)
@@ -191,7 +191,7 @@ describe('WorkspaceDirectorySetting', () => {
     pickFolderMock.mockResolvedValue(null)
     renderWorkspaceDirectorySetting({ updateSettings })
 
-    typePath('orca-w')
+    typePath('aio-ade-w')
     await clickBrowseAfterInputBlur()
 
     expect(getInput().value).toBe(getDefaultSettings('/tmp').workspaceDir)
@@ -202,12 +202,12 @@ describe('WorkspaceDirectorySetting', () => {
     const updateSettings = vi.fn()
     renderWorkspaceDirectorySetting({ updateSettings })
 
-    typePath('orca-workspaces')
+    typePath('aio-ade-workspaces')
     blurInput()
     blurInput()
 
     expect(updateSettings).toHaveBeenCalledTimes(2)
-    expect(updateSettings).toHaveBeenNthCalledWith(1, { workspaceDir: 'orca-workspaces' })
-    expect(updateSettings).toHaveBeenNthCalledWith(2, { workspaceDir: 'orca-workspaces' })
+    expect(updateSettings).toHaveBeenNthCalledWith(1, { workspaceDir: 'aio-ade-workspaces' })
+    expect(updateSettings).toHaveBeenNthCalledWith(2, { workspaceDir: 'aio-ade-workspaces' })
   })
 })

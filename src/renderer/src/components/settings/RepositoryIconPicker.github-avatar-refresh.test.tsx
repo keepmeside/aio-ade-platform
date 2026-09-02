@@ -33,8 +33,8 @@ globalThis.window = { api: { gh: apiMocks } }
 function makeRepo(overrides: Partial<Repo> = {}): Repo {
   return {
     id: 'repo-1',
-    path: '/workspace/orca',
-    displayName: 'orca',
+    path: '/workspace/aio-ade',
+    displayName: 'aio-ade',
     badgeColor: '#2563eb',
     addedAt: 1,
     kind: 'git',
@@ -66,18 +66,18 @@ describe('RepositoryIconPicker GitHub avatar refresh', () => {
 
   it('refreshes stale GitHub avatar metadata lazily when repo settings opens', async () => {
     const updateRepo = vi.fn()
-    // Non-fork repo (upstream resolved to null) transferred stablyai -> parkerrex.
+    // Non-fork repo (upstream resolved to null) transferred keepmeside -> parkerrex.
     const repo = makeRepo({
       upstream: null,
       repoIcon: {
         type: 'image',
-        src: 'https://github.com/stablyai.png?size=64',
+        src: 'https://github.com/keepmeside.png?size=64',
         source: 'github',
-        label: 'stablyai/orca'
+        label: 'keepmeside/aio-ade-platform'
       }
     })
     apiMocks.repoUpstream.mockResolvedValueOnce(null)
-    apiMocks.repoSlug.mockResolvedValueOnce({ owner: 'parkerrex', repo: 'orca' })
+    apiMocks.repoSlug.mockResolvedValueOnce({ owner: 'parkerrex', repo: 'aio-ade' })
 
     act(() => {
       root.render(<RepositoryIconPicker repo={repo} updateRepo={updateRepo} />)
@@ -89,7 +89,7 @@ describe('RepositoryIconPicker GitHub avatar refresh', () => {
         type: 'image',
         src: 'https://github.com/parkerrex.png?size=64',
         source: 'github',
-        label: 'parkerrex/orca'
+        label: 'parkerrex/aio-ade'
       }
     })
   })
@@ -98,18 +98,18 @@ describe('RepositoryIconPicker GitHub avatar refresh', () => {
     const updateRepo = vi.fn()
     // A fork whose avatar tracks its parent org, resolved earlier while online.
     const repo = makeRepo({
-      upstream: { owner: 'stablyai', repo: 'orca' },
+      upstream: { owner: 'keepmeside', repo: 'aio-ade-platform' },
       repoIcon: {
         type: 'image',
-        src: 'https://github.com/stablyai.png?size=64',
+        src: 'https://github.com/keepmeside.png?size=64',
         source: 'github',
-        label: 'stablyai/orca'
+        label: 'keepmeside/aio-ade-platform'
       }
     })
     // Offline/unauthed: the parent lookup returns null. The fork's own origin
     // owner must NOT be persisted over the parent identity.
     apiMocks.repoUpstream.mockResolvedValueOnce(null)
-    apiMocks.repoSlug.mockResolvedValueOnce({ owner: 'parkerrex', repo: 'orca' })
+    apiMocks.repoSlug.mockResolvedValueOnce({ owner: 'parkerrex', repo: 'aio-ade' })
 
     act(() => {
       root.render(<RepositoryIconPicker repo={repo} updateRepo={updateRepo} />)

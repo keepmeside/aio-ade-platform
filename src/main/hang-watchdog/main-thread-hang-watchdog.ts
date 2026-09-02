@@ -21,7 +21,7 @@ export function installMainThreadHangWatchdog(options: {
     return null
   }
   // Why: dev main threads pause in debuggers routinely; watch packaged builds only unless forced.
-  if (!app.isPackaged && process.env.ORCA_HANG_WATCHDOG_FORCE !== '1') {
+  if (!app.isPackaged && process.env.AIO_ADE_HANG_WATCHDOG_FORCE !== '1') {
     return null
   }
   const entryPath = resolveHangWatchdogEntryPath(app.getAppPath(), app.isPackaged)
@@ -32,8 +32,8 @@ export function installMainThreadHangWatchdog(options: {
       env: {
         ...process.env,
         ELECTRON_RUN_AS_NODE: '1',
-        ORCA_HANG_WATCHDOG_PARENT_PID: String(process.pid),
-        ORCA_HANG_WATCHDOG_MARKER_PATH: hangDetectionMarkerPath(options.userDataPath)
+        AIO_ADE_HANG_WATCHDOG_PARENT_PID: String(process.pid),
+        AIO_ADE_HANG_WATCHDOG_MARKER_PATH: hangDetectionMarkerPath(options.userDataPath)
       }
     })
   } catch (error) {

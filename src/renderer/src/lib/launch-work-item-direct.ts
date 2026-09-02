@@ -278,7 +278,7 @@ export async function launchWorkItemDirect(args: LaunchWorkItemDirectArgs): Prom
         promptDelivery,
         settings,
         launchPlatform,
-        // Why: SSH hosts run the plain `orca` shim, so the Linux-only `orca-ide`
+        // Why: SSH hosts run the plain `aio-ade` shim, so the Linux-only `aio-ade`
         // rename must not be applied for remote launches.
         isRemote: typeof launchConnectionId === 'string'
       }))

@@ -22,7 +22,7 @@ import type {
   NotificationSoundDataResult
 } from '../../shared/types'
 import { getRepoIdFromWorktreeId } from '../../shared/worktree-id'
-import type { OrcaRuntimeService } from '../runtime/orca-runtime'
+import type { AioAdeRuntimeService } from '../runtime/aio-ade-runtime'
 import { buildNotificationOptions } from './notification-options'
 import { readNotificationAuthorizationStatus } from './notification-authorization-status'
 import { parsePaneKey } from '../../shared/stable-pane-id'
@@ -34,7 +34,7 @@ const MAX_RECENT_NOTIFICATION_KEYS = 50
 const NOTIFICATION_DISPLAY_CONFIRMATION_TIMEOUT_MS = 2500
 const NOTIFICATION_RELEASE_FALLBACK_MS = 5 * 60 * 1000
 const MAX_NOTIFICATION_SOUND_BYTES = 10 * 1024 * 1024
-const MACOS_PACKAGED_BUNDLE_ID = 'com.stablyai.orca'
+const MACOS_PACKAGED_BUNDLE_ID = 'com.keepmeside.aio-ade'
 const MACOS_NOTIFICATION_SETTINGS_URL =
   'x-apple.systempreferences:com.apple.Notifications-Settings.extension'
 const NOTIFICATION_SOUND_MIME_BY_EXTENSION: ReadonlyMap<string, string> = new Map([
@@ -119,8 +119,8 @@ function probeNotificationDelivery(): Promise<NotificationDeliveryProbeResult> {
   permissionDialogTriggeredThisSession = true
 
   const probe = new Notification({
-    title: 'Orca notifications are on',
-    body: 'Orca will alert you when agents finish or terminals need attention.',
+    title: 'AIO-ADE notifications are on',
+    body: 'AIO-ADE will alert you when agents finish or terminals need attention.',
     silent: true
   })
   activeNotifications.add(probe)
@@ -187,7 +187,7 @@ function probeNotificationDelivery(): Promise<NotificationDeliveryProbeResult> {
 }
 
 function getMacNotificationSettingsUrl(): string {
-  const bundleId = process.env.ORCA_DEV_MACOS_BUNDLE_ID ?? MACOS_PACKAGED_BUNDLE_ID
+  const bundleId = process.env.AIO_ADE_DEV_MACOS_BUNDLE_ID ?? MACOS_PACKAGED_BUNDLE_ID
   return `${MACOS_NOTIFICATION_SETTINGS_URL}?id=${encodeURIComponent(bundleId)}`
 }
 
@@ -306,7 +306,7 @@ function reserveNotificationCooldown(
   return true
 }
 
-export function registerNotificationHandlers(store: Store, runtime?: OrcaRuntimeService): void {
+export function registerNotificationHandlers(store: Store, runtime?: AioAdeRuntimeService): void {
   const recentDesktopNotifications = new Map<string, number>()
   const recentMobileNotifications = new Map<string, number>()
   // Why: handler registration marks a fresh session; permission evidence from a previous one must not leak in.
@@ -643,8 +643,8 @@ export function triggerStartupNotificationRegistration(store: Store): void {
   store.updateUI({ notificationPermissionRequested: true })
 
   const notification = new Notification({
-    title: 'Orca is ready to notify you',
-    body: 'Allow notifications so Orca can alert you when agents finish or terminals need attention.'
+    title: 'AIO-ADE is ready to notify you',
+    body: 'Allow notifications so AIO-ADE can alert you when agents finish or terminals need attention.'
   })
 
   // Why: prevent GC from collecting the notification and its click handler while it's still visible.

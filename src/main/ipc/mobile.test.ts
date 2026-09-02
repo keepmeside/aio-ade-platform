@@ -73,7 +73,7 @@ describe('registerMobileHandlers', () => {
     })
     const createMobilePairingOffer = vi.fn().mockResolvedValue({
       available: true,
-      pairingUrl: 'orca://pair#lan',
+      pairingUrl: 'aio-ade://pair#lan',
       endpoint: 'ws://192.168.50.238:6768',
       deviceId: 'mobile-lan',
       connectionMode: 'automatic'
@@ -137,7 +137,7 @@ describe('registerMobileHandlers', () => {
     })
     const createMobilePairingOffer = vi.fn().mockResolvedValue({
       available: true,
-      pairingUrl: 'orca://pair#mobile',
+      pairingUrl: 'aio-ade://pair#mobile',
       endpoint: 'ws://100.102.47.57:6768',
       deviceId: 'mobile-1',
       connectionMode: 'automatic'
@@ -148,7 +148,7 @@ describe('registerMobileHandlers', () => {
 
     await expect(handlers.get('mobile:getPairingQR')?.(null, {})).resolves.toMatchObject({
       available: true,
-      pairingUrl: 'orca://pair#mobile',
+      pairingUrl: 'aio-ade://pair#mobile',
       endpoint: 'ws://100.102.47.57:6768',
       deviceId: 'mobile-1',
       // The encoded mode passes through so the UI can flag a degraded mint.
@@ -169,7 +169,7 @@ describe('registerMobileHandlers', () => {
     })
     const createMobilePairingOffer = vi.fn().mockResolvedValue({
       available: true,
-      pairingUrl: 'orca://pair#local',
+      pairingUrl: 'aio-ade://pair#local',
       endpoint: 'ws://192.168.1.24:6768',
       deviceId: 'mobile-local',
       connectionMode: 'local-only'
@@ -186,7 +186,7 @@ describe('registerMobileHandlers', () => {
   it('preserves a copyable pairing URL when QR encoding fails', async () => {
     const createMobilePairingOffer = vi.fn().mockResolvedValue({
       available: true,
-      pairingUrl: 'orca://pair?code=copy-me',
+      pairingUrl: 'aio-ade://pair?code=copy-me',
       endpoint: 'wss://pair.example/oversized',
       deviceId: 'mobile-large',
       connectionMode: 'local-only'
@@ -202,7 +202,7 @@ describe('registerMobileHandlers', () => {
       available: true,
       qrDataUrl: null,
       qrError: 'encoding_failed',
-      pairingUrl: 'orca://pair?code=copy-me',
+      pairingUrl: 'aio-ade://pair?code=copy-me',
       endpoint: 'wss://pair.example/oversized',
       deviceId: 'mobile-large',
       connectionMode: 'local-only'
@@ -255,7 +255,7 @@ describe('registerMobileHandlers', () => {
   it('generates runtime-scoped pairing urls for web and desktop clients', async () => {
     const createPairingOffer = vi.fn().mockReturnValue({
       available: true,
-      pairingUrl: 'orca://pair#runtime',
+      pairingUrl: 'aio-ade://pair#runtime',
       webClientUrl: 'http://100.64.1.20:6768/web-index.html?pairing=runtime',
       endpoint: 'ws://100.64.1.20:6768',
       deviceId: 'runtime-1'
@@ -271,7 +271,7 @@ describe('registerMobileHandlers', () => {
       })
     ).resolves.toEqual({
       available: true,
-      pairingUrl: 'orca://pair#runtime',
+      pairingUrl: 'aio-ade://pair#runtime',
       webClientUrl: 'http://100.64.1.20:6768/web-index.html?pairing=runtime',
       endpoint: 'ws://100.64.1.20:6768',
       deviceId: 'runtime-1'
@@ -405,7 +405,7 @@ describe('registerMobileHandlers', () => {
       firewallEnvironment: {
         platform: 'win32',
         isPackaged: true,
-        executablePath: 'C:\\Program Files\\Orca\\Orca.exe',
+        executablePath: 'C:\\Program Files\\AIO-ADE\\AIO-ADE.exe',
         runPowerShell
       }
     })
@@ -427,7 +427,7 @@ describe('registerMobileHandlers', () => {
       firewallEnvironment: {
         platform: 'win32',
         isPackaged: true,
-        executablePath: 'C:\\Program Files\\Orca\\Orca.exe',
+        executablePath: 'C:\\Program Files\\AIO-ADE\\AIO-ADE.exe',
         runPowerShell
       }
     })

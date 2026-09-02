@@ -7,13 +7,13 @@ import {
 } from '../../../../shared/constants'
 import { clampNumber } from '@/lib/terminal-theme'
 
-export const ORCA_EDITOR_QUIESCE_FILE_SAVES_EVENT = 'orca:editor-quiesce-file-saves'
-export const ORCA_EDITOR_EXTERNAL_FILE_CHANGE_EVENT = 'orca:editor-external-file-change'
-export const ORCA_EDITOR_SAVE_FILE_EVENT = 'orca:editor-save-file'
-export const ORCA_EDITOR_SAVE_AND_CLOSE_EVENT = 'orca:save-and-close'
-export const ORCA_EDITOR_FILE_SAVED_EVENT = 'orca:editor-file-saved'
-export const ORCA_EDITOR_REQUEST_CMD_SAVE_EVENT = 'orca:editor-request-cmd-save'
-export const ORCA_EDITOR_REQUEST_FILE_CLOSE_EVENT = 'orca:editor-request-file-close'
+export const AIO_ADE_EDITOR_QUIESCE_FILE_SAVES_EVENT = 'aio-ade:editor-quiesce-file-saves'
+export const AIO_ADE_EDITOR_EXTERNAL_FILE_CHANGE_EVENT = 'aio-ade:editor-external-file-change'
+export const AIO_ADE_EDITOR_SAVE_FILE_EVENT = 'aio-ade:editor-save-file'
+export const AIO_ADE_EDITOR_SAVE_AND_CLOSE_EVENT = 'aio-ade:save-and-close'
+export const AIO_ADE_EDITOR_FILE_SAVED_EVENT = 'aio-ade:editor-file-saved'
+export const AIO_ADE_EDITOR_REQUEST_CMD_SAVE_EVENT = 'aio-ade:editor-request-cmd-save'
+export const AIO_ADE_EDITOR_REQUEST_FILE_CLOSE_EVENT = 'aio-ade:editor-request-file-close'
 
 export type EditorPathMutationTarget = {
   worktreeId: string
@@ -146,7 +146,7 @@ export async function requestEditorSaveQuiesce(target: EditorSaveQuiesceTarget):
   await new Promise<void>((resolve) => {
     let claimed = false
     window.dispatchEvent(
-      new CustomEvent<EditorSaveQuiesceDetail>(ORCA_EDITOR_QUIESCE_FILE_SAVES_EVENT, {
+      new CustomEvent<EditorSaveQuiesceDetail>(AIO_ADE_EDITOR_QUIESCE_FILE_SAVES_EVENT, {
         detail: {
           ...target,
           claim: () => {
@@ -169,7 +169,7 @@ export async function requestEditorFileSave(target: EditorSaveFileTarget): Promi
   await new Promise<void>((resolve, reject) => {
     let claimed = false
     window.dispatchEvent(
-      new CustomEvent<EditorSaveFileDetail>(ORCA_EDITOR_SAVE_FILE_EVENT, {
+      new CustomEvent<EditorSaveFileDetail>(AIO_ADE_EDITOR_SAVE_FILE_EVENT, {
         detail: {
           ...target,
           claim: () => {
@@ -192,7 +192,7 @@ export async function requestEditorFileSave(target: EditorSaveFileTarget): Promi
 
 export function requestEditorFileClose(fileId: string): void {
   window.dispatchEvent(
-    new CustomEvent<EditorRequestFileCloseDetail>(ORCA_EDITOR_REQUEST_FILE_CLOSE_EVENT, {
+    new CustomEvent<EditorRequestFileCloseDetail>(AIO_ADE_EDITOR_REQUEST_FILE_CLOSE_EVENT, {
       detail: { fileId }
     })
   )
@@ -203,7 +203,7 @@ export function requestEditorFileClose(fileId: string): void {
 // content destroys its unsaved draft (the data-loss half of issue #7265).
 export function notifyEditorExternalFileChange(target: EditorPathMutationTarget): void {
   window.dispatchEvent(
-    new CustomEvent<EditorPathMutationTarget>(ORCA_EDITOR_EXTERNAL_FILE_CHANGE_EVENT, {
+    new CustomEvent<EditorPathMutationTarget>(AIO_ADE_EDITOR_EXTERNAL_FILE_CHANGE_EVENT, {
       detail: target
     })
   )

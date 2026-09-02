@@ -10,7 +10,7 @@ export function createMobileE2EEV2Fixture(): {
   sharedSecret: Uint8Array
 } {
   const context = {
-    protocol: 'orca-mobile-e2ee' as const,
+    protocol: 'aio-ade-mobile-e2ee' as const,
     initiator: 'mobile' as const,
     responder: 'desktop' as const,
     transport: 'relay' as const,
@@ -38,10 +38,24 @@ export function createMobileE2EEV2Fixture(): {
   }
 }
 
+/* Golden vector for the v2 handshake: transcript bytes and the 96-byte HKDF expansion derived from
+ * the fixture above. Its purpose is to make an accidental change to the wire format loud — every
+ * value here moves if the framing, the label strings, or the field order change.
+ *
+ * These numbers were recomputed when the protocol label changed from the pre-rebrand
+ * `orca-mobile-e2ee` to `aio-ade-mobile-e2ee`. That label is length-prefixed into the transcript and
+ * appears in the HKDF salt and info labels, so the transcript got 9 bytes longer (1347 → 1356) and
+ * every derived key changed. Recomputing is correct here and would NOT be correct if a peer already
+ * spoke the old label: no shipped client does, since the protocol string is defined in this repo,
+ * the only implementation of the mobile side is `simulated-mobile-e2ee-v2-peer.ts`, and both ends
+ * ship together in one build.
+ *
+ * If an external mobile client is ever published, this label becomes a compatibility contract and a
+ * change to it needs a version bump, not a recomputed vector. */
 export const MOBILE_E2EE_V2_VECTOR = {
-  transcriptLength: 1347,
-  transcriptHashHex: 'ca6385f8bbf64a223fdd59587bfb67e2373891ce9e6d85ab41df8b7a20a168e3',
-  mobileToDesktopKeyHex: 'df17ff534df77fd3a30999f4e6200c8fcedefbb15d369301ca62c3cdfea9559a',
-  desktopToMobileKeyHex: '71365fcf8212a6d63caf909ee28de3c8f689682ef298a374136055e0ab1cde4a',
-  sessionIdHex: '339ae1f2bdff63481857d2813c2f19dd1f5aa4824705d5e5daeb25dae7b9196e'
+  transcriptLength: 1356,
+  transcriptHashHex: '0f25768649d85e5bdbd975145b4198f1d65a6f9e9257ca77493a1eb56380c0f3',
+  mobileToDesktopKeyHex: '3f38988e5eed41bdf9ad803ab5caf8bedfe790426f786b572c7f9918dd40b2fe',
+  desktopToMobileKeyHex: '741a749dff0024e0b5a54bec5e8cfe8e299213b4aa5f3154ff94d71787587248',
+  sessionIdHex: 'b78249bd6c39bc2dce212ceb61d13dab910ad72820b939ecba6cb84ba8e21155'
 } as const

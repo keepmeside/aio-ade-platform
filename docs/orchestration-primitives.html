@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="A small, agent-first proposal for strong Orca orchestration primitives."
+      content="A small, agent-first proposal for strong AIO-ADE orchestration primitives."
     />
-    <title>Orca Orchestration: Strong Primitives, Little Magic</title>
+    <title>AIO-ADE Orchestration: Strong Primitives, Little Magic</title>
     <link rel="stylesheet" href="../src/renderer/src/assets/main.css" />
     <style>
       * {
@@ -596,11 +596,11 @@
       <main>
         <div class="content">
           <section id="summary">
-            <p class="eyebrow">Orca orchestration proposal</p>
+            <p class="eyebrow">AIO-ADE orchestration proposal</p>
             <h1>Strong primitives. Little magic. No orchestration product inside the product.</h1>
             <p class="lede">
-              Orca should make it intuitive for a coordinating agent to start workers, communicate,
-              wait, observe output, and recover safely. Orca supplies dependable building blocks;
+              AIO-ADE should make it intuitive for a coordinating agent to start workers, communicate,
+              wait, observe output, and recover safely. AIO-ADE supplies dependable building blocks;
               the agent decides the orchestration strategy.
             </p>
 
@@ -618,7 +618,7 @@
                 <strong>The common agent loop</strong>
                 <p>
                   Create and bind one Run for the coordination effort; after that its ID is carried
-                  automatically. Create tasks, start workers on this or another connected Orca
+                  automatically. Create tasks, start workers on this or another connected AIO-ADE
                   server, send messages, wait for inbox mail, and read or stop workers. Options
                   refine those operations without adding policy.
                 </p>
@@ -697,7 +697,7 @@
                 <p class="eyebrow">Implemented</p>
                 <h3>Exact structured output with a truthful fallback</h3>
                 <p>
-                  Orca reuses its pane-scoped hook association to read a supported Codex, Claude,
+                  AIO-ADE reuses its pane-scoped hook association to read a supported Codex, Claude,
                   OpenClaude, or Grok transcript. When it cannot prove that source, it returns
                   labeled bounded terminal output instead of guessing a session.
                 </p>
@@ -709,14 +709,14 @@
                 <p class="eyebrow">Current</p>
                 <h3>Results are mostly worker assertions</h3>
                 <p>
-                  Orca verifies that the active dispatch reported <code>worker_done</code>, but the
+                  AIO-ADE verifies that the active dispatch reported <code>worker_done</code>, but the
                   summary, changed files, tests, and report path come from the worker.
                 </p>
               </div>
               <div class="compare-arrow" aria-hidden="true">→</div>
               <div class="card">
                 <p class="eyebrow">Needed</p>
-                <h3>Be explicit about what Orca observed</h3>
+                <h3>Be explicit about what AIO-ADE observed</h3>
                 <p>
                   Keep lifecycle authority separate from worker-reported content. Do not add commit,
                   test, merge, or integration tracking merely to make the report appear stronger.
@@ -741,7 +741,7 @@
                 <h3>The coordinator owns strategy</h3>
                 <p>
                   The agent chooses decomposition, ordering, parallelism, placement, review, and when
-                  to wait. Orca does not schedule ready tasks automatically.
+                  to wait. AIO-ADE does not schedule ready tasks automatically.
                 </p>
               </div>
               <div class="card number-card">
@@ -764,7 +764,7 @@
                 <span class="number">04</span>
                 <h3>Observation is honest</h3>
                 <p>
-                  Orca distinguishes observed process state from worker-reported claims and labels
+                  AIO-ADE distinguishes observed process state from worker-reported claims and labels
                   the source of transcript or terminal output.
                 </p>
               </div>
@@ -772,7 +772,7 @@
                 <span class="number">05</span>
                 <h3>Remote ambiguity stays ambiguous</h3>
                 <p>
-                  A disconnect after a remote mutation returns <code>outcome_unknown</code>. Orca
+                  A disconnect after a remote mutation returns <code>outcome_unknown</code>. AIO-ADE
                   does not silently repeat a command that may have succeeded.
                 </p>
               </div>
@@ -879,7 +879,7 @@
                     <td><code>run-create</code></td>
                     <td>
                       Creates a run and stable coordinator mailbox on the coordinator's selected
-                      Orca server—its Run home—then binds the current coordinator terminal as its
+                      AIO-ADE server—its Run home—then binds the current coordinator terminal as its
                       active consumer.
                     </td>
                   </tr>
@@ -920,7 +920,7 @@
                 <h3>One home, workers anywhere</h3>
                 <p>
                   A Run has one home server that owns its tasks and inbox. A Dispatch may point to a
-                  worker on any connected Orca server; Orca relays that worker's messages back to the
+                  worker on any connected AIO-ADE server; AIO-ADE relays that worker's messages back to the
                   home automatically.
                 </p>
               </div>
@@ -1037,12 +1037,12 @@
               </table>
             </div>
 
-            <pre style="margin-top: 20px"><code>orca orchestration run-create --objective "Improve message delivery"
+            <pre style="margin-top: 20px"><code>aio-ade orchestration run-create --objective "Improve message delivery"
 # → run_123, bound to this coordinator terminal
-orca orchestration task-create --spec "Audit message delivery"
+aio-ade orchestration task-create --spec "Audit message delivery"
 # → task_a, runId run_123 (bound)
-orca orchestration worker-start --task task_a --worktree current --agent codex
-orca orchestration check --wait --timeout-ms 60000</code></pre>
+aio-ade orchestration worker-start --task task_a --worktree current --agent codex
+aio-ade orchestration check --wait --timeout-ms 60000</code></pre>
           </section>
 
           <section id="start">
@@ -1052,7 +1052,7 @@ orca orchestration check --wait --timeout-ms 60000</code></pre>
               <p>
                 <code>worker-start</code> is one synchronous composition of existing worktree, setup,
                 terminal, and dispatch operations. It is not a background executor, external
-                transaction, or placement engine. The coordinator chooses the topology; Orca returns
+                transaction, or placement engine. The coordinator chooses the topology; AIO-ADE returns
                 only after the composition is ready, failed, or honestly unknown.
               </p>
             </div>
@@ -1094,7 +1094,7 @@ orca orchestration check --wait --timeout-ms 60000</code></pre>
                   </tr>
                   <tr>
                     <td>New top-level worktree</td>
-                    <td>Same agent-first behavior, with top-level Orca lineage.</td>
+                    <td>Same agent-first behavior, with top-level AIO-ADE lineage.</td>
                     <td>
                       Same setup default: run a configured hook; use an explicit escape hatch only
                       for a concrete reason.
@@ -1110,7 +1110,7 @@ orca orchestration check --wait --timeout-ms 60000</code></pre>
                 <p>
                   The exact repository selector, name, base branch, child/top-level lineage, setup,
                   and display/comment metadata are validated and passed to the existing worktree
-                  primitive. <code>--on</code> already chooses the connected Orca server, so V1 does
+                  primitive. <code>--on</code> already chooses the connected AIO-ADE server, so V1 does
                   not add a second project/host placement vocabulary to <code>worker-start</code>;
                   agents may use low-level <code>worktree create</code> when that convenience selector
                   is important.
@@ -1124,10 +1124,10 @@ orca orchestration check --wait --timeout-ms 60000</code></pre>
               <div class="card">
                 <h3>Choose a connected server only when needed</h3>
                 <p>
-                  The default is the Run home. Use <code>--on windows</code> (a saved Orca environment
+                  The default is the Run home. Use <code>--on windows</code> (a saved AIO-ADE environment
                   name or ID) only to place a worker on another connected server. V1 resource IDs
                   are server-scoped, so every remote existing worktree or terminal also requires
-                  <code>--on</code>. Orca never guesses an owner from a same-looking ID and echoes the
+                  <code>--on</code>. AIO-ADE never guesses an owner from a same-looking ID and echoes the
                   resolved server name in the receipt.
                 </p>
               </div>
@@ -1135,7 +1135,7 @@ orca orchestration check --wait --timeout-ms 60000</code></pre>
                 <h3>Agent selection is honest</h3>
                 <p>
                   When creating a terminal, V1 requires an explicit <code>--agent</code> that resolves
-                  through Orca's configured launcher before any effect. Composed start does not
+                  through AIO-ADE's configured launcher before any effect. Composed start does not
                   promise custom model, environment, or arbitrary command arguments that agent-first
                   worktree creation cannot actually pass through.
                 </p>
@@ -1144,13 +1144,13 @@ orca orchestration check --wait --timeout-ms 60000</code></pre>
                 <h3>Setup is the safe default</h3>
                 <p>
                   For every new worktree, omitted <code>--setup</code> resolves to
-                  <code>run</code>. If a setup hook exists, Orca launches it; if none exists, the
+                  <code>run</code>. If a setup hook exists, AIO-ADE launches it; if none exists, the
                   receipt says <code>not_configured</code>. Preserve the repository's existing
                   <code>setupAgentStartupPolicy</code>: its default is <code>start-immediately</code>,
                   so setup does not delay agent launch or task delivery. Only an explicit
                   <code>wait-for-setup</code> policy gates the agent. An agent may choose
                   <code>skip</code> or <code>inherit</code> only for a specific reason it states in its
-                  work log. Orca trusts that judgment and adds no approval gate.
+                  work log. AIO-ADE trusts that judgment and adds no approval gate.
                 </p>
               </div>
               <div class="card">
@@ -1163,7 +1163,7 @@ orca orchestration check --wait --timeout-ms 60000</code></pre>
             </div>
 
             <p class="footer-note" style="margin-top: 16px">
-              <code>worker-start --on windows</code> is deliberately different from Orca's existing
+              <code>worker-start --on windows</code> is deliberately different from AIO-ADE's existing
               global <code>--environment windows</code>. <code>--on</code> keeps the command and Task on
               the bound Run home while selecting only the worker server. The global flag still means
               “send this whole CLI command to that environment” and must not silently change meaning.
@@ -1184,7 +1184,7 @@ orca orchestration check --wait --timeout-ms 60000</code></pre>
               existing worker needs an exact worktree/terminal selector or an explicit server so
               same-looking resources are never guessed. Every resolved default includes its source.
               Discover a remote selector with an explicit read-only command such as
-              <code>orca --environment windows worktree list --json</code>, then copy the returned
+              <code>aio-ade --environment windows worktree list --json</code>, then copy the returned
               opaque worktree ID into <code>worker-start --on windows</code>.
             </p>
 
@@ -1213,7 +1213,7 @@ orca orchestration check --wait --timeout-ms 60000</code></pre>
                     <td><code>resource_server_mismatch</code></td>
                     <td>
                       A worker-server receipt names a different Dispatch or authenticated Run home;
-                      Orca never adopts that attachment.
+                      AIO-ADE never adopts that attachment.
                     </td>
                   </tr>
                   <tr>
@@ -1271,7 +1271,7 @@ orca orchestration check --wait --timeout-ms 60000</code></pre>
               before the agent reaches <code>tui-idle</code>. Under an explicit
               <code>wait-for-setup</code> repository policy, setup must complete successfully before
               agent launch and task injection. Agent-first worktree creation launches without the
-              task prompt so Orca can establish authority before injection. The effective timeout
+              task prompt so AIO-ADE can establish authority before injection. The effective timeout
               and startup policy are echoed in every receipt.
               A successful gated receipt reports setup <code>succeeded</code>. A confirmed setup
               spawn/script failure reports <code>failed</code> before task input, while a timeout may
@@ -1280,12 +1280,12 @@ orca orchestration check --wait --timeout-ms 60000</code></pre>
 
             <p class="footer-note" style="margin-top: 16px">
               Underneath the call, one transaction creates a <code>starting</code> Dispatch, moves the
-              Task, and records the retry request before effects. Orca journals each irreversible
+              Task, and records the retry request before effects. AIO-ADE journals each irreversible
               stage and resource receipt before advancing. Restart recovery can therefore prove
               no-effect, return a durable remote result, or remain honestly
               <code>outcome_unknown</code>. A pending accepted start retains its Dispatch ID, so
               repeating the exact request after restart returns that ID and its
-              <code>worker-show</code> command instead of inviting a second start. Orca does not
+              <code>worker-show</code> command instead of inviting a second start. AIO-ADE does not
               resume unfinished orchestration stages in the background; a setup process
               intentionally launched under
               <code>start-immediately</code> may continue exactly as its receipt states.
@@ -1300,7 +1300,7 @@ orca orchestration check --wait --timeout-ms 60000</code></pre>
             </p>
 
             <div class="grid-2" style="margin-top: 20px">
-              <pre><code>orca orchestration worker-start --task task_a --worktree new-child --name message-audit --agent codex --setup run
+              <pre><code>aio-ade orchestration worker-start --task task_a --worktree new-child --name message-audit --agent codex --setup run
 
 # Returns when the worker is ready, start failed, or the outcome is unknown.
 # Coordinators can issue independent start calls in parallel.</code></pre>
@@ -1363,7 +1363,7 @@ orca orchestration check --wait --timeout-ms 60000</code></pre>
                       Return the failed stage, last error, residual resources, Task/Dispatch state,
                       and the durable mutation receipt. The composition itself has returned, but any
                       surviving setup, terminal, or agent process is listed honestly as a residual
-                      resource; Orca never implies that failure cleaned it up. The coordinator
+                      resource; AIO-ADE never implies that failure cleaned it up. The coordinator
                       chooses the matching recovery branch below.
                     </td>
                   </tr>
@@ -1466,7 +1466,7 @@ orca orchestration check --wait --timeout-ms 60000</code></pre>
               <h2>Structured mail is inbox-only, durable, and explicitly consumed.</h2>
               <p>
                 The inbox is an agent API, not product UI and not terminal input. It strengthens
-                Orca's existing message store and <code>check --wait</code>; it does not add an Event
+                AIO-ADE's existing message store and <code>check --wait</code>; it does not add an Event
                 subsystem or a second orchestration engine.
               </p>
             </div>
@@ -1483,7 +1483,7 @@ orca orchestration check --wait --timeout-ms 60000</code></pre>
             <div class="grid-2" style="margin-top: 20px">
               <div class="card">
                 <h3><code>run:run_123</code></h3>
-                <p>The stable coordinator mailbox stored with that Run in the Orca runtime.</p>
+                <p>The stable coordinator mailbox stored with that Run in the AIO-ADE runtime.</p>
               </div>
               <div class="card">
                 <h3><code>dispatch:dispatch_7</code></h3>
@@ -1498,9 +1498,9 @@ orca orchestration check --wait --timeout-ms 60000</code></pre>
             </p>
 
             <p class="principle">
-              Orca authenticates lifecycle reports automatically. The worker supplies only the Task
+              AIO-ADE authenticates lifecycle reports automatically. The worker supplies only the Task
               and Dispatch IDs injected in its preamble; it never supplies Run, runtime, host,
-              terminal, capability, or attestation IDs. At injection, Orca gives the managed pane a
+              terminal, capability, or attestation IDs. At injection, AIO-ADE gives the managed pane a
               narrow unforgeable Dispatch capability through its CLI bridge. The worker server
               verifies that capability and its local pane; the Run home accepts the relayed report
               only from the pinned paired peer for that Dispatch. Stop, abandon, or replacement
@@ -1575,11 +1575,11 @@ orca orchestration check --wait --timeout-ms 60000</code></pre>
             </p>
 
             <div class="grid-2" style="margin-top: 20px">
-              <pre><code>orca orchestration check --wait --timeout-ms 60000
+              <pre><code>aio-ade orchestration check --wait --timeout-ms 60000
 # → returns delivery_81 with an ordered message batch
 
 # Process every message and start newly-ready work.
-orca orchestration check --ack delivery_81 --wait --timeout-ms 60000</code></pre>
+aio-ade orchestration check --ack delivery_81 --wait --timeout-ms 60000</code></pre>
               <pre><code># "result" excerpt from --json
 {
   "runId": "run_123",
@@ -1811,11 +1811,11 @@ orca orchestration check --ack delivery_81 --wait --timeout-ms 60000</code></pre
 
             <div class="grid-2" style="margin-top: 20px">
               <pre><code># Worker: target defaults to the owning Run mailbox.
-orca orchestration ask --question "Should I preserve the legacy format?" --json
+aio-ade orchestration ask --question "Should I preserve the legacy format?" --json
 # → question message msg_question_7
-# After a disconnect/timeout: orca orchestration ask --resume msg_question_7 --json</code></pre>
+# After a disconnect/timeout: aio-ade orchestration ask --resume msg_question_7 --json</code></pre>
               <pre><code># Coordinator: reply to the returned message ID.
-orca orchestration reply --id msg_question_7 --body "Yes; preserve it." --json</code></pre>
+aio-ade orchestration reply --id msg_question_7 --body "Yes; preserve it." --json</code></pre>
             </div>
 
             <p class="principle">
@@ -1831,7 +1831,7 @@ orca orchestration reply --id msg_question_7 --body "Yes; preserve it." --json</
               <p>
                 <code>worker-read --dispatch</code> resolves the worker server and exact process from
                 the Dispatch receipt. Its default <code>auto</code> source returns the exact
-                hook-reported Codex, Claude, OpenClaude, or Grok transcript when Orca can prove that
+                hook-reported Codex, Claude, OpenClaude, or Grok transcript when AIO-ADE can prove that
                 association;
                 otherwise it returns bounded, explicitly labeled terminal output. Agents never
                 choose a server, provider session ID, or transcript path, and task authority never
@@ -1861,7 +1861,7 @@ orca orchestration reply --id msg_question_7 --body "Yes; preserve it." --json</
               </div>
             </div>
 
-            <pre style="margin-top: 20px"><code>orca orchestration worker-read --dispatch dispatch_7 --source auto --limit 100 --json
+            <pre style="margin-top: 20px"><code>aio-ade orchestration worker-read --dispatch dispatch_7 --source auto --limit 100 --json
 
 # Exact transcript result for a worker on the saved environment named windows
 {
@@ -1884,7 +1884,7 @@ orca orchestration reply --id msg_question_7 --body "Yes; preserve it." --json</
 }
 
 # Continue from the returned top-level opaque cursor.
-orca orchestration worker-read --dispatch dispatch_7 \
+aio-ade orchestration worker-read --dispatch dispatch_7 \
   --cursor opaque-next-cursor --limit 100 --json</code></pre>
 
             <div class="grid-2" style="margin-top: 20px">
@@ -1893,7 +1893,7 @@ orca orchestration worker-read --dispatch dispatch_7 \
                 <p>
                   The returned cursor pins the Dispatch, process, source kind, and opaque source
                   identity. <code>auto</code> selects only on the first page. If the process or
-                  provider session changes, Orca returns
+                  provider session changes, AIO-ADE returns
                   <code>worker_identity_changed</code> or <code>source_changed</code>.
                 </p>
               </div>
@@ -1921,8 +1921,8 @@ orca orchestration worker-read --dispatch dispatch_7 \
               <table>
                 <thead>
                   <tr>
-                    <th>Orca can say</th>
-                    <th>Orca cannot infer</th>
+                    <th>AIO-ADE can say</th>
+                    <th>AIO-ADE cannot infer</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1932,7 +1932,7 @@ orca orchestration worker-read --dispatch dispatch_7 \
                   </tr>
                   <tr>
                     <td>The managed process exited with a particular code.</td>
-                    <td>The reported tests actually passed unless Orca ran them itself.</td>
+                    <td>The reported tests actually passed unless AIO-ADE ran them itself.</td>
                   </tr>
                   <tr>
                     <td>A later exact-session adapter resolved these structured entries.</td>
@@ -1952,7 +1952,7 @@ orca orchestration worker-read --dispatch dispatch_7 \
               <p class="eyebrow">Implementation appendix · agents may skip this section</p>
               <h2>Hidden guarantees for one Run home and many worker servers.</h2>
               <p>
-                A coordinator on one Orca server must be able to supervise workers on another—for
+                A coordinator on one AIO-ADE server must be able to supervise workers on another—for
                 example, a Run on a Mac with Dispatches on both that Mac and a connected Windows
                 server. The minimum federation contract routes commands and durably relays messages;
                 it does not replicate the Run or add scheduling policy.
@@ -1963,7 +1963,7 @@ orca orchestration worker-read --dispatch dispatch_7 \
               Agent rule: choose a remote worker once with <code>--on</code>. After that, keep the
               Dispatch ID and follow the returned inspection commands. Reuse
               <code>mutation.requestId</code> only to recover the same request after a lost response.
-              Peer identity, sequencing, capabilities, and relay acknowledgments below are Orca
+              Peer identity, sequencing, capabilities, and relay acknowledgments below are AIO-ADE
               implementation details—not fields agents choose or copy.
             </p>
 
@@ -2017,7 +2017,7 @@ orca orchestration worker-read --dispatch dispatch_7 \
                       pane, and process incarnation; the Run home verifies the pinned authenticated
                       peer and Dispatch on relay import.
                     </td>
-                    <td>Orca authenticates lifecycle reports automatically.</td>
+                    <td>AIO-ADE authenticates lifecycle reports automatically.</td>
                   </tr>
                 </tbody>
               </table>
@@ -2077,7 +2077,7 @@ orca orchestration worker-read --dispatch dispatch_7 \
               <div class="card">
                 <h3>Typed unknown outcome</h3>
                 <p>
-                  If a remote effect may have happened but Orca cannot prove it, return one
+                  If a remote effect may have happened but AIO-ADE cannot prove it, return one
                   <code>outcome_unknown</code> shape with stage, mutation request ID, durable
                   effects/residuals, and exact inspection commands.
                 </p>
@@ -2088,7 +2088,7 @@ orca orchestration worker-read --dispatch dispatch_7 \
                   Stop first commits one home-side compare-and-set that fences new lifecycle changes,
                   blocks the Task, and closes pending questions, then best-effort stops only the
                   supervised agent process/terminal. If completion already won, stop returns
-                  <code>already_settled</code>; if stop won, later completion is stale history. Orca
+                  <code>already_settled</code>; if stop won, later completion is stale history. AIO-ADE
                   never deletes the worktree, setup output, or unrelated configured tabs.
                 </p>
               </div>
@@ -2251,10 +2251,10 @@ orca orchestration worker-read --dispatch dispatch_7 \
             </p>
 
             <p class="footer-note" style="margin-top: 16px">
-              In this proposal, “durable” means committed state survives a client or Orca process
+              In this proposal, “durable” means committed state survives a client or AIO-ADE process
               crash and ordinary restart. Power-loss durability depends on the receiving database's
               documented SQLite synchronization policy; lifecycle import and acknowledgment must use
-              the stronger policy if Orca promises survival across sudden host power loss.
+              the stronger policy if AIO-ADE promises survival across sudden host power loss.
             </p>
 
             <div class="table-wrap" style="margin-top: 20px">
@@ -2308,7 +2308,7 @@ orca orchestration worker-read --dispatch dispatch_7 \
               <p class="eyebrow">Agent ergonomics</p>
               <h2>The skill should be a cookbook, not a second help page.</h2>
               <p>
-                <code>orca --help</code> already owns syntax and exhaustive flags. The skill should
+                <code>aio-ade --help</code> already owns syntax and exhaustive flags. The skill should
                 teach judgment: which topology to choose, how to preserve parallelism, what the
                 command returns, and what not to create afterward.
               </p>
@@ -2333,7 +2333,7 @@ orca orchestration worker-read --dispatch dispatch_7 \
               </div>
               <div class="card">
                 <h3>Read a full-screen agent</h3>
-                <p>Use <code>worker-read --dispatch</code>; Orca routes to the owning server.</p>
+                <p>Use <code>worker-read --dispatch</code>; AIO-ADE routes to the owning server.</p>
               </div>
               <div class="card">
                 <h3>Replace safely</h3>
@@ -2348,7 +2348,7 @@ orca orchestration worker-read --dispatch dispatch_7 \
                   <li>Complete command and flag catalogs</li>
                   <li>Internal database and delivery terminology</li>
                   <li>Provider-specific internals before the common path</li>
-                  <li>Large decision trees for features Orca does not implement</li>
+                  <li>Large decision trees for features AIO-ADE does not implement</li>
                 </ul>
               </div>
               <div class="card">
@@ -2364,7 +2364,7 @@ orca orchestration worker-read --dispatch dispatch_7 \
             </div>
 
             <details open style="margin-top: 20px">
-              <summary>Current Orca · parallel workers in the current worktree</summary>
+              <summary>Current AIO-ADE · parallel workers in the current worktree</summary>
               <div>
                 <p>
                   Creates two fresh agent terminals; setup does not run. Create both tasks and both
@@ -2372,22 +2372,22 @@ orca orchestration worker-read --dispatch dispatch_7 \
                   coordinator keeps checking until both expected Dispatches settle; one batch is not
                   assumed to contain both completions. Misuse: waiting for worker A before starting B.
                 </p>
-                <pre><code>orca orchestration task-create --spec "Audit message semantics" --json
-orca orchestration task-create --spec "Audit transcript adapters" --json
-orca terminal create --worktree active --title message-audit --command codex --json
-orca terminal create --worktree active --title transcript-audit --command codex --json
-orca terminal wait --terminal term_a --for tui-idle --timeout-ms 60000 --json
-orca terminal wait --terminal term_b --for tui-idle --timeout-ms 60000 --json
-orca orchestration dispatch --task task_a --to term_a --inject --json
-orca orchestration dispatch --task task_b --to term_b --inject --json
+                <pre><code>aio-ade orchestration task-create --spec "Audit message semantics" --json
+aio-ade orchestration task-create --spec "Audit transcript adapters" --json
+aio-ade terminal create --worktree active --title message-audit --command codex --json
+aio-ade terminal create --worktree active --title transcript-audit --command codex --json
+aio-ade terminal wait --terminal term_a --for tui-idle --timeout-ms 60000 --json
+aio-ade terminal wait --terminal term_b --for tui-idle --timeout-ms 60000 --json
+aio-ade orchestration dispatch --task task_a --to term_a --inject --json
+aio-ade orchestration dispatch --task task_b --to term_b --inject --json
 
 # Repeat until task_a and task_b are both settled; process every returned message.
-orca orchestration check --wait --timeout-ms 60000 --json</code></pre>
+aio-ade orchestration check --wait --timeout-ms 60000 --json</code></pre>
               </div>
             </details>
 
             <details>
-              <summary>Proposed Orca · same fan-out with composed worker start</summary>
+              <summary>Proposed AIO-ADE · same fan-out with composed worker start</summary>
               <div>
                 <p>
                   Creates one bound Run and two fresh terminals in the existing worktree. Setup is
@@ -2395,21 +2395,21 @@ orca orchestration check --wait --timeout-ms 60000 --json</code></pre>
                   <code>outcome_unknown</code>; independent calls may be issued in parallel. Worker
                   results arrive through the inbox. Misuse: creating another terminal after start.
                 </p>
-                <pre><code>orca orchestration run-create --objective "Improve orchestration ergonomics" --json
-orca orchestration task-create --spec "Audit message semantics" --json
-orca orchestration task-create --spec "Audit transcript adapters" --json</code></pre>
+                <pre><code>aio-ade orchestration run-create --objective "Improve orchestration ergonomics" --json
+aio-ade orchestration task-create --spec "Audit message semantics" --json
+aio-ade orchestration task-create --spec "Audit transcript adapters" --json</code></pre>
 
                 <div class="grid-2" style="margin-top: 14px">
                   <pre><code># Concurrent tool call A
-orca orchestration worker-start --task task_a --worktree current --agent codex --json</code></pre>
+aio-ade orchestration worker-start --task task_a --worktree current --agent codex --json</code></pre>
                   <pre><code># Concurrent tool call B
-orca orchestration worker-start --task task_b --worktree current --agent codex --json</code></pre>
+aio-ade orchestration worker-start --task task_b --worktree current --agent codex --json</code></pre>
                 </div>
 
                 <pre style="margin-top: 14px"><code># After both start calls return, loop; do not assume two waits or one batch is enough.
 # Repeat process → ack → wait until both Dispatches are settled.
-orca orchestration check --wait --timeout-ms 60000 --json
-orca orchestration check --ack delivery_81 --wait --timeout-ms 60000 --json</code></pre>
+aio-ade orchestration check --wait --timeout-ms 60000 --json
+aio-ade orchestration check --ack delivery_81 --wait --timeout-ms 60000 --json</code></pre>
               </div>
             </details>
 
@@ -2419,28 +2419,28 @@ orca orchestration check --ack delivery_81 --wait --timeout-ms 60000 --json</cod
                 <p>
                   The Run and inbox stay on the Mac. The first worker uses the Mac's current
                   worktree; the second creates a top-level worktree on the saved
-                  <code>windows</code> Orca environment. Both report into the same inbox, including
+                  <code>windows</code> AIO-ADE environment. Both report into the same inbox, including
                   after a temporary disconnect. Misuse: creating a second Run on Windows or asking
                   the worker to carry server/Run-home IDs.
                 </p>
                 <pre><code># On the Mac coordinator
-orca orchestration run-create --objective "Audit both platforms" --json
-orca orchestration task-create --spec "Audit macOS behavior" --json
-orca orchestration task-create --spec "Audit Windows behavior" --json
+aio-ade orchestration run-create --objective "Audit both platforms" --json
+aio-ade orchestration task-create --spec "Audit macOS behavior" --json
+aio-ade orchestration task-create --spec "Audit Windows behavior" --json
 
 # Read-only discovery happens against Windows; copy the opaque repo/worktree IDs returned.
-orca --environment windows worktree list --json
+aio-ade --environment windows worktree list --json
 
 # Issue these as independent concurrent tool calls, not as one sequential shell script.
-orca orchestration worker-start --task task_mac --worktree current --agent codex --json
-orca orchestration worker-start --task task_windows --on windows --worktree new-top-level --repo id:&lt;windows-repo-id&gt; --name windows-audit --agent codex --setup run --json
+aio-ade orchestration worker-start --task task_mac --worktree current --agent codex --json
+aio-ade orchestration worker-start --task task_windows --on windows --worktree new-top-level --repo id:&lt;windows-repo-id&gt; --name windows-audit --agent codex --setup run --json
 
 # One home wait fans in local and Windows messages. Repeat until both Dispatches settle.
-orca orchestration check --wait --timeout-ms 60000 --json
-orca orchestration check --ack delivery_81 --wait --timeout-ms 60000 --json
+aio-ade orchestration check --wait --timeout-ms 60000 --json
+aio-ade orchestration check --ack delivery_81 --wait --timeout-ms 60000 --json
 
 # Attempt-specific guidance uses the stable Dispatch, never the remote terminal handle.
-orca orchestration send --to dispatch:dispatch_windows --subject "Follow-up" \
+aio-ade orchestration send --to dispatch:dispatch_windows --subject "Follow-up" \
   --body "Run the additional Windows-only check." --json</code></pre>
               </div>
             </details>
@@ -2450,19 +2450,19 @@ orca orchestration send --to dispatch:dispatch_windows --subject "Follow-up" \
               <div>
                 <p>
                   The injected preamble supplies the only Task and Dispatch IDs a worker copies.
-                  Orca supplies its Dispatch capability automatically; the worker never supplies Run,
+                  AIO-ADE supplies its Dispatch capability automatically; the worker never supplies Run,
                   runtime, host, terminal, capability, or attestation IDs. Misuse: reporting failure as a
                   successful completion or inventing IDs from terminal history.
                 </p>
                 <pre><code># Success
-orca orchestration send --type worker_done --subject "Review complete" \
+aio-ade orchestration send --type worker_done --subject "Review complete" \
   --body "Audited the requested behavior. Found two issues and changed no files. Nothing remains." \
   --task-id "&lt;taskId from current preamble&gt;" \
   --dispatch-id "&lt;dispatchId from current preamble&gt;" \
   --outcome succeeded --json
 
 # Failure
-orca orchestration send --type worker_done --subject "Review failed" \
+aio-ade orchestration send --type worker_done --subject "Review failed" \
   --body "Could not read the required fixture. No findings are reliable. The fixture must be restored before retrying." \
   --task-id "&lt;taskId from current preamble&gt;" \
   --dispatch-id "&lt;dispatchId from current preamble&gt;" \
@@ -2479,17 +2479,17 @@ orca orchestration send --type worker_done --subject "Review failed" \
                   creating a task gate or a second Question ID for a simple reply.
                 </p>
                 <pre><code># Worker
-orca orchestration ask --question "Should I preserve the legacy format?" --json
+aio-ade orchestration ask --question "Should I preserve the legacy format?" --json
 
 # If acceptance may have happened but the response was lost, repeat the identical command with
 # the orchestrationRequestId reported by the CLI as --retry-request.
-orca orchestration ask --question "Should I preserve the legacy format?" --retry-request req_ask7 --json
+aio-ade orchestration ask --question "Should I preserve the legacy format?" --retry-request req_ask7 --json
 
 # If a server disconnect timed out the wait, resume with the returned message ID.
-orca orchestration ask --resume msg_question_7 --json
+aio-ade orchestration ask --resume msg_question_7 --json
 
 # Coordinator, after receiving msg_question_7
-orca orchestration reply --id msg_question_7 --body "Yes; preserve it." --json</code></pre>
+aio-ade orchestration reply --id msg_question_7 --body "Yes; preserve it." --json</code></pre>
               </div>
             </details>
 
@@ -2502,13 +2502,13 @@ orca orchestration reply --id msg_question_7 --body "Yes; preserve it." --json</
                   <code>skip</code> or <code>inherit</code> only for a concrete stated reason. Misuse:
                   adding a second agent terminal because the startup receipt was not inspected.
                 </p>
-                <pre><code>orca orchestration worker-start --task task_a --worktree new-child --name message-audit --agent codex --setup run --json
-orca orchestration worker-show --dispatch dispatch_7 --json
+                <pre><code>aio-ade orchestration worker-start --task task_a --worktree new-child --name message-audit --agent codex --setup run --json
+aio-ade orchestration worker-show --dispatch dispatch_7 --json
 
-orca orchestration worker-start --task task_b --worktree new-top-level --name transcript-audit --agent claude --setup run --json
+aio-ade orchestration worker-start --task task_b --worktree new-top-level --name transcript-audit --agent claude --setup run --json
 
 # Escape hatch: this task audits the pristine fixture, and setup would mutate that fixture.
-orca orchestration worker-start --task task_fixture --worktree new-top-level --name fixture-only --agent codex --setup skip --json</code></pre>
+aio-ade orchestration worker-start --task task_fixture --worktree new-top-level --name fixture-only --agent codex --setup skip --json</code></pre>
               </div>
             </details>
 
@@ -2520,11 +2520,11 @@ orca orchestration worker-start --task task_fixture --worktree new-top-level --n
                   the chosen worktree. Misuse: treating “an idle terminal somewhere” as equivalent.
                 </p>
                 <pre><code># Local existing worktree; copy the exact opaque IDs from worktree/terminal list.
-orca orchestration worker-start --task task_a --worktree 'id:&lt;full-worktree-id&gt;' --terminal term_12 --json
+aio-ade orchestration worker-start --task task_a --worktree 'id:&lt;full-worktree-id&gt;' --terminal term_12 --json
 
 # Remote existing worktree; --on is mandatory because V1 IDs are server-scoped.
-orca --environment windows worktree list --json
-orca orchestration worker-start --task task_b --on windows --worktree 'id:&lt;full-windows-worktree-id&gt;' --agent codex --json</code></pre>
+aio-ade --environment windows worktree list --json
+aio-ade orchestration worker-start --task task_b --on windows --worktree 'id:&lt;full-windows-worktree-id&gt;' --agent codex --json</code></pre>
               </div>
             </details>
 
@@ -2537,19 +2537,19 @@ orca orchestration worker-start --task task_b --on windows --worktree 'id:&lt;fu
                   unconditional recovery sequence.
                 </p>
                 <pre><code># First recover the receipt for the exact request; this cannot create a second effect.
-orca orchestration worker-start --task task_a --worktree new-child --name message-audit --agent codex --setup run --retry-request req_7 --json
+aio-ade orchestration worker-start --task task_a --worktree new-child --name message-audit --agent codex --setup run --retry-request req_7 --json
 
 # Then inspect the Dispatch if the outcome is still unknown.
-orca orchestration worker-show --dispatch dispatch_7 --json
+aio-ade orchestration worker-show --dispatch dispatch_7 --json
 
 # If ready: keep the worker and wait for its result.
 # If failed or stopped: start an explicit replacement, repeating the intended placement.
-orca orchestration worker-start --task task_a --retry-of dispatch_7 --worktree current --agent codex --json
+aio-ade orchestration worker-start --task task_a --retry-of dispatch_7 --worktree current --agent codex --json
 
 # If still unknown: stop and inspect again, or explicitly accept the warning and abandon.
-orca orchestration worker-stop --dispatch dispatch_7 --json
-orca orchestration worker-show --dispatch dispatch_7 --json
-orca orchestration worker-abandon --dispatch dispatch_7 --json</code></pre>
+aio-ade orchestration worker-stop --dispatch dispatch_7 --json
+aio-ade orchestration worker-show --dispatch dispatch_7 --json
+aio-ade orchestration worker-abandon --dispatch dispatch_7 --json</code></pre>
               </div>
             </details>
 
@@ -2558,19 +2558,19 @@ orca orchestration worker-abandon --dispatch dispatch_7 --json</code></pre>
               <div>
                 <p>
                   A Run-home restart preserves the Run, retry receipts, and the same unacknowledged
-                  Delivery; <code>run-use</code> is needed only when Orca cannot safely remint the
+                  Delivery; <code>run-use</code> is needed only when AIO-ADE cannot safely remint the
                   previous coordinator pane. A worker-server restart preserves its Dispatch
                   attachment and relay queue but does not pretend the agent process survived.
                   Misuse: starting a replacement merely because a runtime ID changed.
                 </p>
                 <pre><code># Home restart: rebind only if run-current says this pane is unbound.
-orca orchestration run-current --json
-orca orchestration run-use --id run_123 --json
-orca orchestration check --wait --timeout-ms 60000 --json
+aio-ade orchestration run-current --json
+aio-ade orchestration run-use --id run_123 --json
+aio-ade orchestration check --wait --timeout-ms 60000 --json
 # → returns the same outstanding delivery_81 until it is acknowledged
 
 # Worker-server restart: inspect the persisted attachment and exact process incarnation.
-orca orchestration worker-show --dispatch dispatch_7 --json
+aio-ade orchestration worker-show --dispatch dispatch_7 --json
 # running/ready → keep waiting; gone/failed → explicit retry-of; unknown → inspect or stop/abandon.</code></pre>
               </div>
             </details>
@@ -2606,9 +2606,9 @@ orca orchestration worker-show --dispatch dispatch_7 --json
           <section id="scope-discipline">
             <div class="section-heading">
               <p class="eyebrow">Complexity audit</p>
-              <h2>Keep only the machinery required by Orca's concrete failure modes.</h2>
+              <h2>Keep only the machinery required by AIO-ADE's concrete failure modes.</h2>
               <p>
-                Every retained primitive below addresses a failure Orca can reproduce today. Broader
+                Every retained primitive below addresses a failure AIO-ADE can reproduce today. Broader
                 policy and product layers remain out of scope until a simpler primitive proves
                 insufficient in real use.
               </p>
@@ -2618,7 +2618,7 @@ orca orchestration worker-show --dispatch dispatch_7 --json
               <table>
                 <thead>
                   <tr>
-                    <th>Observed Orca need</th>
+                    <th>Observed AIO-ADE need</th>
                     <th>Keep</th>
                     <th>Deliberately defer</th>
                   </tr>
@@ -2640,7 +2640,7 @@ orca orchestration worker-show --dispatch dispatch_7 --json
                     <td>Automatic retry, inferred success, rollback, or generalized recovery policy.</td>
                   </tr>
                   <tr>
-                    <td>A Run home must coordinate workers across restarts and connected Orca servers.</td>
+                    <td>A Run home must coordinate workers across restarts and connected AIO-ADE servers.</td>
                     <td>Stable Run, Task, and Dispatch identity with authenticated server relay.</td>
                     <td>Role simulation, worker scoring, organization models, or integration queues.</td>
                   </tr>
@@ -2654,14 +2654,14 @@ orca orchestration worker-show --dispatch dispatch_7 --json
                 <p>
                   Scenario tests must demonstrate durable messages, authenticated relay, lifecycle
                   fencing, and truthful recovery. Design analogy is never a substitute for an
-                  Orca-local executable contract.
+                  AIO-ADE-local executable contract.
                 </p>
               </div>
               <div class="card">
                 <h3>Complexity requires local evidence</h3>
                 <p>
                   A generalized scheduler, fairness policy, dead-letter workflow, or integration
-                  system should be proposed only after Orca users demonstrate that the simpler
+                  system should be proposed only after AIO-ADE users demonstrate that the simpler
                   primitives cannot solve a recurring problem.
                 </p>
               </div>
@@ -2669,7 +2669,7 @@ orca orchestration worker-show --dispatch dispatch_7 --json
 
             <p class="footer-note" style="margin-top: 16px">
               Blocking wait, crash-safe acknowledgment, and connected-server relay require
-              Orca-local implementation and tests. Structured output reuses Orca's exact
+              AIO-ADE-local implementation and tests. Structured output reuses AIO-ADE's exact
               pane/process-to-provider-session association and existing bounded transcript decoders;
               it does not introduce provider-session control or a universal transcript model.
             </p>
@@ -2751,7 +2751,7 @@ orca orchestration worker-show --dispatch dispatch_7 --json
                 <div>
                   <h3>Exact structured worker output</h3>
                   <p>
-                    Reuse Orca's existing pane-scoped hook association and bounded
+                    Reuse AIO-ADE's existing pane-scoped hook association and bounded
                     Codex/Claude/OpenClaude/Grok transcript decoders. Add
                     <code>auto|transcript|terminal</code> selection,
                     path-free source identity, opaque source-pinned paging, and labeled terminal
@@ -2796,7 +2796,7 @@ orca orchestration worker-show --dispatch dispatch_7 --json
               <h2>What this proposal intentionally does not build.</h2>
               <p>
                 These are not hidden later phases. They require separate evidence and a separate
-                proposal if Orca eventually needs them.
+                proposal if AIO-ADE eventually needs them.
               </p>
             </div>
 
@@ -2808,7 +2808,7 @@ orca orchestration worker-show --dispatch dispatch_7 --json
                   <li>No global inbox, badges, or queue screen</li>
                   <li>No coordinator chat surface</li>
                   <li>No task DAG visualization</li>
-                  <li>No changes to existing Orca UI behavior</li>
+                  <li>No changes to existing AIO-ADE UI behavior</li>
                 </ul>
               </div>
               <div class="card">
@@ -2845,18 +2845,18 @@ orca orchestration worker-show --dispatch dispatch_7 --json
             </div>
 
             <details open style="margin-top: 20px">
-              <summary>Could Orca add these things later?</summary>
+              <summary>Could AIO-ADE add these things later?</summary>
               <div>
                 Yes, but strong primitives do not need speculative abstractions for them today. A
                 future feature should compose the same start, message, wait, read, stop, identity,
-                and ownership contracts. It should justify its own concepts from observed Orca use.
+                and ownership contracts. It should justify its own concepts from observed AIO-ADE use.
               </div>
             </details>
 
             <details>
               <summary>Does removing commit tracking make worker results less trustworthy?</summary>
               <div>
-                It makes the contract more honest. Today Orca verifies who is authorized to report a
+                It makes the contract more honest. Today AIO-ADE verifies who is authorized to report a
                 result, not that every claim inside the result is true. A coordinator may explicitly
                 ask another worker to review or run validation. That is agent-directed orchestration,
                 not an implicit integration subsystem.
@@ -2864,7 +2864,7 @@ orca orchestration worker-show --dispatch dispatch_7 --json
             </details>
 
             <details>
-              <summary>What about connecting multiple Orca runtime servers?</summary>
+              <summary>What about connecting multiple AIO-ADE runtime servers?</summary>
               <div>
                 It is a core requirement. A Run stays authoritative on one home server while remote
                 Dispatches execute on saved connected environments such as a Windows machine.
@@ -2879,7 +2879,7 @@ orca orchestration worker-show --dispatch dispatch_7 --json
               Phases 0–4 of this contract are implemented. Structured output is verified locally,
               through a mixed-version terminal fallback, and across a Windows-home to Mac-worker
               Dispatch; the remaining physical symmetry checks stay in the acceptance ledger. The
-              proposal makes no Orca product UI changes.
+              proposal makes no AIO-ADE product UI changes.
             </p>
           </section>
         </div>
@@ -2890,7 +2890,7 @@ orca orchestration worker-show --dispatch dispatch_7 --json
       const root = document.documentElement
       const themeButton = document.getElementById('theme-toggle')
       const preferredDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      const storedTheme = window.localStorage.getItem('orca-orchestration-primitives-theme')
+      const storedTheme = window.localStorage.getItem('aio-ade-orchestration-primitives-theme')
 
       function applyTheme(theme) {
         const dark = theme === 'dark'
@@ -2902,7 +2902,7 @@ orca orchestration worker-show --dispatch dispatch_7 --json
 
       themeButton.addEventListener('click', () => {
         const nextTheme = root.classList.contains('dark') ? 'light' : 'dark'
-        window.localStorage.setItem('orca-orchestration-primitives-theme', nextTheme)
+        window.localStorage.setItem('aio-ade-orchestration-primitives-theme', nextTheme)
         applyTheme(nextTheme)
       })
 

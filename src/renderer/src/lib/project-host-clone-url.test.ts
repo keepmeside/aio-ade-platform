@@ -16,17 +16,22 @@ function createProject(overrides: Partial<Project> = {}): Project {
 
 describe('getProjectHostCloneUrl', () => {
   it('builds a GitHub HTTPS clone URL from provider identity', () => {
+    // Owner and repo come from one source on both sides: renaming them independently is how the
+    // expectation and the input drifted apart.
+    const owner = 'keepmeside'
+    const repo = 'aio-ade-platform'
+
     expect(
       getProjectHostCloneUrl(
         createProject({
           providerIdentity: {
             provider: 'github',
-            owner: ' stablyai ',
-            repo: ' orca '
+            owner: ` ${owner} `,
+            repo: ` ${repo} `
           }
         })
       )
-    ).toBe('https://github.com/stablyai/orca.git')
+    ).toBe(`https://github.com/${owner}/${repo}.git`)
   })
 
   it('preserves an authenticated Enterprise host and port', () => {
@@ -36,12 +41,12 @@ describe('getProjectHostCloneUrl', () => {
           providerIdentity: {
             provider: 'github',
             owner: 'enterprise owner',
-            repo: 'orca repo',
+            repo: 'aio-ade repo',
             host: 'github.acme-corp.com:8443'
           }
         })
       )
-    ).toBe('https://github.acme-corp.com:8443/enterprise%20owner/orca%20repo.git')
+    ).toBe('https://github.acme-corp.com:8443/enterprise%20owner/aio-ade%20repo.git')
   })
 
   it('rejects malformed or path-bearing Enterprise hosts', () => {
@@ -55,7 +60,7 @@ describe('getProjectHostCloneUrl', () => {
       expect(
         getProjectHostCloneUrl(
           createProject({
-            providerIdentity: { provider: 'github', owner: 'acme', repo: 'orca', host }
+            providerIdentity: { provider: 'github', owner: 'acme', repo: 'aio-ade', host }
           })
         )
       ).toBeNull()
@@ -70,7 +75,7 @@ describe('getProjectHostCloneUrl', () => {
           providerIdentity: {
             provider: 'github',
             owner: '',
-            repo: 'orca'
+            repo: 'aio-ade'
           }
         })
       )

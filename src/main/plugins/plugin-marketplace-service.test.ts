@@ -19,7 +19,7 @@ import {
 const roots: string[] = []
 
 async function tempRoot(): Promise<string> {
-  const root = await mkdtemp(join(tmpdir(), 'orca-marketplace-service-'))
+  const root = await mkdtemp(join(tmpdir(), 'aio-ade-marketplace-service-'))
   roots.push(root)
   return root
 }
@@ -137,26 +137,26 @@ describe('PluginMarketplaceService', () => {
       pluginsDataDir: await tempRoot(),
       fetcher: async () =>
         fetched(
-          marketplace('Attack', 'community.orca-secrets', 'https://github.com/attacker/x.git')
+          marketplace('Attack', 'community.aio-ade-secrets', 'https://github.com/attacker/x.git')
         )
     })
 
     await expect(service.addSource(source())).rejects.toThrow(
-      'reserved plugin identity community.orca-secrets'
+      'reserved plugin identity community.aio-ade-secrets'
     )
     await expect(service.listSources()).resolves.toEqual([])
   })
 
   it('derives the Official badge only from the canonical marketplace and source organization', async () => {
     const officialMarketplace: PluginMarketplace = {
-      name: 'Orca Plugins',
-      owner: 'stablyai',
+      name: 'AIO-ADE Plugins',
+      owner: 'keepmeside',
       plugins: [
         {
-          id: 'stablyai.orca-shortcuts',
+          id: 'keepmeside.aio-ade-shortcuts',
           source: {
             kind: 'git',
-            url: 'git@github.com:stablyai/orca-shortcuts.git',
+            url: 'git@github.com:keepmeside/aio-ade-platform-shortcuts.git',
             ref: 'main'
           },
           categories: ['keybindings']
@@ -168,10 +168,10 @@ describe('PluginMarketplaceService', () => {
       fetcher: async () => fetched(officialMarketplace)
     })
 
-    await service.addSource(source('https://github.com/stablyai/orca-plugins.git'))
+    await service.addSource(source('https://github.com/keepmeside/aio-ade-platform-plugins.git'))
 
     await expect(service.listPlugins()).resolves.toEqual([
-      expect.objectContaining({ pluginKey: 'stablyai.orca-shortcuts', official: true })
+      expect.objectContaining({ pluginKey: 'keepmeside.aio-ade-shortcuts', official: true })
     ])
   })
 
@@ -215,17 +215,17 @@ describe('PluginMarketplaceService', () => {
   it('seeds the official marketplace once and keeps it configured across restarts', async () => {
     const root = await tempRoot()
     const officialMarketplace = marketplace(
-      'Orca Plugins',
-      'stablyai.orca-notes',
-      'https://github.com/stablyai/orca-notes.git'
+      'AIO-ADE Plugins',
+      'keepmeside.aio-ade-notes',
+      'https://github.com/keepmeside/aio-ade-platform-notes.git'
     )
-    officialMarketplace.owner = 'stablyai'
+    officialMarketplace.owner = 'keepmeside'
     const fetcher = vi.fn(async () => fetched(officialMarketplace))
     const first = new PluginMarketplaceService({ pluginsDataDir: root, fetcher })
 
     await expect(first.seedOfficialSource()).resolves.toMatchObject({
       official: true,
-      marketplace: { name: 'Orca Plugins' }
+      marketplace: { name: 'AIO-ADE Plugins' }
     })
     await expect(first.seedOfficialSource()).resolves.toMatchObject({ official: true })
     expect(fetcher).toHaveBeenCalledTimes(1)
@@ -258,11 +258,11 @@ describe('PluginMarketplaceService', () => {
       addedAt: 1
     }
     const officialMarketplace = marketplace(
-      'Orca Plugins',
-      'stablyai.orca-notes',
-      'https://github.com/stablyai/orca-notes.git'
+      'AIO-ADE Plugins',
+      'keepmeside.aio-ade-notes',
+      'https://github.com/keepmeside/aio-ade-platform-notes.git'
     )
-    officialMarketplace.owner = 'stablyai'
+    officialMarketplace.owner = 'keepmeside'
     const listSources = vi
       .fn<() => Promise<readonly PluginMarketplaceRegisteredSource[]>>()
       .mockRejectedValueOnce(new Error('source store temporarily unavailable'))
@@ -289,7 +289,7 @@ describe('PluginMarketplaceService', () => {
       expect.objectContaining({ id: registered.id, official: true })
     ])
     await expect(service.seedOfficialSource()).resolves.toMatchObject({
-      marketplace: { name: 'Orca Plugins' },
+      marketplace: { name: 'AIO-ADE Plugins' },
       official: true
     })
   })
@@ -303,11 +303,11 @@ describe('PluginMarketplaceService', () => {
       )
     )
     const officialMarketplace = marketplace(
-      'Orca Plugins',
-      'stablyai.orca-notes',
-      'https://github.com/stablyai/orca-notes.git'
+      'AIO-ADE Plugins',
+      'keepmeside.aio-ade-notes',
+      'https://github.com/keepmeside/aio-ade-platform-notes.git'
     )
-    officialMarketplace.owner = 'stablyai'
+    officialMarketplace.owner = 'keepmeside'
     const service = new PluginMarketplaceService({
       pluginsDataDir: root,
       store,

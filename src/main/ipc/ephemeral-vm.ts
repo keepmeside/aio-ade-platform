@@ -40,7 +40,7 @@ const activeProvisionControllers = new Map<string, AbortController>()
 export type EphemeralVmProvisionIpcResult =
   | {
       ok: true
-      connectionType: 'orca-server'
+      connectionType: 'aio-ade-server'
       runtime: EphemeralVmRuntimeRecord
       environment: PublicKnownRuntimeEnvironment
       stderr: string
@@ -229,7 +229,7 @@ export function registerEphemeralVmHandlers(store: Store, pluginService?: Plugin
         })
         return {
           ok: true,
-          connectionType: 'orca-server',
+          connectionType: 'aio-ade-server',
           runtime,
           environment: redactRuntimeEnvironment(environment),
           stderr: redactEphemeralVmRecipeDiagnosticText(result.start.stderr),

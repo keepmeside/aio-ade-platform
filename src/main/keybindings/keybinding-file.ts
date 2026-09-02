@@ -1,6 +1,7 @@
 /* eslint-disable max-lines -- Why: parsing, sanitizing, migrating, and writing the keybindings file must stay together so file-format edge cases share one validation path. */
 import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { dirname } from 'node:path'
+import { getAppHomePath } from '../../shared/app-home-paths'
 import {
   findKeybindingConflicts,
   formatKeybindingList,
@@ -23,7 +24,7 @@ const PLATFORM_KEYS: readonly KeybindingPlatform[] = ['darwin', 'linux', 'win32'
 const ROOT_KEYS = new Set(['$schema', 'version', 'keybindings', 'platforms'])
 
 export function getUserKeybindingsPath(homePath: string): string {
-  return join(homePath, '.orca', 'keybindings.json')
+  return getAppHomePath(homePath, 'keybindings.json')
 }
 
 function isJsonObject(value: unknown): value is JsonObject {

@@ -1592,8 +1592,8 @@ Append new entries chronologically. Do not rewrite older entries except to corre
 - Verification:
   - Run `run_074503e3edc6`, Task `task_8a07840e7aad`, and Dispatch `ctx_d6bac1ee6409` started a fresh
     Codex worker in the existing Mac worktree with setup `not_applicable`.
-  - The worker relayed `ORCA_MAC_CONTROL_INITIAL_7C31`, blocked on its Dispatch inbox, received
-    coordinator guidance addressed to the stable Dispatch as `ORCA_MAC_CONTROL_FOLLOWUP_A842`, and
+  - The worker relayed `AIO_ADE_MAC_CONTROL_INITIAL_7C31`, blocked on its Dispatch inbox, received
+    coordinator guidance addressed to the stable Dispatch as `AIO_ADE_MAC_CONTROL_FOLLOWUP_A842`, and
     returned one authenticated successful `worker_done` containing both markers.
   - The Windows home settled the Task and Dispatch once. `worker-read --source auto` returned
     `source=transcript`, `provider=codex`, an opaque cursor, both markers, and no capability token or

@@ -1,34 +1,51 @@
-const MANAGED_MARKER = '# Orca managed WSL CLI launcher'
-const BRIDGE_MANAGED_MARKER = '# Orca managed WSL CLI PowerShell bridge'
+const MANAGED_MARKER = '# AIO-ADE managed WSL CLI launcher'
+const BRIDGE_MANAGED_MARKER = '# AIO-ADE managed WSL CLI PowerShell bridge'
+
+/* The marker a pre-rebrand build wrote into the same scripts.
+ *
+ * Ownership detection reads this: the installer only rewrites or removes a WSL registration whose
+ * content carries one of its own markers, and never touches a script a user wrote. A distro that
+ * was registered before the rename still has the old marker on disk, so recognizing only the
+ * current one would classify that registration as user-owned and leave it forwarding to a launcher
+ * path this app no longer installs. */
+const LEGACY_MANAGED_MARKERS = [
+  '# Orca managed WSL CLI launcher',
+  '# Orca managed WSL CLI PowerShell bridge'
+] as const
+
+/** True when the script was written by this app, under either brand's marker. */
+export function isManagedWslScript(content: string, marker: string): boolean {
+  return content.includes(marker) || LEGACY_MANAGED_MARKERS.some((old) => content.includes(old))
+}
 
 export function buildWslLauncher(
   windowsLauncherPath: string,
-  bridgePath = '${XDG_DATA_HOME:-$HOME/.local/share}/orca/orca-wsl-bridge.ps1'
+  bridgePath = '${XDG_DATA_HOME:-$HOME/.local/share}/aio-ade/aio-ade-wsl-bridge.ps1'
 ): string {
   const encodedTarget = Buffer.from(windowsLauncherPath, 'utf8').toString('base64')
   return `#!/usr/bin/env bash
 set -euo pipefail
 ${MANAGED_MARKER}
-# ORCA_WIN_LAUNCHER_B64=${encodedTarget}
-ORCA_WIN_LAUNCHER=${quoteShell(windowsLauncherPath)}
-ORCA_BRIDGE_PS1=${quoteShell(bridgePath)}
+# AIO_ADE_WIN_LAUNCHER_B64=${encodedTarget}
+AIO_ADE_WIN_LAUNCHER=${quoteShell(windowsLauncherPath)}
+AIO_ADE_BRIDGE_PS1=${quoteShell(bridgePath)}
 if command -v powershell.exe >/dev/null 2>&1; then
-  ORCA_POWERSHELL=powershell.exe
+  AIO_ADE_POWERSHELL=powershell.exe
 elif [ -x /mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe ]; then
-  ORCA_POWERSHELL=/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe
+  AIO_ADE_POWERSHELL=/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe
 else
-  echo "Orca WSL CLI requires Windows interop and could not find powershell.exe." >&2
+  echo "AIO-ADE WSL CLI requires Windows interop and could not find powershell.exe." >&2
   exit 1
 fi
 # Why: a shell can outlive a deleted worktree; keep explicit CLI selectors and
 # help usable, and repair cwd before any WSL interop tool tries to resolve it.
-ORCA_WSL_CWD=$(pwd -P 2>/dev/null) || {
-  ORCA_WSL_CWD=/
+AIO_ADE_WSL_CWD=$(pwd -P 2>/dev/null) || {
+  AIO_ADE_WSL_CWD=/
   cd /
 }
-ORCA_BRIDGE_PS1_WIN=$(wslpath -w "$ORCA_BRIDGE_PS1")
-ORCA_WSL_CWD_WIN=$(wslpath -w "$ORCA_WSL_CWD")
-exec "$ORCA_POWERSHELL" -NoProfile -ExecutionPolicy Bypass -File "$ORCA_BRIDGE_PS1_WIN" "$ORCA_WIN_LAUNCHER" -WslCwd "$ORCA_WSL_CWD_WIN" "$@"
+AIO_ADE_BRIDGE_PS1_WIN=$(wslpath -w "$AIO_ADE_BRIDGE_PS1")
+AIO_ADE_WSL_CWD_WIN=$(wslpath -w "$AIO_ADE_WSL_CWD")
+exec "$AIO_ADE_POWERSHELL" -NoProfile -ExecutionPolicy Bypass -File "$AIO_ADE_BRIDGE_PS1_WIN" "$AIO_ADE_WIN_LAUNCHER" -WslCwd "$AIO_ADE_WSL_CWD_WIN" "$@"
 `
 }
 
@@ -37,7 +54,7 @@ export function buildWslBridgeScript(): string {
 [CmdletBinding(PositionalBinding=$false)]
 param(
   [Parameter(Mandatory=$true, Position=0)]
-  [string]$OrcaLauncher,
+  [string]$AioAdeLauncher,
 
   [string]$WslCwd,
 
@@ -48,12 +65,12 @@ param(
 $exitCode = 0
 try {
   if ([string]::IsNullOrEmpty($WslCwd)) {
-    Remove-Item Env:ORCA_CLI_CWD -ErrorAction SilentlyContinue
+    Remove-Item Env:AIO_ADE_CLI_CWD -ErrorAction SilentlyContinue
   } else {
-    $env:ORCA_CLI_CWD = $WslCwd
+    $env:AIO_ADE_CLI_CWD = $WslCwd
   }
-  Push-Location -LiteralPath (Split-Path -Parent $OrcaLauncher)
-  & $OrcaLauncher @ForwardArgs
+  Push-Location -LiteralPath (Split-Path -Parent $AioAdeLauncher)
+  & $AioAdeLauncher @ForwardArgs
   if ($null -eq $LASTEXITCODE) {
     if (-not $?) {
       $exitCode = 1
@@ -73,8 +90,8 @@ exit $exitCode
 
 export function getBridgePathFromCommandPath(commandPath: string): string {
   // Why: both the current Linux command and the legacy pre-rename command
-  // share one WSL bridge under ~/.local/share/orca.
-  return `${commandPath.replace(/\/\.local\/bin\/(?:orca|orca-ide)$/, '/.local/share/orca')}/orca-wsl-bridge.ps1`
+  // share one WSL bridge under ~/.local/share/aio-ade.
+  return `${commandPath.replace(/\/\.local\/bin\/(?:aio-ade|aio-ade)$/, '/.local/share/aio-ade')}/aio-ade-wsl-bridge.ps1`
 }
 
 export function buildSafeReplaceGuard(path: string, managedMarker: string): string {
@@ -82,10 +99,10 @@ export function buildSafeReplaceGuard(path: string, managedMarker: string): stri
   const quotedMarker = quoteShell(managedMarker)
   return [
     `if [ -L ${quotedPath} ]; then`,
-    '  echo "__ORCA_CONFLICT__"',
+    '  echo "__AIO_ADE_CONFLICT__"',
     '  exit 23',
     `elif [ -e ${quotedPath} ] && { [ ! -f ${quotedPath} ] || ! grep -Fq ${quotedMarker} ${quotedPath}; }; then`,
-    '  echo "__ORCA_CONFLICT__"',
+    '  echo "__AIO_ADE_CONFLICT__"',
     '  exit 23',
     'fi'
   ].join('\n')
@@ -93,20 +110,22 @@ export function buildSafeReplaceGuard(path: string, managedMarker: string): stri
 
 export function buildRegistrationLockPrelude(commandPath: string): string {
   const lockDir = getPosixDirname(getBridgePathFromCommandPath(commandPath))
-  // Why: the per-distro queue only serializes one Orca process; flock covers
+  // Why: the per-distro queue only serializes one AIO-ADE process; flock covers
   // a second install (e.g. stable + nightly) mutating the same distro files.
   return [
     `if command -v flock >/dev/null 2>&1 && mkdir -p ${quoteShell(lockDir)} 2>/dev/null; then`,
-    `  exec 9>${quoteShell(`${lockDir}/.orca-wsl-cli.lock`)}`,
+    `  exec 9>${quoteShell(`${lockDir}/.aio-ade-wsl-cli.lock`)}`,
     '  flock -x -w 30 9',
     'fi'
   ].join('\n')
 }
 
 export function buildManagedLegacyRemoveCommand(quotedLegacyCommandPath: string): string {
-  // Why: remove only the Orca-managed pre-rename wrapper; user-owned `orca`
-  // commands and symlinks must survive.
-  return `if [ ! -L ${quotedLegacyCommandPath} ] && [ -f ${quotedLegacyCommandPath} ] && grep -Fq ${quoteShell(MANAGED_MARKER)} ${quotedLegacyCommandPath}; then rm -f ${quotedLegacyCommandPath}; fi`
+  /* Remove only a wrapper this app wrote; a user-owned command or symlink at the same path must
+   * survive. The marker to grep for is the PRE-REBRAND one: the file being removed was written by a
+   * pre-rename build, so it carries that marker and not the current one. */
+  const quotedLegacyMarker = quoteShell(LEGACY_MANAGED_MARKERS[0])
+  return `if [ ! -L ${quotedLegacyCommandPath} ] && [ -f ${quotedLegacyCommandPath} ] && { grep -Fq ${quoteShell(MANAGED_MARKER)} ${quotedLegacyCommandPath} || grep -Fq ${quotedLegacyMarker} ${quotedLegacyCommandPath}; }; then rm -f ${quotedLegacyCommandPath}; fi`
 }
 
 export function buildSafeRemoveCommand(commandPath: string, legacyCommandPath?: string): string {
@@ -117,14 +136,17 @@ export function buildSafeRemoveCommand(commandPath: string, legacyCommandPath?: 
     buildSafeReplaceGuard(commandPath, MANAGED_MARKER),
     buildSafeReplaceGuard(bridgePath, BRIDGE_MANAGED_MARKER),
     `rm -f ${quoteShell(commandPath)} ${quoteShell(bridgePath)}`,
-    // Why: leaving a managed legacy `orca` behind lets startup reconciliation
+    // Why: leaving a managed legacy `aio-ade` behind lets startup reconciliation
     // re-adopt it as opt-in proof and silently undo this removal.
     ...(legacyCommandPath ? [buildManagedLegacyRemoveCommand(quoteShell(legacyCommandPath))] : [])
   ].join('\n')
 }
 
 export function parseManagedLauncherTarget(content: string): string | null {
-  const encoded = content.match(/^# ORCA_WIN_LAUNCHER_B64=([A-Za-z0-9+/=]+)$/m)?.[1]
+  /* Accept either brand's variable name: this parses a script already on disk, and a registration
+   * written before the rename spells it `ORCA_WIN_LAUNCHER_B64`. Failing to read it reports the
+   * target as unknown, which presents a stale registration as unmanaged. */
+  const encoded = content.match(/^# (?:AIO_ADE|ORCA)_WIN_LAUNCHER_B64=([A-Za-z0-9+/=]+)$/m)?.[1]
   if (encoded) {
     try {
       return Buffer.from(encoded, 'base64').toString('utf8')
@@ -133,7 +155,7 @@ export function parseManagedLauncherTarget(content: string): string | null {
     }
   }
 
-  const legacyTarget = content.match(/^ORCA_WIN_LAUNCHER='((?:[^']|'"'"')*)'$/m)?.[1]
+  const legacyTarget = content.match(/^(?:AIO_ADE|ORCA)_WIN_LAUNCHER='((?:[^']|'"'"')*)'$/m)?.[1]
   return legacyTarget ? legacyTarget.replaceAll(`'"'"'`, "'") : null
 }
 

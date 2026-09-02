@@ -229,14 +229,14 @@ import type { AiVaultListArgs, AiVaultSubagentListArgs } from '../shared/ai-vaul
 import type { AiVaultPrepareSessionResumeArgs } from '../shared/ai-vault-resume-preparation'
 import type { AgentType } from '../shared/native-chat-types'
 import {
-  ORCA_APP_RESTART_ABORTED_EVENT,
-  ORCA_APP_RESTART_STARTED_EVENT,
-  ORCA_UPDATER_QUIT_AND_INSTALL_ABORTED_EVENT,
-  ORCA_UPDATER_QUIT_AND_INSTALL_STARTED_EVENT
+  AIO_ADE_APP_RESTART_ABORTED_EVENT,
+  AIO_ADE_APP_RESTART_STARTED_EVENT,
+  AIO_ADE_UPDATER_QUIT_AND_INSTALL_ABORTED_EVENT,
+  AIO_ADE_UPDATER_QUIT_AND_INSTALL_STARTED_EVENT
 } from '../shared/updater-renderer-events'
-import { ORCA_RENDERER_UNLOAD_PREVENTED_EVENT } from '../shared/renderer-shutdown-events'
+import { AIO_ADE_RENDERER_UNLOAD_PREVENTED_EVENT } from '../shared/renderer-shutdown-events'
 import {
-  ORCA_INTERNAL_FILE_DRAG_TYPE,
+  AIO_ADE_INTERNAL_FILE_DRAG_TYPE,
   createNativeFileDropPayload,
   createRejectedNativeFileDropPayload,
   hasNativeFileDragTypes,
@@ -281,14 +281,14 @@ const nativeFileDropCallbacks: NativeFileDropCallback[] = []
 let nativeFileDropListenerRegistered = false
 const updaterQuitAbortRelay = createUpdaterQuitAbortRelay(
   window,
-  ORCA_UPDATER_QUIT_AND_INSTALL_ABORTED_EVENT
+  AIO_ADE_UPDATER_QUIT_AND_INSTALL_ABORTED_EVENT
 )
 
 ipcRenderer.on('updater:status', (_event, status: UpdateStatus) => {
   updaterQuitAbortRelay.handleStatus(status)
 })
 ipcRenderer.on('window:unload-prevented', () => {
-  window.dispatchEvent(new Event(ORCA_RENDERER_UNLOAD_PREVENTED_EVENT))
+  window.dispatchEvent(new Event(AIO_ADE_RENDERER_UNLOAD_PREVENTED_EVENT))
 })
 
 function getLinuxDisplayServer(): 'wayland' | 'x11' | null {
@@ -398,7 +398,7 @@ document.addEventListener(
   'drop',
   (e) => {
     // Let in-app drags (e.g. file explorer → terminal) through to React handlers
-    if (e.dataTransfer?.types.includes(ORCA_INTERNAL_FILE_DRAG_TYPE)) {
+    if (e.dataTransfer?.types.includes(AIO_ADE_INTERNAL_FILE_DRAG_TYPE)) {
       return
     }
 
@@ -452,7 +452,7 @@ document.addEventListener(
   true
 )
 
-const startupDiagnosticsEnabled = process.env.ORCA_STARTUP_DIAGNOSTICS === '1'
+const startupDiagnosticsEnabled = process.env.AIO_ADE_STARTUP_DIAGNOSTICS === '1'
 
 // Custom APIs for renderer
 const api = {
@@ -463,13 +463,13 @@ const api = {
     relaunch: (): Promise<void> => ipcRenderer.invoke('app:relaunch'),
     restart: async (): Promise<void> => {
       await prepareRendererForAppRestart(window, {
-        startedEventName: ORCA_APP_RESTART_STARTED_EVENT,
-        abortedEventName: ORCA_APP_RESTART_ABORTED_EVENT
+        startedEventName: AIO_ADE_APP_RESTART_STARTED_EVENT,
+        abortedEventName: AIO_ADE_APP_RESTART_ABORTED_EVENT
       })
       try {
         return await ipcRenderer.invoke('app:restart')
       } catch (error) {
-        window.dispatchEvent(new Event(ORCA_APP_RESTART_ABORTED_EVENT))
+        window.dispatchEvent(new Event(AIO_ADE_APP_RESTART_ABORTED_EVENT))
         throw error
       }
     },
@@ -507,24 +507,24 @@ const api = {
       ipcRenderer.invoke('terminal:writeRenderDesyncEvidence', args)
   },
 
-  orcaProfiles: {
-    list: () => ipcRenderer.invoke('orcaProfiles:list'),
-    authStatus: () => ipcRenderer.invoke('orcaProfiles:authStatus'),
-    createLocal: (args) => ipcRenderer.invoke('orcaProfiles:createLocal', args),
-    createCloudLinked: (args) => ipcRenderer.invoke('orcaProfiles:createCloudLinked', args),
-    switchProfile: (args) => ipcRenderer.invoke('orcaProfiles:switch', args),
-    transferProject: (args) => ipcRenderer.invoke('orcaProfiles:transferProject', args),
-    findProjectProfiles: (args) => ipcRenderer.invoke('orcaProfiles:findProjectProfiles', args),
-    connectCurrent: () => ipcRenderer.invoke('orcaProfiles:connectCurrent'),
-    refreshAuth: () => ipcRenderer.invoke('orcaProfiles:refreshAuth'),
-    signOutCurrent: () => ipcRenderer.invoke('orcaProfiles:signOutCurrent'),
-    selectOrg: (args) => ipcRenderer.invoke('orcaProfiles:selectOrg', args),
-    orgMembersList: (args) => ipcRenderer.invoke('orcaProfiles:orgMembersList', args),
-    orgMemberInvite: (args) => ipcRenderer.invoke('orcaProfiles:orgMemberInvite', args),
-    orgInviteRevoke: (args) => ipcRenderer.invoke('orcaProfiles:orgInviteRevoke', args),
-    orgMemberChangeRole: (args) => ipcRenderer.invoke('orcaProfiles:orgMemberChangeRole', args),
-    orgMemberRemove: (args) => ipcRenderer.invoke('orcaProfiles:orgMemberRemove', args)
-  } satisfies PreloadApi['orcaProfiles'],
+  aioAdeProfiles: {
+    list: () => ipcRenderer.invoke('aioAdeProfiles:list'),
+    authStatus: () => ipcRenderer.invoke('aioAdeProfiles:authStatus'),
+    createLocal: (args) => ipcRenderer.invoke('aioAdeProfiles:createLocal', args),
+    createCloudLinked: (args) => ipcRenderer.invoke('aioAdeProfiles:createCloudLinked', args),
+    switchProfile: (args) => ipcRenderer.invoke('aioAdeProfiles:switch', args),
+    transferProject: (args) => ipcRenderer.invoke('aioAdeProfiles:transferProject', args),
+    findProjectProfiles: (args) => ipcRenderer.invoke('aioAdeProfiles:findProjectProfiles', args),
+    connectCurrent: () => ipcRenderer.invoke('aioAdeProfiles:connectCurrent'),
+    refreshAuth: () => ipcRenderer.invoke('aioAdeProfiles:refreshAuth'),
+    signOutCurrent: () => ipcRenderer.invoke('aioAdeProfiles:signOutCurrent'),
+    selectOrg: (args) => ipcRenderer.invoke('aioAdeProfiles:selectOrg', args),
+    orgMembersList: (args) => ipcRenderer.invoke('aioAdeProfiles:orgMembersList', args),
+    orgMemberInvite: (args) => ipcRenderer.invoke('aioAdeProfiles:orgMemberInvite', args),
+    orgInviteRevoke: (args) => ipcRenderer.invoke('aioAdeProfiles:orgInviteRevoke', args),
+    orgMemberChangeRole: (args) => ipcRenderer.invoke('aioAdeProfiles:orgMemberChangeRole', args),
+    orgMemberRemove: (args) => ipcRenderer.invoke('aioAdeProfiles:orgMemberRemove', args)
+  } satisfies PreloadApi['aioAdeProfiles'],
 
   platform: {
     get: () => ({
@@ -1578,9 +1578,9 @@ const api = {
       return () => ipcRenderer.removeListener('gh:workItemMutated', listener)
     },
 
-    checkOrcaStarred: (): Promise<boolean | null> => ipcRenderer.invoke('gh:checkOrcaStarred'),
-    starOrca: (source: AppStarSource): Promise<boolean> =>
-      ipcRenderer.invoke('gh:starOrca', source),
+    checkAioAdeStarred: (): Promise<boolean | null> => ipcRenderer.invoke('gh:checkAioAdeStarred'),
+    starAioAde: (source: AppStarSource): Promise<boolean> =>
+      ipcRenderer.invoke('gh:starAioAde', source),
 
     // Why: rate_limit is exempt from rate-limit accounting; `force` still busts the 30s in-process cache after an expensive op.
     rateLimit: (args?: { force?: boolean }): Promise<GetRateLimitResult> =>
@@ -1906,7 +1906,7 @@ const api = {
     complete: (): Promise<void> => ipcRenderer.invoke('star-nag:complete'),
     disable: (): Promise<void> => ipcRenderer.invoke('star-nag:disable'),
     openWeb: (): Promise<void> => ipcRenderer.invoke('star-nag:openWeb'),
-    starOrca: (): Promise<boolean> => ipcRenderer.invoke('star-nag:starOrca'),
+    starAioAde: (): Promise<boolean> => ipcRenderer.invoke('star-nag:starAioAde'),
     forceShow: (): Promise<void> => ipcRenderer.invoke('star-nag:forceShow'),
     agentValueMoment: (): Promise<
       { status: 'ready'; mode: 'gh' | 'web' } | { status: 'skipped' }
@@ -2437,7 +2437,7 @@ const api = {
       callback: (event: {
         browserPageId: string
         origin: string
-        action: 'opened-in-orca' | 'opened-external' | 'blocked'
+        action: 'opened-in-aio-ade' | 'opened-external' | 'blocked'
       }) => void
     ): (() => void) => {
       const listener = (
@@ -2445,7 +2445,7 @@ const api = {
         data: {
           browserPageId: string
           origin: string
-          action: 'opened-in-orca' | 'opened-external' | 'blocked'
+          action: 'opened-in-aio-ade' | 'opened-external' | 'blocked'
         }
       ) => callback(data)
       ipcRenderer.on('browser:popup', listener)
@@ -2602,15 +2602,15 @@ const api = {
       return () => ipcRenderer.removeListener('browser:pane-focus', listener)
     },
 
-    onOpenLinkInOrcaTab: (
+    onOpenLinkInAioAdeTab: (
       callback: (event: { browserPageId: string; url: string }) => void
     ): (() => void) => {
       const listener = (
         _event: Electron.IpcRendererEvent,
         data: { browserPageId: string; url: string }
       ) => callback(data)
-      ipcRenderer.on('browser:open-link-in-orca-tab', listener)
-      return () => ipcRenderer.removeListener('browser:open-link-in-orca-tab', listener)
+      ipcRenderer.on('browser:open-link-in-aio-ade-tab', listener)
+      return () => ipcRenderer.removeListener('browser:open-link-in-aio-ade-tab', listener)
     },
 
     cancelDownload: (args: { downloadId: string }): Promise<boolean> =>
@@ -2900,8 +2900,8 @@ const api = {
     dismissAvailableUpdate: () => ipcRenderer.invoke('updater:dismissAvailableUpdate'),
     quitAndInstall: async (): Promise<void> => {
       await prepareRendererForAppRestart(window, {
-        startedEventName: ORCA_UPDATER_QUIT_AND_INSTALL_STARTED_EVENT,
-        abortedEventName: ORCA_UPDATER_QUIT_AND_INSTALL_ABORTED_EVENT
+        startedEventName: AIO_ADE_UPDATER_QUIT_AND_INSTALL_STARTED_EVENT,
+        abortedEventName: AIO_ADE_UPDATER_QUIT_AND_INSTALL_ABORTED_EVENT
       })
       updaterQuitAbortRelay.markPrepared()
       try {

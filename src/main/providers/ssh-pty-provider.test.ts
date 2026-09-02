@@ -413,7 +413,7 @@ describe('SshPtyProvider', () => {
 
     it('preserves explicit TERM and forwards final env deletions to the relay', async () => {
       mux.request.mockResolvedValue({ id: 'pty-env-precedence' })
-      const envToDelete = ['TERM_PROGRAM', 'ORCA_ATTRIBUTION_SHIM_DIR']
+      const envToDelete = ['TERM_PROGRAM', 'AIO_ADE_ATTRIBUTION_SHIM_DIR']
 
       await provider.spawn({
         cols: 120,
@@ -421,7 +421,7 @@ describe('SshPtyProvider', () => {
         env: {
           TERM: 'screen-256color',
           TERM_PROGRAM: 'stale-terminal',
-          ORCA_ATTRIBUTION_SHIM_DIR: '/tmp/stale-attribution'
+          AIO_ADE_ATTRIBUTION_SHIM_DIR: '/tmp/stale-attribution'
         },
         envToDelete
       })
@@ -438,7 +438,7 @@ describe('SshPtyProvider', () => {
       })
       const spawnCall = mux.request.mock.calls.find((call) => call[0] === 'pty.spawn')
       expect(spawnCall?.[1]?.env).not.toHaveProperty('TERM_PROGRAM')
-      expect(spawnCall?.[1]?.env).not.toHaveProperty('ORCA_ATTRIBUTION_SHIM_DIR')
+      expect(spawnCall?.[1]?.env).not.toHaveProperty('AIO_ADE_ATTRIBUTION_SHIM_DIR')
     })
 
     it('forwards provider command delivery to the relay', async () => {
@@ -463,19 +463,19 @@ describe('SshPtyProvider', () => {
       })
     })
 
-    it('injects the relay-backed Orca CLI bridge into remote PTY env', async () => {
+    it('injects the relay-backed AIO-ADE CLI bridge into remote PTY env', async () => {
       mux.request.mockResolvedValue({ id: 'pty-bridge' })
       provider = new SshPtyProvider('conn-1', mux as never, {
-        binDir: '/home/user/.orca-relay/bin',
-        relayDir: '/home/user/.orca-relay/relay-v1',
+        binDir: '/home/user/.aio-ade-relay/bin',
+        relayDir: '/home/user/.aio-ade-relay/relay-v1',
         nodePath: '/usr/bin/node',
-        sockPath: '/home/user/.orca-relay/relay.sock'
+        sockPath: '/home/user/.aio-ade-relay/relay.sock'
       })
 
       await provider.spawn({
         cols: 120,
         rows: 40,
-        env: { PATH: '/usr/bin', ORCA_TERMINAL_HANDLE: 'term_ssh' }
+        env: { PATH: '/usr/bin', AIO_ADE_TERMINAL_HANDLE: 'term_ssh' }
       })
 
       expect(mux.request).toHaveBeenCalledWith('pty.spawn', {
@@ -483,13 +483,13 @@ describe('SshPtyProvider', () => {
         rows: 40,
         cwd: undefined,
         env: {
-          PATH: '/home/user/.orca-relay/bin:/usr/bin',
-          ORCA_TERMINAL_HANDLE: 'term_ssh',
+          PATH: '/home/user/.aio-ade-relay/bin:/usr/bin',
+          AIO_ADE_TERMINAL_HANDLE: 'term_ssh',
           [POWERLEVEL10K_WIZARD_DISABLE_ENV]: 'true',
-          ORCA_REMOTE_CLI_BIN_DIR: '/home/user/.orca-relay/bin',
-          ORCA_RELAY_DIR: '/home/user/.orca-relay/relay-v1',
-          ORCA_RELAY_NODE_PATH: '/usr/bin/node',
-          ORCA_RELAY_SOCKET_PATH: '/home/user/.orca-relay/relay.sock'
+          AIO_ADE_REMOTE_CLI_BIN_DIR: '/home/user/.aio-ade-relay/bin',
+          AIO_ADE_RELAY_DIR: '/home/user/.aio-ade-relay/relay-v1',
+          AIO_ADE_RELAY_NODE_PATH: '/usr/bin/node',
+          AIO_ADE_RELAY_SOCKET_PATH: '/home/user/.aio-ade-relay/relay.sock'
         }
       })
     })
@@ -497,16 +497,16 @@ describe('SshPtyProvider', () => {
     it('does not clobber the remote relay PATH when caller env has no PATH', async () => {
       mux.request.mockResolvedValue({ id: 'pty-bridge' })
       provider = new SshPtyProvider('conn-1', mux as never, {
-        binDir: '/home/user/.orca-relay/bin',
-        relayDir: '/home/user/.orca-relay/relay-v1',
+        binDir: '/home/user/.aio-ade-relay/bin',
+        relayDir: '/home/user/.aio-ade-relay/relay-v1',
         nodePath: '/usr/bin/node',
-        sockPath: '/home/user/.orca-relay/relay.sock'
+        sockPath: '/home/user/.aio-ade-relay/relay.sock'
       })
 
       await provider.spawn({
         cols: 120,
         rows: 40,
-        env: { ORCA_TERMINAL_HANDLE: 'term_ssh' }
+        env: { AIO_ADE_TERMINAL_HANDLE: 'term_ssh' }
       })
 
       expect(mux.request).toHaveBeenCalledWith('pty.spawn', {
@@ -514,12 +514,12 @@ describe('SshPtyProvider', () => {
         rows: 40,
         cwd: undefined,
         env: {
-          ORCA_TERMINAL_HANDLE: 'term_ssh',
+          AIO_ADE_TERMINAL_HANDLE: 'term_ssh',
           [POWERLEVEL10K_WIZARD_DISABLE_ENV]: 'true',
-          ORCA_REMOTE_CLI_BIN_DIR: '/home/user/.orca-relay/bin',
-          ORCA_RELAY_DIR: '/home/user/.orca-relay/relay-v1',
-          ORCA_RELAY_NODE_PATH: '/usr/bin/node',
-          ORCA_RELAY_SOCKET_PATH: '/home/user/.orca-relay/relay.sock'
+          AIO_ADE_REMOTE_CLI_BIN_DIR: '/home/user/.aio-ade-relay/bin',
+          AIO_ADE_RELAY_DIR: '/home/user/.aio-ade-relay/relay-v1',
+          AIO_ADE_RELAY_NODE_PATH: '/usr/bin/node',
+          AIO_ADE_RELAY_SOCKET_PATH: '/home/user/.aio-ade-relay/relay.sock'
         }
       })
     })
@@ -527,10 +527,10 @@ describe('SshPtyProvider', () => {
     it('uses Windows PATH delimiters for native Windows SSH bridge env', async () => {
       mux.request.mockResolvedValue({ id: 'pty-bridge' })
       provider = new SshPtyProvider('conn-1', mux as never, {
-        binDir: 'C:/Users/me/.orca-relay/bin',
-        relayDir: 'C:/Users/me/.orca-remote/relay-v1',
+        binDir: 'C:/Users/me/.aio-ade-relay/bin',
+        relayDir: 'C:/Users/me/.aio-ade-remote/relay-v1',
         nodePath: 'C:/Program Files/nodejs/node.exe',
-        sockPath: '\\\\.\\pipe\\orca-relay-123',
+        sockPath: '\\\\.\\pipe\\aio-ade-relay-123',
         pathDelimiter: ';'
       })
 
@@ -545,12 +545,12 @@ describe('SshPtyProvider', () => {
         rows: 40,
         cwd: undefined,
         env: {
-          Path: 'C:/Users/me/.orca-relay/bin;C:/Windows/System32;C:/Tools',
+          Path: 'C:/Users/me/.aio-ade-relay/bin;C:/Windows/System32;C:/Tools',
           [POWERLEVEL10K_WIZARD_DISABLE_ENV]: 'true',
-          ORCA_REMOTE_CLI_BIN_DIR: 'C:/Users/me/.orca-relay/bin',
-          ORCA_RELAY_DIR: 'C:/Users/me/.orca-remote/relay-v1',
-          ORCA_RELAY_NODE_PATH: 'C:/Program Files/nodejs/node.exe',
-          ORCA_RELAY_SOCKET_PATH: '\\\\.\\pipe\\orca-relay-123'
+          AIO_ADE_REMOTE_CLI_BIN_DIR: 'C:/Users/me/.aio-ade-relay/bin',
+          AIO_ADE_RELAY_DIR: 'C:/Users/me/.aio-ade-remote/relay-v1',
+          AIO_ADE_RELAY_NODE_PATH: 'C:/Program Files/nodejs/node.exe',
+          AIO_ADE_RELAY_SOCKET_PATH: '\\\\.\\pipe\\aio-ade-relay-123'
         }
       })
     })

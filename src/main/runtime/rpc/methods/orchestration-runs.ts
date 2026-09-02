@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { defineMethod, type RpcMethod } from '../core'
 import { OptionalString, requiredString } from '../schemas'
-import type { OrcaRuntimeService } from '../../orca-runtime'
+import type { AioAdeRuntimeService } from '../../aio-ade-runtime'
 import { OrchestrationError } from '../../orchestration/orchestration-error'
 
 const RunCreateParams = z.object({
@@ -18,12 +18,12 @@ const RunCurrentParams = z.object({ from: requiredString('Missing coordinator te
 const RunListParams = z.object({})
 const RunShowParams = z.object({ id: requiredString('Missing --id'), from: OptionalString })
 
-function requireCallerPane(runtime: OrcaRuntimeService, handle: string): string {
+function requireCallerPane(runtime: AioAdeRuntimeService, handle: string): string {
   const paneKey = runtime.getTerminalPaneKey(handle)
   if (!paneKey) {
     throw new OrchestrationError(
       'stable_pane_required',
-      'The coordinator terminal has no stable pane identity. Run this command inside a live Orca terminal.'
+      'The coordinator terminal has no stable pane identity. Run this command inside a live AIO-ADE terminal.'
     )
   }
   return paneKey

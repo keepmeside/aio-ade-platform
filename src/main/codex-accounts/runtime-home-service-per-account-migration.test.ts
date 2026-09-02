@@ -17,20 +17,20 @@ vi.mock('node:os', async () => {
 
 beforeEach(() => {
   vi.resetModules()
-  testState.userData = mkdtempSync(join(tmpdir(), 'orca-codex-e-migration-'))
-  testState.home = mkdtempSync(join(tmpdir(), 'orca-codex-e-home-'))
+  testState.userData = mkdtempSync(join(tmpdir(), 'aio-ade-codex-e-migration-'))
+  testState.home = mkdtempSync(join(tmpdir(), 'aio-ade-codex-e-home-'))
   for (const key of [
-    'ORCA_USER_DATA_PATH',
-    'ORCA_CODEX_SYSTEM_DEFAULT_REAL_HOME',
-    'ORCA_DISABLE_CODEX_TRUST_RPC',
+    'AIO_ADE_USER_DATA_PATH',
+    'AIO_ADE_CODEX_SYSTEM_DEFAULT_REAL_HOME',
+    'AIO_ADE_DISABLE_CODEX_TRUST_RPC',
     'CODEX_HOME',
-    'ORCA_CODEX_HOME'
+    'AIO_ADE_CODEX_HOME'
   ]) {
     previousEnv[key] = process.env[key]
     delete process.env[key]
   }
-  process.env.ORCA_USER_DATA_PATH = testState.userData
-  process.env.ORCA_DISABLE_CODEX_TRUST_RPC = '1'
+  process.env.AIO_ADE_USER_DATA_PATH = testState.userData
+  process.env.AIO_ADE_DISABLE_CODEX_TRUST_RPC = '1'
   mkdirSync(systemHome(), { recursive: true })
   mkdirSync(sharedHome(), { recursive: true })
 })
@@ -229,7 +229,7 @@ describe('CodexRuntimeHomeService per-account takeover composition', () => {
   it('does not expose an untrusted persisted home through rollout discovery', async () => {
     const outsideHome = join(testState.userData, 'outside', 'account-1', 'home')
     mkdirSync(join(outsideHome, 'sessions'), { recursive: true })
-    writeFileSync(join(outsideHome, '.orca-managed-home'), 'account-1\n', 'utf-8')
+    writeFileSync(join(outsideHome, '.aio-ade-managed-home'), 'account-1\n', 'utf-8')
     writeFileSync(
       join(outsideHome, 'auth.json'),
       createAuth('one@example.com', 'acct-1', 'outside', 1_000),
@@ -269,7 +269,7 @@ function createManagedAccount(
 ): CodexManagedAccount {
   const home = join(testState.userData, 'codex-accounts', id, 'home')
   mkdirSync(home, { recursive: true })
-  writeFileSync(join(home, '.orca-managed-home'), `${id}\n`, 'utf-8')
+  writeFileSync(join(home, '.aio-ade-managed-home'), `${id}\n`, 'utf-8')
   writeFileSync(join(home, 'auth.json'), auth, 'utf-8')
   return managedAccountRecord(id, providerId, home, email)
 }

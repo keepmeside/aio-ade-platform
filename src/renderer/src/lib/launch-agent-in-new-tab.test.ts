@@ -323,7 +323,7 @@ describe('launchAgentInNewTab', () => {
     mockIsWebRuntimeSessionActive.mockReturnValue(true)
     mockCreateWebRuntimeSessionTerminal.mockResolvedValue({
       status: 'failed',
-      message: 'Upgrade the remote Orca host before starting or resuming agent sessions.'
+      message: 'Upgrade the remote AIO-ADE host before starting or resuming agent sessions.'
     })
     store.settings = {
       agentCmdOverrides: {},
@@ -340,7 +340,7 @@ describe('launchAgentInNewTab', () => {
 
     await Promise.resolve()
     expect(mockToastError).toHaveBeenCalledWith(
-      'Upgrade the remote Orca host before starting or resuming agent sessions.'
+      'Upgrade the remote AIO-ADE host before starting or resuming agent sessions.'
     )
     expect(mockSetActiveTabType).not.toHaveBeenCalled()
   })

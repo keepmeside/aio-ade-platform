@@ -2,7 +2,7 @@
 // but has no Electron dependencies. Deployed standalone to remote hosts.
 
 export const RELAY_VERSION = '0.1.0'
-export const RELAY_SENTINEL = `ORCA-RELAY v${RELAY_VERSION} READY\n`
+export const RELAY_SENTINEL = `AIO_ADE-RELAY v${RELAY_VERSION} READY\n`
 
 export const HEADER_LENGTH = 13
 export const MAX_MESSAGE_SIZE = 16 * 1024 * 1024
@@ -18,9 +18,9 @@ export const MessageType = {
 // to refuse mismatched-version --connect bridges that would otherwise drive a
 // stale daemon.
 export type HandshakeMessage =
-  | { type: 'orca-relay-handshake'; version: string }
-  | { type: 'orca-relay-handshake-ok'; version: string }
-  | { type: 'orca-relay-handshake-mismatch'; expected: string; got: string }
+  | { type: 'aio-ade-relay-handshake'; version: string }
+  | { type: 'aio-ade-relay-handshake-ok'; version: string }
+  | { type: 'aio-ade-relay-handshake-mismatch'; expected: string; got: string }
 
 export function encodeHandshakeFrame(msg: HandshakeMessage): Buffer {
   const payload = Buffer.from(JSON.stringify(msg), 'utf-8')
@@ -31,9 +31,9 @@ export function parseHandshakeMessage(payload: Buffer): HandshakeMessage {
   const msg = JSON.parse(payload.toString('utf-8')) as HandshakeMessage
   const t = (msg as { type?: string }).type
   if (
-    t !== 'orca-relay-handshake' &&
-    t !== 'orca-relay-handshake-ok' &&
-    t !== 'orca-relay-handshake-mismatch'
+    t !== 'aio-ade-relay-handshake' &&
+    t !== 'aio-ade-relay-handshake-ok' &&
+    t !== 'aio-ade-relay-handshake-mismatch'
   ) {
     throw new Error(`Unknown handshake type: ${t}`)
   }
@@ -77,7 +77,7 @@ export const GIT_RESPONSE_CHUNK_SIZE = 128 * 1024
  * follows as git.responseChunk frames on the bulk lane. Old relays never emit
  * this, so a new client falls back to the plain result they return. */
 export type GitResponseStreamMarker = {
-  __orcaGitResponseStream: { streamId: number; totalBytes: number; chunkCount: number }
+  __aioAdeGitResponseStream: { streamId: number; totalBytes: number; chunkCount: number }
 }
 
 export const RelayErrorCode = {

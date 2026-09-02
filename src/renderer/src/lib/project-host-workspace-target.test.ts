@@ -57,27 +57,37 @@ function makeSetup(
 
 describe('project-host workspace target resolution', () => {
   it('falls back to a local setup for a local-only repo', () => {
-    const repo = makeRepo('orca')
+    const repo = makeRepo('aio-ade')
 
     const resolution = resolveWorkspaceCreationTarget({ eligibleRepos: [repo] })
 
     expect(resolution).toMatchObject({
       status: 'ready',
       target: {
-        projectId: 'repo:orca',
+        projectId: 'repo:aio-ade',
         hostId: 'local',
-        projectHostSetupId: 'orca',
-        repoId: 'orca'
+        projectHostSetupId: 'aio-ade',
+        repoId: 'aio-ade'
       }
     })
   })
 
   it('chooses the focused host setup when one project exists on multiple hosts', () => {
-    const repos = [makeRepo('orca-local'), makeRepo('orca-ssh', { connectionId: 'openclaw-2' })]
-    const projects = [makeProject('github:stablyai/orca', ['orca-local', 'orca-ssh'])]
+    const repos = [
+      makeRepo('aio-ade-local'),
+      makeRepo('aio-ade-ssh', { connectionId: 'openclaw-2' })
+    ]
+    const projects = [
+      makeProject('github:keepmeside/aio-ade-platform', ['aio-ade-local', 'aio-ade-ssh'])
+    ]
     const projectHostSetups = [
-      makeSetup('orca-local', 'github:stablyai/orca', 'local', 'orca-local'),
-      makeSetup('orca-ssh', 'github:stablyai/orca', 'ssh:openclaw-2', 'orca-ssh')
+      makeSetup('aio-ade-local', 'github:keepmeside/aio-ade-platform', 'local', 'aio-ade-local'),
+      makeSetup(
+        'aio-ade-ssh',
+        'github:keepmeside/aio-ade-platform',
+        'ssh:openclaw-2',
+        'aio-ade-ssh'
+      )
     ]
 
     expect(
@@ -85,38 +95,45 @@ describe('project-host workspace target resolution', () => {
         eligibleRepos: repos,
         projects,
         projectHostSetups,
-        projectId: 'github:stablyai/orca',
+        projectId: 'github:keepmeside/aio-ade-platform',
         focusedHostScope: 'ssh:openclaw-2'
       })
-    ).toBe('orca-ssh')
+    ).toBe('aio-ade-ssh')
   })
 
   it('resolves an explicit project and host to the matching setup', () => {
     const repos = [
-      makeRepo('orca-local'),
-      makeRepo('orca-runtime', { executionHostId: 'runtime:gpu-1' })
+      makeRepo('aio-ade-local'),
+      makeRepo('aio-ade-runtime', { executionHostId: 'runtime:gpu-1' })
     ]
-    const projects = [makeProject('github:stablyai/orca', ['orca-local', 'orca-runtime'])]
+    const projects = [
+      makeProject('github:keepmeside/aio-ade-platform', ['aio-ade-local', 'aio-ade-runtime'])
+    ]
     const projectHostSetups = [
-      makeSetup('orca-local', 'github:stablyai/orca', 'local', 'orca-local'),
-      makeSetup('orca-runtime', 'github:stablyai/orca', 'runtime:gpu-1', 'orca-runtime')
+      makeSetup('aio-ade-local', 'github:keepmeside/aio-ade-platform', 'local', 'aio-ade-local'),
+      makeSetup(
+        'aio-ade-runtime',
+        'github:keepmeside/aio-ade-platform',
+        'runtime:gpu-1',
+        'aio-ade-runtime'
+      )
     ]
 
     const resolution = resolveWorkspaceCreationTarget({
       eligibleRepos: repos,
       projects,
       projectHostSetups,
-      projectId: 'github:stablyai/orca',
+      projectId: 'github:keepmeside/aio-ade-platform',
       hostId: 'runtime:gpu-1'
     })
 
     expect(resolution).toMatchObject({
       status: 'ready',
       target: {
-        projectId: 'github:stablyai/orca',
+        projectId: 'github:keepmeside/aio-ade-platform',
         hostId: 'runtime:gpu-1',
-        projectHostSetupId: 'orca-runtime',
-        repoId: 'orca-runtime'
+        projectHostSetupId: 'aio-ade-runtime',
+        repoId: 'aio-ade-runtime'
       }
     })
   })
@@ -125,32 +142,41 @@ describe('project-host workspace target resolution', () => {
     // Why: the run-target picker renders one row per host. A draft persisted before that collapse
     // can still name a duplicate local setup; creation must land in the displayed path, not a
     // transient worktree path the user never sees.
-    const repos = [makeRepo('orca-main'), makeRepo('orca-worktree')]
-    const projects = [makeProject('github:stablyai/orca', ['orca-main', 'orca-worktree'])]
+    const repos = [makeRepo('aio-ade-main'), makeRepo('aio-ade-worktree')]
+    const projects = [
+      makeProject('github:keepmeside/aio-ade-platform', ['aio-ade-main', 'aio-ade-worktree'])
+    ]
     const projectHostSetups = [
-      makeSetup('orca-main', 'github:stablyai/orca', 'local', 'orca-main'),
-      makeSetup('orca-worktree', 'github:stablyai/orca', 'local', 'orca-worktree')
+      makeSetup('aio-ade-main', 'github:keepmeside/aio-ade-platform', 'local', 'aio-ade-main'),
+      makeSetup(
+        'aio-ade-worktree',
+        'github:keepmeside/aio-ade-platform',
+        'local',
+        'aio-ade-worktree'
+      )
     ]
 
     const resolution = resolveWorkspaceCreationTarget({
       eligibleRepos: repos,
       projects,
       projectHostSetups,
-      projectHostSetupId: 'orca-worktree'
+      projectHostSetupId: 'aio-ade-worktree'
     })
 
     expect(resolution).toMatchObject({
       status: 'ready',
-      target: { projectHostSetupId: 'orca-main', repoId: 'orca-main', hostId: 'local' }
+      target: { projectHostSetupId: 'aio-ade-main', repoId: 'aio-ade-main', hostId: 'local' }
     })
   })
 
   it('keeps an explicit setup id that is the only one on its host', () => {
-    const repos = [makeRepo('orca-local'), makeRepo('orca-ssh', { connectionId: 'builder' })]
-    const projects = [makeProject('github:stablyai/orca', ['orca-local', 'orca-ssh'])]
+    const repos = [makeRepo('aio-ade-local'), makeRepo('aio-ade-ssh', { connectionId: 'builder' })]
+    const projects = [
+      makeProject('github:keepmeside/aio-ade-platform', ['aio-ade-local', 'aio-ade-ssh'])
+    ]
     const projectHostSetups = [
-      makeSetup('orca-local', 'github:stablyai/orca', 'local', 'orca-local'),
-      makeSetup('orca-ssh', 'github:stablyai/orca', 'ssh:builder', 'orca-ssh')
+      makeSetup('aio-ade-local', 'github:keepmeside/aio-ade-platform', 'local', 'aio-ade-local'),
+      makeSetup('aio-ade-ssh', 'github:keepmeside/aio-ade-platform', 'ssh:builder', 'aio-ade-ssh')
     ]
 
     expect(
@@ -158,40 +184,42 @@ describe('project-host workspace target resolution', () => {
         eligibleRepos: repos,
         projects,
         projectHostSetups,
-        projectHostSetupId: 'orca-ssh'
+        projectHostSetupId: 'aio-ade-ssh'
       })
     ).toMatchObject({
       status: 'ready',
-      target: { projectHostSetupId: 'orca-ssh', repoId: 'orca-ssh', hostId: 'ssh:builder' }
+      target: { projectHostSetupId: 'aio-ade-ssh', repoId: 'aio-ade-ssh', hostId: 'ssh:builder' }
     })
   })
 
   it('does not merge same-name repos without shared project identity', () => {
     const repos = [
-      makeRepo('personal-orca', { displayName: 'orca' }),
-      makeRepo('work-orca', { displayName: 'orca', connectionId: 'work-linux' })
+      makeRepo('personal-aio-ade', { displayName: 'aio-ade' }),
+      makeRepo('work-aio-ade', { displayName: 'aio-ade', connectionId: 'work-linux' })
     ]
 
     expect(
       resolveWorkspaceCreationRepoId({
         eligibleRepos: repos,
-        projectId: 'repo:personal-orca',
+        projectId: 'repo:personal-aio-ade',
         focusedHostScope: 'ssh:work-linux'
       })
-    ).toBe('personal-orca')
+    ).toBe('personal-aio-ade')
   })
 
   it('reports unavailable when the project is not set up on the selected host', () => {
-    const repo = makeRepo('orca')
-    const projects = [makeProject('github:stablyai/orca', ['orca'])]
-    const projectHostSetups = [makeSetup('orca', 'github:stablyai/orca', 'local', 'orca')]
+    const repo = makeRepo('aio-ade')
+    const projects = [makeProject('github:keepmeside/aio-ade-platform', ['aio-ade'])]
+    const projectHostSetups = [
+      makeSetup('aio-ade', 'github:keepmeside/aio-ade-platform', 'local', 'aio-ade')
+    ]
 
     expect(
       resolveWorkspaceCreationTarget({
         eligibleRepos: [repo],
         projects,
         projectHostSetups,
-        projectId: 'github:stablyai/orca',
+        projectId: 'github:keepmeside/aio-ade-platform',
         hostId: 'ssh:openclaw-2'
       })
     ).toEqual({
@@ -201,11 +229,11 @@ describe('project-host workspace target resolution', () => {
   })
 
   it('reports setup-not-ready when the selected host has pending setup metadata', () => {
-    const repo = makeRepo('orca')
-    const projects = [makeProject('github:stablyai/orca', ['orca'])]
+    const repo = makeRepo('aio-ade')
+    const projects = [makeProject('github:keepmeside/aio-ade-platform', ['aio-ade'])]
     const projectHostSetups = [
-      makeSetup('orca', 'github:stablyai/orca', 'local', 'orca'),
-      makeSetup('gpu-pending', 'github:stablyai/orca', 'runtime:gpu', '', {
+      makeSetup('aio-ade', 'github:keepmeside/aio-ade-platform', 'local', 'aio-ade'),
+      makeSetup('gpu-pending', 'github:keepmeside/aio-ade-platform', 'runtime:gpu', '', {
         path: '',
         setupState: 'setting-up',
         setupMethod: 'provisioned'
@@ -217,7 +245,7 @@ describe('project-host workspace target resolution', () => {
         eligibleRepos: [repo],
         projects,
         projectHostSetups,
-        projectId: 'github:stablyai/orca',
+        projectId: 'github:keepmeside/aio-ade-platform',
         hostId: 'runtime:gpu'
       })
     ).toEqual({
@@ -227,10 +255,12 @@ describe('project-host workspace target resolution', () => {
   })
 
   it('reports unavailable when an explicit setup is not ready', () => {
-    const repo = makeRepo('orca')
-    const projects = [makeProject('github:stablyai/orca', ['orca'])]
+    const repo = makeRepo('aio-ade')
+    const projects = [makeProject('github:keepmeside/aio-ade-platform', ['aio-ade'])]
     const projectHostSetups = [
-      makeSetup('orca', 'github:stablyai/orca', 'local', 'orca', { setupState: 'setting-up' })
+      makeSetup('aio-ade', 'github:keepmeside/aio-ade-platform', 'local', 'aio-ade', {
+        setupState: 'setting-up'
+      })
     ]
 
     expect(
@@ -238,7 +268,7 @@ describe('project-host workspace target resolution', () => {
         eligibleRepos: [repo],
         projects,
         projectHostSetups,
-        projectHostSetupId: 'orca'
+        projectHostSetupId: 'aio-ade'
       })
     ).toEqual({
       status: 'unavailable',

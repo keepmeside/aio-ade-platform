@@ -518,7 +518,7 @@ describe('createBrowserSlice runtime guard', () => {
           {
             id: 'default',
             scope: 'default',
-            partition: 'persist:orca-default',
+            partition: 'persist:aio-ade-default',
             label: 'Default',
             source: null
           }
@@ -544,7 +544,7 @@ describe('createBrowserSlice runtime guard', () => {
       {
         id: 'default',
         scope: 'default',
-        partition: 'persist:orca-default',
+        partition: 'persist:aio-ade-default',
         label: 'Default',
         source: null
       }
@@ -553,7 +553,7 @@ describe('createBrowserSlice runtime guard', () => {
       {
         id: 'default',
         scope: 'default',
-        partition: 'persist:orca-default',
+        partition: 'persist:aio-ade-default',
         label: 'Default',
         source: null
       }
@@ -570,7 +570,7 @@ describe('createBrowserSlice runtime guard', () => {
           {
             id: 'remote-default',
             scope: 'default',
-            partition: 'persist:orca-remote',
+            partition: 'persist:aio-ade-remote',
             label: 'Remote Default',
             source: null
           }
@@ -586,7 +586,7 @@ describe('createBrowserSlice runtime guard', () => {
       {
         id: 'local-default',
         scope: 'default',
-        partition: 'persist:orca-local',
+        partition: 'persist:aio-ade-local',
         label: 'Local Default',
         source: null
       }
@@ -847,13 +847,13 @@ describe('createBrowserSlice runtime guard', () => {
 
     const tab = store.getState().createBrowserTab('wt-1', 'https://example.com', {
       sessionProfileId: 'profile-isolated',
-      sessionPartition: 'persist:orca-browser-session-profile-isolated'
+      sessionPartition: 'persist:aio-ade-browser-session-profile-isolated'
     })
 
     expect(tab.sessionProfileId).toBe('profile-isolated')
-    expect(tab.sessionPartition).toBe('persist:orca-browser-session-profile-isolated')
+    expect(tab.sessionPartition).toBe('persist:aio-ade-browser-session-profile-isolated')
     expect(store.getState().browserTabsByWorktree['wt-1']?.[0]?.sessionPartition).toBe(
-      'persist:orca-browser-session-profile-isolated'
+      'persist:aio-ade-browser-session-profile-isolated'
     )
   })
 
@@ -861,7 +861,7 @@ describe('createBrowserSlice runtime guard', () => {
     const store = createTestStore()
     const tab = store.getState().createBrowserTab('wt-1', 'https://example.com', {
       sessionProfileId: null,
-      sessionPartition: 'persist:orca-browser'
+      sessionPartition: 'persist:aio-ade-browser'
     })
 
     store
@@ -869,13 +869,13 @@ describe('createBrowserSlice runtime guard', () => {
       .switchBrowserTabProfile(
         tab.id,
         'profile-isolated',
-        'persist:orca-browser-session-profile-isolated'
+        'persist:aio-ade-browser-session-profile-isolated'
       )
 
     expect(store.getState().browserTabsByWorktree['wt-1']?.[0]).toEqual(
       expect.objectContaining({
         sessionProfileId: 'profile-isolated',
-        sessionPartition: 'persist:orca-browser-session-profile-isolated'
+        sessionPartition: 'persist:aio-ade-browser-session-profile-isolated'
       })
     )
   })
@@ -1016,7 +1016,7 @@ describe('createBrowserSlice runtime guard', () => {
       {
         id: 'default',
         scope: 'default',
-        partition: 'persist:orca-default',
+        partition: 'persist:aio-ade-default',
         label: 'Default',
         source: null
       }
@@ -1029,7 +1029,7 @@ describe('createBrowserSlice runtime guard', () => {
       {
         id: 'default',
         scope: 'default',
-        partition: 'persist:orca-default',
+        partition: 'persist:aio-ade-default',
         label: 'Default',
         source: null
       }

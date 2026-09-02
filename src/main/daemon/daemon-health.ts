@@ -27,7 +27,7 @@ const START_TIME_TOLERANCE_MS = 1_500
 // Why: e2e forces the failed-health preserve path without SIGSTOP races —
 // a stopped daemon also blocks listSessions, so the unhealthy guard cannot
 // verify live sessions until SIGCONT, which is flaky under CI load.
-export const E2E_FORCE_DAEMON_HEALTH_UNREACHABLE_ENV = 'ORCA_E2E_FORCE_DAEMON_HEALTH_UNREACHABLE'
+export const E2E_FORCE_DAEMON_HEALTH_UNREACHABLE_ENV = 'AIO_ADE_E2E_FORCE_DAEMON_HEALTH_UNREACHABLE'
 // Why: on Windows the pid file's startedAtMs is the daemon's self-reported
 // Node start time, while verification reads the OS process creation time —
 // the gap between them is the exe bootstrap, which AV/disk pressure can
@@ -461,7 +461,7 @@ export function parseWindowsProcessIdentityJson(stdout: string): WindowsProcessI
 // Async because the sync version measurably froze the Electron main thread at
 // startup for the whole spawn (benchmark: ~0.5s warm, 3s timeout cap cold).
 // CreationDate rides along in the same spawn so start-time verification adds
-// zero extra process launches. Timed under ORCA_STARTUP_DIAGNOSTICS so the
+// zero extra process launches. Timed under AIO_ADE_STARTUP_DIAGNOSTICS so the
 // cold-start benchmark can attribute startup cost to these checks.
 async function queryWindowsProcessIdentity(pid: number): Promise<WindowsProcessIdentity | null> {
   const startedAt = performance.now()

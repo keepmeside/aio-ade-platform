@@ -16,20 +16,39 @@ import { getCohortAtEmit } from './cohort-classifier'
 import { resolveConsent, type ConsentState } from './consent'
 import { commonPropsSchema, validate } from './validator'
 
-// Compile-time feature flag, independent of the build-identity gate — both must be satisfied to transmit.
+/* Compile-time feature flag, independent of the build-identity gate — both must be satisfied to
+ * transmit.
+ *
+ * Held at `false` deliberately. The approved position is that this fork's telemetry stays inert
+ * until three things exist: a published privacy policy, an opt-in/opt-out surface a user can
+ * actually reach, and redaction tests proving no API key, secret reference or personal path can
+ * appear in a payload. None of those are in place, so nothing should transmit.
+ *
+ * Being explicit here matters: without it the only thing stopping transmission is the absence of a
+ * CI write-key secret, which is an accident of configuration rather than a decision. Someone adding
+ * that secret would silently start shipping events. */
 // NOTE: config/scripts/verify-telemetry-constants.mjs greps `const TELEMETRY_ENABLED = true|false`; keep that shape or update its regex.
-const TELEMETRY_ENABLED = true
+const TELEMETRY_ENABLED = false
+
+/* Where events would go if the flag above were ever turned on.
+ *
+ * Named as a constant rather than inlined so it is greppable and so it cannot quietly stay pointed
+ * at the upstream project's analytics instance, which is what it was before the fork. Sending this
+ * fork's users' events to upstream would be a privacy failure regardless of intent. */
+const TELEMETRY_INGEST_HOST = 'https://telemetry.aio-ade.keepmeside.dev'
 
 // Eligible to transmit only if CI injected BOTH build-identity and write key; either alone fails closed, with no runtime env-var override (dev/contributor builds get `null`).
 // The `globalThis` reads are for vitest, which skips electron-vite's `define` pass — resolving to `IS_OFFICIAL_BUILD === false` there.
 const BUILD_IDENTITY: 'stable' | 'rc' | null =
-  typeof ORCA_BUILD_IDENTITY !== 'undefined'
-    ? ORCA_BUILD_IDENTITY
-    : ((globalThis as { ORCA_BUILD_IDENTITY?: 'stable' | 'rc' | null }).ORCA_BUILD_IDENTITY ?? null)
+  typeof AIO_ADE_BUILD_IDENTITY !== 'undefined'
+    ? AIO_ADE_BUILD_IDENTITY
+    : ((globalThis as { AIO_ADE_BUILD_IDENTITY?: 'stable' | 'rc' | null }).AIO_ADE_BUILD_IDENTITY ??
+      null)
 const WRITE_KEY: string | null =
-  typeof ORCA_POSTHOG_WRITE_KEY !== 'undefined'
-    ? ORCA_POSTHOG_WRITE_KEY
-    : ((globalThis as { ORCA_POSTHOG_WRITE_KEY?: string | null }).ORCA_POSTHOG_WRITE_KEY ?? null)
+  typeof AIO_ADE_POSTHOG_WRITE_KEY !== 'undefined'
+    ? AIO_ADE_POSTHOG_WRITE_KEY
+    : ((globalThis as { AIO_ADE_POSTHOG_WRITE_KEY?: string | null }).AIO_ADE_POSTHOG_WRITE_KEY ??
+      null)
 const IS_OFFICIAL_BUILD: boolean =
   (BUILD_IDENTITY === 'stable' || BUILD_IDENTITY === 'rc') &&
   typeof WRITE_KEY === 'string' &&
@@ -59,7 +78,7 @@ function buildCommonProps(installId: string, sid: string, channel: 'stable' | 'r
     os_release: osRelease(),
     install_id: installId,
     session_id: sid,
-    orca_channel: channel
+    aio_ade_channel: channel
   }
 }
 
@@ -101,7 +120,7 @@ export function initTelemetry(store: Store): void {
   }
 
   posthog = new PostHog(WRITE_KEY as string, {
-    host: 'https://us.i.posthog.com',
+    host: TELEMETRY_INGEST_HOST,
     flushAt: 20,
     flushInterval: 10_000,
     // Strip SDK-auto GeoIP / client-IP enrichment; our wire is exactly CommonProps ∪ EventProps ∪ a small allow-list.
@@ -160,7 +179,7 @@ function waitForCaptureEnqueue(client: PostHog, event: EventName, uuid: string):
   })
 }
 
-// No-op in contributor / non-official builds; only official stable/rc builds (CI-injected `ORCA_BUILD_IDENTITY` + `ORCA_POSTHOG_WRITE_KEY`) transmit.
+// No-op in contributor / non-official builds; only official stable/rc builds (CI-injected `AIO_ADE_BUILD_IDENTITY` + `AIO_ADE_POSTHOG_WRITE_KEY`) transmit.
 export function track<N extends EventName>(name: N, props: EventProps<N>): void {
   if (!testTransportEnabled && (!IS_OFFICIAL_BUILD || !TELEMETRY_ENABLED)) {
     return

@@ -59,7 +59,7 @@ function isUserFacingExternalWorktree(worktree: DetectedWorktree): boolean {
   // stay outside repo-wide discovery and visibility controls (#9388).
   return (
     !worktree.selectedCheckout &&
-    worktree.ownership !== 'orca-managed' &&
+    worktree.ownership !== 'aio-ade-managed' &&
     worktree.ownership !== 'agent-scratch'
   )
 }

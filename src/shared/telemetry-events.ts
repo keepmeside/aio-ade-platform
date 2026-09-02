@@ -65,8 +65,8 @@ export const AGENT_KIND_VALUES = ['claude-code', 'claude-agent-teams', 'codex', 
 export const agentKindSchema = z.enum(AGENT_KIND_VALUES)
 export type AgentKind = z.infer<typeof agentKindSchema>
 
-// Small set: only failures Orca's PTY-typed-command launch can observe (`binary_not_found` = shell ENOENT, `paste_readiness_timeout`, `unknown`).
-// Provider-side errors (auth/rate-limit/network) happen inside the agent CLI subprocess and are invisible to Orca. See telemetry-plan.md §Defer per-incident error fields.
+// Small set: only failures AIO-ADE's PTY-typed-command launch can observe (`binary_not_found` = shell ENOENT, `paste_readiness_timeout`, `unknown`).
+// Provider-side errors (auth/rate-limit/network) happen inside the agent CLI subprocess and are invisible to AIO-ADE. See telemetry-plan.md §Defer per-incident error fields.
 export const errorClassSchema = z.enum(['binary_not_found', 'paste_readiness_timeout', 'unknown'])
 export type ErrorClass = z.infer<typeof errorClassSchema>
 
@@ -198,7 +198,7 @@ export type FeatureWallExitActionTelemetry = z.infer<typeof featureWallExitActio
 export const optInViaSchema = z.enum(['first_launch_banner', 'settings'])
 export type OptInVia = z.infer<typeof optInViaSchema>
 
-// Whitelist of settings emittable on `settings_changed`. `orca_channel` (build-time, not user-togglable) is absent.
+// Whitelist of settings emittable on `settings_changed`. `aio_ade_channel` (build-time, not user-togglable) is absent.
 // The telemetry opt-in toggle is also absent — it fires dedicated `telemetry_opted_in/out` events; listing it would double-fire.
 type BooleanGlobalSettingsKey = {
   // Why: new toggles may be optional for legacy-settings compat but are still boolean once defaulted.
@@ -258,7 +258,7 @@ const repoAddedSchema = z
   })
   .strict()
 
-const appStarredOrcaSchema = z
+const appStarredAioAdeSchema = z
   .object({
     source: appStarSourceSchema,
     nth_repo_added: nthRepoAddedSchema
@@ -383,7 +383,7 @@ const daemonLifecycleSchema = z.discriminatedUnion('transition', [
 ])
 
 // Rollout signal for granting Codex hook trust via codex app-server RPCs
-// instead of Orca's self-computed trusted_hash. `fallback`/`verify_failed`
+// instead of AIO-ADE's self-computed trusted_hash. `fallback`/`verify_failed`
 // spikes mean the RPC lane is not taking; steady-state ledger skips are not
 // reported (they would only measure launch volume). `lane` attributes the
 // grant surface (real ~/.codex vs managed home); `error_class`/`verify_class`
@@ -466,22 +466,22 @@ const nativeChatSkillDiscoverySchema = z
 const telemetryOptedInSchema = z.object({ via: optInViaSchema }).strict()
 const telemetryOptedOutSchema = z.object({ via: optInViaSchema }).strict()
 
-const orcaCliFeatureTipSourceSchema = z.enum(['app_open', 'manual'])
-const orcaCliFeatureTipShownSchema = z
+const aioAdeCliFeatureTipSourceSchema = z.enum(['app_open', 'manual'])
+const aioAdeCliFeatureTipShownSchema = z
   .object({
-    source: orcaCliFeatureTipSourceSchema,
+    source: aioAdeCliFeatureTipSourceSchema,
     nth_repo_added: nthRepoAddedSchema
   })
   .strict()
-const orcaCliFeatureTipSetupClickedSchema = z
+const aioAdeCliFeatureTipSetupClickedSchema = z
   .object({
-    source: orcaCliFeatureTipSourceSchema,
+    source: aioAdeCliFeatureTipSourceSchema,
     nth_repo_added: nthRepoAddedSchema
   })
   .strict()
-const orcaCliFeatureTipSetupResultSchema = z
+const aioAdeCliFeatureTipSetupResultSchema = z
   .object({
-    source: orcaCliFeatureTipSourceSchema,
+    source: aioAdeCliFeatureTipSourceSchema,
     result: z.enum(['installed', 'needs_attention', 'dev_preview', 'failed']),
     nth_repo_added: nthRepoAddedSchema
   })
@@ -489,13 +489,13 @@ const orcaCliFeatureTipSetupResultSchema = z
 
 const cmdJPaletteFeatureTipShownSchema = z
   .object({
-    source: orcaCliFeatureTipSourceSchema,
+    source: aioAdeCliFeatureTipSourceSchema,
     nth_repo_added: nthRepoAddedSchema
   })
   .strict()
 const cmdJPaletteFeatureTipAcknowledgedSchema = z
   .object({
-    source: orcaCliFeatureTipSourceSchema,
+    source: aioAdeCliFeatureTipSourceSchema,
     nth_repo_added: nthRepoAddedSchema
   })
   .strict()
@@ -1351,7 +1351,7 @@ const directSshReconnectOperationSchema = z
 // Versioning: breaking changes (rename/re-mean/remove a key) need a new event name; in-place edits blend pre/post rows unmixably. Additive-optional fields are safe.
 export const eventSchemas = {
   app_opened: appOpenedSchema,
-  app_starred_orca: appStarredOrcaSchema,
+  app_starred_aio_ade: appStarredAioAdeSchema,
   star_nag_outcome: starNagOutcomeEventSchema,
   feature_interaction_usage_bucket_reached: featureInteractionUsageBucketReachedSchema,
 
@@ -1392,9 +1392,9 @@ export const eventSchemas = {
   telemetry_opted_in: telemetryOptedInSchema,
   telemetry_opted_out: telemetryOptedOutSchema,
 
-  orca_cli_feature_tip_shown: orcaCliFeatureTipShownSchema,
-  orca_cli_feature_tip_setup_clicked: orcaCliFeatureTipSetupClickedSchema,
-  orca_cli_feature_tip_setup_result: orcaCliFeatureTipSetupResultSchema,
+  aio_ade_cli_feature_tip_shown: aioAdeCliFeatureTipShownSchema,
+  aio_ade_cli_feature_tip_setup_clicked: aioAdeCliFeatureTipSetupClickedSchema,
+  aio_ade_cli_feature_tip_setup_result: aioAdeCliFeatureTipSetupResultSchema,
   cmd_j_palette_feature_tip_shown: cmdJPaletteFeatureTipShownSchema,
   cmd_j_palette_feature_tip_acknowledged: cmdJPaletteFeatureTipAcknowledgedSchema,
 
@@ -1480,7 +1480,7 @@ export const COHORT_EXTENDED: readonly EventName[] = Array.from(COHORT_EXTENDED_
 // Compile-time roster guarding the runtime injection set against silent schema drift.
 type _CohortExtendedRoster =
   | 'app_opened'
-  | 'app_starred_orca'
+  | 'app_starred_aio_ade'
   | 'star_nag_outcome'
   | 'feature_interaction_usage_bucket_reached'
   | 'repo_added'
@@ -1497,9 +1497,9 @@ type _CohortExtendedRoster =
   | 'agent_started'
   | 'agent_prompt_sent'
   | 'agent_error'
-  | 'orca_cli_feature_tip_shown'
-  | 'orca_cli_feature_tip_setup_clicked'
-  | 'orca_cli_feature_tip_setup_result'
+  | 'aio_ade_cli_feature_tip_shown'
+  | 'aio_ade_cli_feature_tip_setup_clicked'
+  | 'aio_ade_cli_feature_tip_setup_result'
   | 'cmd_j_palette_feature_tip_shown'
   | 'cmd_j_palette_feature_tip_acknowledged'
 // Why: strict empty payloads infer a string index signature; ignore index-only keys so they aren't pulled into keyed rosters.
@@ -1571,7 +1571,7 @@ export const commonPropsSchema = z
     // `.min(1)`: an empty install_id/session_id would collapse unrelated events into one synthetic user/session, corrupting analytics.
     install_id: z.string().min(1).max(64),
     session_id: z.string().min(1).max(64),
-    orca_channel: z.enum(['stable', 'rc'])
+    aio_ade_channel: z.enum(['stable', 'rc'])
   })
   .strict()
 export type CommonProps = z.infer<typeof commonPropsSchema>

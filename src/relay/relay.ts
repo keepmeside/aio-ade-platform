@@ -3,7 +3,7 @@
 
 /* eslint-disable max-lines -- Why: splitting the entrypoint's startup/reconnect/registration would hide the startup order, the key invariant here. */
 
-// Orca Relay — lightweight daemon deployed to remote hosts over SCP and launched via an SSH exec channel.
+// AIO-ADE Relay — lightweight daemon deployed to remote hosts over SCP and launched via an SSH exec channel.
 // Communicates over stdin/stdout using the framed JSON-RPC protocol.
 // On client disconnect it enters a grace period, keeping PTYs alive on a Unix domain socket; a later launch
 // reconnects via `relay.js --connect`, bridging the new SSH channel's stdio to the existing relay's socket.
@@ -53,7 +53,7 @@ const SOCK_NAME = 'relay.sock'
 const CONNECT_TIMEOUT_MS = 5_000
 const STALE_SOCKET_PROBE_TIMEOUT_MS = 500
 const EMPTY_DETACHED_STARTUP_GRACE_MS = parseNonNegativeIntEnv(
-  'ORCA_RELAY_EMPTY_STARTUP_GRACE_MS',
+  'AIO_ADE_RELAY_EMPTY_STARTUP_GRACE_MS',
   60_000
 )
 
@@ -118,7 +118,7 @@ function parseArgs(argv: string[]): {
       i++
     } else if (argv[i] === '--connect') {
       connectMode = true
-    } else if (argv[i] === '--orca-cli') {
+    } else if (argv[i] === '--aio-ade-cli') {
       cliMode = true
     } else if (argv[i] === '--detached') {
       detached = true
@@ -185,9 +185,9 @@ function runConnectMode(sockPath: string): void {
   })
 }
 
-async function runOrcaCliMode(sockPath: string, argv: string[]): Promise<void> {
+async function runAioAdeCliMode(sockPath: string, argv: string[]): Promise<void> {
   const myVersion = readLaunchVersion()
-  const stdin = shouldReadRemoteCliStdin(argv) ? await readOrcaCliStdin() : undefined
+  const stdin = shouldReadRemoteCliStdin(argv) ? await readAioAdeCliStdin() : undefined
   const sock = createConnection({ path: sockPath })
   let nextSeq = 1
   let highestReceivedSeq = 0
@@ -199,7 +199,7 @@ async function runOrcaCliMode(sockPath: string, argv: string[]): Promise<void> {
       {
         jsonrpc: '2.0',
         id: requestId,
-        method: 'orca.cli',
+        method: 'aio-ade.cli',
         params: {
           argv,
           cwd: process.cwd(),
@@ -246,7 +246,7 @@ async function runOrcaCliMode(sockPath: string, argv: string[]): Promise<void> {
   })
 
   const connectTimeout = setTimeout(() => {
-    process.stderr.write(`[orca-cli] Relay connection timed out after ${CONNECT_TIMEOUT_MS}ms\n`)
+    process.stderr.write(`[aio-ade-cli] Relay connection timed out after ${CONNECT_TIMEOUT_MS}ms\n`)
     sock.destroy()
     process.exit(1)
   }, CONNECT_TIMEOUT_MS)
@@ -268,12 +268,12 @@ async function runOrcaCliMode(sockPath: string, argv: string[]): Promise<void> {
 
   sock.on('error', (err) => {
     clearTimeout(connectTimeout)
-    process.stderr.write(`[orca-cli] Relay socket error: ${err.message}\n`)
+    process.stderr.write(`[aio-ade-cli] Relay socket error: ${err.message}\n`)
     process.exit(1)
   })
 }
 
-async function readOrcaCliStdin(): Promise<string | undefined> {
+async function readAioAdeCliStdin(): Promise<string | undefined> {
   if (process.stdin.isTTY) {
     return undefined
   }
@@ -296,8 +296,8 @@ async function main(): Promise<void> {
     return
   }
   if (cliMode) {
-    const marker = process.argv.indexOf('--orca-cli')
-    await runOrcaCliMode(sockPath, marker >= 0 ? process.argv.slice(marker + 1) : [])
+    const marker = process.argv.indexOf('--aio-ade-cli')
+    await runAioAdeCliMode(sockPath, marker >= 0 ? process.argv.slice(marker + 1) : [])
     return
   }
 
@@ -431,8 +431,8 @@ async function main(): Promise<void> {
     () => ({ grantedCapabilities: null, services: null })
   )
 
-  dispatcher.onRequest('orca.cli', async (params, context) => {
-    return await dispatcher.requestAnyClient('orca.cli', params, {
+  dispatcher.onRequest('aio-ade.cli', async (params, context) => {
+    return await dispatcher.requestAnyClient('aio-ade.cli', params, {
       excludeClientId: context.clientId,
       timeoutMs: remoteCliRequestTimeoutMs(params)
     })
@@ -455,7 +455,7 @@ async function main(): Promise<void> {
   )
 
   // ── Agent-hook server ─────────────────────────────────────────────
-  // Why: loopback HTTP receiver so remote-PTY agent CLIs post hook events locally, forwarded to Orca as agent.hook notifications. See docs/design/agent-status-over-ssh.md §2-§5.
+  // Why: loopback HTTP receiver so remote-PTY agent CLIs post hook events locally, forwarded to AIO-ADE as agent.hook notifications. See docs/design/agent-status-over-ssh.md §2-§5.
   const hookServer = new RelayAgentHookServer({
     // Why: scope endpoint.env/cmd by socket path so multiple relay daemons on one account can't overwrite each other's hook tokens.
     endpointDir: endpointDir ?? endpointDirForRelaySocket(sockPath),
@@ -467,7 +467,7 @@ async function main(): Promise<void> {
       )
     }
   })
-  // Why: await the bind before announcing readiness so the first PTY spawn already sees ORCA_AGENT_HOOK_* env; bind failure is soft (log and continue).
+  // Why: await the bind before announcing readiness so the first PTY spawn already sees AIO_ADE_AGENT_HOOK_* env; bind failure is soft (log and continue).
   try {
     await hookServer.start({ publishEndpoint: false })
   } catch (err) {
@@ -476,7 +476,7 @@ async function main(): Promise<void> {
     )
   }
 
-  // Why: read the augmenter on every spawn so a late (or restarted) hook-server bind still lands in the next PTY's ORCA_AGENT_HOOK_* env.
+  // Why: read the augmenter on every spawn so a late (or restarted) hook-server bind still lands in the next PTY's AIO_ADE_AGENT_HOOK_* env.
   ptyHandler.addEnvAugmenter(() => hookServer.buildPtyEnv())
 
   // Why: evict pane status cache on PTY exit so panes don't ghost after reconnect (§5 Path 3).

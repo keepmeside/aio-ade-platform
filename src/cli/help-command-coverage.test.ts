@@ -1,11 +1,11 @@
-/* Phase-03 guard (plans/260730-0117-aio-ade-rebrand-and-integration/phase-03).
+/* Guard: CLI help must not advertise a command that no longer dispatches.
  *
  * Help text is the CLI's contract with agents: the orchestration preamble points them at it, and
- * `orca --help` is how an agent discovers what it may call. Nothing type-checks it, so a carve can
+ * `aio-ade --help` is how an agent discovers what it may call. Nothing type-checks it, so a carve can
  * leave help advertising commands that no longer dispatch — the agent then burns turns on a command
  * that returns "Unknown command".
  *
- * This asserts the invariant directly: every `$ orca <command>` example and every command line in a
+ * This asserts the invariant directly: every `$ aio-ade <command>` example and every command line in a
  * help section must resolve to a registered spec. */
 import { describe, expect, it } from 'vitest'
 import { COMMAND_SPECS } from './specs'
@@ -35,13 +35,13 @@ function resolveCommand(words: string[], keys: Set<string>): string | null {
   return null
 }
 
-describe('phase-03: help text only advertises commands that exist', () => {
-  it('resolves every `$ orca ...` example to a registered command', () => {
+describe('help text only advertises commands that exist', () => {
+  it('resolves every `$ aio-ade ...` example to a registered command', () => {
     const keys = registeredKeys()
     const unresolved: string[] = []
 
     for (const line of ROOT_HELP_TEXT.split('\n')) {
-      const match = /^\s*\$ orca ([a-z][a-z0-9 -]*)/.exec(line)
+      const match = /^\s*\$ aio-ade ([a-z][a-z0-9 -]*)/.exec(line)
       if (!match) {
         continue
       }
@@ -65,7 +65,7 @@ describe('phase-03: help text only advertises commands that exist', () => {
         continue
       }
       const words = match[1]!.trim().split(/\s+/)
-      // A bare group header (e.g. `linear`) is a legitimate help entry: `orca linear` prints the
+      // A bare group header (e.g. `linear`) is a legitimate help entry: `aio-ade linear` prints the
       // group's subcommands rather than dispatching.
       if (!resolveCommand(words, keys) && !isCommandGroup(words)) {
         unresolved.push(words.join(' '))

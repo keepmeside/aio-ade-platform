@@ -1,5 +1,5 @@
 import {
-  ORCA_EDITOR_PREPARE_HOT_EXIT_EVENT,
+  AIO_ADE_EDITOR_PREPARE_HOT_EXIT_EVENT,
   type EditorPrepareHotExitDetail
 } from '../shared/editor-save-events'
 import type { UpdateStatus } from '../shared/types'
@@ -13,7 +13,7 @@ function requestEditorHotExitBackup(eventTarget: EventTarget): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     let claimed = false
     eventTarget.dispatchEvent(
-      new CustomEvent<EditorPrepareHotExitDetail>(ORCA_EDITOR_PREPARE_HOT_EXIT_EVENT, {
+      new CustomEvent<EditorPrepareHotExitDetail>(AIO_ADE_EDITOR_PREPARE_HOT_EXIT_EVENT, {
         detail: {
           claim: () => {
             claimed = true

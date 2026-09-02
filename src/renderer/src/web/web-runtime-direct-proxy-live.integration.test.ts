@@ -5,9 +5,9 @@ import type { WorkspacePortScanResult } from '../../../shared/workspace-ports'
 import { parseWebPairingInput, type WebPairingOffer } from './web-pairing'
 import { WebRuntimeClient } from './web-runtime-client'
 
-const pairingInput = process.env.ORCA_REMOTE_ACCESS_PAIRING_INPUT
-const proxyEndpoint = process.env.ORCA_REMOTE_ACCESS_PROXY_ENDPOINT
-const secondPairingInput = process.env.ORCA_REMOTE_ACCESS_SECOND_PAIRING_INPUT
+const pairingInput = process.env.AIO_ADE_REMOTE_ACCESS_PAIRING_INPUT
+const proxyEndpoint = process.env.AIO_ADE_REMOTE_ACCESS_PROXY_ENDPOINT
+const secondPairingInput = process.env.AIO_ADE_REMOTE_ACCESS_SECOND_PAIRING_INPUT
 
 function requireResult<T>(response: RuntimeRpcResponse<unknown>): T {
   if (!response.ok) {
@@ -47,7 +47,7 @@ async function exerciseCatalogAndFilesystem(client: WebRuntimeClient): Promise<v
       relativePath: 'package.json'
     })
   )
-  expect(preview.content).toContain('"name": "orca"')
+  expect(preview.content).toContain('"name": "aio-ade"')
 
   const ports = requireResult<WorkspacePortScanResult>(await client.call('workspacePorts.scan', {}))
   expect(Array.isArray(ports.ports)).toBe(true)
@@ -62,7 +62,7 @@ describe.runIf(Boolean(pairingInput && proxyEndpoint))(
     beforeEach(() => {
       const parsed = parseWebPairingInput(pairingInput ?? '')
       if (!parsed) {
-        throw new Error('ORCA_REMOTE_ACCESS_PAIRING_INPUT is not a valid pairing input.')
+        throw new Error('AIO_ADE_REMOTE_ACCESS_PAIRING_INPUT is not a valid pairing input.')
       }
       directOffer = parsed
       Reflect.set(globalThis, 'window', {
@@ -116,7 +116,7 @@ describe.runIf(Boolean(pairingInput && proxyEndpoint))(
       async () => {
         const secondOffer = parseWebPairingInput(secondPairingInput ?? '')
         if (!secondOffer) {
-          throw new Error('ORCA_REMOTE_ACCESS_SECOND_PAIRING_INPUT is not valid.')
+          throw new Error('AIO_ADE_REMOTE_ACCESS_SECOND_PAIRING_INPUT is not valid.')
         }
         const [first, second] = await Promise.all([
           openClient(directOffer),

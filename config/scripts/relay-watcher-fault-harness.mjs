@@ -186,24 +186,24 @@ async function main() {
   let tempRoot
   let relay
   try {
-    tempRoot = await mkdtemp(join(tmpdir(), 'orca-relay-watcher-fault-'))
+    tempRoot = await mkdtemp(join(tmpdir(), 'aio-ade-relay-watcher-fault-'))
     const watchRoot = await realpath(tempRoot)
     const pidFile = join(tempRoot, 'watcher.pid')
     const protocol = await loadProtocol(tempRoot)
     const socketPath =
       process.platform === 'win32'
-        ? `\\\\.\\pipe\\orca-relay-watcher-fault-${process.pid}-${Date.now()}`
+        ? `\\\\.\\pipe\\aio-ade-relay-watcher-fault-${process.pid}-${Date.now()}`
         : join(tempRoot, 'relay.sock')
     relay = createRelayClient(
       relayEntry,
       ['--sock-path', socketPath, '--endpoint-dir', join(tempRoot, 'agent-hooks')],
-      { ...process.env, ORCA_WATCHER_CHILD_PID_FILE: pidFile },
+      { ...process.env, AIO_ADE_WATCHER_CHILD_PID_FILE: pidFile },
       protocol
     )
     await relay.sentinelReceived
 
     const spawned = await relay.request('pty.spawn', { cols: 80, rows: 24, cwd: watchRoot })
-    const beforePtyMarker = `ORCA_PTY_BEFORE_${Date.now()}`
+    const beforePtyMarker = `AIO_ADE_PTY_BEFORE_${Date.now()}`
     let startIndex = relay.messageCount()
     relay.notify('pty.data', { id: spawned.id, data: `echo ${beforePtyMarker}\r` })
     await relay.waitForNotification(
@@ -237,7 +237,7 @@ async function main() {
     if (status.pid !== relay.proc.pid) {
       throw new Error('relay.status did not come from the original surviving relay process')
     }
-    const afterPtyMarker = `ORCA_PTY_AFTER_${Date.now()}`
+    const afterPtyMarker = `AIO_ADE_PTY_AFTER_${Date.now()}`
     startIndex = relay.messageCount()
     relay.notify('pty.data', { id: spawned.id, data: `echo ${afterPtyMarker}\r` })
     await relay.waitForNotification(

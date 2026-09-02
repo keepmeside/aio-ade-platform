@@ -16,7 +16,7 @@ import {
   type RuntimeEnvironmentStore
 } from './runtime-environments'
 
-const ENVIRONMENTS_FILE = 'orca-environments.json'
+const ENVIRONMENTS_FILE = 'aio-ade-environments.json'
 export const MAX_RUNTIME_ENVIRONMENT_STORE_FILE_BYTES = 1024 * 1024
 
 export type RuntimeEnvironmentStoreErrorCode = 'invalid_argument' | 'runtime_error'
@@ -47,7 +47,7 @@ export function addEnvironmentFromPairingCode(
   if (!offer) {
     throw new RuntimeEnvironmentStoreError(
       'invalid_argument',
-      'Invalid pairing code. Expected an orca://pair?... URL or bare pairing payload.'
+      'Invalid pairing code. Expected an aio-ade://pair?... URL or bare pairing payload.'
     )
   }
   const store = readEnvironmentStore(userDataPath)
@@ -97,7 +97,7 @@ export function updateEnvironmentFromPairingCode(
   if (!offer) {
     throw new RuntimeEnvironmentStoreError(
       'invalid_argument',
-      'Invalid pairing code. Expected an orca://pair?... URL or bare pairing payload.'
+      'Invalid pairing code. Expected an aio-ade://pair?... URL or bare pairing payload.'
     )
   }
   const store = readEnvironmentStore(userDataPath)
@@ -220,7 +220,7 @@ function readEnvironmentStore(userDataPath: string): RuntimeEnvironmentStore {
   } catch {
     throw new RuntimeEnvironmentStoreError(
       'runtime_error',
-      `Could not read Orca environments at ${path}; the file is invalid.`
+      `Could not read AIO-ADE environments at ${path}; the file is invalid.`
     )
   }
 }
@@ -237,7 +237,7 @@ function writeEnvironmentStore(userDataPath: string, store: RuntimeEnvironmentSt
     if (error instanceof JsonStringifyByteLimitError) {
       throw new RuntimeEnvironmentStoreError(
         'runtime_error',
-        `Could not write Orca environments at ${path}; the store exceeds its durable capacity.`
+        `Could not write AIO-ADE environments at ${path}; the store exceeds its durable capacity.`
       )
     }
     throw error

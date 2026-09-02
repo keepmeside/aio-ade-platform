@@ -6,7 +6,7 @@ import { app, ipcMain, net } from 'electron'
 // endpoint rejects. Electron's net module runs in the main process and is not
 // subject to CORS, so we proxy the submission through IPC. This mirrors the
 // same pattern used by updater-changelog.ts and updater-nudge.ts.
-const FEEDBACK_API_URL = 'https://www.onorca.dev/v1/feedback'
+const FEEDBACK_API_URL = 'https://www.aio-ade.keepmeside.dev/v1/feedback'
 const FEEDBACK_REQUEST_TIMEOUT_MS = 10_000
 const FEEDBACK_ATTACHMENT_REQUEST_TIMEOUT_MS = 60_000
 const DIAGNOSTIC_BUNDLE_CONTENT_TYPE = 'application/x-ndjson'
@@ -60,7 +60,7 @@ type InternalFeedbackSubmitArgs = FeedbackSubmitArgs & {
 }
 
 // Why: the Slack notification and any follow-up investigation need to know
-// which Orca build and which OS the feedback came from. The main process is
+// which AIO-ADE build and which OS the feedback came from. The main process is
 // the only place with trusted access to these values (app.getVersion and the
 // node os module), so we enrich the payload here rather than trusting the
 // renderer.
@@ -144,7 +144,7 @@ function feedbackRequestBodyInit(body: FeedbackSubmitBody): Pick<RequestInit, 'b
   formData.append(
     'diagnosticBundleFile',
     new Blob([body.diagnosticBundle.content], { type: DIAGNOSTIC_BUNDLE_CONTENT_TYPE }),
-    `orca-diagnostics-${body.diagnosticBundle.bundleSubmissionId}.ndjson`
+    `aio-ade-diagnostics-${body.diagnosticBundle.bundleSubmissionId}.ndjson`
   )
 
   // Why: multipart avoids JSON-escaping a near-cap NDJSON bundle over the
@@ -270,7 +270,7 @@ export async function submitFeedback(
     if (res.ok) {
       return { ok: true }
     }
-    // Why: api.onorca.dev serves a different product, so transient failures
+    // Why: api.aio-ade.keepmeside.dev serves a different product, so transient failures
     // retry the endpoint that owns feedback and crash delivery.
     if (res.status >= 500) {
       return retryFeedbackOnPrimary(body, new Error(`status ${res.status}`))

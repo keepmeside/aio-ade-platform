@@ -1,9 +1,10 @@
-import { createReadStream } from 'node:fs'
+import { createReadStream, existsSync } from 'node:fs'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
   PLUGIN_MARKETPLACE_FILENAME,
+  PLUGIN_MARKETPLACE_FILENAMES,
   pluginMarketplaceSchema,
   type PluginMarketplace
 } from '../../shared/plugins/plugin-marketplace'
@@ -18,11 +19,11 @@ export type PluginMarketplaceFetchResult = {
 }
 
 /** Fetches a marketplace through system Git so private repositories use the
- * same SSH agent and credential helpers as every other Orca Git operation. */
+ * same SSH agent and credential helpers as every other AIO-ADE Git operation. */
 export async function fetchPluginMarketplace(
   source: PluginMarketplaceRegisteredSource
 ): Promise<PluginMarketplaceFetchResult> {
-  const stagingDirectory = await mkdtemp(join(tmpdir(), 'orca-plugin-marketplace-'))
+  const stagingDirectory = await mkdtemp(join(tmpdir(), 'aio-ade-plugin-marketplace-'))
   try {
     const marketplaceCommit = await checkoutPluginGitSource({
       url: source.source.url,
@@ -40,7 +41,10 @@ export async function fetchPluginMarketplace(
 export async function readPluginMarketplaceIndex(
   rootDirectory: string
 ): Promise<PluginMarketplace> {
-  const path = join(rootDirectory, PLUGIN_MARKETPLACE_FILENAME)
+  // Why: the shared marketplace index is authored outside this repository, so a checkout may
+  // still carry the pre-rebrand file name.
+  const candidates = PLUGIN_MARKETPLACE_FILENAMES.map((fileName) => join(rootDirectory, fileName))
+  const path = candidates.find((candidate) => existsSync(candidate)) ?? candidates[0]!
   const chunks: Buffer[] = []
   let totalBytes = 0
   for await (const chunk of createReadStream(path)) {

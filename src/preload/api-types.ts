@@ -56,31 +56,31 @@ import type {
   EnrichedDetectedPort
 } from '../shared/ssh-types'
 import type {
-  CreateLocalOrcaProfileArgs,
-  CreateLocalOrcaProfileResult,
-  CreateCloudLinkedOrcaProfileArgs,
-  CreateCloudLinkedOrcaProfileResult,
-  ConnectCurrentOrcaProfileResult,
-  FindOrcaProfileProjectsByPathArgs,
-  FindOrcaProfileProjectsByPathResult,
-  OrcaProfileListResult,
-  OrcaProfileAuthStatus,
-  RefreshCurrentOrcaProfileAuthResult,
-  SelectOrcaProfileOrgArgs,
-  SelectOrcaProfileOrgResult,
-  SignOutCurrentOrcaProfileResult,
-  SwitchOrcaProfileArgs,
-  SwitchOrcaProfileResult,
-  TransferOrcaProfileProjectArgs,
-  TransferOrcaProfileProjectResult,
-  OrcaProfileOrgInviteRevokeArgs,
-  OrcaProfileOrgMemberChangeRoleArgs,
-  OrcaProfileOrgMemberInviteArgs,
-  OrcaProfileOrgMemberMutationResult,
-  OrcaProfileOrgMemberRemoveArgs,
-  OrcaProfileOrgMembersListArgs,
-  OrcaProfileOrgMembersListResult
-} from '../shared/orca-profiles'
+  CreateLocalAioAdeProfileArgs,
+  CreateLocalAioAdeProfileResult,
+  CreateCloudLinkedAioAdeProfileArgs,
+  CreateCloudLinkedAioAdeProfileResult,
+  ConnectCurrentAioAdeProfileResult,
+  FindAioAdeProfileProjectsByPathArgs,
+  FindAioAdeProfileProjectsByPathResult,
+  AioAdeProfileListResult,
+  AioAdeProfileAuthStatus,
+  RefreshCurrentAioAdeProfileAuthResult,
+  SelectAioAdeProfileOrgArgs,
+  SelectAioAdeProfileOrgResult,
+  SignOutCurrentAioAdeProfileResult,
+  SwitchAioAdeProfileArgs,
+  SwitchAioAdeProfileResult,
+  TransferAioAdeProfileProjectArgs,
+  TransferAioAdeProfileProjectResult,
+  AioAdeProfileOrgInviteRevokeArgs,
+  AioAdeProfileOrgMemberChangeRoleArgs,
+  AioAdeProfileOrgMemberInviteArgs,
+  AioAdeProfileOrgMemberMutationResult,
+  AioAdeProfileOrgMemberRemoveArgs,
+  AioAdeProfileOrgMembersListArgs,
+  AioAdeProfileOrgMembersListResult
+} from '../shared/aio-ade-profiles'
 import type { TerminalPaneSplitSource } from '../shared/feature-education-telemetry'
 import type { TaskSourceContext } from '../shared/task-source-context'
 import type { LinearIssueAttributeFilter } from '../shared/linear-issue-attribute-filter'
@@ -219,7 +219,7 @@ import type {
   NotificationPermissionStatusResult,
   NotificationSoundResult,
   OnboardingState,
-  OrcaHooks,
+  AioAdeHooks,
   PathSource,
   PersistedUIState,
   PRCheckDetail,
@@ -568,7 +568,7 @@ export type BrowserApi = {
   onPaneFocus: (
     callback: (data: { worktreeId: string | null; browserPageId: string }) => void
   ) => () => void
-  onOpenLinkInOrcaTab: (
+  onOpenLinkInAioAdeTab: (
     callback: (event: { browserPageId: string; url: string }) => void
   ) => () => void
   cancelDownload: (args: { downloadId: string }) => Promise<boolean>
@@ -751,8 +751,8 @@ export type DiagnosticsStatusPayload = {
   readonly traceFamilySize: number
   readonly disabledReason?:
     | 'do_not_track'
-    | 'orca_telemetry_disabled'
-    | 'orca_diagnostics_disabled'
+    | 'aio_ade_telemetry_disabled'
+    | 'aio_ade_diagnostics_disabled'
     | 'ci'
 }
 export type DiagnosticsBundlePayload = {
@@ -915,7 +915,7 @@ export type AppApi = {
   getFeatureWallAssetBaseUrl: () => Promise<string>
   /** Relaunches the app (app.relaunch() + app.exit(0)) for settings that need a full restart to apply. */
   relaunch: () => Promise<void>
-  /** Restarts Orca through the normal quit pipeline so daemon-backed terminal
+  /** Restarts AIO-ADE through the normal quit pipeline so daemon-backed terminal
    *  sessions survive and can reattach after the new process starts. */
   restart: () => Promise<void>
   /** Reloads the current app renderer through main so expected renderer
@@ -930,7 +930,7 @@ export type AppApi = {
   /** Resolves when the daemon PTY provider and hook receiver have either
    *  started or failed open for the first BrowserWindow. */
   awaitFirstWindowStartupServices: () => Promise<void>
-  /** Emits a startup benchmark marker when ORCA_STARTUP_DIAGNOSTICS is enabled. */
+  /** Emits a startup benchmark marker when AIO_ADE_STARTUP_DIAGNOSTICS is enabled. */
   startupDiagnostic: (event: string, details?: Record<string, unknown>) => Promise<void>
   /** macOS active input mode, or layout ID when no IME is selected (e.g. `com.apple.keylayout.PolishPro`).
    *  Distinguishes CJK IMEs and Option-layer-composing layouts that look like US QWERTY (issue #1205).
@@ -940,7 +940,7 @@ export type AppApi = {
   setUnreadDockBadgeCount: (count: number) => Promise<void>
   /** Resolves the launch directory for global Floating Terminal tabs. */
   getFloatingTerminalCwd: (args?: FloatingTerminalCwdRequest) => Promise<string>
-  /** Resolves Orca's app-owned directory for auto-created Floating Workspace
+  /** Resolves AIO-ADE's app-owned directory for auto-created Floating Workspace
    *  markdown notes. */
   getFloatingMarkdownDirectory: () => Promise<string>
   /** Opens a native picker for markdown documents, rooted in the floating
@@ -1085,39 +1085,39 @@ export type PluginMarketplaceHostInstallPreview = {
 
 export type PreloadApi = {
   app: AppApi
-  orcaProfiles: {
-    list: () => Promise<OrcaProfileListResult>
-    authStatus: () => Promise<OrcaProfileAuthStatus>
-    createLocal: (args?: CreateLocalOrcaProfileArgs) => Promise<CreateLocalOrcaProfileResult>
+  aioAdeProfiles: {
+    list: () => Promise<AioAdeProfileListResult>
+    authStatus: () => Promise<AioAdeProfileAuthStatus>
+    createLocal: (args?: CreateLocalAioAdeProfileArgs) => Promise<CreateLocalAioAdeProfileResult>
     createCloudLinked: (
-      args?: CreateCloudLinkedOrcaProfileArgs
-    ) => Promise<CreateCloudLinkedOrcaProfileResult>
-    switchProfile: (args: SwitchOrcaProfileArgs) => Promise<SwitchOrcaProfileResult>
+      args?: CreateCloudLinkedAioAdeProfileArgs
+    ) => Promise<CreateCloudLinkedAioAdeProfileResult>
+    switchProfile: (args: SwitchAioAdeProfileArgs) => Promise<SwitchAioAdeProfileResult>
     transferProject: (
-      args: TransferOrcaProfileProjectArgs
-    ) => Promise<TransferOrcaProfileProjectResult>
+      args: TransferAioAdeProfileProjectArgs
+    ) => Promise<TransferAioAdeProfileProjectResult>
     findProjectProfiles: (
-      args: FindOrcaProfileProjectsByPathArgs
-    ) => Promise<FindOrcaProfileProjectsByPathResult>
-    connectCurrent: () => Promise<ConnectCurrentOrcaProfileResult>
-    refreshAuth: () => Promise<RefreshCurrentOrcaProfileAuthResult>
-    signOutCurrent: () => Promise<SignOutCurrentOrcaProfileResult>
-    selectOrg: (args: SelectOrcaProfileOrgArgs) => Promise<SelectOrcaProfileOrgResult>
+      args: FindAioAdeProfileProjectsByPathArgs
+    ) => Promise<FindAioAdeProfileProjectsByPathResult>
+    connectCurrent: () => Promise<ConnectCurrentAioAdeProfileResult>
+    refreshAuth: () => Promise<RefreshCurrentAioAdeProfileAuthResult>
+    signOutCurrent: () => Promise<SignOutCurrentAioAdeProfileResult>
+    selectOrg: (args: SelectAioAdeProfileOrgArgs) => Promise<SelectAioAdeProfileOrgResult>
     orgMembersList: (
-      args: OrcaProfileOrgMembersListArgs
-    ) => Promise<OrcaProfileOrgMembersListResult>
+      args: AioAdeProfileOrgMembersListArgs
+    ) => Promise<AioAdeProfileOrgMembersListResult>
     orgMemberInvite: (
-      args: OrcaProfileOrgMemberInviteArgs
-    ) => Promise<OrcaProfileOrgMemberMutationResult>
+      args: AioAdeProfileOrgMemberInviteArgs
+    ) => Promise<AioAdeProfileOrgMemberMutationResult>
     orgInviteRevoke: (
-      args: OrcaProfileOrgInviteRevokeArgs
-    ) => Promise<OrcaProfileOrgMemberMutationResult>
+      args: AioAdeProfileOrgInviteRevokeArgs
+    ) => Promise<AioAdeProfileOrgMemberMutationResult>
     orgMemberChangeRole: (
-      args: OrcaProfileOrgMemberChangeRoleArgs
-    ) => Promise<OrcaProfileOrgMemberMutationResult>
+      args: AioAdeProfileOrgMemberChangeRoleArgs
+    ) => Promise<AioAdeProfileOrgMemberMutationResult>
     orgMemberRemove: (
-      args: OrcaProfileOrgMemberRemoveArgs
-    ) => Promise<OrcaProfileOrgMemberMutationResult>
+      args: AioAdeProfileOrgMemberRemoveArgs
+    ) => Promise<AioAdeProfileOrgMemberMutationResult>
   }
   platform: {
     get: () => {
@@ -1358,7 +1358,7 @@ export type PreloadApi = {
       force?: boolean
       skipArchive?: boolean
     }) => Promise<RemoveWorktreeResult>
-    // Forget a workspace from Orca only (no remote Git/FS work) — for workspaces pinned to a removed/disconnected SSH host.
+    // Forget a workspace from AIO-ADE only (no remote Git/FS work) — for workspaces pinned to a removed/disconnected SSH host.
     forgetLocal: (args: {
       worktreeId: string
       hostId?: ExecutionHostId
@@ -1877,8 +1877,8 @@ export type PreloadApi = {
         number: number
       }) => void
     ) => () => void
-    checkOrcaStarred: () => Promise<boolean | null>
-    starOrca: (source: AppStarSource) => Promise<boolean>
+    checkAioAdeStarred: () => Promise<boolean | null>
+    starAioAde: (source: AppStarSource) => Promise<boolean>
     /**
      * GitHub API rate-limit snapshot. Does NOT consume quota (the
      * `rate_limit` endpoint is exempt). Cached 30s server-side — pass
@@ -2246,7 +2246,7 @@ export type PreloadApi = {
     complete: () => Promise<void>
     disable: () => Promise<void>
     openWeb: () => Promise<void>
-    starOrca: () => Promise<boolean>
+    starAioAde: () => Promise<boolean>
     forceShow: () => Promise<void>
     agentValueMoment: () => Promise<{ status: 'ready'; mode: 'gh' | 'web' } | { status: 'skipped' }>
     showAgentValueMoment: () => Promise<void>
@@ -2412,7 +2412,7 @@ export type PreloadApi = {
     onData: (callback: (payload: TerminalPreviewDataPayload) => void) => () => void
   }
   macosTccPrompts: {
-    /** Fires once macOS has raised its Nth consent dialog naming Orca (#9756). */
+    /** Fires once macOS has raised its Nth consent dialog naming AIO-ADE (#9756). */
     onThreshold: (callback: (payload: { promptCount: number }) => void) => () => void
     consumePending: () => Promise<{ claimId: number; promptCount: number } | null>
     acknowledgePending: (claimId: number) => Promise<void>
@@ -2469,7 +2469,7 @@ export type PreloadApi = {
     check: (args: { repoId: string; hostId?: ExecutionHostId }) => Promise<{
       status?: 'ok' | 'error'
       hasHooks: boolean
-      hooks: OrcaHooks | null
+      hooks: AioAdeHooks | null
       mayNeedUpdate: boolean
     }>
     inspectSetupScriptImports: (args: { repoId: string }) => Promise<SetupScriptImportCandidate[]>
@@ -2496,8 +2496,8 @@ export type PreloadApi = {
     listRecipes: (args: { repoId: string }) => Promise<{
       status: 'ok' | 'error'
       repoPath: string | null
-      recipes: OrcaHooks['environmentRecipes']
-      diagnostics: NonNullable<OrcaHooks['environmentRecipeDiagnostics']>
+      recipes: AioAdeHooks['environmentRecipes']
+      diagnostics: NonNullable<AioAdeHooks['environmentRecipeDiagnostics']>
       message?: string
     }>
     listRecipeCatalog: () => Promise<
@@ -2505,8 +2505,8 @@ export type PreloadApi = {
         repoId: string
         repoName: string
         repoPath: string
-        recipes: NonNullable<OrcaHooks['environmentRecipes']>
-        diagnostics: NonNullable<OrcaHooks['environmentRecipeDiagnostics']>
+        recipes: NonNullable<AioAdeHooks['environmentRecipes']>
+        diagnostics: NonNullable<AioAdeHooks['environmentRecipeDiagnostics']>
       }[]
     >
     doctor: (args: { repoId: string; recipeId: string }) => Promise<EphemeralVmRecipeDoctorResult>
@@ -2520,7 +2520,7 @@ export type PreloadApi = {
     }) => Promise<
       | {
           ok: true
-          connectionType: 'orca-server'
+          connectionType: 'aio-ade-server'
           runtime: EphemeralVmRuntimeRecord
           environment: PublicKnownRuntimeEnvironment
           stderr: string

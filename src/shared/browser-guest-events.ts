@@ -10,8 +10,8 @@ export type BrowserPopupEvent = {
   browserPageId: string
   /** Sanitized to origin/host so auth query params never leak into UI state. */
   origin: string
-  /** Whether Orca opened the target in Orca, opened it externally, or blocked it as unsafe. */
-  action: 'opened-in-orca' | 'opened-external' | 'blocked'
+  /** Whether AIO-ADE opened the target in AIO-ADE, opened it externally, or blocked it as unsafe. */
+  action: 'opened-in-aio-ade' | 'opened-external' | 'blocked'
 }
 
 export type BrowserDownloadRequestedEvent = {

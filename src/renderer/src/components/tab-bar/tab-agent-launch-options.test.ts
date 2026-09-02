@@ -26,7 +26,7 @@ describe('tab agent launch options', () => {
     expect(
       findMatchingTabAgentLaunchOptions('codex-beta', options).map((option) => option.agent)
     ).toEqual(['codex'])
-    // Agent Teams launches through the Orca CLI, so its command is not its id.
+    // Agent Teams launches through the AIO-ADE CLI, so its command is not its id.
     expect(
       findMatchingTabAgentLaunchOptions('claude-teams', options).map((option) => option.agent)
     ).toEqual(['claude-agent-teams'])

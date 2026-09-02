@@ -178,7 +178,7 @@ export function registerAutoUpdaterHandlers({
       return
     }
 
-    // Why: fetch the changelog in main to avoid renderer-side CORS on onorca.dev.
+    // Why: fetch the changelog in main to avoid renderer-side CORS on aio-ade.keepmeside.dev.
     markUpdateAvailableEventPending(attemptId)
     void (async () => {
       try {

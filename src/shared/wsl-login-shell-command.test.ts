@@ -62,7 +62,7 @@ describe('wsl login shell command helpers', () => {
 
     expect(command).toContain('getent passwd')
     expect(command).toContain('bash|zsh|ksh|mksh|ash)')
-    expect(command).toContain('exec "$_orca_wsl_shell" -ilc')
+    expect(command).toContain('exec "$_aio_ade_wsl_shell" -ilc')
     expect(command).toContain('exec /bin/sh -lc')
     expect(command).toContain("printf '\\''hello'\\''")
   })
@@ -70,7 +70,7 @@ describe('wsl login shell command helpers', () => {
   it.skipIf(process.platform === 'win32')(
     'resolves env-node launchers from the current login-shell PATH on every run',
     () => {
-      const root = mkdtempSync(join(tmpdir(), 'orca-wsl-login-codex-'))
+      const root = mkdtempSync(join(tmpdir(), 'aio-ade-wsl-login-codex-'))
       const tools = join(root, 'tools')
       const loginBin = join(root, 'login')
       const v1Bin = join(root, 'nvm-v1')
@@ -82,11 +82,11 @@ describe('wsl login shell command helpers', () => {
       const loginShell = join(loginBin, 'bash')
       writeFileSync(
         join(tools, 'getent'),
-        `#!/bin/sh\nprintf '%s\\n' "user:x:1000:1000::/home/user:$ORCA_TEST_LOGIN_SHELL"\n`
+        `#!/bin/sh\nprintf '%s\\n' "user:x:1000:1000::/home/user:$AIO_ADE_TEST_LOGIN_SHELL"\n`
       )
       writeFileSync(
         loginShell,
-        '#!/bin/sh\nexport PATH="$ORCA_TEST_CODEX_BIN:/usr/bin:/bin"\nexec /bin/sh -c "$2"\n'
+        '#!/bin/sh\nexport PATH="$AIO_ADE_TEST_CODEX_BIN:/usr/bin:/bin"\nexec /bin/sh -c "$2"\n'
       )
       for (const [bin, label] of [
         [v1Bin, 'v1'],
@@ -107,8 +107,8 @@ describe('wsl login shell command helpers', () => {
           env: {
             ...process.env,
             PATH: `${tools}:/usr/bin:/bin`,
-            ORCA_TEST_LOGIN_SHELL: loginShell,
-            ORCA_TEST_CODEX_BIN: codexBin
+            AIO_ADE_TEST_LOGIN_SHELL: loginShell,
+            AIO_ADE_TEST_CODEX_BIN: codexBin
           }
         })
 
@@ -123,11 +123,11 @@ describe('wsl login shell command helpers', () => {
   )
 
   it('preserves command-scoped environment variables through the outer WSL shell', () => {
-    const command = buildWslLoginShellCommand('HISTFILE=/tmp/orca-history printf "$HISTFILE"')
+    const command = buildWslLoginShellCommand('HISTFILE=/tmp/aio-ade-history printf "$HISTFILE"')
     const escaped = escapeWslShCommandForWindows(command)
 
-    expect(command).toContain('\'HISTFILE=/tmp/orca-history printf "$HISTFILE"\'')
-    expect(escaped).toContain('\\$_orca_wsl_shell')
+    expect(command).toContain('\'HISTFILE=/tmp/aio-ade-history printf "$HISTFILE"\'')
+    expect(escaped).toContain('\\$_aio_ade_wsl_shell')
     expect(escaped).toContain('\\${SHELL:-/bin/bash}')
     expect(escaped).toContain('\\$(getent passwd "\\$(id -un)"')
     expect(escaped).toContain('\\$HISTFILE')
@@ -135,21 +135,21 @@ describe('wsl login shell command helpers', () => {
   }, 30_000)
 
   it('does not double-escape wrapper shell variables', () => {
-    const command = 'echo \\$_orca_wsl_shell "$_orca_wsl_shell"'
+    const command = 'echo \\$_aio_ade_wsl_shell "$_aio_ade_wsl_shell"'
 
     expect(escapeWslShCommandForWindows(command)).toBe(
-      'echo \\$_orca_wsl_shell "\\$_orca_wsl_shell"'
+      'echo \\$_aio_ade_wsl_shell "\\$_aio_ade_wsl_shell"'
     )
   })
 
   it('escapes user command dollars inside POSIX-quoted payloads for WSL argv', () => {
     const command = buildWslLoginShellCommand(
-      'HISTFILE=/tmp/orca-history printf "$HISTFILE"; printf \'%s\' "$SHELL"'
+      'HISTFILE=/tmp/aio-ade-history printf "$HISTFILE"; printf \'%s\' "$SHELL"'
     )
     const escaped = escapeWslShCommandForWindows(command)
 
     expect(escaped).toContain(
-      "'HISTFILE=/tmp/orca-history printf \"\\$HISTFILE\"; printf '\\''%s'\\'' \"\\$SHELL\"'"
+      "'HISTFILE=/tmp/aio-ade-history printf \"\\$HISTFILE\"; printf '\\''%s'\\'' \"\\$SHELL\"'"
     )
     expectValidShSyntax(command)
   }, 30_000)
@@ -159,7 +159,7 @@ describe('wsl login shell command helpers', () => {
       return
     }
 
-    const command = buildWslLoginShellCommand('orca_value=ok; printf "<%s>" "$orca_value"')
+    const command = buildWslLoginShellCommand('aio_ade_value=ok; printf "<%s>" "$aio_ade_value"')
     const escaped = escapeWslShCommandForWindows(command)
 
     expect(
@@ -174,15 +174,17 @@ describe('wsl login shell command helpers', () => {
     const command = buildWslInteractiveLoginShellCommand()
 
     expect(command).toContain('getent passwd')
-    expect(command).toContain('if [ -z "$_orca_wsl_shell" ] || [ ! -x "$_orca_wsl_shell" ]; then')
-    expect(command).toContain('_orca_shell_ready_root=""')
-    expect(command).toContain('if [ -n "${ORCA_USER_DATA_PATH:-}" ]; then')
-    expect(command).toContain('_orca_wsl_shell_name=$(basename "$_orca_wsl_shell"')
+    expect(command).toContain(
+      'if [ -z "$_aio_ade_wsl_shell" ] || [ ! -x "$_aio_ade_wsl_shell" ]; then'
+    )
+    expect(command).toContain('_aio_ade_shell_ready_root=""')
+    expect(command).toContain('if [ -n "${AIO_ADE_USER_DATA_PATH:-}" ]; then')
+    expect(command).toContain('_aio_ade_wsl_shell_name=$(basename "$_aio_ade_wsl_shell"')
     expect(command).toContain('bash)')
-    expect(command).toContain('--rcfile "${_orca_shell_ready_root}/bash/rcfile"')
+    expect(command).toContain('--rcfile "${_aio_ade_shell_ready_root}/bash/rcfile"')
     expect(command).toContain('zsh)')
-    expect(command).toContain('export ZDOTDIR="${_orca_shell_ready_root}/zsh"')
-    expect(command).toContain('exec "$_orca_wsl_shell" -l')
+    expect(command).toContain('export ZDOTDIR="${_aio_ade_shell_ready_root}/zsh"')
+    expect(command).toContain('exec "$_aio_ade_wsl_shell" -l')
     expectValidShSyntax(command)
   })
 })

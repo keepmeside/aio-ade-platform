@@ -7,7 +7,7 @@
  *
  * Fails closed: only an explicit, recognized opt-in enables it.
  */
-const ENABLE_ENV_VAR = 'ORCA_ENABLE_SERVE'
+const ENABLE_ENV_VAR = 'AIO_ADE_ENABLE_SERVE'
 const ENABLED_VALUES = new Set(['1', 'true'])
 
 export const SERVE_DISABLED_MESSAGE =

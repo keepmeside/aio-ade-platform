@@ -5,6 +5,7 @@ import { spawn } from 'node:child_process'
 import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { APP_HOME_DIR_NAME, getAppHomePath } from '../../shared/app-home-paths'
 import type { SFTPWrapper } from 'ssh2'
 import type * as osModule from 'node:os'
 
@@ -12,25 +13,25 @@ let isolatedUserDataDir = ''
 let previousUserDataPath: string | undefined
 
 beforeEach(() => {
-  previousUserDataPath = process.env.ORCA_USER_DATA_PATH
-  isolatedUserDataDir = mkdtempSync(join(tmpdir(), 'orca-hook-stdin-user-data-'))
-  // Why: Orca-managed Codex hooks resolve through ORCA_USER_DATA_PATH before
+  previousUserDataPath = process.env.AIO_ADE_USER_DATA_PATH
+  isolatedUserDataDir = mkdtempSync(join(tmpdir(), 'aio-ade-hook-stdin-user-data-'))
+  // Why: AIO-ADE-managed Codex hooks resolve through AIO_ADE_USER_DATA_PATH before
   // the mocked home; an inherited live path would let this test rewrite them.
-  process.env.ORCA_USER_DATA_PATH = isolatedUserDataDir
+  process.env.AIO_ADE_USER_DATA_PATH = isolatedUserDataDir
 })
 
 afterEach(() => {
   if (previousUserDataPath === undefined) {
-    delete process.env.ORCA_USER_DATA_PATH
+    delete process.env.AIO_ADE_USER_DATA_PATH
   } else {
-    process.env.ORCA_USER_DATA_PATH = previousUserDataPath
+    process.env.AIO_ADE_USER_DATA_PATH = previousUserDataPath
   }
   rmSync(isolatedUserDataDir, { recursive: true, force: true })
 })
 
 function findGitBash(): string {
-  if (process.env.ORCA_TEST_GIT_BASH_PATH) {
-    return process.env.ORCA_TEST_GIT_BASH_PATH
+  if (process.env.AIO_ADE_TEST_GIT_BASH_PATH) {
+    return process.env.AIO_ADE_TEST_GIT_BASH_PATH
   }
   const candidates = [
     process.env.ProgramFiles && join(process.env.ProgramFiles, 'Git', 'bin', 'bash.exe'),
@@ -53,7 +54,7 @@ const { homedirMock } = vi.hoisted(() => ({
 
 vi.mock('electron', () => ({
   app: {
-    getPath: () => '/tmp/orca-user-data'
+    getPath: () => '/tmp/aio-ade-user-data'
   }
 }))
 
@@ -130,12 +131,12 @@ function runHookProcess(
 
 function hookEnvironment(extraEnv: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
   const env = Object.fromEntries(
-    Object.entries(process.env).filter(([key]) => !key.startsWith('ORCA_'))
+    Object.entries(process.env).filter(([key]) => !key.startsWith('AIO_ADE_'))
   )
   return {
     ...env,
     HOME: REMOTE_HOME,
-    ORCA_AGENT_HOOK_ENDPOINT: '',
+    AIO_ADE_AGENT_HOOK_ENDPOINT: '',
     ...extraEnv
   }
 }
@@ -151,7 +152,7 @@ async function generatePosixScripts(): Promise<Map<string, string>> {
     const status = await entry.install(memory.sftp)
     expect(status.state, `${entry.agent} install status`).toBe('installed')
     const generated = [...memory.fs.files.entries()].filter(
-      ([path]) => path.includes('/.orca/agent-hooks/') && path.endsWith('.sh')
+      ([path]) => path.includes(`/${APP_HOME_DIR_NAME}/agent-hooks/`) && path.endsWith('.sh')
     )
     // Why: Claude ships a second managed script (the statusline usage feed); the stdin lifecycle contract applies to every generated script.
     expect(generated.length, `${entry.agent} generated scripts`).toBeGreaterThan(0)
@@ -176,7 +177,7 @@ function withPlatform<T>(platform: NodeJS.Platform, run: () => T): T {
 
 describe('Windows managed hook stdin structure', () => {
   it('routes every batch guard to a shared drain epilogue', () => {
-    const home = mkdtempSync(join(tmpdir(), 'orca-hook-stdin-windows-'))
+    const home = mkdtempSync(join(tmpdir(), 'aio-ade-hook-stdin-windows-'))
     homedirMock.mockReturnValue(home)
     try {
       withPlatform('win32', () => {
@@ -184,23 +185,23 @@ describe('Windows managed hook stdin structure', () => {
           expect(entry.install().state, `${entry.agent} install status`).toBe('installed')
         }
       })
-      const hooksDir = join(home, '.orca', 'agent-hooks')
+      const hooksDir = getAppHomePath(home, 'agent-hooks')
       const mainBatchScripts = readdirSync(hooksDir).filter((name) => name.endsWith('-hook.cmd'))
       expect(mainBatchScripts).toHaveLength(2)
       for (const fileName of mainBatchScripts) {
         const script = readFileSync(join(hooksDir, fileName), 'utf8')
         expect(script, `${fileName} port guard`).toContain(
-          'if "%ORCA_AGENT_HOOK_PORT%"=="" goto :orca_agent_hook_drain_stdin'
+          'if "%AIO_ADE_AGENT_HOOK_PORT%"=="" goto :aio_ade_agent_hook_drain_stdin'
         )
         expect(script, `${fileName} token guard`).toContain(
-          'if "%ORCA_AGENT_HOOK_TOKEN%"=="" goto :orca_agent_hook_drain_stdin'
+          'if "%AIO_ADE_AGENT_HOOK_TOKEN%"=="" goto :aio_ade_agent_hook_drain_stdin'
         )
         expect(script, `${fileName} pane guard`).toContain(
-          'if "%ORCA_PANE_KEY%"=="" goto :orca_agent_hook_drain_stdin'
+          'if "%AIO_ADE_PANE_KEY%"=="" goto :aio_ade_agent_hook_drain_stdin'
         )
         expect(script, `${fileName} drain epilogue`).toContain(
           [
-            ':orca_agent_hook_drain_stdin',
+            ':aio_ade_agent_hook_drain_stdin',
             '"%SystemRoot%\\System32\\more.com" >nul 2>nul',
             'exit /b 0'
           ].join('\r\n')
@@ -215,14 +216,14 @@ describe('Windows managed hook stdin structure', () => {
   it.skipIf(process.platform !== 'win32')(
     'executes every local script and missing-script launcher without a broken writer',
     async () => {
-      const home = mkdtempSync(join(tmpdir(), 'orca-hook-stdin-windows-live-'))
+      const home = mkdtempSync(join(tmpdir(), 'aio-ade-hook-stdin-windows-live-'))
       homedirMock.mockReturnValue(home)
       try {
         const gitBash = findGitBash()
         for (const entry of LOCAL_INSTALLERS) {
           expect(entry.install().state, `${entry.agent} install status`).toBe('installed')
         }
-        const hooksDir = join(home, '.orca', 'agent-hooks')
+        const hooksDir = getAppHomePath(home, 'agent-hooks')
         const mainScripts = readdirSync(hooksDir).filter(
           (name) =>
             name.endsWith('-hook.ps1') || name.endsWith('-hook.sh') || name.endsWith('-hook.cmd')
@@ -251,7 +252,7 @@ describe('Windows managed hook stdin structure', () => {
           expect(result.stdinErrors, `${fileName} stdin errors`).toHaveLength(0)
         }
 
-        const missingScript = 'C:\\missing\\orca-hook.cmd'
+        const missingScript = 'C:\\missing\\aio-ade-hook.cmd'
         // Why: the cmd fast path is intentionally a bare, directly-spawnable .cmd
         // path (Codex launches it as argv[0], not via cmd.exe), so it cannot own
         // stdin for a missing script — a cmd-builtin drain would make argv[0]
@@ -295,7 +296,7 @@ describe.skipIf(process.platform === 'win32')('managed hook stdin lifecycle', ()
     }
   })
 
-  it('accepts a large payload without Orca environment or a broken writer', async () => {
+  it('accepts a large payload without AIO-ADE environment or a broken writer', async () => {
     const scripts = await generatePosixScripts()
     for (const [agent, script] of scripts) {
       const result = await runPosixHook(script)
@@ -312,7 +313,9 @@ describe.skipIf(process.platform === 'win32')('managed hook stdin lifecycle', ()
       expect(result.stdinErrors, `${agent} stdin errors`).toHaveLength(0)
     }
 
-    const missing = await runPosixHook(wrapPosixHookCommand('/missing/orca-hook.sh'), { PATH: '' })
+    const missing = await runPosixHook(wrapPosixHookCommand('/missing/aio-ade-hook.sh'), {
+      PATH: ''
+    })
     expect(missing.exitCode, 'missing script launcher exit code').toBe(0)
     expect(missing.stdinErrors, 'missing script launcher stdin errors').toHaveLength(0)
   })
@@ -327,7 +330,7 @@ describe.skipIf(process.platform === 'win32')('managed hook stdin lifecycle', ()
     // Why: a worktree-local `cat` must never receive the hook payload.
     ['PATH whose first cat is a decoy', '']
   ])('captures the whole payload with %s', async (label, pathValue) => {
-    const decoyDir = mkdtempSync(join(tmpdir(), 'orca-hook-stdin-decoy-'))
+    const decoyDir = mkdtempSync(join(tmpdir(), 'aio-ade-hook-stdin-decoy-'))
     try {
       let effectivePath = pathValue
       if (label === 'PATH whose first cat is a decoy') {
@@ -357,7 +360,7 @@ describe.skipIf(process.platform === 'win32')('managed hook stdin lifecycle', ()
   })
 
   it('drains a large payload when the configured script is missing', async () => {
-    const result = await runPosixHook(wrapPosixHookCommand('/missing/orca-hook.sh'))
+    const result = await runPosixHook(wrapPosixHookCommand('/missing/aio-ade-hook.sh'))
     expect(result.exitCode).toBe(0)
     expect(result.stdinErrors).toHaveLength(0)
   })

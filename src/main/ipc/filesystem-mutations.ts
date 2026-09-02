@@ -1,6 +1,7 @@
 /* eslint-disable max-lines -- Why: filesystem mutation IPC handlers stay centralized so
 authorization, SSH routing, and external import behavior remain audited together. */
 import { ipcMain } from 'electron'
+import { getRepoAppPath } from '../../shared/repo-app-paths'
 import { constants } from 'node:fs'
 import {
   copyFile,
@@ -251,7 +252,7 @@ export function registerFilesystemMutationHandlers(store: Store): void {
 
   // Why: terminal drag-and-drop resolver. Local worktrees pass paths through
   // unchanged (reference-in-place; preserves zero-latency drop). SSH worktrees
-  // upload each path into `${worktreePath}/.orca/drops/` and return remote
+  // upload each path into `${worktreePath}/.aio-ade/drops/` and return remote
   // paths the remote agent can read. Kept as a separate IPC from
   // fs:importExternalPaths because terminal semantics differ from the
   // explorer's "copy into user-picked destDir". See docs/terminal-drop-ssh.md.
@@ -281,7 +282,7 @@ export function registerFilesystemMutationHandlers(store: Store): void {
         }
       }
       const worktreePath = args.worktreePath.replace(/\/+$/, '')
-      const destDir = `${worktreePath}/.orca/drops`
+      const destDir = getRepoAppPath(worktreePath, 'drops')
       const { results } = await importExternalPathsSsh(args.paths, destDir, args.connectionId, {
         ensureDir: true,
         assertCurrent: () =>

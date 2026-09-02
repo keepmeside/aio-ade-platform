@@ -101,7 +101,7 @@ describe('worktree git-common narrow watch (darwin)', () => {
   }
 
   async function makeCommonDir(withWorktrees: boolean): Promise<string> {
-    const root = await mkdtemp(join(tmpdir(), 'orca-git-common-watch-'))
+    const root = await mkdtemp(join(tmpdir(), 'aio-ade-git-common-watch-'))
     cleanups.push(() => rm(root, { recursive: true, force: true }))
     const commonDir = await realpath(root)
     if (withWorktrees) {
@@ -395,7 +395,7 @@ describe('worktree git-common polling gate (non-darwin)', () => {
   })
 
   async function makePollingCommonDir(): Promise<string> {
-    const root = await mkdtemp(join(tmpdir(), 'orca-git-common-polling-'))
+    const root = await mkdtemp(join(tmpdir(), 'aio-ade-git-common-polling-'))
     cleanups.push(() => rm(root, { recursive: true, force: true }))
     const commonDir = await realpath(root)
     await mkdir(join(commonDir, 'worktrees'))

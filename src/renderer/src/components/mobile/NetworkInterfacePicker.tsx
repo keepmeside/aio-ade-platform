@@ -79,7 +79,7 @@ export function NetworkInterfacePicker({
         inputLabel: translate('auto.components.mobile.CustomNetworkAddressDialog.label', 'Address'),
         placeholder: translate(
           'auto.components.mobile.CustomNetworkAddressDialog.placeholder',
-          'home.example.com:8443 or https://example.com/orca'
+          'home.example.com:8443 or https://example.com/aio-ade'
         ),
         hint: translate(
           'auto.components.mobile.CustomNetworkAddressDialog.hint',

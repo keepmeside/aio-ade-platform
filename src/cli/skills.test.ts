@@ -58,15 +58,15 @@ vi.mock('./runtime-client', () => {
     RuntimeClient,
     RuntimeClientError,
     RuntimeRpcFailureError,
-    serveOrcaApp: vi.fn(),
-    getDefaultUserDataPath: vi.fn(() => '/tmp/orca-user-data')
+    serveAioAdeApp: vi.fn(),
+    getDefaultUserDataPath: vi.fn(() => '/tmp/aio-ade-user-data')
   }
 })
 
 import { dispatch } from './dispatch'
 import { main } from './index'
 
-describe('orca skills CLI', () => {
+describe('aio-ade skills CLI', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     runtimeClientConstructorMock.mockClear()
@@ -168,7 +168,7 @@ describe('orca skills CLI', () => {
     await main(['--help'], '/tmp/repo')
 
     expect(String(logSpy.mock.calls[0]?.[0])).toContain(
-      'Usage: orca skills get <topic> [--full] [--json]'
+      'Usage: aio-ade skills get <topic> [--full] [--json]'
     )
     expect(String(logSpy.mock.calls[1]?.[0])).toContain(
       'Commands:\n  list               List version-matched skill guides'

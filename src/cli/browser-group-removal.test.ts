@@ -1,11 +1,11 @@
-/* Phase-03 carve (plans/260730-0117-aio-ade-rebrand-and-integration/phase-03).
+/* Guard: the browser command group stays out of the CLI.
  *
  * "Minimal agent bridge" means the CLI keeps only what the desktop actually invokes across the
  * process boundary. The browser command group — 77 commands across 8 handler groups — is the
  * largest surface with no consumer at all:
  *
  *   - nothing outside src/cli imports its handlers, specs or formatters
- *   - `orca browser` appears nowhere in the repo outside src/cli
+ *   - `aio-ade browser` appears nowhere in the repo outside src/cli
  *   - zero shipped skill-guide references, so no agent workflow teaches it
  *   - zero e2e specs and zero reliability gates cite it
  *

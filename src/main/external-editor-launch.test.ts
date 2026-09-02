@@ -100,14 +100,14 @@ describe('resolveExternalEditorLaunchSpec', () => {
     expect(
       resolveExternalEditorLaunchSpec(
         'C:\\Program Files\\Neovim\\bin\\nvim.exe',
-        'C:\\workspaces\\orca',
+        'C:\\workspaces\\aio-ade',
         { platform: 'win32' }
       )
     ).toEqual({
       kind: 'executable',
       hideWindowsConsole: false,
       spawnCmd: 'C:\\Program Files\\Neovim\\bin\\nvim.exe',
-      spawnArgs: ['C:\\workspaces\\orca']
+      spawnArgs: ['C:\\workspaces\\aio-ade']
     })
   })
 
@@ -115,27 +115,27 @@ describe('resolveExternalEditorLaunchSpec', () => {
     expect(
       resolveExternalEditorLaunchSpec(
         '"C:\\Program Files\\Neovim\\bin\\nvim.exe"',
-        'C:\\workspaces\\orca',
+        'C:\\workspaces\\aio-ade',
         { platform: 'win32' }
       )
     ).toEqual({
       kind: 'executable',
       hideWindowsConsole: false,
       spawnCmd: 'C:\\Program Files\\Neovim\\bin\\nvim.exe',
-      spawnArgs: ['C:\\workspaces\\orca']
+      spawnArgs: ['C:\\workspaces\\aio-ade']
     })
   })
 
   it('shows the Windows console for NeoVim shell commands with arguments', () => {
     expect(
-      resolveExternalEditorLaunchSpec('nvim --clean', 'C:\\workspaces\\orca', {
+      resolveExternalEditorLaunchSpec('nvim --clean', 'C:\\workspaces\\aio-ade', {
         platform: 'win32'
       })
     ).toEqual({
       kind: 'shell',
       hideWindowsConsole: false,
       spawnCmd: getCmdExePath(),
-      spawnArgs: ['/d', '/s', '/c', 'nvim --clean C:\\workspaces\\orca']
+      spawnArgs: ['/d', '/s', '/c', 'nvim --clean C:\\workspaces\\aio-ade']
     })
   })
 
@@ -221,7 +221,7 @@ describe('resolveExternalEditorLaunchSpec', () => {
     ])
   })
 
-  it.each(['C:\\workspaces\\orca', '\\\\server\\share\\project'])(
+  it.each(['C:\\workspaces\\aio-ade', '\\\\server\\share\\project'])(
     'keeps the non-WSL Windows path %s local',
     (pathValue) => {
       expect(

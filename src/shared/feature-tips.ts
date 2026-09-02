@@ -4,7 +4,7 @@ import {
   type FeatureInteractionState
 } from './feature-interactions'
 
-export type FeatureTipId = 'voice-dictation' | 'orca-cli' | 'cmd-j-palette'
+export type FeatureTipId = 'voice-dictation' | 'aio-ade-cli' | 'cmd-j-palette'
 
 export type FeatureTipPriority = 'new' | 'unseen'
 
@@ -30,10 +30,10 @@ export type CompletedFeatureTipState = {
 
 export const FEATURE_TIPS = [
   {
-    id: 'orca-cli',
+    id: 'aio-ade-cli',
     priority: 'new',
     eyebrow: 'Tip',
-    title: 'Let agents drive Orca with the Orca CLI',
+    title: 'Let agents drive AIO-ADE with the AIO-ADE CLI',
     description: 'Enable agents to coordinate child worktrees and communicate between worktrees.',
     action: 'setup-cli',
     ctaLabel: 'Install CLI & Skills',
@@ -58,7 +58,7 @@ export const FEATURE_TIPS = [
     eyebrow: 'Tip',
     title: 'Voice Dictation is here',
     description:
-      'Speak into any focused pane and Orca will transcribe it. Press the dictation shortcut to start and stop.',
+      'Speak into any focused pane and AIO-ADE will transcribe it. Press the dictation shortcut to start and stop.',
     action: 'enable-voice',
     ctaLabel: 'Set Up Voice',
     completedByFeatureInteractions: ['voice-dictation']
@@ -88,7 +88,7 @@ export function normalizeFeatureTipIds(value: unknown): FeatureTipId[] {
 export function getCompletedFeatureTipIds(state: CompletedFeatureTipState): Set<FeatureTipId> {
   const completedIds = new Set<FeatureTipId>()
   if (state.cliInstalled) {
-    completedIds.add('orca-cli')
+    completedIds.add('aio-ade-cli')
   }
   if (state.voiceDictationEnabled) {
     completedIds.add('voice-dictation')

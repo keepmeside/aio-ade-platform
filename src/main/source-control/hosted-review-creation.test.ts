@@ -152,7 +152,7 @@ function resetMocks(): void {
 
 function mockGitHubProvider(): void {
   getProjectSlugMock.mockResolvedValue(null)
-  getRepoSlugMock.mockResolvedValue({ owner: 'acme', repo: 'orca' })
+  getRepoSlugMock.mockResolvedValue({ owner: 'acme', repo: 'aio-ade' })
   getBitbucketRepoSlugMock.mockResolvedValue(null)
   getAzureDevOpsRepoSlugMock.mockResolvedValue(null)
   getGiteaRepoSlugMock.mockResolvedValue(null)
@@ -167,7 +167,7 @@ function mockGitHubEnterpriseProvider(): void {
   // comes back host-qualified instead of null + separate enterprise fallback.
   getRepoSlugMock.mockResolvedValue({
     owner: 'acme',
-    repo: 'orca',
+    repo: 'aio-ade',
     host: 'github.acme-corp.com'
   })
   getBitbucketRepoSlugMock.mockResolvedValue(null)
@@ -176,13 +176,13 @@ function mockGitHubEnterpriseProvider(): void {
   // The auth gate still keys off the enterprise resolver (authed-GHES signal).
   getEnterpriseGitHubRepoSlugMock.mockResolvedValue({
     owner: 'acme',
-    repo: 'orca',
+    repo: 'aio-ade',
     host: 'github.acme-corp.com'
   })
 }
 
 function mockGitLabProvider(): void {
-  getProjectSlugMock.mockResolvedValue({ host: 'gitlab.com', path: 'acme/orca' })
+  getProjectSlugMock.mockResolvedValue({ host: 'gitlab.com', path: 'acme/aio-ade' })
   getRepoSlugMock.mockResolvedValue(null)
   getBitbucketRepoSlugMock.mockResolvedValue(null)
   getAzureDevOpsRepoSlugMock.mockResolvedValue(null)
@@ -196,9 +196,9 @@ function mockAzureDevOpsProvider(): void {
   getAzureDevOpsRepoSlugMock.mockResolvedValue({
     host: 'dev.azure.com',
     project: 'Project',
-    repository: 'orca',
+    repository: 'aio-ade',
     apiBaseUrl: 'https://dev.azure.com/acme/Project',
-    webBaseUrl: 'https://dev.azure.com/acme/Project/_git/orca'
+    webBaseUrl: 'https://dev.azure.com/acme/Project/_git/aio-ade'
   })
   getGiteaRepoSlugMock.mockResolvedValue(null)
 }
@@ -211,7 +211,7 @@ function mockGiteaProvider(): void {
   getGiteaRepoSlugMock.mockResolvedValue({
     host: 'git.example.com',
     owner: 'acme',
-    repo: 'orca',
+    repo: 'aio-ade',
     apiBaseUrl: 'https://git.example.com/api/v1',
     webBaseUrl: 'https://git.example.com'
   })
@@ -254,22 +254,22 @@ describe('createHostedReview', () => {
     createGitHubPullRequestMock.mockResolvedValue({
       ok: true,
       number: 12,
-      url: 'https://github.com/acme/orca/pull/12'
+      url: 'https://github.com/acme/aio-ade/pull/12'
     })
     createGitLabMergeRequestMock.mockResolvedValue({
       ok: true,
       number: 44,
-      url: 'https://gitlab.com/acme/orca/-/merge_requests/44'
+      url: 'https://gitlab.com/acme/aio-ade/-/merge_requests/44'
     })
     createAzureDevOpsPullRequestMock.mockResolvedValue({
       ok: true,
       number: 88,
-      url: 'https://dev.azure.com/acme/Project/_git/orca/pullrequest/88'
+      url: 'https://dev.azure.com/acme/Project/_git/aio-ade/pullrequest/88'
     })
     createGiteaPullRequestMock.mockResolvedValue({
       ok: true,
       number: 19,
-      url: 'https://git.example.com/acme/orca/pulls/19'
+      url: 'https://git.example.com/acme/aio-ade/pulls/19'
     })
     isAzureDevOpsReviewCreationAuthenticatedMock.mockReturnValue(true)
     isGiteaReviewCreationAuthenticatedMock.mockReturnValue(true)
@@ -358,7 +358,7 @@ describe('createHostedReview', () => {
     ).resolves.toEqual({
       ok: true,
       number: 12,
-      url: 'https://github.com/acme/orca/pull/12'
+      url: 'https://github.com/acme/aio-ade/pull/12'
     })
     expect(createGitHubPullRequestMock).toHaveBeenCalledOnce()
   })
@@ -379,7 +379,7 @@ describe('createHostedReview', () => {
     ).resolves.toEqual({
       ok: true,
       number: 12,
-      url: 'https://github.com/acme/orca/pull/12'
+      url: 'https://github.com/acme/aio-ade/pull/12'
     })
 
     expect(gitExecFileAsyncMock).toHaveBeenCalledWith(['rev-parse', '--abbrev-ref', 'HEAD'], {
@@ -431,7 +431,7 @@ describe('createHostedReview', () => {
     ).resolves.toEqual({
       ok: true,
       number: 12,
-      url: 'https://github.com/acme/orca/pull/12'
+      url: 'https://github.com/acme/aio-ade/pull/12'
     })
 
     // Detection already confirmed gh is authed to the GHES host, so the auth
@@ -454,7 +454,7 @@ describe('createHostedReview', () => {
     ).resolves.toEqual({
       ok: true,
       number: 44,
-      url: 'https://gitlab.com/acme/orca/-/merge_requests/44'
+      url: 'https://gitlab.com/acme/aio-ade/-/merge_requests/44'
     })
 
     expect(glabExecFileAsyncMock).toHaveBeenCalledWith(
@@ -487,7 +487,7 @@ describe('createHostedReview', () => {
     ).resolves.toEqual({
       ok: true,
       number: 88,
-      url: 'https://dev.azure.com/acme/Project/_git/orca/pullrequest/88'
+      url: 'https://dev.azure.com/acme/Project/_git/aio-ade/pullrequest/88'
     })
 
     expect(createAzureDevOpsPullRequestMock).toHaveBeenCalledWith(
@@ -517,7 +517,7 @@ describe('createHostedReview', () => {
     ).resolves.toEqual({
       ok: true,
       number: 19,
-      url: 'https://git.example.com/acme/orca/pulls/19'
+      url: 'https://git.example.com/acme/aio-ade/pulls/19'
     })
 
     expect(createGiteaPullRequestMock).toHaveBeenCalledWith(
@@ -576,7 +576,7 @@ describe('createHostedReview', () => {
     ).resolves.toEqual({
       ok: true,
       number: 12,
-      url: 'https://github.com/acme/orca/pull/12'
+      url: 'https://github.com/acme/aio-ade/pull/12'
     })
 
     expect(remoteGit.exec).toHaveBeenCalledWith(
@@ -613,7 +613,7 @@ describe('createHostedReview', () => {
       number: 31,
       title: 'Existing feature',
       state: 'open',
-      url: 'https://github.com/acme/orca/pull/31',
+      url: 'https://github.com/acme/aio-ade/pull/31',
       status: 'pending',
       updatedAt: '2026-05-15T00:00:00.000Z',
       mergeable: 'UNKNOWN'
@@ -632,7 +632,7 @@ describe('createHostedReview', () => {
       error: 'A pull request already exists for this branch.',
       existingReview: {
         number: 31,
-        url: 'https://github.com/acme/orca/pull/31'
+        url: 'https://github.com/acme/aio-ade/pull/31'
       }
     })
     expect(createGitHubPullRequestMock).not.toHaveBeenCalled()

@@ -187,7 +187,7 @@ export type LinearProjectCreateInput = {
   targetDate?: string
 }
 
-const ORCA_PROJECT_FIELDS = `
+const AIO_ADE_PROJECT_FIELDS = `
   id
   slugId
   name
@@ -244,8 +244,8 @@ const ORCA_PROJECT_FIELDS = `
   }
 `
 
-const ORCA_PROJECT_DETAIL_FIELDS = `
-  ${ORCA_PROJECT_FIELDS}
+const AIO_ADE_PROJECT_DETAIL_FIELDS = `
+  ${AIO_ADE_PROJECT_FIELDS}
   projectMilestones(first: 20) {
     nodes {
       id
@@ -277,7 +277,7 @@ const ORCA_PROJECT_DETAIL_FIELDS = `
   }
 `
 
-const ORCA_ISSUE_FIELDS = `
+const AIO_ADE_ISSUE_FIELDS = `
   id
   identifier
   title
@@ -311,10 +311,10 @@ const ORCA_ISSUE_FIELDS = `
 `
 
 const PROJECTS_QUERY = `
-  query OrcaLinearProjects($first: Int, $filter: ProjectFilter, $orderBy: PaginationOrderBy) {
+  query AioAdeLinearProjects($first: Int, $filter: ProjectFilter, $orderBy: PaginationOrderBy) {
     projects(first: $first, filter: $filter, orderBy: $orderBy) {
       nodes {
-        ${ORCA_PROJECT_FIELDS}
+        ${AIO_ADE_PROJECT_FIELDS}
       }
       pageInfo {
         hasNextPage
@@ -324,10 +324,10 @@ const PROJECTS_QUERY = `
 `
 
 const SEARCH_PROJECTS_QUERY = `
-  query OrcaLinearProjectSearch($term: String!, $first: Int, $after: String) {
+  query AioAdeLinearProjectSearch($term: String!, $first: Int, $after: String) {
     searchProjects(term: $term, first: $first, after: $after) {
       nodes {
-        ${ORCA_PROJECT_FIELDS}
+        ${AIO_ADE_PROJECT_FIELDS}
       }
       pageInfo {
         hasNextPage
@@ -338,26 +338,26 @@ const SEARCH_PROJECTS_QUERY = `
 `
 
 const PROJECT_QUERY = `
-  query OrcaLinearProject($id: String!) {
+  query AioAdeLinearProject($id: String!) {
     project(id: $id) {
-      ${ORCA_PROJECT_DETAIL_FIELDS}
+      ${AIO_ADE_PROJECT_DETAIL_FIELDS}
     }
   }
 `
 
 const CREATE_PROJECT_MUTATION = `
-  mutation OrcaLinearProjectCreate($input: ProjectCreateInput!) {
+  mutation AioAdeLinearProjectCreate($input: ProjectCreateInput!) {
     projectCreate(input: $input) {
       success
       project {
-        ${ORCA_PROJECT_DETAIL_FIELDS}
+        ${AIO_ADE_PROJECT_DETAIL_FIELDS}
       }
     }
   }
 `
 
 const PROJECT_ISSUES_QUERY = `
-  query OrcaLinearProjectIssues(
+  query AioAdeLinearProjectIssues(
     $id: String!,
     $first: Int,
     $after: String,
@@ -366,7 +366,7 @@ const PROJECT_ISSUES_QUERY = `
     project(id: $id) {
       issues(first: $first, after: $after, orderBy: $orderBy) {
         nodes {
-          ${ORCA_ISSUE_FIELDS}
+          ${AIO_ADE_ISSUE_FIELDS}
         }
         pageInfo {
           hasNextPage
@@ -378,7 +378,7 @@ const PROJECT_ISSUES_QUERY = `
 `
 
 const PROJECT_TEAMS_QUERY = `
-  query OrcaLinearProjectTeams($id: String!, $first: Int, $after: String) {
+  query AioAdeLinearProjectTeams($id: String!, $first: Int, $after: String) {
     project(id: $id) {
       teams(first: $first, after: $after) {
         nodes {
@@ -396,7 +396,7 @@ const PROJECT_TEAMS_QUERY = `
 `
 
 const CUSTOM_VIEWS_QUERY = `
-  query OrcaLinearCustomViews(
+  query AioAdeLinearCustomViews(
     $first: Int,
     $filter: CustomViewFilter,
     $orderBy: PaginationOrderBy
@@ -437,7 +437,7 @@ const CUSTOM_VIEWS_QUERY = `
 `
 
 const CUSTOM_VIEW_QUERY = `
-  query OrcaLinearCustomView($id: String!) {
+  query AioAdeLinearCustomView($id: String!) {
     customView(id: $id) {
       id
       name
@@ -469,7 +469,7 @@ const CUSTOM_VIEW_QUERY = `
 `
 
 const CUSTOM_VIEW_ISSUES_QUERY = `
-  query OrcaLinearCustomViewIssues(
+  query AioAdeLinearCustomViewIssues(
     $id: String!,
     $first: Int,
     $after: String,
@@ -480,7 +480,7 @@ const CUSTOM_VIEW_ISSUES_QUERY = `
       modelName
       issues(first: $first, after: $after, orderBy: $orderBy) {
         nodes {
-          ${ORCA_ISSUE_FIELDS}
+          ${AIO_ADE_ISSUE_FIELDS}
         }
         pageInfo {
           hasNextPage
@@ -492,13 +492,13 @@ const CUSTOM_VIEW_ISSUES_QUERY = `
 `
 
 const CUSTOM_VIEW_PROJECTS_QUERY = `
-  query OrcaLinearCustomViewProjects($id: String!, $first: Int, $orderBy: PaginationOrderBy) {
+  query AioAdeLinearCustomViewProjects($id: String!, $first: Int, $orderBy: PaginationOrderBy) {
     customView(id: $id) {
       id
       modelName
       projects(first: $first, orderBy: $orderBy) {
         nodes {
-          ${ORCA_PROJECT_FIELDS}
+          ${AIO_ADE_PROJECT_FIELDS}
         }
         pageInfo {
           hasNextPage
@@ -782,7 +782,7 @@ async function readIssueConnectionPages(
 
   while (items.length < limit) {
     // Why: Linear returns issue connections in pages of up to 50; expanded
-    // Orca reads must follow cursors to show more than one backend page.
+    // AIO-ADE reads must follow cursors to show more than one backend page.
     const first = Math.min(LINEAR_ISSUE_API_PAGE_SIZE_MAX, limit - items.length)
     const connection = await loadConnection(after ? { first, after } : { first })
     const nodes = connection?.nodes ?? []

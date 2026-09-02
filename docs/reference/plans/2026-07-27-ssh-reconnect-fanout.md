@@ -113,20 +113,20 @@ Results initially on `79ec57d04`, then rerun after rebasing through `974447175`:
 
 ### Candidate implementation and validation
 
-The candidate implements the composed authority pair, host-qualified catalog/worktree/lineage reads, separate waiter and provider identities, five-slot fair scheduling with a seven-start provider budget, the first-timeout retry barrier, exact-target terminal recovery, fenced remote-workspace hydration, and privacy-safe aggregate telemetry. Coordinator routing defaults on and can be disabled per build with `VITE_DIRECT_SSH_RECONNECT_COORDINATOR=false` or per renderer session with `orca.directSshReconnectCoordinator.enabled=false`; the fallback retains host/authority fencing, atomic terminal recovery, and bounded preparation.
+The candidate implements the composed authority pair, host-qualified catalog/worktree/lineage reads, separate waiter and provider identities, five-slot fair scheduling with a seven-start provider budget, the first-timeout retry barrier, exact-target terminal recovery, fenced remote-workspace hydration, and privacy-safe aggregate telemetry. Coordinator routing defaults on and can be disabled per build with `VITE_DIRECT_SSH_RECONNECT_COORDINATOR=false` or per renderer session with `aio-ade.directSshReconnectCoordinator.enabled=false`; the fallback retains host/authority fencing, atomic terminal recovery, and bounded preparation.
 
 Deterministic validation on the final rebased implementation passed all 42 changed unit suites (1,960 tests), including the 11-file direct-SSH terminal gate (637 tests), the 11-file renderer provider/transport gate (763 tests), and the 12-file main/preload/runtime/shared authority gate (513 tests), plus full typecheck, changed-code quality, reliability-gate and max-lines checks, `git diff --check`, and an Electron E2E-mode build. The authority gate proves retained SSH connection and detected-port payload admission is wired into native preload and runtime-client/environment production routes. An earlier full `pnpm test` exercise ran 3,707 files and 39,083 tests; only two assertions in unchanged `agent-exec-handler.test.ts` failed because the managed terminal already injects `GIT_CONFIG_*` prompt settings. The file passed 10/10 with those inherited settings removed. Final exact-head CI evidence is recorded in the PR description.
 
 Real transport validation used a macOS Electron headless client against an ephemeral Linux Docker SSH/relay target:
 
 ```bash
-ORCA_E2E_SSH_DOCKER=1 SKIP_BUILD=1 pnpm exec playwright test \
+AIO_ADE_E2E_SSH_DOCKER=1 SKIP_BUILD=1 pnpm exec playwright test \
   tests/e2e/ssh-docker-relay-perf.spec.ts \
   --config tests/playwright.config.ts \
   --project electron-headless \
   --workers=1
 
-ORCA_E2E_SSH_DOCKER=1 SKIP_BUILD=1 pnpm exec playwright test \
+AIO_ADE_E2E_SSH_DOCKER=1 SKIP_BUILD=1 pnpm exec playwright test \
   tests/e2e/ssh-cold-activation-restore.spec.ts \
   --config tests/playwright.config.ts \
   --project electron-headless \
@@ -135,7 +135,7 @@ ORCA_E2E_SSH_DOCKER=1 SKIP_BUILD=1 pnpm exec playwright test \
 
 The four-test relay suite and the cold-restore journey passed. The relay suite covered streaming, a background ACK-stalled PTY, file/Git pressure, and live terminal input/output before and after SSH disconnect/reconnect; the reconnect case independently read the post-reconnect proof file inside the Linux container. The cold-restore journey proved all six restored SSH terminals remounted and accepted remote input after renderer reload. Repo registration waits on exact renderer catalog ownership and full authority, requires an authoritative host-qualified worktree response, and uses no timing sleep.
 
-Remaining live gaps are headed paired-Orca-server and headless `orca serve` non-interference, WSL, physical Windows and Linux desktop clients, and a multi-target live fan-out/large-terminal-map benchmark. Docker SSH proves the direct SSH provider/relay path, not paired-runtime parity.
+Remaining live gaps are headed paired-AIO-ADE-server and headless `aio-ade serve` non-interference, WSL, physical Windows and Linux desktop clients, and a multi-target live fan-out/large-terminal-map benchmark. Docker SSH proves the direct SSH provider/relay path, not paired-runtime parity.
 
 Current-main reconciliation:
 
@@ -926,7 +926,7 @@ Release checks:
 - direct SSH lineage deletion is host-correct; and
 - Git and folder terminal overlays clear and retry symmetrically while port and detected-agent cleanup remains intact.
 
-Rollback disables coordinator routing with build-time `VITE_DIRECT_SSH_RECONNECT_COORDINATOR=false` or session key `orca.directSshReconnectCoordinator.enabled=false` while retaining composed authority rotation, authority-boundary preservation, host-qualified IPC, mutation fences, and atomic terminal actions. The fallback reconnect path uses the dedicated bounded scheduler and preserves port/detected-agent cleanup; it does not restore host-blind or unbounded `Promise.all`.
+Rollback disables coordinator routing with build-time `VITE_DIRECT_SSH_RECONNECT_COORDINATOR=false` or session key `aio-ade.directSshReconnectCoordinator.enabled=false` while retaining composed authority rotation, authority-boundary preservation, host-qualified IPC, mutation fences, and atomic terminal actions. The fallback reconnect path uses the dedicated bounded scheduler and preserves port/detected-agent cleanup; it does not restore host-blind or unbounded `Promise.all`.
 
 ## Cross-platform and compatibility
 

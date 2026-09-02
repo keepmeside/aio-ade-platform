@@ -35,11 +35,11 @@ import { SidebarFeedbackDialog } from './SidebarFeedbackDialog'
 import { translate } from '@/i18n/i18n'
 import { getUpdateCheckClickOptions, getUpdateCheckHint } from '@/lib/update-check-click-options'
 
-const DOCS_URL = 'https://www.onorca.dev/docs'
-const CHANGELOG_URL = 'https://onorca.dev/changelog'
-const GITHUB_URL = 'https://github.com/stablyai/orca'
+const DOCS_URL = 'https://www.aio-ade.keepmeside.dev/docs'
+const CHANGELOG_URL = 'https://aio-ade.keepmeside.dev/changelog'
+const GITHUB_URL = 'https://github.com/keepmeside/aio-ade-platform'
 const DISCORD_URL = 'https://discord.gg/fzjDKHxv8Q'
-const X_URL = 'https://x.com/orca_build'
+const X_URL = 'https://x.com/aio_ade_build'
 const NO_UPDATE_CHECK_MODIFIERS = {
   altKey: false,
   ctrlKey: false,
@@ -96,7 +96,7 @@ export function SidebarSettingsHelpMenu(): React.JSX.Element {
   const [menuOpen, setMenuOpen] = useState(false)
   const [feedbackOpen, setFeedbackOpen] = useState(false)
   const [showAdminOptions, setShowAdminOptions] = useState(false)
-  const [isRestartingOrca, setIsRestartingOrca] = useState(false)
+  const [isRestartingAioAde, setIsRestartingAioAde] = useState(false)
   const lastShowOnboardingAtRef = React.useRef(0)
   const updateCheckModifiersRef = React.useRef(NO_UPDATE_CHECK_MODIFIERS)
   const mountedRef = useMountedRef()
@@ -128,21 +128,21 @@ export function SidebarSettingsHelpMenu(): React.JSX.Element {
     void showOnboardingFromRenderer()
   }
 
-  const handleRestartOrca = (): void => {
-    if (isRestartingOrca) {
+  const handleRestartAioAde = (): void => {
+    if (isRestartingAioAde) {
       return
     }
-    setIsRestartingOrca(true)
+    setIsRestartingAioAde(true)
     toast.info(
-      translate('auto.components.sidebar.SidebarSettingsHelpMenu.5161eef55d', 'Restarting Orca…')
+      translate('auto.components.sidebar.SidebarSettingsHelpMenu.5161eef55d', 'Restarting AIO-ADE…')
     )
     void window.api.app.restart().catch((error) => {
       if (mountedRef.current) {
-        setIsRestartingOrca(false)
+        setIsRestartingAioAde(false)
         toast.error(
           translate(
             'auto.components.sidebar.SidebarSettingsHelpMenu.4e8f5710d3',
-            "Couldn't restart Orca."
+            "Couldn't restart AIO-ADE."
           ),
           {
             description: error instanceof Error ? error.message : undefined
@@ -336,11 +336,11 @@ export function SidebarSettingsHelpMenu(): React.JSX.Element {
             {showAdminOptions ? (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={handleRestartOrca} disabled={isRestartingOrca}>
+                <DropdownMenuItem onSelect={handleRestartAioAde} disabled={isRestartingAioAde}>
                   <RotateCw className="size-3.5" />
                   {translate(
                     'auto.components.sidebar.SidebarSettingsHelpMenu.ad3d3ed7f1',
-                    'Restart Orca'
+                    'Restart AIO-ADE'
                   )}
                 </DropdownMenuItem>
               </>

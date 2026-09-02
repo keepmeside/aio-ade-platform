@@ -20,7 +20,7 @@ const projectDir = path.resolve(import.meta.dirname, '..', '..')
 const temporaryDirectories = []
 
 async function createFixture() {
-  const root = await mkdtemp(path.join(tmpdir(), 'orca-bundled-skill-guides-'))
+  const root = await mkdtemp(path.join(tmpdir(), 'aio-ade-bundled-skill-guides-'))
   temporaryDirectories.push(root)
   await Promise.all([
     cp(path.join(projectDir, 'skill-guides'), path.join(root, 'skill-guides'), {
@@ -71,24 +71,26 @@ describe('bundled skill guide generator', () => {
 
   it('keeps pre-guide fallback useful and read-only for every converted domain', async () => {
     const expectedFallbackCommands = {
-      'computer-use': ['ORCA computer capabilities --json', 'ORCA computer list-apps --json'],
-      'linear-tickets': ['ORCA linear --help', 'ORCA linear issue --current --full --json'],
-      'orca-emulator': ['ORCA emulator list --json'],
-      'orca-emulator-android': ['ORCA emulator devices --json'],
-      'orca-linear': ['ORCA linear --help', 'ORCA linear issue --current --full --json'],
-      'orca-per-workspace-env': ['ORCA vm recipe doctor <recipe-id> --repo-path <repo> --json'],
-      orchestration: ['ORCA orchestration task-list --json', 'ORCA terminal list --json']
+      'computer-use': ['AIO_ADE computer capabilities --json', 'AIO_ADE computer list-apps --json'],
+      'linear-tickets': ['AIO_ADE linear --help', 'AIO_ADE linear issue --current --full --json'],
+      'aio-ade-emulator': ['AIO_ADE emulator list --json'],
+      'aio-ade-emulator-android': ['AIO_ADE emulator devices --json'],
+      'aio-ade-linear': ['AIO_ADE linear --help', 'AIO_ADE linear issue --current --full --json'],
+      'aio-ade-per-workspace-env': [
+        'AIO_ADE vm recipe doctor <recipe-id> --repo-path <repo> --json'
+      ],
+      orchestration: ['AIO_ADE orchestration task-list --json', 'AIO_ADE terminal list --json']
     }
 
     for (const [name, commands] of Object.entries(expectedFallbackCommands)) {
       const stub = await readFile(path.join(projectDir, 'skill-stubs', `${name}.md`), 'utf8')
-      const fallback = stub.split('## If an older Orca does not recognize `skills get`')[1]
+      const fallback = stub.split('## If an older AIO-ADE does not recognize `skills get`')[1]
 
       expect(fallback, name).toBeDefined()
       for (const command of commands) {
         expect(fallback, name).toContain(command)
       }
-      expect(fallback, name).not.toContain('ORCA worktree ps --json')
+      expect(fallback, name).not.toContain('AIO_ADE worktree ps --json')
     }
   })
 
@@ -111,19 +113,24 @@ describe('bundled skill guide generator', () => {
   })
 
   it('keeps CLI guide examples safe across shells and Linux command names', async () => {
-    for (const name of ['orca-cli', 'computer-use', 'orca-emulator', 'orca-emulator-android']) {
+    for (const name of [
+      'aio-ade-cli',
+      'computer-use',
+      'aio-ade-emulator',
+      'aio-ade-emulator-android'
+    ]) {
       const source = await readFile(path.join(projectDir, 'skill-guides', `${name}.md`), 'utf8')
 
-      expect(source).toContain('ORCA_CLI_COMMAND')
-      expect(source).toContain('orca-dev')
-      expect(source).toContain('orca-ide')
+      expect(source).toContain('AIO_ADE_CLI_COMMAND')
+      expect(source).toContain('aio-ade-dev')
+      expect(source).toContain('aio-ade')
       expect(source).toContain('PowerShell')
       expect(source).toContain('cmd.exe')
-      expect(source).toMatch(/^ORCA .+--json$/mu)
+      expect(source).toMatch(/^AIO_ADE .+--json$/mu)
       // Why: bare command lines can launch GNOME Orca, while shell variables make
       // the same guide unusable from PowerShell and cmd.exe.
-      expect(source).not.toMatch(/^orca /mu)
-      expect(source).not.toMatch(/\$ORCA(?:_|\b)/u)
+      expect(source).not.toMatch(/^aio-ade /mu)
+      expect(source).not.toMatch(/\$AIO_ADE(?:_|\b)/u)
     }
   })
 

@@ -217,10 +217,10 @@ async function hasUncommittedChanges(
   return await anyRecordIsUserDirt(repoPath, records, options.sharedLinkPaths ?? [])
 }
 
-/** True when any record is real user work rather than a shared symlink Orca put
+/** True when any record is real user work rather than a shared symlink AIO-ADE put
  *  in the worktree.
  *
- *  Fails closed on purpose: anything not positively identified as an Orca-owned
+ *  Fails closed on purpose: anything not positively identified as an AIO-ADE-owned
  *  untracked symlink counts as dirty. A false "clean" would let a review be
  *  created off a branch missing the user's work. */
 async function anyRecordIsUserDirt(
@@ -279,7 +279,7 @@ function reviewCopy(provider: HostedReviewProvider): {
       shortLabel: 'PR',
       reviewLabel: 'pull request',
       providerName: 'Azure DevOps',
-      authInstruction: 'Set ORCA_AZURE_DEVOPS_TOKEN'
+      authInstruction: 'Set AIO_ADE_AZURE_DEVOPS_TOKEN'
     }
   }
   if (provider === 'gitea') {
@@ -287,7 +287,7 @@ function reviewCopy(provider: HostedReviewProvider): {
       shortLabel: 'PR',
       reviewLabel: 'pull request',
       providerName: 'Gitea',
-      authInstruction: 'Set ORCA_GITEA_TOKEN'
+      authInstruction: 'Set AIO_ADE_GITEA_TOKEN'
     }
   }
   return {
@@ -452,7 +452,7 @@ async function validateCurrentBranchCanCreateReview(
       return {
         ok: false,
         code: 'validation',
-        error: `Create ${copy.shortLabel} failed: Orca could not confirm whether this branch already has a ${copy.reviewLabel}. Retry once the ${copy.providerName} lookup succeeds.`
+        error: `Create ${copy.shortLabel} failed: AIO-ADE could not confirm whether this branch already has a ${copy.reviewLabel}. Retry once the ${copy.providerName} lookup succeeds.`
       }
     }
     // Why: renderer eligibility can be stale by submit time; main process is the last gate before an out-of-date create.

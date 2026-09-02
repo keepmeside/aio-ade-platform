@@ -12,7 +12,7 @@ import { pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
 import type { Page, TestInfo } from '@stablyai/playwright-test'
 import { expect, test } from '@stablyai/playwright-test'
-import { createRestartSession } from './helpers/orca-restart'
+import { createRestartSession } from './helpers/aio-ade-restart'
 
 const execFileAsync = promisify(execFile)
 
@@ -48,9 +48,9 @@ async function commitRepository(
     repository,
     [
       '-c',
-      'user.name=Orca Test',
+      'user.name=AIO-ADE Test',
       '-c',
-      'user.email=orca-test@example.invalid',
+      'user.email=aio-ade-test@example.invalid',
       'commit',
       '--quiet',
       '-m',
@@ -85,7 +85,7 @@ async function configureFixtureGit(home: string, repositories: string): Promise<
   }
   const repositoryBaseUrl = pathToFileURL(`${repositories}${sep}`).href
   const entries = [
-    [`url.${repositoryBaseUrl}.insteadOf`, 'https://github.com/stablyai/'],
+    [`url.${repositoryBaseUrl}.insteadOf`, 'https://github.com/keepmeside/'],
     ['protocol.file.allow', 'always'],
     ['commit.gpgSign', 'false'],
     ['tag.gpgSign', 'false'],
@@ -98,7 +98,7 @@ async function configureFixtureGit(home: string, repositories: string): Promise<
 }
 
 async function createMarketplaceFixture(): Promise<MarketplaceFixture> {
-  const root = await mkdtemp(join(tmpdir(), 'orca-marketplace-e2e-'))
+  const root = await mkdtemp(join(tmpdir(), 'aio-ade-marketplace-e2e-'))
   const repositories = join(root, 'repositories')
   const home = join(root, 'home')
   await mkdir(repositories, { recursive: true })
@@ -106,40 +106,40 @@ async function createMarketplaceFixture(): Promise<MarketplaceFixture> {
   const gitEnvironment = await configureFixtureGit(home, repositories)
   await copyLaunchPlugin(
     repositories,
-    'orca-portuguese',
+    'aio-ade-portuguese',
     'stablyai.orca-portuguese',
     gitEnvironment
   )
   await copyLaunchPlugin(
     repositories,
-    'orca-multipass-recipes',
+    'aio-ade-multipass-recipes',
     'stablyai.orca-multipass-recipes',
     gitEnvironment
   )
   await copyLaunchPlugin(
     repositories,
-    'orca-navigation-shortcuts',
+    'aio-ade-navigation-shortcuts',
     'stablyai.orca-navigation-shortcuts',
     gitEnvironment
   )
 
-  const marketplaceRepository = join(repositories, 'orca-plugins.git')
+  const marketplaceRepository = join(repositories, 'aio-ade-plugins.git')
   await mkdir(marketplaceRepository, { recursive: true })
   await writeFile(
-    join(marketplaceRepository, 'orca-marketplace.json'),
+    join(marketplaceRepository, 'aio-ade-marketplace.json'),
     `${JSON.stringify(
       {
-        name: 'Orca Plugins',
-        owner: 'stablyai',
+        name: 'AIO-ADE Plugins',
+        owner: 'keepmeside',
         plugins: [
-          ['stablyai.orca-portuguese', 'orca-portuguese', 'languages'],
-          ['stablyai.orca-multipass-recipes', 'orca-multipass-recipes', 'vm-recipes'],
-          ['stablyai.orca-navigation-shortcuts', 'orca-navigation-shortcuts', 'keybindings']
+          ['stablyai.orca-portuguese', 'aio-ade-portuguese', 'languages'],
+          ['stablyai.orca-multipass-recipes', 'aio-ade-multipass-recipes', 'vm-recipes'],
+          ['stablyai.orca-navigation-shortcuts', 'aio-ade-navigation-shortcuts', 'keybindings']
         ].map(([id, repository, category]) => ({
           id,
           source: {
             kind: 'git',
-            url: `https://github.com/stablyai/${repository}.git`,
+            url: `https://github.com/keepmeside/${repository}.git`,
             ref: 'v1.0.0'
           },
           categories: [category]
@@ -180,7 +180,7 @@ async function installMarketplacePluginThroughUi(
   await expect(listing).toBeVisible()
   await listing.getByRole('button', { name: 'Install' }).click()
   const preview = page.getByRole('dialog', { name: pluginName })
-  await expect(preview).toContainText('Official · stablyai')
+  await expect(preview).toContainText('Official · keepmeside')
   await preview.getByRole('button', { name: 'Install plugin' }).click()
   const consent = page.getByRole('dialog', { name: consentDialogName })
   await expect(consent).toBeVisible()

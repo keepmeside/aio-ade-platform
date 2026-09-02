@@ -42,8 +42,8 @@ const {
   rerunPRChecksMock,
   requestPRReviewersMock,
   removePRReviewersMock,
-  checkOrcaStarredMock,
-  starOrcaMock,
+  checkAioAdeStarredMock,
+  starAioAdeMock,
   trackMock,
   getCohortAtEmitMock,
   getAllWebContentsMock,
@@ -84,8 +84,8 @@ const {
   rerunPRChecksMock: vi.fn(),
   requestPRReviewersMock: vi.fn(),
   removePRReviewersMock: vi.fn(),
-  checkOrcaStarredMock: vi.fn(),
-  starOrcaMock: vi.fn(),
+  checkAioAdeStarredMock: vi.fn(),
+  starAioAdeMock: vi.fn(),
   trackMock: vi.fn(),
   getCohortAtEmitMock: vi.fn(),
   getAllWebContentsMock: vi.fn(),
@@ -134,8 +134,8 @@ vi.mock('../github/client', () => ({
   rerunPRChecks: rerunPRChecksMock,
   requestPRReviewers: requestPRReviewersMock,
   removePRReviewers: removePRReviewersMock,
-  checkOrcaStarred: checkOrcaStarredMock,
-  starOrca: starOrcaMock
+  checkAioAdeStarred: checkAioAdeStarredMock,
+  starAioAde: starAioAdeMock
 }))
 
 vi.mock('../github/work-item-details', () => ({
@@ -232,8 +232,8 @@ describe('registerGitHubHandlers', () => {
     rerunPRChecksMock.mockReset()
     requestPRReviewersMock.mockReset()
     removePRReviewersMock.mockReset()
-    checkOrcaStarredMock.mockReset()
-    starOrcaMock.mockReset()
+    checkAioAdeStarredMock.mockReset()
+    starAioAdeMock.mockReset()
     trackMock.mockReset()
     getCohortAtEmitMock.mockReset()
     getCohortAtEmitMock.mockReturnValue({ nth_repo_added: undefined })
@@ -898,7 +898,7 @@ describe('registerGitHubHandlers', () => {
         updatedAt: 0
       }
     ]
-    const prRepo = { owner: 'acme', repo: 'orca', host: 'github.acme-corp.com' }
+    const prRepo = { owner: 'acme', repo: 'aio-ade', host: 'github.acme-corp.com' }
     const localGitOptions = { wslDistro: 'Ubuntu' }
     getWorkItemMock.mockResolvedValue(null)
     getWorkItemByOwnerRepoMock.mockResolvedValue(null)
@@ -924,7 +924,7 @@ describe('registerGitHubHandlers', () => {
     await handlers['gh:workItemByOwnerRepo'](null, {
       repoPath: '/workspace/repo',
       owner: 'acme',
-      repo: 'orca',
+      repo: 'aio-ade',
       host: prRepo.host,
       number: 42,
       type: 'pr'
@@ -1249,13 +1249,13 @@ describe('registerGitHubHandlers', () => {
         repoPath: '/workspace/repo',
         prNumber: 42,
         method: 'squash',
-        prRepo: { owner: 'acme', repo: 'orca' }
+        prRepo: { owner: 'acme', repo: 'aio-ade' }
       }
     )
 
     expect(mergePRMock).toHaveBeenCalledWith('/workspace/repo', 42, 'squash', 'openclaw-2', {
       owner: 'acme',
-      repo: 'orca'
+      repo: 'aio-ade'
     })
   })
 
@@ -1272,7 +1272,7 @@ describe('registerGitHubHandlers', () => {
         prNumber: 42,
         enabled: true,
         method: 'squash',
-        prRepo: { owner: 'acme', repo: 'orca' }
+        prRepo: { owner: 'acme', repo: 'aio-ade' }
       }
     )
 
@@ -1284,7 +1284,7 @@ describe('registerGitHubHandlers', () => {
       'openclaw-2',
       {
         owner: 'acme',
-        repo: 'orca'
+        repo: 'aio-ade'
       }
     )
   })
@@ -1301,25 +1301,25 @@ describe('registerGitHubHandlers', () => {
     expect(getAuthenticatedViewerMock).toHaveBeenCalled()
   })
 
-  it('emits app_starred_orca once after a successful star with cohort context', async () => {
-    starOrcaMock.mockResolvedValue(true)
+  it('emits app_starred_aio_ade once after a successful star with cohort context', async () => {
+    starAioAdeMock.mockResolvedValue(true)
     getCohortAtEmitMock.mockReturnValue({ nth_repo_added: 3 })
 
     registerGitHubHandlers(store as never, stats as never)
 
-    await expect(handlers['gh:starOrca'](null, 'settings')).resolves.toBe(true)
+    await expect(handlers['gh:starAioAde'](null, 'settings')).resolves.toBe(true)
 
-    expect(starOrcaMock).toHaveBeenCalledTimes(1)
+    expect(starAioAdeMock).toHaveBeenCalledTimes(1)
     expect(getCohortAtEmitMock).toHaveBeenCalledTimes(1)
     expect(trackMock).toHaveBeenCalledTimes(1)
-    expect(trackMock).toHaveBeenCalledWith('app_starred_orca', {
+    expect(trackMock).toHaveBeenCalledWith('app_starred_aio_ade', {
       source: 'settings',
       nth_repo_added: 3
     })
   })
 
   it('accepts every app star source for success telemetry', async () => {
-    starOrcaMock.mockResolvedValue(true)
+    starAioAdeMock.mockResolvedValue(true)
 
     registerGitHubHandlers(store as never, stats as never)
 
@@ -1330,7 +1330,7 @@ describe('registerGitHubHandlers', () => {
       'settings',
       'landing'
     ] as const) {
-      await expect(handlers['gh:starOrca'](null, source)).resolves.toBe(true)
+      await expect(handlers['gh:starAioAde'](null, source)).resolves.toBe(true)
     }
 
     expect(trackMock).toHaveBeenCalledTimes(5)
@@ -1343,37 +1343,37 @@ describe('registerGitHubHandlers', () => {
     ])
   })
 
-  it('does not emit app_starred_orca when the star action returns false', async () => {
-    starOrcaMock.mockResolvedValue(false)
+  it('does not emit app_starred_aio_ade when the star action returns false', async () => {
+    starAioAdeMock.mockResolvedValue(false)
 
     registerGitHubHandlers(store as never, stats as never)
 
-    await expect(handlers['gh:starOrca'](null, 'landing')).resolves.toBe(false)
+    await expect(handlers['gh:starAioAde'](null, 'landing')).resolves.toBe(false)
 
-    expect(starOrcaMock).toHaveBeenCalledTimes(1)
+    expect(starAioAdeMock).toHaveBeenCalledTimes(1)
     expect(trackMock).not.toHaveBeenCalled()
     expect(getCohortAtEmitMock).not.toHaveBeenCalled()
   })
 
-  it('does not emit app_starred_orca when the star action throws', async () => {
-    starOrcaMock.mockRejectedValue(new Error('gh failed'))
+  it('does not emit app_starred_aio_ade when the star action throws', async () => {
+    starAioAdeMock.mockRejectedValue(new Error('gh failed'))
 
     registerGitHubHandlers(store as never, stats as never)
 
-    await expect(handlers['gh:starOrca'](null, 'star_nag')).rejects.toThrow('gh failed')
+    await expect(handlers['gh:starAioAde'](null, 'star_nag')).rejects.toThrow('gh failed')
 
     expect(trackMock).not.toHaveBeenCalled()
     expect(getCohortAtEmitMock).not.toHaveBeenCalled()
   })
 
   it('preserves star result but skips telemetry for an invalid IPC source', async () => {
-    starOrcaMock.mockResolvedValue(true)
+    starAioAdeMock.mockResolvedValue(true)
 
     registerGitHubHandlers(store as never, stats as never)
 
-    await expect(handlers['gh:starOrca'](null, 'github_website')).resolves.toBe(true)
+    await expect(handlers['gh:starAioAde'](null, 'github_website')).resolves.toBe(true)
 
-    expect(starOrcaMock).toHaveBeenCalledTimes(1)
+    expect(starAioAdeMock).toHaveBeenCalledTimes(1)
     expect(trackMock).not.toHaveBeenCalled()
     expect(getCohortAtEmitMock).not.toHaveBeenCalled()
   })

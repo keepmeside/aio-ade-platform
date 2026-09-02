@@ -46,7 +46,7 @@ describe('resolveExplicitTerminalTitleAgentType', () => {
   it('treats Claude generic status prefixes as activity-only, not identity', () => {
     expect(resolveExplicitTerminalTitleAgentType('✳ investigating startup')).toBeNull()
     expect(resolveExplicitTerminalTitleAgentType('⠸ investigating startup')).toBeNull()
-    expect(resolveExplicitTerminalTitleAgentType('. Compare Opencode Vs Orca')).toBeNull()
+    expect(resolveExplicitTerminalTitleAgentType('. Compare Opencode Vs AIO-ADE')).toBeNull()
     expect(resolveExplicitTerminalTitleAgentType('* Review Codex behavior')).toBeNull()
   })
 
@@ -61,7 +61,7 @@ describe('resolveExplicitTerminalTitleAgentType', () => {
     expect(getAgentLabel('tmux | OC | ses_123')).toBe('OpenCode')
     expect(getAgentLabel('OC|compact-session')).toBe('OpenCode')
     expect(getAgentLabel('oc | Understand about the plugin')).toBeNull()
-    // A label Orca cannot launch carries no agent identity.
+    // A label AIO-ADE cannot launch carries no agent identity.
     expect(resolveExplicitTerminalTitleAgentType('OC | Compare Codex and Claude')).toBeNull()
   })
 
@@ -71,7 +71,7 @@ describe('resolveExplicitTerminalTitleAgentType', () => {
   })
 
   // Why: adversarial coverage — native OC must not steal Claude/Codex identity, and the CLIs
-  // Orca no longer launches must keep their own label instead of falling through to Claude.
+  // AIO-ADE no longer launches must keep their own label instead of falling through to Claude.
   it('keeps other agents classified correctly alongside OpenCode native titles', () => {
     expect(resolveExplicitTerminalTitleAgentType('✳ Claude Code')).toBe('claude')
     expect(resolveExplicitTerminalTitleAgentType('⠋ Codex')).toBe('codex')

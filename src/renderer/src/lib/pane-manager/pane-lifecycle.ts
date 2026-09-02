@@ -6,7 +6,7 @@ import {
 } from './pane-fit-resize-observer'
 import { clearPendingSplitScrollRestore } from './pane-split-scroll'
 import { cancelDeferredScrollRestore } from './pane-scroll'
-import { activateOrcaTerminalUnicodeProvider } from '../../../../shared/terminal-unicode-provider'
+import { activateAioAdeTerminalUnicodeProvider } from '../../../../shared/terminal-unicode-provider'
 import { attachTerminalMouseWheelMultiplier } from './pane-terminal-mouse-wheel'
 import { attachTerminalScrollIntentTracking } from './terminal-scroll-intent-dom-tracking'
 import { installTerminalLinkifierHoverResetOnMouseLeave } from './terminal-linkifier-hover-reset-on-mouseleave'
@@ -65,7 +65,7 @@ export function openTerminal(pane: ManagedPaneInternal): void {
   pane.linkifierHoverResetDisposable = installTerminalLinkifierHoverResetOnWrite(terminal)
   pane.linkifierMouseLeaveResetDisposable = installTerminalLinkifierHoverResetOnMouseLeave(terminal)
 
-  // Activate Orca's Unicode 11 width shim *before* any caller-driven write. CJK / emoji /
+  // Activate AIO-ADE's Unicode 11 width shim *before* any caller-driven write. CJK / emoji /
   // ZWJ codepoints get baked into the buffer at the active unicode version on
   // write — if a restore (snapshot, scrollback, cold-restore) writes bytes
   // through xterm while the default v6 width tables are still active, wide
@@ -74,7 +74,7 @@ export function openTerminal(pane: ManagedPaneInternal): void {
   // (replayTerminalLayout → splitPane/createInitialPane → openTerminal,
   // restoreScrollbackBuffers, handleReattachResult) run after openTerminal,
   // so the activation must stay at this position.
-  activateOrcaTerminalUnicodeProvider(terminal)
+  activateAioAdeTerminalUnicodeProvider(terminal)
 
   // Why: any xterm character joiner makes every repaint scan the whole grid.
   // Defer registration until the first RTL write; replay and live paths both

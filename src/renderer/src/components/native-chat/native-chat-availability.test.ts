@@ -46,7 +46,7 @@ describe('canToggleNativeChat', () => {
     ).toBe(true)
   })
 
-  // Why: Orca no longer launches these CLIs, but native chat still parses their
+  // Why: AIO-ADE no longer launches these CLIs, but native chat still parses their
   // transcripts, so a hand-started session detected via hooks must still toggle.
   it('allows a hand-started OpenClaude session detected live', () => {
     expect(

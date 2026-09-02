@@ -1,7 +1,7 @@
 import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { test as base, expect } from './helpers/orca-app'
+import { test as base, expect } from './helpers/aio-ade-app'
 import {
   ensureTerminalVisible,
   getActiveTabId,
@@ -14,7 +14,7 @@ import { waitForActivePaneHookDescriptor, waitForActivePanePtyId } from './helpe
 import { RuntimeClient } from '../../src/cli/runtime-client'
 import type { RuntimeTerminalListResult, RuntimeTerminalRead } from '../../src/shared/runtime-types'
 
-const fakeCliDir = mkdtempSync(path.join(os.tmpdir(), 'orca-e2e-orchestration-worker-'))
+const fakeCliDir = mkdtempSync(path.join(os.tmpdir(), 'aio-ade-e2e-orchestration-worker-'))
 const fakeCodexSource = `
 if (process.argv.slice(2).includes('app-server')) {
   process.stderr.write("error: unrecognized subcommand 'app-server'\\n")
@@ -58,16 +58,16 @@ test.afterAll(() => {
 })
 
 test('worker-start materializes one inactive terminal tab before workspace re-entry', async ({
-  orcaPage,
+  aioAdePage,
   electronApp
 }) => {
-  await waitForSessionReady(orcaPage)
-  const worktreeId = await waitForActiveWorktree(orcaPage)
-  await ensureTerminalVisible(orcaPage)
-  const coordinatorTabId = await getActiveTabId(orcaPage)
+  await waitForSessionReady(aioAdePage)
+  const worktreeId = await waitForActiveWorktree(aioAdePage)
+  await ensureTerminalVisible(aioAdePage)
+  const coordinatorTabId = await getActiveTabId(aioAdePage)
   expect(coordinatorTabId).toBeTruthy()
-  await waitForActivePanePtyId(orcaPage)
-  const coordinatorPane = await waitForActivePaneHookDescriptor(orcaPage)
+  await waitForActivePanePtyId(aioAdePage)
+  const coordinatorPane = await waitForActivePaneHookDescriptor(aioAdePage)
   const userDataDir = await electronApp.evaluate(({ app }) => app.getPath('userData'))
   const client = new RuntimeClient(userDataDir, 30_000, null, null)
   const coordinator = await client.call<{ terminal: { handle: string } }>('terminal.resolvePane', {
@@ -124,13 +124,13 @@ test('worker-start materializes one inactive terminal tab before workspace re-en
       return read.result.terminal.tail.join('\n')
     })
     .toContain('ACK')
-  const workerTab = orcaPage.locator(
+  const workerTab = aioAdePage.locator(
     `[data-testid="sortable-tab"][data-tab-id="${workerTerminal!.tabId}"]`
   )
   await expect(workerTab).toBeVisible()
   await expect(workerTab).toHaveAttribute('data-active', 'false')
   await expect(
-    orcaPage.locator(`[data-testid="sortable-tab"][data-tab-id="${coordinatorTabId}"]`)
+    aioAdePage.locator(`[data-testid="sortable-tab"][data-tab-id="${coordinatorTabId}"]`)
   ).toHaveAttribute('data-active', 'true')
 
   await client.call('orchestration.send', {
@@ -144,16 +144,16 @@ test('worker-start materializes one inactive terminal tab before workspace re-en
   })
   expect(checked.result.messages).toEqual([expect.objectContaining({ subject: 'ACK' })])
 
-  const otherWorktreeId = await switchToOtherWorktree(orcaPage, worktreeId)
+  const otherWorktreeId = await switchToOtherWorktree(aioAdePage, worktreeId)
   expect(otherWorktreeId).toBeTruthy()
   await expect(workerTab).not.toBeVisible()
-  await switchToWorktree(orcaPage, worktreeId)
+  await switchToWorktree(aioAdePage, worktreeId)
 
   await expect(workerTab).toBeVisible()
   await expect(
-    orcaPage.locator(`[data-testid="sortable-tab"][data-tab-id="${workerTerminal!.tabId}"]`)
+    aioAdePage.locator(`[data-testid="sortable-tab"][data-tab-id="${workerTerminal!.tabId}"]`)
   ).toHaveCount(1)
   await expect(
-    orcaPage.locator(`[data-testid="sortable-tab"][data-tab-title="${workerTabTitle}"]`)
+    aioAdePage.locator(`[data-testid="sortable-tab"][data-tab-title="${workerTabTitle}"]`)
   ).toHaveCount(1)
 })

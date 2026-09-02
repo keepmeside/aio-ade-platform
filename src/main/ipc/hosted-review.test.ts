@@ -140,7 +140,7 @@ describe('registerHostedReviewHandlers', () => {
     createHostedReviewMock.mockResolvedValueOnce({
       ok: true,
       number: 42,
-      url: 'https://github.com/acme/orca/pull/42'
+      url: 'https://github.com/acme/aio-ade/pull/42'
     })
 
     registerHostedReviewHandlers(store as never, stats as never)
@@ -168,7 +168,7 @@ describe('registerHostedReviewHandlers', () => {
     )
   })
 
-  // Why: without this the dirty preflight counts Orca's own shared symlinks as
+  // Why: without this the dirty preflight counts AIO-ADE's own shared symlinks as
   // user work and Create Review tells the user to commit a link they cannot
   // commit (issue #10451). Nothing else asserts the handler supplies them.
   it('passes the repo shared link paths through local review creation', async () => {
@@ -261,7 +261,7 @@ describe('registerHostedReviewHandlers', () => {
       number: 42,
       title: 'Feature PR',
       state: 'open',
-      url: 'https://github.com/acme/orca/pull/42',
+      url: 'https://github.com/acme/aio-ade/pull/42',
       status: 'success',
       updatedAt: '2026-06-16T00:00:00.000Z',
       mergeable: 'MERGEABLE'
@@ -325,7 +325,7 @@ describe('registerHostedReviewHandlers', () => {
     createHostedReviewMock.mockResolvedValueOnce({
       ok: true,
       number: 42,
-      url: 'https://github.com/acme/orca/pull/42'
+      url: 'https://github.com/acme/aio-ade/pull/42'
     })
 
     registerHostedReviewHandlers(store as never, stats as never)
@@ -359,7 +359,7 @@ describe('registerHostedReviewHandlers', () => {
       expect.objectContaining({
         type: 'pr_created',
         repoId: 'repo-1',
-        meta: { prNumber: 42, prUrl: 'https://github.com/acme/orca/pull/42' }
+        meta: { prNumber: 42, prUrl: 'https://github.com/acme/aio-ade/pull/42' }
       })
     )
   })

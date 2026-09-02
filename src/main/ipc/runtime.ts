@@ -1,5 +1,5 @@
 import { BrowserWindow, ipcMain } from 'electron'
-import type { OrcaRuntimeService } from '../runtime/orca-runtime'
+import type { AioAdeRuntimeService } from '../runtime/aio-ade-runtime'
 import type {
   RuntimeBrowserDriverState,
   RuntimeStatus,
@@ -20,7 +20,7 @@ function boundTerminalFitRestore(pending: Promise<boolean>): Promise<boolean> {
   return Promise.race([pending, deadline]).finally(() => clearTimeout(timer))
 }
 
-export function registerRuntimeHandlers(runtime: OrcaRuntimeService): void {
+export function registerRuntimeHandlers(runtime: AioAdeRuntimeService): void {
   const pendingTerminalFitRestores = new Map<string, Promise<boolean>>()
   ipcMain.removeHandler('runtime:syncWindowGraph')
   ipcMain.removeHandler('runtime:getStatus')

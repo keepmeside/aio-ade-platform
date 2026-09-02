@@ -1,5 +1,5 @@
 import type { Page, TestInfo } from '@stablyai/playwright-test'
-import { test, expect } from './helpers/orca-app'
+import { test, expect } from './helpers/aio-ade-app'
 import {
   buildAltScreenFrame,
   describeAltScreenRenderPath,
@@ -368,7 +368,7 @@ async function startHiddenPtyOutputBurst(page: Page, ptyId: string, runId: strin
     '},30);'
   ].join('')
   // Why: delivered via a temp file — `node -e` quoting is not PowerShell-safe (#8521).
-  await runNodeScriptInTerminal(page, ptyId, script, { prefix: 'orca-tab-switch-burst' })
+  await runNodeScriptInTerminal(page, ptyId, script, { prefix: 'aio-ade-tab-switch-burst' })
 }
 
 async function writeStaticTabContent(
@@ -531,68 +531,68 @@ test.describe('Terminal tab switch visual restore', () => {
   test.describe.configure({ mode: 'serial' })
 
   test('keeps full-width geometry after switching away and back', async ({
-    orcaPage
+    aioAdePage
   }, testInfo) => {
-    await waitForSessionReady(orcaPage)
-    await waitForActiveWorktree(orcaPage)
-    await ensureTerminalVisible(orcaPage)
-    await waitForActiveTerminalManager(orcaPage, 30_000)
+    await waitForSessionReady(aioAdePage)
+    await waitForActiveWorktree(aioAdePage)
+    await ensureTerminalVisible(aioAdePage)
+    await waitForActiveTerminalManager(aioAdePage, 30_000)
 
-    const { firstTabId, secondTabId } = await ensureTwoTerminalTabs(orcaPage)
-    await forceWebglOnActiveTab(orcaPage)
+    const { firstTabId, secondTabId } = await ensureTwoTerminalTabs(aioAdePage)
+    await forceWebglOnActiveTab(aioAdePage)
 
     const runId = `${Date.now()}`
     const marker = `${TAB_SWITCH_MARKER_PREFIX}_${runId}`
-    const firstPtyId = await waitForPanePtyIdOnTab(orcaPage, firstTabId)
-    await writeStaticTabContent(orcaPage, firstTabId, marker, TAB_A_GLYPH_ROW)
+    const firstPtyId = await waitForPanePtyIdOnTab(aioAdePage, firstTabId)
+    await writeStaticTabContent(aioAdePage, firstTabId, marker, TAB_A_GLYPH_ROW)
 
-    const baseline = await readTabTerminalGeometry(orcaPage, firstTabId, runId)
+    const baseline = await readTabTerminalGeometry(aioAdePage, firstTabId, runId)
     expect(baseline.markerPresent).toBe(true)
     expect(baseline.overlayWidth).toBeGreaterThan(300)
     expect(geometryLooksCorrupted(baseline)).toBeNull()
 
     const corruptionReports: string[] = []
-    await resetTerminalOutputSchedulerDebug(orcaPage)
-    await startHiddenPtyOutputBurst(orcaPage, firstPtyId, runId)
+    await resetTerminalOutputSchedulerDebug(aioAdePage)
+    await startHiddenPtyOutputBurst(aioAdePage, firstPtyId, runId)
 
     for (let cycle = 0; cycle < 12; cycle += 1) {
-      await activateTerminalTab(orcaPage, secondTabId)
-      await injectHiddenStreamingBurst(orcaPage, firstTabId, runId)
+      await activateTerminalTab(aioAdePage, secondTabId)
+      await injectHiddenStreamingBurst(aioAdePage, firstTabId, runId)
       // Why: rapid back-to-back switches mirror the user's leave/return pattern
       // and race the overlay's rAF/50ms refit retries.
-      await activateTerminalTab(orcaPage, firstTabId)
+      await activateTerminalTab(aioAdePage, firstTabId)
       if (cycle % 3 === 0) {
-        await activateTerminalTab(orcaPage, secondTabId)
-        await activateTerminalTab(orcaPage, firstTabId)
+        await activateTerminalTab(aioAdePage, secondTabId)
+        await activateTerminalTab(aioAdePage, firstTabId)
       }
 
       // Sample immediately — bug often shows before the 50ms overlay refit retry.
-      const immediate = await readTabTerminalGeometry(orcaPage, firstTabId, runId)
+      const immediate = await readTabTerminalGeometry(aioAdePage, firstTabId, runId)
       const immediateIssue = geometryLooksCorrupted(immediate)
       if (immediateIssue) {
         corruptionReports.push(`cycle ${cycle} immediate: ${immediateIssue}`)
         await captureTabScreenshot(
-          orcaPage,
+          aioAdePage,
           firstTabId,
           testInfo,
           `tab-switch-corrupt-immediate-cycle-${cycle}`
         )
       }
 
-      await orcaPage.waitForTimeout(60)
-      const settled = await readTabTerminalGeometry(orcaPage, firstTabId, runId)
+      await aioAdePage.waitForTimeout(60)
+      const settled = await readTabTerminalGeometry(aioAdePage, firstTabId, runId)
       const settledIssue = geometryLooksCorrupted(settled)
       if (settledIssue) {
         corruptionReports.push(`cycle ${cycle} settled: ${settledIssue}`)
         await captureTabScreenshot(
-          orcaPage,
+          aioAdePage,
           firstTabId,
           testInfo,
           `tab-switch-corrupt-settled-cycle-${cycle}`
         )
       }
     }
-    const schedulerActivity = await waitForHiddenOutputSchedulerActivity(orcaPage)
+    const schedulerActivity = await waitForHiddenOutputSchedulerActivity(aioAdePage)
     expect(schedulerActivity.scheduledDrainCount).toBeGreaterThan(0)
 
     if (corruptionReports.length > 0) {
@@ -608,22 +608,22 @@ test.describe('Terminal tab switch visual restore', () => {
   })
 
   test('keeps geometry after hidden alt-screen TUI redraws during tab switches', async ({
-    orcaPage
+    aioAdePage
   }, testInfo) => {
-    await waitForSessionReady(orcaPage)
-    await waitForActiveWorktree(orcaPage)
-    await ensureTerminalVisible(orcaPage)
-    await waitForActiveTerminalManager(orcaPage, 30_000)
+    await waitForSessionReady(aioAdePage)
+    await waitForActiveWorktree(aioAdePage)
+    await ensureTerminalVisible(aioAdePage)
+    await waitForActiveTerminalManager(aioAdePage, 30_000)
 
-    const { firstTabId, secondTabId } = await ensureTwoTerminalTabs(orcaPage)
-    await forceWebglOnActiveTab(orcaPage)
-    await waitForPanePtyIdOnTab(orcaPage, firstTabId)
+    const { firstTabId, secondTabId } = await ensureTwoTerminalTabs(aioAdePage)
+    await forceWebglOnActiveTab(aioAdePage)
+    await waitForPanePtyIdOnTab(aioAdePage, firstTabId)
 
     const runId = `${Date.now()}`
     const finalMarker = `${TAB_SWITCH_MARKER_PREFIX}_${runId}_ALT_24`
 
     await writeToPaneTerminal(
-      orcaPage,
+      aioAdePage,
       firstTabId,
       Array.from({ length: 25 }, (_, frame) => buildAltScreenFrame(finalMarker, frame)).join('')
     )
@@ -639,18 +639,18 @@ test.describe('Terminal tab switch visual restore', () => {
       // snapshot so either path leaves a valid screen — numbered one higher so
       // the readback still reports which one painted. Identity is re-read per
       // cycle because a reattach would re-key the override.
-      const { ptyId, cols, rows } = await readPaneIdentityOnTab(orcaPage, firstTabId)
-      await setHiddenSnapshotOverride(orcaPage, ptyId, {
+      const { ptyId, cols, rows } = await readPaneIdentityOnTab(aioAdePage, firstTabId)
+      await setHiddenSnapshotOverride(aioAdePage, ptyId, {
         data: buildAltScreenFrame(finalMarker, restoreFrame),
         cols,
         rows
       })
-      await activateTerminalTab(orcaPage, secondTabId)
-      await writeToPaneTerminal(orcaPage, firstTabId, redraw)
-      await activateTerminalTab(orcaPage, firstTabId)
+      await activateTerminalTab(aioAdePage, secondTabId)
+      await writeToPaneTerminal(aioAdePage, firstTabId, redraw)
+      await activateTerminalTab(aioAdePage, firstTabId)
 
-      const geometry = await readTabTerminalGeometry(orcaPage, firstTabId, `${runId}_ALT`)
-      const renderedFrame = await readRenderedAltScreenFrame(orcaPage, firstTabId, finalMarker)
+      const geometry = await readTabTerminalGeometry(aioAdePage, firstTabId, `${runId}_ALT`)
+      const renderedFrame = await readRenderedAltScreenFrame(aioAdePage, firstTabId, finalMarker)
       renderPaths.push(
         `cycle ${cycle}: ${describeAltScreenRenderPath(renderedFrame, liveFrame, restoreFrame)}`
       )
@@ -666,7 +666,7 @@ test.describe('Terminal tab switch visual restore', () => {
           `cycle ${cycle}: ${issue ?? 'marker missing after alt-screen redraw'}`
         )
         await captureTabScreenshot(
-          orcaPage,
+          aioAdePage,
           firstTabId,
           testInfo,
           `alt-screen-corrupt-cycle-${cycle}`
@@ -691,20 +691,20 @@ test.describe('Terminal tab switch visual restore', () => {
     ).toEqual([])
   })
 
-  test('restores skipped hidden agent output on light tab resume', async ({ orcaPage }) => {
-    await waitForSessionReady(orcaPage)
-    await waitForActiveWorktree(orcaPage)
-    await ensureTerminalVisible(orcaPage)
-    await waitForActiveTerminalManager(orcaPage, 30_000)
+  test('restores skipped hidden agent output on light tab resume', async ({ aioAdePage }) => {
+    await waitForSessionReady(aioAdePage)
+    await waitForActiveWorktree(aioAdePage)
+    await ensureTerminalVisible(aioAdePage)
+    await waitForActiveTerminalManager(aioAdePage, 30_000)
 
-    const shellTabId = (await getActiveTabId(orcaPage))!
-    const agentTabId = await createCodexMarkedTerminalTab(orcaPage)
-    await waitForActiveTerminalManager(orcaPage, 30_000)
-    await waitForPanePtyIdOnTab(orcaPage, agentTabId)
-    const paneIdentity = await readPaneIdentityOnTab(orcaPage, agentTabId)
+    const shellTabId = (await getActiveTabId(aioAdePage))!
+    const agentTabId = await createCodexMarkedTerminalTab(aioAdePage)
+    await waitForActiveTerminalManager(aioAdePage, 30_000)
+    await waitForPanePtyIdOnTab(aioAdePage, agentTabId)
+    const paneIdentity = await readPaneIdentityOnTab(aioAdePage, agentTabId)
     const paneKey = `${agentTabId}:${paneIdentity.leafId}`
 
-    await activateTerminalTab(orcaPage, shellTabId)
+    await activateTerminalTab(aioAdePage, shellTabId)
     const runId = `${Date.now()}`
     const marker = `${TAB_SWITCH_MARKER_PREFIX}_SKIPPED_AGENT_${runId}`
     const hiddenFrame = [
@@ -713,49 +713,49 @@ test.describe('Terminal tab switch visual restore', () => {
       'status=streaming while tab-hidden',
       '\x1b[?2026l'
     ].join('\r\n')
-    await resetHiddenOutputDebug(orcaPage)
-    await injectPaneData(orcaPage, paneKey, hiddenFrame, {
+    await resetHiddenOutputDebug(aioAdePage)
+    await injectPaneData(aioAdePage, paneKey, hiddenFrame, {
       seq: hiddenFrame.length,
       rawLength: hiddenFrame.length
     })
 
     await expect
-      .poll(async () => (await readHiddenOutputDebug(orcaPage))?.hiddenRendererSkipCount ?? 0, {
+      .poll(async () => (await readHiddenOutputDebug(aioAdePage))?.hiddenRendererSkipCount ?? 0, {
         timeout: 5_000,
         message: 'Codex-marked hidden output did not take the skipped renderer path'
       })
       .toBeGreaterThan(0)
-    await setHiddenSnapshotOverride(orcaPage, paneIdentity.ptyId, {
+    await setHiddenSnapshotOverride(aioAdePage, paneIdentity.ptyId, {
       data: `${marker} restored from main snapshot\r\n`,
       cols: paneIdentity.cols,
       rows: paneIdentity.rows,
       seq: hiddenFrame.length
     })
 
-    await activateTerminalTab(orcaPage, agentTabId)
+    await activateTerminalTab(aioAdePage, agentTabId)
 
     await expect
-      .poll(() => getTerminalContent(orcaPage, 8_000), {
+      .poll(() => getTerminalContent(aioAdePage, 8_000), {
         timeout: 10_000,
         message: 'light tab resume did not request skipped hidden-output recovery'
       })
       .toContain(marker)
   })
 
-  test('restores skipped hidden Grok output on light tab resume', async ({ orcaPage }) => {
-    await waitForSessionReady(orcaPage)
-    await waitForActiveWorktree(orcaPage)
-    await ensureTerminalVisible(orcaPage)
-    await waitForActiveTerminalManager(orcaPage, 30_000)
+  test('restores skipped hidden Grok output on light tab resume', async ({ aioAdePage }) => {
+    await waitForSessionReady(aioAdePage)
+    await waitForActiveWorktree(aioAdePage)
+    await ensureTerminalVisible(aioAdePage)
+    await waitForActiveTerminalManager(aioAdePage, 30_000)
 
-    const shellTabId = (await getActiveTabId(orcaPage))!
-    const grokTabId = await createGrokMarkedTerminalTab(orcaPage)
-    await waitForActiveTerminalManager(orcaPage, 30_000)
-    await waitForPanePtyIdOnTab(orcaPage, grokTabId)
-    const paneIdentity = await readPaneIdentityOnTab(orcaPage, grokTabId)
+    const shellTabId = (await getActiveTabId(aioAdePage))!
+    const grokTabId = await createGrokMarkedTerminalTab(aioAdePage)
+    await waitForActiveTerminalManager(aioAdePage, 30_000)
+    await waitForPanePtyIdOnTab(aioAdePage, grokTabId)
+    const paneIdentity = await readPaneIdentityOnTab(aioAdePage, grokTabId)
     const paneKey = `${grokTabId}:${paneIdentity.leafId}`
 
-    await activateTerminalTab(orcaPage, shellTabId)
+    await activateTerminalTab(aioAdePage, shellTabId)
     const runId = `${Date.now()}`
     const marker = `${TAB_SWITCH_MARKER_PREFIX}_SKIPPED_GROK_${runId}`
     // Why: synchronized-output mode exercises the hidden renderer skip path
@@ -766,84 +766,84 @@ test.describe('Terminal tab switch visual restore', () => {
       'status=streaming while tab-hidden',
       '\x1b[?2026l'
     ].join('\r\n')
-    await resetHiddenOutputDebug(orcaPage)
-    await injectPaneData(orcaPage, paneKey, hiddenFrame, {
+    await resetHiddenOutputDebug(aioAdePage)
+    await injectPaneData(aioAdePage, paneKey, hiddenFrame, {
       seq: hiddenFrame.length,
       rawLength: hiddenFrame.length
     })
 
     await expect
-      .poll(async () => (await readHiddenOutputDebug(orcaPage))?.hiddenRendererSkipCount ?? 0, {
+      .poll(async () => (await readHiddenOutputDebug(aioAdePage))?.hiddenRendererSkipCount ?? 0, {
         timeout: 5_000,
         message: 'Grok-marked hidden output did not take the skipped renderer path'
       })
       .toBeGreaterThan(0)
-    await setHiddenSnapshotOverride(orcaPage, paneIdentity.ptyId, {
+    await setHiddenSnapshotOverride(aioAdePage, paneIdentity.ptyId, {
       data: `${marker} restored from main snapshot\r\n`,
       cols: paneIdentity.cols,
       rows: paneIdentity.rows,
       seq: hiddenFrame.length
     })
 
-    await activateTerminalTab(orcaPage, grokTabId)
+    await activateTerminalTab(aioAdePage, grokTabId)
 
     await expect
-      .poll(() => getTerminalContent(orcaPage, 8_000), {
+      .poll(() => getTerminalContent(aioAdePage, 8_000), {
         timeout: 10_000,
         message: 'light tab resume did not request skipped Grok hidden-output recovery'
       })
       .toContain(marker)
   })
 
-  test('keeps returned tab glyphs intact across tab switches', async ({ orcaPage }, testInfo) => {
+  test('keeps returned tab glyphs intact across tab switches', async ({ aioAdePage }, testInfo) => {
     // Why: screenshot equality catches WebGL atlas corruption on the tab being
     // resumed, not just stale cols/rows geometry checks.
-    await waitForSessionReady(orcaPage)
-    await waitForActiveWorktree(orcaPage)
-    await ensureTerminalVisible(orcaPage)
-    await waitForActiveTerminalManager(orcaPage, 30_000)
+    await waitForSessionReady(aioAdePage)
+    await waitForActiveWorktree(aioAdePage)
+    await ensureTerminalVisible(aioAdePage)
+    await waitForActiveTerminalManager(aioAdePage, 30_000)
 
-    const { firstTabId, secondTabId } = await ensureTwoTerminalTabs(orcaPage)
-    await forceWebglOnActiveTab(orcaPage)
-    await activateTerminalTab(orcaPage, firstTabId)
-    const firstWebgl = await waitForWebglOnTab(orcaPage, firstTabId)
-    await activateTerminalTab(orcaPage, secondTabId)
-    await orcaPage.evaluate((id) => {
+    const { firstTabId, secondTabId } = await ensureTwoTerminalTabs(aioAdePage)
+    await forceWebglOnActiveTab(aioAdePage)
+    await activateTerminalTab(aioAdePage, firstTabId)
+    const firstWebgl = await waitForWebglOnTab(aioAdePage, firstTabId)
+    await activateTerminalTab(aioAdePage, secondTabId)
+    await aioAdePage.evaluate((id) => {
       window.__paneManagers?.get(id)?.setTerminalGpuAcceleration?.('on')
     }, secondTabId)
-    const secondWebgl = await waitForWebglOnTab(orcaPage, secondTabId)
+    const secondWebgl = await waitForWebglOnTab(aioAdePage, secondTabId)
     if (!firstWebgl || !secondWebgl) {
       test.skip(true, 'WebGL never attached on both tabs')
       return
     }
 
-    const firstPtyId = await waitForPanePtyIdOnTab(orcaPage, firstTabId)
-    const secondPtyId = await waitForPanePtyIdOnTab(orcaPage, secondTabId)
-    await sendToTerminal(orcaPage, firstPtyId, SILENT_FOREGROUND_COMMAND)
-    await sendToTerminal(orcaPage, secondPtyId, SILENT_FOREGROUND_COMMAND)
-    await orcaPage.waitForTimeout(1_000)
+    const firstPtyId = await waitForPanePtyIdOnTab(aioAdePage, firstTabId)
+    const secondPtyId = await waitForPanePtyIdOnTab(aioAdePage, secondTabId)
+    await sendToTerminal(aioAdePage, firstPtyId, SILENT_FOREGROUND_COMMAND)
+    await sendToTerminal(aioAdePage, secondPtyId, SILENT_FOREGROUND_COMMAND)
+    await aioAdePage.waitForTimeout(1_000)
 
     const runId = `${Date.now()}`
     const markerA = `${TAB_SWITCH_MARKER_PREFIX}_A_${runId}`
     const markerB = `${TAB_SWITCH_MARKER_PREFIX}_B_${runId}`
-    await writeStaticTabContent(orcaPage, firstTabId, markerA, TAB_A_GLYPH_ROW)
-    await activateTerminalTab(orcaPage, secondTabId)
-    await writeStaticTabContent(orcaPage, secondTabId, markerB, TAB_B_GLYPH_ROW)
+    await writeStaticTabContent(aioAdePage, firstTabId, markerA, TAB_A_GLYPH_ROW)
+    await activateTerminalTab(aioAdePage, secondTabId)
+    await writeStaticTabContent(aioAdePage, secondTabId, markerB, TAB_B_GLYPH_ROW)
 
-    await activateTerminalTab(orcaPage, firstTabId)
-    await resetAtlasOnTab(orcaPage, firstTabId)
-    await orcaPage.waitForTimeout(800)
-    const baseline = await captureStableTabScreenshot(orcaPage, firstTabId)
+    await activateTerminalTab(aioAdePage, firstTabId)
+    await resetAtlasOnTab(aioAdePage, firstTabId)
+    await aioAdePage.waitForTimeout(800)
+    const baseline = await captureStableTabScreenshot(aioAdePage, firstTabId)
 
     const screenshotMismatches: string[] = []
     for (let cycle = 0; cycle < 8; cycle += 1) {
-      await activateTerminalTab(orcaPage, secondTabId)
+      await activateTerminalTab(aioAdePage, secondTabId)
       // Why: do not write into the hidden tab here — new bytes would change the
       // screenshot even when rendering is healthy. This cycle only exercises the
       // suspend/resume + atlas reset path on unchanged content.
-      await activateTerminalTab(orcaPage, firstTabId)
-      await orcaPage.waitForTimeout(100)
-      const afterReturn = await captureStableTabScreenshot(orcaPage, firstTabId)
+      await activateTerminalTab(aioAdePage, firstTabId)
+      await aioAdePage.waitForTimeout(100)
+      const afterReturn = await captureStableTabScreenshot(aioAdePage, firstTabId)
       const diff = compareTerminalScreenshots(baseline, afterReturn)
       if (!diff.matches) {
         screenshotMismatches.push(

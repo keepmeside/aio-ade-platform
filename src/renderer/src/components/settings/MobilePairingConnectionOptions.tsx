@@ -110,10 +110,10 @@ export function MobilePairingConnectionOptions({
   onChange: (value: MobilePairingConnectionMode) => void
   compact?: boolean
 }): React.JSX.Element {
-  const authStatus = useAppStore((state) => state.orcaProfileAuthStatus)
-  const connecting = useAppStore((state) => state.orcaProfileConnecting)
-  const connect = useAppStore((state) => state.connectCurrentOrcaProfile)
-  const fetchAuthStatus = useAppStore((state) => state.fetchOrcaProfileAuthStatus)
+  const authStatus = useAppStore((state) => state.aioAdeProfileAuthStatus)
+  const connecting = useAppStore((state) => state.aioAdeProfileConnecting)
+  const connect = useAppStore((state) => state.connectCurrentAioAdeProfile)
+  const fetchAuthStatus = useAppStore((state) => state.fetchAioAdeProfileAuthStatus)
   const [relayStatus, setRelayStatus] = useState<MobileRelayStatus>('offline')
   const signedIn = authStatus?.state === 'connected'
   const reconnectRequired = authStatus?.state === 'reconnect-required'
@@ -189,7 +189,7 @@ export function MobilePairingConnectionOptions({
           onSelect={() => onChange('automatic')}
           title={translate(
             'auto.components.settings.MobilePairingConnectionOptions.anywhereTitle',
-            'Orca Relay'
+            'AIO-ADE Relay'
           )}
           description={translate(
             'auto.components.settings.MobilePairingConnectionOptions.anywhereDescription',
@@ -230,7 +230,7 @@ export function MobilePairingConnectionOptions({
           <p className="min-w-0 flex-1 text-xs text-muted-foreground">
             {translate(
               'auto.components.settings.MobilePairingConnectionOptions.signInRequired',
-              'Sign in to use Orca Mobile Relay.'
+              'Sign in to use AIO-ADE Mobile Relay.'
             )}
           </p>
           <Button
@@ -264,7 +264,7 @@ export function MobilePairingConnectionOptions({
           <p className="min-w-0 flex-1 text-xs text-muted-foreground">
             {translate(
               'auto.components.settings.MobilePairingConnectionOptions.relayUnavailable',
-              'Orca Relay isn’t available in this build. Use LAN.'
+              'AIO-ADE Relay isn’t available in this build. Use LAN.'
             )}
           </p>
           <Badge variant="outline" className="shrink-0">

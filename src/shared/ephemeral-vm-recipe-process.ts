@@ -128,17 +128,17 @@ function buildRecipeEnv(
   return {
     ...process.env,
     ...env,
-    ORCA_VM_MODE: mode,
-    ORCA_VM_INSTANCE_ID: context.instanceId ?? '',
-    ORCA_RECIPE_ID: context.recipeId,
-    ORCA_PROJECT_ID: context.projectId ?? '',
-    ORCA_WORKSPACE_ID: context.workspaceId ?? '',
-    ORCA_WORKSPACE_NAME: context.workspaceName ?? '',
-    ORCA_REPO_PATH: context.repoPath,
-    ORCA_REPO_URL: context.repoUrl ?? '',
-    ORCA_REPO_BRANCH: context.branch ?? '',
-    ORCA_REPO_REF: context.ref ?? '',
-    ORCA_VERSION: context.orcaVersion ?? ''
+    AIO_ADE_VM_MODE: mode,
+    AIO_ADE_VM_INSTANCE_ID: context.instanceId ?? '',
+    AIO_ADE_RECIPE_ID: context.recipeId,
+    AIO_ADE_PROJECT_ID: context.projectId ?? '',
+    AIO_ADE_WORKSPACE_ID: context.workspaceId ?? '',
+    AIO_ADE_WORKSPACE_NAME: context.workspaceName ?? '',
+    AIO_ADE_REPO_PATH: context.repoPath,
+    AIO_ADE_REPO_URL: context.repoUrl ?? '',
+    AIO_ADE_REPO_BRANCH: context.branch ?? '',
+    AIO_ADE_REPO_REF: context.ref ?? '',
+    AIO_ADE_VERSION: context.aioAdeVersion ?? ''
   }
 }
 

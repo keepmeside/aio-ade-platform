@@ -61,7 +61,7 @@ export function classifyCodexRateLimitWindows(result: CodexRpcRateLimits | null 
     }
   }
 
-  // Why: unknown app-server durations retain Orca's legacy primary/session and secondary/weekly mapping.
+  // Why: unknown app-server durations retain AIO-ADE's legacy primary/session and secondary/weekly mapping.
   if (!session && primary && classifyWindowDuration(primary) === null) {
     session = primary
   }

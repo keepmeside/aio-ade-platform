@@ -1,4 +1,4 @@
-// Why: this stylesheet targets the *exported* PDF document, not the live Orca
+// Why: this stylesheet targets the *exported* PDF document, not the live AIO-ADE
 // pane. In-app CSS assumes sticky UI chrome, hover affordances, and app-shell
 // spacing that would look wrong when flattened to paper. Keeping export CSS
 // separate also means a future UI refactor can move live classes without
@@ -17,62 +17,62 @@ html, body {
   line-height: 1.6;
 }
 
-.orca-export-root {
+.aio-ade-export-root {
   padding: 0;
   max-width: 100%;
 }
 
-.orca-export-root h1,
-.orca-export-root h2,
-.orca-export-root h3,
-.orca-export-root h4,
-.orca-export-root h5,
-.orca-export-root h6 {
+.aio-ade-export-root h1,
+.aio-ade-export-root h2,
+.aio-ade-export-root h3,
+.aio-ade-export-root h4,
+.aio-ade-export-root h5,
+.aio-ade-export-root h6 {
   font-weight: 600;
   line-height: 1.25;
   margin-top: 1.5em;
   margin-bottom: 0.5em;
 }
 
-.orca-export-root h1 { font-size: 1.9em; }
-.orca-export-root h2 { font-size: 1.5em; }
-.orca-export-root h3 { font-size: 1.25em; }
-.orca-export-root h4 { font-size: 1em; }
+.aio-ade-export-root h1 { font-size: 1.9em; }
+.aio-ade-export-root h2 { font-size: 1.5em; }
+.aio-ade-export-root h3 { font-size: 1.25em; }
+.aio-ade-export-root h4 { font-size: 1em; }
 
-.orca-export-root p,
-.orca-export-root blockquote,
-.orca-export-root ul,
-.orca-export-root ol,
-.orca-export-root pre,
-.orca-export-root table {
+.aio-ade-export-root p,
+.aio-ade-export-root blockquote,
+.aio-ade-export-root ul,
+.aio-ade-export-root ol,
+.aio-ade-export-root pre,
+.aio-ade-export-root table {
   margin-top: 0;
   margin-bottom: 1em;
 }
 
-.orca-export-root a {
+.aio-ade-export-root a {
   color: #0969da;
   text-decoration: underline;
 }
 
-.orca-export-root blockquote {
+.aio-ade-export-root blockquote {
   padding: 0 1em;
   color: #57606a;
   border-left: 0.25em solid #d0d7de;
 }
 
-.orca-export-root code,
-.orca-export-root pre {
+.aio-ade-export-root code,
+.aio-ade-export-root pre {
   font-family: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
   font-size: 0.9em;
 }
 
-.orca-export-root code {
+.aio-ade-export-root code {
   background: #f6f8fa;
   padding: 0.2em 0.4em;
   border-radius: 4px;
 }
 
-.orca-export-root pre {
+.aio-ade-export-root pre {
   background: #f6f8fa;
   padding: 12px 16px;
   border-radius: 6px;
@@ -81,43 +81,43 @@ html, body {
   word-break: break-word;
 }
 
-.orca-export-root pre code {
+.aio-ade-export-root pre code {
   background: transparent;
   padding: 0;
   border-radius: 0;
   font-size: inherit;
 }
 
-.orca-export-root table {
+.aio-ade-export-root table {
   border-collapse: collapse;
   width: 100%;
 }
 
-.orca-export-root th,
-.orca-export-root td {
+.aio-ade-export-root th,
+.aio-ade-export-root td {
   border: 1px solid #d0d7de;
   padding: 6px 12px;
   text-align: left;
 }
 
-.orca-export-root th { background: #f6f8fa; }
+.aio-ade-export-root th { background: #f6f8fa; }
 
-.orca-export-root img,
-.orca-export-root svg {
+.aio-ade-export-root img,
+.aio-ade-export-root svg {
   max-width: 100%;
   height: auto;
 }
 
-.orca-export-root ul,
-.orca-export-root ol { padding-left: 2em; }
+.aio-ade-export-root ul,
+.aio-ade-export-root ol { padding-left: 2em; }
 
-.orca-export-root li { margin: 0.25em 0; }
+.aio-ade-export-root li { margin: 0.25em 0; }
 
-.orca-export-root input[type="checkbox"] {
+.aio-ade-export-root input[type="checkbox"] {
   margin-right: 0.4em;
 }
 
-.orca-export-root hr {
+.aio-ade-export-root hr {
   border: 0;
   border-top: 1px solid #d0d7de;
   margin: 1.5em 0;
@@ -130,7 +130,7 @@ html, body {
 .code-block-copy-btn,
 .markdown-preview-search,
 .rich-markdown-toolbar,
-[data-orca-export-hide="true"] {
+[data-aio-ade-export-hide="true"] {
   display: none !important;
 }
 

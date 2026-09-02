@@ -70,7 +70,7 @@ type Props = {
   selectedRepoIds: ReadonlySet<string>
 }
 
-const ORCA_FEATURE_REQUEST_URL = 'https://github.com/stablyai/orca/issues/new'
+const AIO_ADE_FEATURE_REQUEST_URL = 'https://github.com/keepmeside/aio-ade-platform/issues/new'
 
 function listProjectViewsForRuntime(
   settings: Parameters<typeof getActiveRuntimeTarget>[0],
@@ -422,18 +422,18 @@ export default function ProjectViewWrapper({ selectedRepoIds }: Props): React.JS
     ? `${table.project.url}/views/${table.selectedView.number ?? ''}`
     : null
 
-  // Why: matched-repo rows open `GitHubItemDialog`, unmatched the slug dialog; `repoNotInOrca` drives the `repo-not-in-orca` modal.
+  // Why: matched-repo rows open `GitHubItemDialog`, unmatched the slug dialog; `repoNotInAioAde` drives the `repo-not-in-aio-ade` modal.
   const [dialogRepoItem, setDialogRepoItem] = useState<{
     workItem: GitHubWorkItem
     repoPath: string
     repoId: string
     origin: GitHubItemDialogProjectOrigin
   } | null>(null)
-  // Why: slug dialog only serves unregistered-repo rows; the parent (not this dialog) owns the repo-not-in-orca "Start work" flow.
+  // Why: slug dialog only serves unregistered-repo rows; the parent (not this dialog) owns the repo-not-in-aio-ade "Start work" flow.
   const [slugDialog, setSlugDialog] = useState<{
     origin: GitHubItemDialogProjectOrigin
   } | null>(null)
-  const [repoNotInOrca, setRepoNotInOrca] = useState<{
+  const [repoNotInAioAde, setRepoNotInAioAde] = useState<{
     owner: string
     repo: string
     host?: string
@@ -447,7 +447,7 @@ export default function ProjectViewWrapper({ selectedRepoIds }: Props): React.JS
     selectedRepoIds
   )
   if (resolvedDialogRepoItem !== dialogRepoItem) {
-    // Why: clear the repo-backed dialog when its repo leaves Orca, before the modal tree gets stale repo ids.
+    // Why: clear the repo-backed dialog when its repo leaves AIO-ADE, before the modal tree gets stale repo ids.
     setDialogRepoItem(resolvedDialogRepoItem)
   }
   const resolvedDialogRepo = resolvedDialogRepoItem
@@ -464,7 +464,7 @@ export default function ProjectViewWrapper({ selectedRepoIds }: Props): React.JS
   const resolvedMissingRepoDialogs = resolveMissingRepoProjectDialogState({
     slugIndexReady,
     slugDialog,
-    repoNotInOrca,
+    repoNotInAioAde,
     lookupSlug,
     selectedRepoIds
   })
@@ -472,8 +472,8 @@ export default function ProjectViewWrapper({ selectedRepoIds }: Props): React.JS
     // Why: once a missing repo is registered, rows switch to the full repo-backed dialog, not the slug fallback.
     setSlugDialog(resolvedMissingRepoDialogs.slugDialog)
   }
-  if (resolvedMissingRepoDialogs.repoNotInOrca !== repoNotInOrca) {
-    setRepoNotInOrca(resolvedMissingRepoDialogs.repoNotInOrca)
+  if (resolvedMissingRepoDialogs.repoNotInAioAde !== repoNotInAioAde) {
+    setRepoNotInAioAde(resolvedMissingRepoDialogs.repoNotInAioAde)
   }
 
   const buildOrigin = useCallback(
@@ -618,7 +618,7 @@ export default function ProjectViewWrapper({ selectedRepoIds }: Props): React.JS
         return
       }
       if (resolution.status === 'no_global_match') {
-        setRepoNotInOrca({
+        setRepoNotInAioAde({
           owner: origin.owner,
           repo: origin.repo,
           host: origin.host,
@@ -964,51 +964,51 @@ export default function ProjectViewWrapper({ selectedRepoIds }: Props): React.JS
         />
       ) : null}
 
-      {/* Slug-only dialog for unadded-repo rows; Start-work lives in the parent's `repoNotInOrca` modal, not here (avoids a confusing duplicate button). */}
+      {/* Slug-only dialog for unadded-repo rows; Start-work lives in the parent's `repoNotInAioAde` modal, not here (avoids a confusing duplicate button). */}
       <ProjectItemSlugDialog
         projectOrigin={resolvedMissingRepoDialogs.slugDialog?.origin ?? null}
         sourceSettings={settings}
         onClose={() => setSlugDialog(null)}
       />
 
-      {/* repo-not-in-orca prompt: see design doc Interaction States. */}
+      {/* repo-not-in-aio-ade prompt: see design doc Interaction States. */}
       <Dialog
-        open={resolvedMissingRepoDialogs.repoNotInOrca !== null}
-        onOpenChange={(open) => !open && setRepoNotInOrca(null)}
+        open={resolvedMissingRepoDialogs.repoNotInAioAde !== null}
+        onOpenChange={(open) => !open && setRepoNotInAioAde(null)}
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
               {translate(
                 'auto.components.github.project.ProjectViewWrapper.7037c8f5f1',
-                'Repository not in Orca'
+                'Repository not in AIO-ADE'
               )}
             </DialogTitle>
             <DialogDescription>
-              {resolvedMissingRepoDialogs.repoNotInOrca
+              {resolvedMissingRepoDialogs.repoNotInAioAde
                 ? translate(
                     'auto.components.github.project.ProjectViewWrapper.1850fceac8',
-                    "{{value0}}/{{value1}} isn't added to Orca. Add it to start work, or open in GitHub.",
+                    "{{value0}}/{{value1}} isn't added to AIO-ADE. Add it to start work, or open in GitHub.",
                     {
-                      value0: resolvedMissingRepoDialogs.repoNotInOrca.owner,
-                      value1: resolvedMissingRepoDialogs.repoNotInOrca.repo
+                      value0: resolvedMissingRepoDialogs.repoNotInAioAde.owner,
+                      value1: resolvedMissingRepoDialogs.repoNotInAioAde.repo
                     }
                   )
                 : null}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:justify-end">
-            <Button variant="ghost" onClick={() => setRepoNotInOrca(null)}>
+            <Button variant="ghost" onClick={() => setRepoNotInAioAde(null)}>
               {translate('auto.components.github.project.ProjectViewWrapper.dffa899f36', 'Cancel')}
             </Button>
-            {resolvedMissingRepoDialogs.repoNotInOrca?.url ? (
+            {resolvedMissingRepoDialogs.repoNotInAioAde?.url ? (
               <Button
                 variant="outline"
                 onClick={() => {
-                  if (resolvedMissingRepoDialogs.repoNotInOrca?.url) {
-                    void window.api.shell.openUrl(resolvedMissingRepoDialogs.repoNotInOrca.url)
+                  if (resolvedMissingRepoDialogs.repoNotInAioAde?.url) {
+                    void window.api.shell.openUrl(resolvedMissingRepoDialogs.repoNotInAioAde.url)
                   }
-                  setRepoNotInOrca(null)
+                  setRepoNotInAioAde(null)
                 }}
               >
                 {translate(
@@ -1020,7 +1020,7 @@ export default function ProjectViewWrapper({ selectedRepoIds }: Props): React.JS
             <Button
               onClick={async () => {
                 // Why: `addRepo` opens the OS folder picker (auto-clone is out of v1 scope); close the modal regardless so a cancelled picker doesn't trap the user.
-                setRepoNotInOrca(null)
+                setRepoNotInAioAde(null)
                 await addRepoFromStore()
               }}
             >
@@ -1198,8 +1198,8 @@ function ViewTabStrip({
                 ? v.name
                 : translate(
                     'auto.components.github.project.ProjectViewWrapper.2edf5e7e77',
-                    "{{value0}} — Orca doesn't support {{value1}} project views yet. File a feature request at {{value2}}.",
-                    { value0: v.name, value1: layoutLabel, value2: ORCA_FEATURE_REQUEST_URL }
+                    "{{value0}} — AIO-ADE doesn't support {{value1}} project views yet. File a feature request at {{value2}}.",
+                    { value0: v.name, value1: layoutLabel, value2: AIO_ADE_FEATURE_REQUEST_URL }
                   )
             }
             className={cn(
@@ -1218,7 +1218,7 @@ function ViewTabStrip({
         if (supported) {
           return tab
         }
-        const unsupportedMessage = `Orca doesn't support ${layoutLabel} project views yet.`
+        const unsupportedMessage = `AIO-ADE doesn't support ${layoutLabel} project views yet.`
         return (
           <HoverCard key={v.id} openDelay={200} closeDelay={100}>
             <HoverCardTrigger asChild>
@@ -1227,7 +1227,11 @@ function ViewTabStrip({
                 aria-label={translate(
                   'auto.components.github.project.ProjectViewWrapper.55de4fb57a',
                   '{{value0}}. {{value1}} File a feature request at {{value2}}.',
-                  { value0: v.name, value1: unsupportedMessage, value2: ORCA_FEATURE_REQUEST_URL }
+                  {
+                    value0: v.name,
+                    value1: unsupportedMessage,
+                    value2: AIO_ADE_FEATURE_REQUEST_URL
+                  }
                 )}
                 className="inline-flex shrink-0 cursor-not-allowed rounded-t-md outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
               >
@@ -1240,14 +1244,14 @@ function ViewTabStrip({
                   {unsupportedMessage}{' '}
                   {translate(
                     'auto.components.github.project.ProjectViewWrapper.1bf8c01c8b',
-                    'Switch to a Table view to work with this project in Orca.'
+                    'Switch to a Table view to work with this project in AIO-ADE.'
                   )}
                 </p>
                 <Button
                   type="button"
                   size="xs"
                   variant="outline"
-                  onClick={() => void window.api.shell.openUrl(ORCA_FEATURE_REQUEST_URL)}
+                  onClick={() => void window.api.shell.openUrl(AIO_ADE_FEATURE_REQUEST_URL)}
                 >
                   {translate(
                     'auto.components.github.project.ProjectViewWrapper.4d2a77a119',
@@ -1295,9 +1299,9 @@ function ErrorState({
   }
   const copy =
     error.type === 'too_large'
-      ? `This view has ${totalCount ?? 'many'} items — too large to render in Orca. Narrow the view's filter on GitHub.`
+      ? `This view has ${totalCount ?? 'many'} items — too large to render in AIO-ADE. Narrow the view's filter on GitHub.`
       : error.type === 'unsupported_layout'
-        ? 'Orca only renders table views yet. This is a Board or Roadmap view.'
+        ? 'AIO-ADE only renders table views yet. This is a Board or Roadmap view.'
         : error.type === 'not_found'
           ? 'Could not find this project or view.'
           : error.type === 'schema_drift'

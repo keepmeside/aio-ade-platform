@@ -203,7 +203,7 @@ describe('ai vault resume command runtime', () => {
         }
       })
     ).toBe(
-      "Remove-Item Env:CODEX_HOME -ErrorAction SilentlyContinue; Remove-Item Env:ORCA_CODEX_HOME -ErrorAction SilentlyContinue; Set-Location -LiteralPath 'C:\\Users\\alice\\repo'; codex 'resume' 'session one'"
+      "Remove-Item Env:CODEX_HOME -ErrorAction SilentlyContinue; Remove-Item Env:AIO_ADE_CODEX_HOME -ErrorAction SilentlyContinue; Set-Location -LiteralPath 'C:\\Users\\alice\\repo'; codex 'resume' 'session one'"
     )
   })
 
@@ -224,7 +224,7 @@ describe('ai vault resume command runtime', () => {
         }
       })
     ).toBe(
-      'set "CODEX_HOME=" & set "ORCA_CODEX_HOME=" & cd /d "C:\\Users\\alice\\repo" && codex "resume" "session one"'
+      'set "CODEX_HOME=" & set "AIO_ADE_CODEX_HOME=" & cd /d "C:\\Users\\alice\\repo" && codex "resume" "session one"'
     )
   })
 
@@ -245,7 +245,7 @@ describe('ai vault resume command runtime', () => {
         }
       })
     ).toBe(
-      "unset CODEX_HOME; unset ORCA_CODEX_HOME; cd '/home/alice/repo' && codex 'resume' 'session one'"
+      "unset CODEX_HOME; unset AIO_ADE_CODEX_HOME; cd '/home/alice/repo' && codex 'resume' 'session one'"
     )
   })
 
@@ -446,7 +446,7 @@ describe('ai vault resume command runtime', () => {
       })
     ).toMatchObject({
       command: "Set-Location -LiteralPath '/home/alice/repo'; codex 'resume' 'session one'",
-      envToDelete: ['CODEX_HOME', 'ORCA_CODEX_HOME']
+      envToDelete: ['CODEX_HOME', 'AIO_ADE_CODEX_HOME']
     })
   })
 
@@ -469,7 +469,7 @@ describe('ai vault resume command runtime', () => {
       })
     ).toMatchObject({
       command: "cd '/home/alice/repo' && codex 'resume' 'session one'",
-      envToDelete: ['CODEX_HOME', 'ORCA_CODEX_HOME'],
+      envToDelete: ['CODEX_HOME', 'AIO_ADE_CODEX_HOME'],
       providerSession: { key: 'session_id', id: 'session one' }
     })
   })
@@ -514,7 +514,7 @@ describe('ai vault resume command runtime', () => {
     })
 
     expect(command).toBe(
-      "unset CODEX_HOME; unset ORCA_CODEX_HOME; cd '/home/alice/repo' && codex 'resume' 'session one'"
+      "unset CODEX_HOME; unset AIO_ADE_CODEX_HOME; cd '/home/alice/repo' && codex 'resume' 'session one'"
     )
     expect(command).not.toContain('/retired/shared-home')
   })

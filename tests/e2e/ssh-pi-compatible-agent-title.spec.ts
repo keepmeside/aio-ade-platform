@@ -1,5 +1,5 @@
 import type { Page } from '@stablyai/playwright-test'
-import { test, expect } from './helpers/orca-app'
+import { test, expect } from './helpers/aio-ade-app'
 import { ensureTerminalVisible, waitForActiveWorktree, waitForSessionReady } from './helpers/store'
 import {
   sendToTerminal,
@@ -14,7 +14,7 @@ import {
   type DockerSshRelayTarget
 } from './helpers/docker-ssh-relay-target'
 
-const RUN_DOCKER_SSH = process.env.ORCA_E2E_SSH_DOCKER === '1'
+const RUN_DOCKER_SSH = process.env.AIO_ADE_E2E_SSH_DOCKER === '1'
 
 type ConnectedDockerRemote = {
   targetId: string
@@ -141,47 +141,47 @@ async function readTerminalAgentStatus(
 }
 
 test.describe('Docker SSH Pi-compatible agent titles', () => {
-  test.skip(!RUN_DOCKER_SSH, 'Set ORCA_E2E_SSH_DOCKER=1 to run Docker-backed SSH relay tests.')
+  test.skip(!RUN_DOCKER_SSH, 'Set AIO_ADE_E2E_SSH_DOCKER=1 to run Docker-backed SSH relay tests.')
   test.skip(process.platform === 'win32', 'Docker SSH relay tests use POSIX ssh tooling.')
 
   test('classifies OMP and Pi title transitions from a remote terminal', async ({
-    orcaPage
+    aioAdePage
   }, testInfo) => {
     test.slow()
     let target: DockerSshRelayTarget | null = null
     try {
       target = startDockerSshRelayTarget(testInfo)
-      await waitForSessionReady(orcaPage)
-      await waitForActiveWorktree(orcaPage)
-      const remote = await connectDockerRemote(orcaPage, target)
-      await ensureTerminalVisible(orcaPage, 45_000)
-      await waitForActiveTerminalManager(orcaPage, 60_000)
-      const ptyId = await waitForActivePanePtyId(orcaPage, 60_000)
-      const terminalHandle = await findTerminalByPtyId(orcaPage, ptyId)
+      await waitForSessionReady(aioAdePage)
+      await waitForActiveWorktree(aioAdePage)
+      const remote = await connectDockerRemote(aioAdePage, target)
+      await ensureTerminalVisible(aioAdePage, 45_000)
+      await waitForActiveTerminalManager(aioAdePage, 60_000)
+      const ptyId = await waitForActivePanePtyId(aioAdePage, 60_000)
+      const terminalHandle = await findTerminalByPtyId(aioAdePage, ptyId)
 
       const marker = `PI_COMPATIBLE_TITLE_READY_${Date.now()}`
-      await sendToTerminal(orcaPage, ptyId, `printf '${marker}\\n'\r`)
-      await waitForTerminalOutput(orcaPage, marker, 20_000, 60_000)
+      await sendToTerminal(aioAdePage, ptyId, `printf '${marker}\\n'\r`)
+      await waitForTerminalOutput(aioAdePage, marker, 20_000, 60_000)
 
-      await emitOscTitle(orcaPage, ptyId, '\u280b OMP')
+      await emitOscTitle(aioAdePage, ptyId, '\u280b OMP')
       await expect
-        .poll(async () => readTerminalAgentStatus(orcaPage, terminalHandle), {
+        .poll(async () => readTerminalAgentStatus(aioAdePage, terminalHandle), {
           timeout: 10_000,
           message: 'Remote OMP working title did not classify as an agent status'
         })
         .toMatchObject({ isRunningAgent: true, status: 'working' })
 
-      await emitOscTitle(orcaPage, ptyId, 'OMP ready')
+      await emitOscTitle(aioAdePage, ptyId, 'OMP ready')
       await expect
-        .poll(async () => readTerminalAgentStatus(orcaPage, terminalHandle), {
+        .poll(async () => readTerminalAgentStatus(aioAdePage, terminalHandle), {
           timeout: 10_000,
           message: 'Remote OMP ready title did not classify as idle'
         })
         .toMatchObject({ isRunningAgent: true, status: 'idle' })
 
-      await emitOscTitle(orcaPage, ptyId, '\u280b Pi')
+      await emitOscTitle(aioAdePage, ptyId, '\u280b Pi')
       await expect
-        .poll(async () => readTerminalAgentStatus(orcaPage, terminalHandle), {
+        .poll(async () => readTerminalAgentStatus(aioAdePage, terminalHandle), {
           timeout: 10_000,
           message: 'Remote Pi working title did not classify as an agent status'
         })

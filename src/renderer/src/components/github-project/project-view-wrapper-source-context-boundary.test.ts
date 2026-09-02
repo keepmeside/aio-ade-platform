@@ -20,6 +20,10 @@ function sourceBetween(source: string, startPattern: string, endPattern: string)
 }
 
 describe('ProjectViewWrapper GitHub source context boundary', () => {
+  /* Timeout raised above the 30s suite default because this case really does import the component:
+   * `buildProjectWorkItem` lives in `ProjectViewWrapper`, so reaching it TS-transforms that whole
+   * module graph — 15.8s on an idle machine, which is under 30s alone but over it once the full
+   * suite saturates every core. It timed out on every full-suite run while passing in isolation. */
   it('builds project work items with a host-pinned repository identity', async () => {
     const { buildProjectWorkItem } = await import('./ProjectViewWrapper')
     const row: GitHubProjectRow = {
@@ -29,11 +33,11 @@ describe('ProjectViewWrapper GitHub source context boundary', () => {
         number: 42,
         title: 'Enterprise pull request',
         body: null,
-        url: 'https://ghe.example.com/acme/orca/pull/42',
+        url: 'https://ghe.example.com/acme/aio-ade/pull/42',
         state: 'OPEN',
         stateReason: null,
         isDraft: false,
-        repository: 'acme/orca',
+        repository: 'acme/aio-ade',
         assignees: [],
         labels: [{ name: 'bug', color: 'd73a4a' }],
         parentIssue: null,
@@ -47,10 +51,10 @@ describe('ProjectViewWrapper GitHub source context boundary', () => {
     expect(buildProjectWorkItem(row, 'repo-1', 'ghe.example.com')).toMatchObject({
       repoId: 'repo-1',
       type: 'pr',
-      prRepo: { owner: 'acme', repo: 'orca', host: 'ghe.example.com' }
+      prRepo: { owner: 'acme', repo: 'aio-ade', host: 'ghe.example.com' }
     })
     expect(buildProjectWorkItem(row, 'repo-1')?.prRepo?.host).toBe('github.com')
-  })
+  }, 90_000)
 
   it('passes the matched repo source context into the repo-backed GitHub dialog', () => {
     const source = componentSource('ProjectViewWrapper.tsx')

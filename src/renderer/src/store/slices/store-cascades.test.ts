@@ -597,9 +597,9 @@ describe('removeWorktree cascade', () => {
   })
 
   it.each([
-    'Could not connect to the remote Orca runtime.',
-    'Remote Orca runtime closed the connection.',
-    'Timed out waiting for the remote Orca runtime to respond.'
+    'Could not connect to the remote AIO-ADE runtime.',
+    'Remote AIO-ADE runtime closed the connection.',
+    'Timed out waiting for the remote AIO-ADE runtime to respond.'
   ])(
     'does not offer force delete for wrapped remote runtime failure: %s',
     async (runtimeFailure) => {
@@ -646,7 +646,7 @@ describe('removeWorktree cascade', () => {
     }
   )
 
-  it('offers force delete for orphaned Orca worktree directories', async () => {
+  it('offers force delete for orphaned AIO-ADE worktree directories', async () => {
     const store = createTestStore()
     const worktreeId = 'repo1::/path/wt1'
 
@@ -5842,7 +5842,7 @@ describe('shutdownWorktreeTerminals (sleep) — agent status hygiene', () => {
   })
 })
 
-// Why: CLI-spawned terminals stamp ORCA_PANE_KEY at spawn; renderer must adopt the tab under that id so hook events route correctly.
+// Why: CLI-spawned terminals stamp AIO_ADE_PANE_KEY at spawn; renderer must adopt the tab under that id so hook events route correctly.
 describe('createTab tabId hint', () => {
   it('uses the supplied id when no collision exists', () => {
     const store = createTestStore()

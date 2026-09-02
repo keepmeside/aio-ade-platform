@@ -34,7 +34,7 @@ describe('getAutomationProjectGroups', () => {
         repo({
           id: 'ssh',
           displayName: 'claude-swap',
-          path: '/home/orca/claude-swap',
+          path: '/home/aio-ade/claude-swap',
           connectionId: 'docker',
           repoIcon: { type: 'image', source: 'github', label: 'realiti4/claude-swap', src: '' }
         }),
@@ -58,11 +58,11 @@ describe('getAutomationProjectGroups', () => {
   it('finds and preserves the selected concrete source', () => {
     const groups = getAutomationProjectGroups(
       [
-        repo({ id: 'local', upstream: { owner: 'stablyai', repo: 'orca' } }),
+        repo({ id: 'local', upstream: { owner: 'keepmeside', repo: 'aio-ade-platform' } }),
         repo({
           id: 'ssh',
           connectionId: 'builder',
-          upstream: { owner: 'stablyai', repo: 'orca' }
+          upstream: { owner: 'keepmeside', repo: 'aio-ade-platform' }
         })
       ],
       'ssh'

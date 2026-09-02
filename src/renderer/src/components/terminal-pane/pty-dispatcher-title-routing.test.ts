@@ -210,7 +210,7 @@ describe('dispatcher → transport → onTitleChange for Codex spinner', () => {
   })
 
   it('still surfaces the synthesized "Cursor ready" idle title after working', async () => {
-    // Why: the bare-title drop must not also catch the decorated "Cursor ready" done frame Orca synthesizes on the stop hook.
+    // Why: the bare-title drop must not also catch the decorated "Cursor ready" done frame AIO-ADE synthesizes on the stop hook.
     const { createIpcPtyTransport } = await import('./pty-transport')
     const onTitleChange = vi.fn()
 

@@ -45,8 +45,8 @@ function renderHeader({
         title: isGitLab ? 'Fix GitLab MR creation' : 'fix: pr-bug-scan validated finding',
         state: 'open',
         url: isGitLab
-          ? 'https://gitlab.com/acme/orca/-/merge_requests/31'
-          : 'https://github.com/stablyai/orca/pull/2964',
+          ? 'https://gitlab.com/acme/aio-ade/-/merge_requests/31'
+          : 'https://github.com/keepmeside/aio-ade-platform/pull/2964',
         status: 'pending',
         updatedAt: '2026-05-31T22:58:01Z',
         mergeable: 'UNKNOWN'

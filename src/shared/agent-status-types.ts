@@ -50,7 +50,7 @@ export type AgentStateHistoryEntry = {
   /** When this state was first reported. */
   startedAt: number
   /** True when this `done` was a cancellation (agent hook like Claude `is_interrupt`,
-   *  or Orca's guarded fallback). Always falsy for non-`done` states so retention logic can preserve it. */
+   *  or AIO-ADE's guarded fallback). Always falsy for non-`done` states so retention logic can preserve it. */
   interrupted?: boolean
 }
 
@@ -122,7 +122,7 @@ export type AgentStatusEntry = {
   /** Most recent assistant message preview, when the hook carried one. */
   lastAssistantMessage?: string
   /** True when this `done` was reached via interrupt, not normal completion
-   *  (agent-reported or Orca's guarded fallback). Undefined otherwise. */
+   *  (agent-reported or AIO-ADE's guarded fallback). Undefined otherwise. */
   interrupted?: boolean
   /** Orchestration dispatch context for panes spawned by another agent.
    *  Why: parent/child hierarchy is pane-level state, not worktree lineage — workers often share the coordinator's worktree. */
@@ -131,7 +131,7 @@ export type AgentStatusEntry = {
    *  none are tracked; the sidebar derives indented child rows from it. */
   subagents?: AgentSubagentSnapshot[]
   /** Provider-owned conversation/session id captured from hook payloads.
-   *  Used only for exact CLI resume; Orca terminal ids are not agent-session ids. */
+   *  Used only for exact CLI resume; AIO-ADE terminal ids are not agent-session ids. */
   providerSession?: AgentProviderSessionMetadata
   /** Live-only Command Code turn boundary key; not persisted to last-status.json. */
   promptInteractionKey?: string

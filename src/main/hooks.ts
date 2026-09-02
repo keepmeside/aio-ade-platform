@@ -7,13 +7,18 @@ import { getRuntimePathBasename } from '../shared/cross-platform-path'
 import { resolveHookCommandSourcePolicy } from '../shared/hook-command-source-policy'
 import { shouldWaitForSetupBeforeAgentStartup } from '../shared/setup-agent-startup-policy'
 import { TERMINAL_GIT_CREDENTIAL_GUARD_POLICY_ENV } from '../shared/terminal-git-credential-guard'
-import { parseOrcaYaml } from '../shared/orca-yaml'
+import { parseAioAdeYaml } from '../shared/aio-ade-yaml'
+import {
+  getRepoProjectConfigCandidates,
+  LEGACY_REPO_APP_DIR_NAME,
+  REPO_APP_DIR_NAME
+} from '../shared/repo-app-paths'
 import { gitExecFileSync, promptGuardShellEnv } from './git/runner'
 import { isWslPath, parseWslPath, toWindowsWslPath, toLinuxPath } from './wsl'
-import { addWorktreeSetupWslInteropEnv } from './pty/wsl-orca-env'
+import { addWorktreeSetupWslInteropEnv } from './pty/wsl-aio-ade-env'
 import type {
   HookCommandSourcePolicy,
-  OrcaHooks,
+  AioAdeHooks,
   Repo,
   SetupDecision,
   SetupRunPolicy,
@@ -36,34 +41,35 @@ function getHookShell(): string | undefined {
   return '/bin/bash'
 }
 
-export { parseOrcaYaml }
+export { parseAioAdeYaml }
 
-/**
- * Load hooks from orca.yaml in the given repo root.
- */
-export function loadHooks(repoPath: string): OrcaHooks | null {
-  const yamlPath = join(repoPath, 'orca.yaml')
-  if (!existsSync(yamlPath)) {
+/** The committed project config, preferring the current name over the pre-rebrand one. */
+export function getProjectConfigFilePath(repoPath: string): string | null {
+  return getRepoProjectConfigCandidates(repoPath).find((path) => existsSync(path)) ?? null
+}
+
+/** Load hooks from the project config in the given repo root. */
+export function loadHooks(repoPath: string): AioAdeHooks | null {
+  const yamlPath = getProjectConfigFilePath(repoPath)
+  if (!yamlPath) {
     return null
   }
 
   try {
     const content = readFileSync(yamlPath, 'utf-8')
-    return parseOrcaYaml(content)
+    return parseAioAdeYaml(content)
   } catch {
     return null
   }
 }
 
-/**
- * Check whether an orca.yaml exists for a repo.
- */
+/** Check whether a project config exists for a repo. */
 export function hasHooksFile(repoPath: string): boolean {
-  return existsSync(join(repoPath, 'orca.yaml'))
+  return getProjectConfigFilePath(repoPath) !== null
 }
 
 // Why: detect unrecognised keys so the UI can suggest an update instead of showing a "could not be parsed" error.
-const RECOGNIZED_ORCA_YAML_KEYS = new Set([
+const RECOGNIZED_AIO_ADE_YAML_KEYS = new Set([
   'scripts',
   'issueCommand',
   'defaultTabs',
@@ -71,14 +77,18 @@ const RECOGNIZED_ORCA_YAML_KEYS = new Set([
   'worktree'
 ])
 
-/** True when `orca.yaml` has a top-level key this version of Orca does not handle. */
-export function hasUnrecognizedOrcaYamlKeys(repoPath: string): boolean {
+/** True when `aio-ade.yaml` has a top-level key this version of AIO-ADE does not handle. */
+export function hasUnrecognizedAioAdeYamlKeys(repoPath: string): boolean {
   try {
-    const content = readFileSync(join(repoPath, 'orca.yaml'), 'utf-8')
+    const configPath = getProjectConfigFilePath(repoPath)
+    if (!configPath) {
+      return false
+    }
+    const content = readFileSync(configPath, 'utf-8')
     for (const line of iterateLfScriptLines(content)) {
       // Why: match bare `key:` at end-of-line too, since a mapping with a block value on the next line is valid YAML.
       const m = line.match(/^([A-Za-z][A-Za-z0-9_-]*):(\s|$)/)
-      if (m != null && !RECOGNIZED_ORCA_YAML_KEYS.has(m[1])) {
+      if (m != null && !RECOGNIZED_AIO_ADE_YAML_KEYS.has(m[1])) {
         return true
       }
     }
@@ -89,13 +99,34 @@ export function hasUnrecognizedOrcaYamlKeys(repoPath: string): boolean {
 }
 
 // ─── Issue command files ────────────────────────────────────────────────
-// Why: `.orca/issue-command` is the per-user override; `orca.yaml` is the tracked project default.
+// Why: the in-repo `issue-command` file is the per-user override; the project yaml is the tracked default.
 
-const ORCA_DIR = '.orca'
 const ISSUE_COMMAND_FILENAME = 'issue-command'
 
+/** Write target for the per-user override. */
 export function getIssueCommandFilePath(repoPath: string): string {
-  return join(repoPath, ORCA_DIR, ISSUE_COMMAND_FILENAME)
+  return join(repoPath, REPO_APP_DIR_NAME, ISSUE_COMMAND_FILENAME)
+}
+
+/** Read target: an override authored before the rebrand still applies. */
+function findIssueCommandOverride(repoPath: string): { path: string; content: string } | null {
+  for (const dirName of [REPO_APP_DIR_NAME, LEGACY_REPO_APP_DIR_NAME]) {
+    const path = join(repoPath, dirName, ISSUE_COMMAND_FILENAME)
+    if (!existsSync(path)) {
+      continue
+    }
+    try {
+      // Why: an empty file is not an override, so it must not shadow a real one in the other
+      // directory — same rule the SSH reader applies.
+      const content = readFileSync(path, 'utf-8').trim()
+      if (content) {
+        return { path, content }
+      }
+    } catch {
+      // Try the next candidate.
+    }
+  }
+  return null
 }
 
 export function getSharedIssueCommand(repoPath: string): string | null {
@@ -115,16 +146,8 @@ export type ResolvedIssueCommand = {
  */
 export function readIssueCommand(repoPath: string): ResolvedIssueCommand {
   const filePath = getIssueCommandFilePath(repoPath)
-  let localContent: string | null = null
-
-  if (existsSync(filePath)) {
-    try {
-      const content = readFileSync(filePath, 'utf-8').trim()
-      localContent = content || null
-    } catch {
-      localContent = null
-    }
-  }
+  const override = findIssueCommandOverride(repoPath)
+  const localContent = override?.content ?? null
 
   const sharedContent = getSharedIssueCommand(repoPath)
   const effectiveContent = localContent ?? sharedContent
@@ -133,14 +156,16 @@ export function readIssueCommand(repoPath: string): ResolvedIssueCommand {
     localContent,
     sharedContent,
     effectiveContent,
-    localFilePath: filePath,
+    // Why: point the UI at the file the content actually came from, so an override authored
+    // before the rebrand is editable where it lives instead of silently shadowed.
+    localFilePath: override?.path ?? filePath,
     source: localContent ? 'local' : sharedContent ? 'shared' : 'none'
   }
 }
 
 /**
- * Write the per-user issue command override to `{repoRoot}/.orca/issue-command`.
- * Empty content deletes the override so the shared `orca.yaml` command applies again.
+ * Write the per-user issue command override into the repo's app directory.
+ * Empty content deletes the override so the shared project-config command applies again.
  */
 export function writeIssueCommand(repoPath: string, content: string): void {
   const filePath = getIssueCommandFilePath(repoPath)
@@ -148,15 +173,18 @@ export function writeIssueCommand(repoPath: string, content: string): void {
 
   try {
     if (!trimmed) {
+      // Why: clear both, or a pre-rebrand override silently keeps winning after the user
+      // deletes what the UI showed them.
       rmSync(filePath, { force: true })
+      rmSync(join(repoPath, LEGACY_REPO_APP_DIR_NAME, ISSUE_COMMAND_FILENAME), { force: true })
       return
     }
 
-    const orcaDir = join(repoPath, ORCA_DIR)
-    if (!existsSync(orcaDir)) {
-      mkdirSync(orcaDir, { recursive: true })
+    const appDir = join(repoPath, REPO_APP_DIR_NAME)
+    if (!existsSync(appDir)) {
+      mkdirSync(appDir, { recursive: true })
     }
-    ensureOrcaDirIgnored(repoPath)
+    ensureRepoAppDirIgnored(repoPath)
     writeFileSync(filePath, `${trimmed}\n`, 'utf-8')
   } catch (err) {
     console.error('[hooks] Failed to write issue command:', err)
@@ -165,22 +193,23 @@ export function writeIssueCommand(repoPath: string, content: string): void {
   }
 }
 
-/** Ensure `.orca` is in `.gitignore` so the per-user directory is never committed. */
-function ensureOrcaDirIgnored(repoPath: string): void {
+/** Keep the per-user directory out of commits. */
+function ensureRepoAppDirIgnored(repoPath: string): void {
   const gitignorePath = join(repoPath, '.gitignore')
+  const pattern = new RegExp(`^${REPO_APP_DIR_NAME.replace('.', '\\.')}/?$`, 'm')
   try {
     if (existsSync(gitignorePath)) {
       const content = readFileSync(gitignorePath, 'utf-8')
-      if (/^\.orca\/?$/m.test(content)) {
+      if (pattern.test(content)) {
         return
       }
       const separator = content.endsWith('\n') ? '' : '\n'
-      writeFileSync(gitignorePath, `${content}${separator}.orca\n`, 'utf-8')
+      writeFileSync(gitignorePath, `${content}${separator}${REPO_APP_DIR_NAME}\n`, 'utf-8')
     } else {
-      writeFileSync(gitignorePath, '.orca\n', 'utf-8')
+      writeFileSync(gitignorePath, `${REPO_APP_DIR_NAME}\n`, 'utf-8')
     }
   } catch {
-    console.warn('[hooks] Could not update .gitignore to exclude .orca')
+    console.warn(`[hooks] Could not update .gitignore to exclude ${REPO_APP_DIR_NAME}`)
   }
 }
 
@@ -205,8 +234,8 @@ function getEffectiveHookScript(
 
 export function getEffectiveHooksFromConfig(
   repo: Repo,
-  yamlHooks: OrcaHooks | null
-): OrcaHooks | null {
+  yamlHooks: AioAdeHooks | null
+): AioAdeHooks | null {
   const localSetup = repo.hookSettings?.scripts.setup
   const localArchive = repo.hookSettings?.scripts.archive
   const rawPolicy = repo.hookSettings?.commandSourcePolicy
@@ -223,7 +252,7 @@ export function getEffectiveHooksFromConfig(
     return null
   }
 
-  // Why: committed `orca.yaml` and local Settings can coexist; the source policy decides which is authoritative.
+  // Why: committed `aio-ade.yaml` and local Settings can coexist; the source policy decides which is authoritative.
   return {
     scripts: {
       ...(setup ? { setup } : {}),
@@ -232,7 +261,7 @@ export function getEffectiveHooksFromConfig(
   }
 }
 
-export function getEffectiveHooks(repo: Repo, worktreePath?: string): OrcaHooks | null {
+export function getEffectiveHooks(repo: Repo, worktreePath?: string): AioAdeHooks | null {
   const hooksRoot = worktreePath ?? repo.path
   return getEffectiveHooksFromConfig(repo, loadHooks(hooksRoot))
 }
@@ -257,7 +286,7 @@ export function shouldRunSetupForCreate(repo: Repo, decision: SetupDecision = 'i
   return policy === 'run-by-default'
 }
 
-export function getDefaultTabCommandTrustContent(hooks: OrcaHooks | null): string {
+export function getDefaultTabCommandTrustContent(hooks: AioAdeHooks | null): string {
   const commands = (hooks?.defaultTabs ?? [])
     .map((tab, index) => {
       const command = tab.command?.trim()
@@ -272,7 +301,7 @@ export function getDefaultTabCommandTrustContent(hooks: OrcaHooks | null): strin
 }
 
 export function getDefaultTabsLaunch(
-  hooks: OrcaHooks | null,
+  hooks: AioAdeHooks | null,
   repo: Repo,
   decision: SetupDecision = 'inherit'
 ): WorktreeDefaultTabsLaunch | undefined {
@@ -287,7 +316,7 @@ export function getDefaultTabsLaunch(
       hasLocalScript: Boolean(repo.hookSettings?.scripts.setup?.trim())
     }
   )
-  // Why: local-only repos may use shared tab titles/colors but must not run the committed orca.yaml commands.
+  // Why: local-only repos may use shared tab titles/colors but must not run the committed aio-ade.yaml commands.
   const canRunSharedCommands = sharedCommandPolicy !== 'local-only'
   const runCommands =
     hasCommands && canRunSharedCommands ? shouldRunSetupForCreate(repo, decision) : false
@@ -324,9 +353,9 @@ export function getSetupCommandSource(
 
 function getSetupEnvVars(repo: Repo, worktreePath: string): Record<string, string> {
   return {
-    ORCA_ROOT_PATH: repo.path,
-    ORCA_WORKTREE_PATH: worktreePath,
-    ORCA_WORKSPACE_NAME: getRuntimePathBasename(worktreePath),
+    AIO_ADE_ROOT_PATH: repo.path,
+    AIO_ADE_WORKTREE_PATH: worktreePath,
+    AIO_ADE_WORKSPACE_NAME: getRuntimePathBasename(worktreePath),
     // Compat with conductor.json users
     CONDUCTOR_ROOT_PATH: repo.path,
     GHOSTX_ROOT_PATH: repo.path
@@ -494,7 +523,9 @@ function createWorktreeRunnerScript(
   const wslWorktree = isWslPath(worktreePath) || Boolean(runtimeTarget?.wslDistro)
   const useWindowsFormat = process.platform === 'win32' && !wslWorktree
   // Why: linked worktrees use a `.git` file, so resolve the real per-worktree gitdir via git rev-parse --git-path.
-  const gitRelPath = useWindowsFormat ? `orca/${runnerBaseName}.cmd` : `orca/${runnerBaseName}.sh`
+  const gitRelPath = useWindowsFormat
+    ? `aio-ade/${runnerBaseName}.cmd`
+    : `aio-ade/${runnerBaseName}.sh`
   let runnerScriptPath = getGitPath(worktreePath, gitRelPath, runtimeTarget)
 
   // Why: git runs inside WSL and returns a Linux path; convert to a UNC path so the Windows fs calls can reach it.
@@ -554,7 +585,7 @@ export function runHook(
     const escapedCwd = wslInfo.linuxPath.replace(/'/g, "'\\''")
     const escapedScript = script.replace(/'/g, "'\\''")
     const bashCmd = `cd '${escapedCwd}' && ${escapedScript}`
-    // Why: hook scripts run inside WSL, so translate the ORCA_* Windows UNC paths to Linux paths.
+    // Why: hook scripts run inside WSL, so translate the AIO_ADE_* Windows UNC paths to Linux paths.
     const envVars = getSetupEnvVars(repo, cwd)
     const wslEnv: Record<string, string> = {}
     for (const [key, value] of Object.entries(envVars)) {

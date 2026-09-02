@@ -13,16 +13,16 @@ import { hashPluginTree } from './plugin-content-hash'
 
 const roots: string[] = []
 const services: PluginService[] = []
-const pluginKey = 'orca-samples.recipes'
+const pluginKey = 'aio-ade-samples.recipes'
 
 function contentManifest(): PluginManifest {
   return pluginManifestSchema.parse({
     manifestVersion: 1,
     id: 'recipes',
-    publisher: 'orca-samples',
+    publisher: 'aio-ade-samples',
     name: 'Recipes',
     version: '1.0.0',
-    engines: { orca: '>=1.0.0' },
+    engines: { 'aio-ade': '>=1.0.0' },
     pluginApi: 1,
     contributes: {
       languagePacks: [{ locale: 'es', path: 'locales/es.json' }],
@@ -33,11 +33,11 @@ function contentManifest(): PluginManifest {
 }
 
 async function pluginRoot(): Promise<string> {
-  const root = await mkdtemp(join(tmpdir(), 'orca-plugin-kill-content-'))
+  const root = await mkdtemp(join(tmpdir(), 'aio-ade-plugin-kill-content-'))
   roots.push(root)
   await Promise.all([mkdir(join(root, 'locales')), mkdir(join(root, 'recipes'))])
   await Promise.all([
-    writeFile(join(root, 'orca-plugin.json'), JSON.stringify(contentManifest())),
+    writeFile(join(root, 'aio-ade-plugin.json'), JSON.stringify(contentManifest())),
     writeFile(join(root, 'locales', 'es.json'), JSON.stringify({ settings: 'Ajustes' })),
     writeFile(
       join(root, 'recipes', 'vm.json'),

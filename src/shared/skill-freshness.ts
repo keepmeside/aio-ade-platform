@@ -127,7 +127,7 @@ export type SkillFreshnessScanIssue = {
   errorCode: string | null
 }
 
-// Why: a real read failure is a fact about the user's disk and stays actionable. Orca's
+// Why: a real read failure is a fact about the user's disk and stays actionable. AIO-ADE's
 // own traversal bounds are not — reporting them as attention turns an ordinary large
 // plugin cache into a permanent amber pill on every skill.
 //

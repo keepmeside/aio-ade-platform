@@ -41,7 +41,7 @@ describe('Electron Vite output contract', () => {
     expect(targetConfig).toContain('Object.prototype.hasOwnProperty.call(configByTarget, target)')
   })
 
-  it('gives the dev terminal daemon helper the TCC identity watched by Orca', () => {
+  it('gives the dev terminal daemon helper the TCC identity watched by AIO-ADE', () => {
     expect(devRunner).toContain('const helperBundleId = `${bundleId}.helper`')
     expect(devRunner).toContain("'Electron Helper.app',")
     expect(devRunner).toContain(

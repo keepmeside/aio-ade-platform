@@ -389,10 +389,10 @@ describe('automation target availability', () => {
           sourceContext: {
             kind: 'task-source',
             provider: 'github',
-            projectId: 'github:stablyai/orca',
+            projectId: 'github:keepmeside/aio-ade-platform',
             hostId: 'local',
             repoId: 'repo-1',
-            providerIdentity: { provider: 'github', owner: 'stablyai', repo: 'orca' }
+            providerIdentity: { provider: 'github', owner: 'keepmeside', repo: 'aio-ade-platform' }
           }
         }),
         repo: makeRepo(),
@@ -415,15 +415,15 @@ describe('automation target availability', () => {
           sourceContext: {
             kind: 'task-source',
             provider: 'gitlab',
-            projectId: 'gitlab:stablyai/orca',
+            projectId: 'gitlab:keepmeside/aio-ade-platform',
             hostId: 'runtime:old-server',
             repoId: 'repo-1',
             providerIdentity: {
               provider: 'gitlab',
-              projectId: 'stablyai/orca',
-              namespace: 'stablyai',
-              project: 'orca',
-              webUrl: 'https://gitlab.com/stablyai/orca'
+              projectId: 'keepmeside/aio-ade-platform',
+              namespace: 'keepmeside',
+              project: 'aio-ade',
+              webUrl: 'https://gitlab.com/keepmeside/aio-ade-platform'
             }
           }
         }),

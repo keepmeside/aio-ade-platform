@@ -144,13 +144,14 @@ describe('extractTerminalHandleLinks', () => {
 
 describe('extractOrchestrationTaskLinks', () => {
   it('detects task IDs from orchestration dispatch output', () => {
-    const line = 'Ran orca orchestration dispatch --task task_88f323f654c0 --to term_worker'
+    const taskId = 'task_88f323f654c0'
+    const line = `Ran aio-ade orchestration dispatch --task ${taskId} --to term_worker`
 
     expect(extractOrchestrationTaskLinks(line)).toEqual([
       {
-        taskId: 'task_88f323f654c0',
-        startIndex: 39,
-        endIndex: 56
+        taskId,
+        startIndex: line.indexOf(taskId),
+        endIndex: line.indexOf(taskId) + taskId.length
       }
     ])
   })

@@ -160,7 +160,7 @@ export function useDiffCommentDecorator({
     const zones = zonesRef.current
     const plus = document.createElement('button')
     plus.type = 'button'
-    plus.className = 'orca-diff-comment-add-btn'
+    plus.className = 'aio-ade-diff-comment-add-btn'
     plus.title = addButtonLabel
     plus.setAttribute('aria-label', addButtonLabel)
     plus.innerHTML =
@@ -204,7 +204,7 @@ export function useDiffCommentDecorator({
           range: new monaco.Range(from, 1, to, 1),
           options: {
             isWholeLine: true,
-            className: 'orca-diff-comment-range-highlight'
+            className: 'aio-ade-diff-comment-range-highlight'
           }
         }
       ])
@@ -457,7 +457,7 @@ export function useDiffCommentDecorator({
                   modeIdParts={['diff-comment-note', worktreeId, filePath, comment.id]}
                   scopes={getSingleCommentSendScopes(comment, formatCommentPrompt)}
                   targetModeLabel="This note"
-                  triggerClassName="orca-diff-comment-edit"
+                  triggerClassName="aio-ade-diff-comment-edit"
                   disabledTooltip="Note already sent"
                   onDelivered={(notes) => void clearDeliveredDiffComments(worktreeId, notes)}
                 />
@@ -488,7 +488,7 @@ export function useDiffCommentDecorator({
           continue
         }
         const dom = document.createElement('div')
-        dom.className = 'orca-diff-comment-inline'
+        dom.className = 'aio-ade-diff-comment-inline'
         // Swallow mousedown on the zone so the editor doesn't steal focus / start a selection drag; Delete still fires (click is on the button).
         const disposeMouseDownStopper = installDiffCommentZoneMouseDownStopper(dom)
 

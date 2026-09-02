@@ -8,7 +8,7 @@ const ESC = '\x1b'
 const PTY_ID = 'pty-parked-2031'
 
 // One fish prompt cycle: subscribe, paint, hand off the tty.
-const FISH_PROMPT_HANDOFF = `${ESC}[?2031h${ESC}[0m~/orca ${ESC}[32m❯${ESC}[0m ${ESC}[?2031l`
+const FISH_PROMPT_HANDOFF = `${ESC}[?2031h${ESC}[0m~/aio-ade ${ESC}[32m❯${ESC}[0m ${ESC}[?2031l`
 
 let sidecarWatcher: ((data: string) => void) | null = null
 const unsubscribe = vi.fn()

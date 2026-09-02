@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { PLUGIN_ENGINE_FIELD, readPluginEngineRange } from './plugin-brand-tokens'
 import { pluginCapabilitySchema } from './plugin-capabilities'
 import {
   PLUGIN_AGENT_PROFILE_LIMIT,
@@ -20,11 +21,11 @@ import {
 import { validatePluginManifestContributions } from './plugin-manifest-contribution-validation'
 
 /**
- * Plugin manifest v1 (`orca-plugin.json` at the plugin root). The
+ * Plugin manifest v1 (`aio-ade-plugin.json` at the plugin root). The
  * `contributes` key names deliberately mirror common Electron-ecosystem
  * manifest conventions so future adapters stay cheap.
  *
- * Lives in `shared` so the desktop app, the headless `orca serve` runtime,
+ * Lives in `shared` so the desktop app, the headless `aio-ade serve` runtime,
  * the relay, and the CLI validate manifests identically (SSH/remote parity).
  *
  * Everything here is EXPERIMENTAL: no compatibility promises until pluginApi
@@ -38,10 +39,21 @@ export const PLUGIN_COMMAND_LIMIT = 256
 
 // Why: v0 supports only the ">=x.y.z" form. A closed grammar keeps the gate
 // predictable; richer ranges can be added without breaking old manifests.
-const orcaEngineRangeSchema = z
+const hostEngineRangeSchema = z
   .string()
   .max(64)
   .regex(/^>=\d+\.\d+\.\d+$/, 'must be a ">=x.y.z" version range')
+
+/* Why preprocess: a manifest authored before the rebrand spells this key with the old brand.
+ * Normalizing to the canonical key here keeps one parsed shape for every consumer while both
+ * spellings stay installable. */
+const pluginEnginesSchema = z.preprocess(
+  (value) => {
+    const range = readPluginEngineRange(value)
+    return range === null ? value : { [PLUGIN_ENGINE_FIELD]: range }
+  },
+  z.object({ [PLUGIN_ENGINE_FIELD]: hostEngineRangeSchema })
+)
 
 const panelContributionSchema = z.object({
   id: pluginIdSchema,
@@ -91,7 +103,7 @@ export const pluginManifestSchema = z
     repository: z.string().max(2048).optional(),
     icon: pluginRelativePathSchema.optional(),
     /** Minimum host version gate; the host refuses to load below it. */
-    engines: z.object({ orca: orcaEngineRangeSchema }),
+    engines: pluginEnginesSchema,
     /** Host-API major version this plugin targets. */
     pluginApi: z.literal(1),
     /** Node entry executed inside the out-of-process plugin worker. */
@@ -143,7 +155,17 @@ export {
   pluginCommandIdSchema
 } from './plugin-manifest-fields'
 
-export const PLUGIN_MANIFEST_FILENAME = 'orca-plugin.json'
+export {
+  LEGACY_PLUGIN_MANIFEST_FILENAME,
+  PLUGIN_ENGINE_FIELD,
+  PLUGIN_MANIFEST_FILENAME,
+  PLUGIN_MANIFEST_FILENAMES
+} from './plugin-brand-tokens'
+
+/** Minimum host version this plugin declares, already normalized to one spelling. */
+export function getPluginHostVersionRange(manifest: PluginManifest): string {
+  return manifest.engines[PLUGIN_ENGINE_FIELD]
+}
 
 /** Canonical install identity: `<publisher>.<id>` (also the install dir name). */
 export function qualifiedPluginKey(manifest: Pick<PluginManifest, 'publisher' | 'id'>): string {
@@ -174,7 +196,7 @@ export function parsePluginManifest(raw: unknown): PluginManifestParseResult {
 
 /** v0 engines gate: supports the ">=x.y.z" grammar the schema enforces.
  *  Prerelease/build suffixes on the host version are ignored for ordering. */
-export function satisfiesOrcaEngineRange(hostVersion: string, range: string): boolean {
+export function satisfiesHostEngineRange(hostVersion: string, range: string): boolean {
   const minimum = range.slice(2)
   const parse = (value: string): number[] =>
     value

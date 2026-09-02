@@ -5,7 +5,7 @@ import { isGitRepoKind } from '../../../../shared/repo-kind'
 import type { Repo } from '../../../../shared/types'
 
 /**
- * Re-runs the setup-script prompt inspection when a shared `orca.yaml` setup hook
+ * Re-runs the setup-script prompt inspection when a shared `aio-ade.yaml` setup hook
  * can have become effective outside SetupScriptPromptCard's reactive inputs, so a
  * stale "Add a setup script" prompt clears without a full sidebar reopen.
  */
@@ -27,8 +27,8 @@ export function useSetupScriptPromptRevalidation(input: {
     promptState.repoId === activeRepo?.id &&
     !promptState.hasEffectiveSetup
 
-  // Why: orca.yaml is edited on disk or the hook runs in a terminal outside React
-  // state. Re-inspect on window focus so returning to Orca detects it (mirrors
+  // Why: aio-ade.yaml is edited on disk or the hook runs in a terminal outside React
+  // state. Re-inspect on window focus so returning to AIO-ADE detects it (mirrors
   // useInstalledAgentSkills' focus revalidation).
   useEffect(() => {
     if (

@@ -19,7 +19,7 @@ import {
 import type {
   DetectedWorktree,
   GlobalSettings,
-  OrcaWorkspaceLayout,
+  AioAdeWorkspaceLayout,
   Repo,
   Worktree,
   WorktreeMeta,
@@ -32,11 +32,11 @@ export {
   isLegacyRepoForExternalWorktreeVisibility
 } from './external-worktree-visibility'
 
-export function buildKnownOrcaWorkspaceLayouts(
+export function buildKnownAioAdeWorkspaceLayouts(
   settings: Pick<GlobalSettings, 'workspaceDir' | 'nestWorkspaces' | 'workspaceDirHistory'>,
   repo?: Pick<Repo, 'path' | 'connectionId' | 'worktreeBasePath'>
-): OrcaWorkspaceLayout[] {
-  const layouts: OrcaWorkspaceLayout[] = []
+): AioAdeWorkspaceLayout[] {
+  const layouts: AioAdeWorkspaceLayout[] = []
   const repoBasePath = getRepoWorktreeBasePath(repo)
   if (repo && repoBasePath) {
     layouts.push({
@@ -77,8 +77,8 @@ export function buildKnownOrcaWorkspaceLayouts(
 }
 
 function appendWorkspaceLayouts(
-  target: OrcaWorkspaceLayout[],
-  source: readonly OrcaWorkspaceLayout[]
+  target: AioAdeWorkspaceLayout[],
+  source: readonly AioAdeWorkspaceLayout[]
 ): void {
   // Why: workspace history is persisted user data and can grow large enough
   // for `push(...source)` to exceed the JavaScript call argument limit.
@@ -118,7 +118,7 @@ function shouldIncludeWorkspaceLayout(
 function buildWslWorkspaceLayouts(
   repoPath: string,
   settings: Pick<GlobalSettings, 'nestWorkspaces' | 'workspaceDirHistory'>
-): OrcaWorkspaceLayout[] {
+): AioAdeWorkspaceLayout[] {
   const parsed = parseWslUncPath(repoPath)
   if (!parsed) {
     return []
@@ -128,7 +128,7 @@ function buildWslWorkspaceLayouts(
   if (!linuxHome) {
     return []
   }
-  const root = `//wsl.localhost/${parsed.distro}${linuxHome}/orca/workspaces`
+  const root = `//wsl.localhost/${parsed.distro}${linuxHome}/aio-ade/workspaces`
   const historicalModes = (settings.workspaceDirHistory ?? []).map(
     (layout) => layout.nestWorkspaces
   )
@@ -141,11 +141,11 @@ export function classifyWorktreeOwnership(args: {
   worktree: Pick<Worktree, 'path' | 'isMainWorktree'>
   meta?: WorktreeMeta
   settings: Pick<GlobalSettings, 'workspaceDir' | 'nestWorkspaces' | 'workspaceDirHistory'>
-  knownOrcaLayouts: OrcaWorkspaceLayout[]
+  knownAioAdeLayouts: AioAdeWorkspaceLayout[]
   agentScratchWorktreePathMatcher?: AgentScratchWorktreePathMatcher
 }): WorktreeOwnership {
-  if (hasStrongOrcaMetadata(args.meta)) {
-    return 'orca-managed'
+  if (hasStrongAioAdeMetadata(args.meta)) {
+    return 'aio-ade-managed'
   }
 
   // Why: sub-agent scratch worktrees (e.g. .claude/worktrees) are tool
@@ -157,13 +157,13 @@ export function classifyWorktreeOwnership(args: {
     return 'agent-scratch'
   }
 
-  if (isUnderFlatOrUntrustedOrcaRoot(args.worktree.path, args.knownOrcaLayouts)) {
+  if (isUnderFlatOrUntrustedAioAdeRoot(args.worktree.path, args.knownAioAdeLayouts)) {
     return 'unknown-legacy'
   }
 
-  if (canClassifyAsExternal(args.worktree.path, args.knownOrcaLayouts)) {
-    // Why: a plain `git worktree add` can target Orca's nested workspace
-    // folder. Only metadata proves Orca created it.
+  if (canClassifyAsExternal(args.worktree.path, args.knownAioAdeLayouts)) {
+    // Why: a plain `git worktree add` can target AIO-ADE's nested workspace
+    // folder. Only metadata proves AIO-ADE created it.
     return 'external'
   }
 
@@ -175,7 +175,7 @@ export function toDetectedWorktree(args: {
   worktree: Worktree
   meta?: WorktreeMeta
   settings: Pick<GlobalSettings, 'workspaceDir' | 'nestWorkspaces' | 'workspaceDirHistory'>
-  knownOrcaLayouts: OrcaWorkspaceLayout[]
+  knownAioAdeLayouts: AioAdeWorkspaceLayout[]
   isLegacyRepoForVisibility?: boolean
   agentScratchWorktreePathMatcher?: AgentScratchWorktreePathMatcher
 }): DetectedWorktree {
@@ -211,7 +211,7 @@ export function shouldShowWorktree(args: {
   if (args.isSelectedCheckout) {
     return true
   }
-  if (args.ownership === 'orca-managed') {
+  if (args.ownership === 'aio-ade-managed') {
     return true
   }
   if (
@@ -221,7 +221,7 @@ export function shouldShowWorktree(args: {
   ) {
     return true
   }
-  // Why: agent scratch stays hidden even when the repo shows non-Orca
+  // Why: agent scratch stays hidden even when the repo shows non-AIO-ADE
   // worktrees; only an explicit import or selected checkout reveals it.
   if (args.ownership === 'agent-scratch') {
     return false
@@ -240,7 +240,7 @@ export function applyMetadataFallbackVisibility(detected: DetectedWorktree): Det
   return {
     ...detected,
     visible: true,
-    ownership: detected.ownership === 'orca-managed' ? 'orca-managed' : 'unknown-legacy'
+    ownership: detected.ownership === 'aio-ade-managed' ? 'aio-ade-managed' : 'unknown-legacy'
   }
 }
 
@@ -250,10 +250,10 @@ export function areRuntimePathsEqual(leftPath: string, rightPath: string): boole
   )
 }
 
-function hasStrongOrcaMetadata(meta: WorktreeMeta | undefined): boolean {
+function hasStrongAioAdeMetadata(meta: WorktreeMeta | undefined): boolean {
   return Boolean(
-    meta?.orcaCreatedAt ||
-    meta?.orcaCreationWorkspaceLayout ||
+    meta?.aioAdeCreatedAt ||
+    meta?.aioAdeCreationWorkspaceLayout ||
     meta?.createdAt ||
     meta?.createdWithAgent ||
     meta?.pushTarget ||
@@ -263,11 +263,11 @@ function hasStrongOrcaMetadata(meta: WorktreeMeta | undefined): boolean {
   )
 }
 
-function isUnderFlatOrUntrustedOrcaRoot(
+function isUnderFlatOrUntrustedAioAdeRoot(
   worktreePath: string,
-  knownOrcaLayouts: OrcaWorkspaceLayout[]
+  knownAioAdeLayouts: AioAdeWorkspaceLayout[]
 ): boolean {
-  for (const layout of knownOrcaLayouts) {
+  for (const layout of knownAioAdeLayouts) {
     const relative = relativePathInsideRoot(layout.path, worktreePath)
     if (relative === null) {
       continue
@@ -281,12 +281,12 @@ function isUnderFlatOrUntrustedOrcaRoot(
 
 function canClassifyAsExternal(
   worktreePath: string,
-  knownOrcaLayouts: OrcaWorkspaceLayout[]
+  knownAioAdeLayouts: AioAdeWorkspaceLayout[]
 ): boolean {
-  if (knownOrcaLayouts.length === 0) {
+  if (knownAioAdeLayouts.length === 0) {
     return false
   }
-  for (const layout of knownOrcaLayouts) {
+  for (const layout of knownAioAdeLayouts) {
     const relative = relativePathInsideRoot(layout.path, worktreePath)
     if (relative === null) {
       continue

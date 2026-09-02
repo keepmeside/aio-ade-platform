@@ -2,8 +2,7 @@ import { existsSync, lstatSync, readFileSync, realpathSync, writeFileSync } from
 import { join, relative, resolve, sep } from 'node:path'
 import { app } from 'electron'
 import { writeFileAtomically } from '../codex-accounts/fs-utils'
-
-const MANAGED_AUTH_MARKER = '.orca-managed-claude-auth'
+import { MANAGED_AUTH_MARKER, readManagedAuthMarkerAccountId } from './managed-auth-marker'
 
 export function getClaudeManagedAccountsRoot(): string {
   return join(app.getPath('userData'), 'claude-accounts')
@@ -42,12 +41,15 @@ export function resolveOwnedClaudeManagedAuthPath(
     ) {
       return null
     }
-    const markerPath = join(canonicalCandidate, MANAGED_AUTH_MARKER)
-    const markerValid = isManagedAuthMarkerValid(markerPath, accountId)
+    const markerValid = readManagedAuthMarkerAccountId(canonicalCandidate) === accountId
     if (!markerValid && options.adoptLegacyMarker) {
-      writeFileSync(markerPath, `${accountId}\n`, { encoding: 'utf-8', mode: 0o600, flag: 'wx' })
+      writeFileSync(join(canonicalCandidate, MANAGED_AUTH_MARKER), `${accountId}\n`, {
+        encoding: 'utf-8',
+        mode: 0o600,
+        flag: 'wx'
+      })
     }
-    if (!markerValid && !isManagedAuthMarkerValid(markerPath, accountId)) {
+    if (!markerValid && readManagedAuthMarkerAccountId(canonicalCandidate) !== accountId) {
       return null
     }
     return canonicalCandidate
@@ -78,24 +80,9 @@ export function writeClaudeManagedAuthFile(
 ): void {
   const filePath = resolve(managedAuthPath, filename)
   if (existsSync(filePath) && !isOwnedChildFile(managedAuthPath, filePath)) {
-    throw new Error('Managed Claude auth child file is not owned by Orca.')
+    throw new Error('Managed Claude auth child file is not owned by AIO-ADE.')
   }
   writeFileAtomically(filePath, contents, { mode: 0o600 })
-}
-
-function isManagedAuthMarkerValid(markerPath: string, accountId: string): boolean {
-  try {
-    if (
-      !existsSync(markerPath) ||
-      lstatSync(markerPath).isSymbolicLink() ||
-      !lstatSync(markerPath).isFile()
-    ) {
-      return false
-    }
-    return readFileSync(markerPath, 'utf-8').trim() === accountId
-  } catch {
-    return false
-  }
 }
 
 function isOwnedChildFile(managedAuthPath: string, filePath: string): boolean {

@@ -178,11 +178,11 @@ function githubSourceContext(
   return {
     kind: 'task-source',
     provider: 'github',
-    projectId: 'github:stablyai/orca',
+    projectId: 'github:keepmeside/aio-ade-platform',
     hostId,
     projectHostSetupId: 'setup-1',
     repoId,
-    providerIdentity: { provider: 'github', owner: 'stablyai', repo: 'orca' }
+    providerIdentity: { provider: 'github', owner: 'keepmeside', repo: 'aio-ade-platform' }
   }
 }
 
@@ -1929,7 +1929,7 @@ describe('createGitHubSlice.fetchPRForBranch', () => {
       number: 12,
       title: 'Newer hosted review status',
       state: 'open',
-      url: 'https://github.com/acme/orca/pull/12',
+      url: 'https://github.com/acme/aio-ade/pull/12',
       status: 'success',
       updatedAt: '2026-03-28T00:00:00Z',
       mergeable: 'MERGEABLE'
@@ -1985,7 +1985,7 @@ describe('createGitHubSlice.fetchPRForBranch', () => {
       number: 12,
       title: 'Already attached PR',
       state: 'open',
-      url: 'https://github.com/acme/orca/pull/12',
+      url: 'https://github.com/acme/aio-ade/pull/12',
       status: 'pending',
       updatedAt: '2026-03-28T00:00:00Z',
       mergeable: 'UNKNOWN'
@@ -2046,7 +2046,7 @@ describe('createGitHubSlice.fetchPRForBranch', () => {
       number: 88,
       title: 'Created PR',
       state: 'open',
-      url: 'https://github.com/acme/orca/pull/88',
+      url: 'https://github.com/acme/aio-ade/pull/88',
       status: 'pending',
       updatedAt: '2026-03-28T00:00:00Z',
       mergeable: 'UNKNOWN'
@@ -2104,7 +2104,7 @@ describe('createGitHubSlice.fetchPRForBranch', () => {
       number: 12,
       title: 'Same-ms external hosted review status',
       state: 'open',
-      url: 'https://github.com/acme/orca/pull/12',
+      url: 'https://github.com/acme/aio-ade/pull/12',
       status: 'success',
       updatedAt: '2026-03-28T00:00:00Z',
       mergeable: 'MERGEABLE'
@@ -2756,7 +2756,7 @@ describe('createGitHubSlice.fetchPRForBranch', () => {
               number: 12,
               title: 'Visible cached PR',
               state,
-              url: 'https://github.com/acme/orca/pull/12',
+              url: 'https://github.com/acme/aio-ade/pull/12',
               status: 'pending',
               updatedAt: '2026-03-28T00:00:00Z',
               mergeable: 'UNKNOWN'
@@ -2816,7 +2816,7 @@ describe('createGitHubSlice.fetchPRForBranch', () => {
             number: 12,
             title: 'Visible open PR',
             state: 'open',
-            url: 'https://github.com/acme/orca/pull/12',
+            url: 'https://github.com/acme/aio-ade/pull/12',
             status: 'pending',
             updatedAt: '2026-03-28T00:00:00Z',
             mergeable: 'UNKNOWN'
@@ -3066,7 +3066,7 @@ describe('createGitHubSlice.fetchPRForBranch', () => {
             number: 44,
             title: 'Hosted review fallback PR',
             state: 'open',
-            url: 'https://github.com/acme/orca/pull/44',
+            url: 'https://github.com/acme/aio-ade/pull/44',
             status: 'pending',
             updatedAt: '2026-03-28T00:00:00Z',
             mergeable: 'UNKNOWN'
@@ -3121,7 +3121,7 @@ describe('createGitHubSlice.fetchPRForBranch', () => {
             number: 44,
             title: 'Stale hosted-review PR',
             state: 'open',
-            url: 'https://github.com/acme/orca/pull/44',
+            url: 'https://github.com/acme/aio-ade/pull/44',
             status: 'pending',
             updatedAt: '2026-03-28T00:00:00Z',
             mergeable: 'UNKNOWN'
@@ -3727,7 +3727,7 @@ describe('createGitHubSlice.fetchPRForBranch', () => {
               number: 12,
               title: 'Visible event PR',
               state,
-              url: 'https://github.com/acme/orca/pull/12',
+              url: 'https://github.com/acme/aio-ade/pull/12',
               status: 'pending',
               updatedAt: '2026-03-28T00:00:00Z',
               mergeable: 'UNKNOWN'
@@ -3914,7 +3914,7 @@ describe('createGitHubSlice.fetchPRForBranch', () => {
             number: 12,
             title: 'Old PR status',
             state: 'open',
-            url: 'https://github.com/acme/orca/pull/12',
+            url: 'https://github.com/acme/aio-ade/pull/12',
             status: 'pending',
             updatedAt: '2026-03-28T00:00:00Z',
             mergeable: 'UNKNOWN'
@@ -3969,7 +3969,7 @@ describe('createGitHubSlice.fetchPRForBranch', () => {
       number: 12,
       title: 'Newer hosted review status',
       state: 'open',
-      url: 'https://github.com/acme/orca/pull/12',
+      url: 'https://github.com/acme/aio-ade/pull/12',
       status: 'success',
       updatedAt: '2026-03-28T00:00:00Z',
       mergeable: 'MERGEABLE'
@@ -4016,7 +4016,7 @@ describe('createGitHubSlice.fetchPRForBranch', () => {
       number: 12,
       title: 'Newer hosted review status',
       state: 'open',
-      url: 'https://github.com/acme/orca/pull/12',
+      url: 'https://github.com/acme/aio-ade/pull/12',
       status: 'success',
       updatedAt: '2026-03-28T00:00:00Z',
       mergeable: 'MERGEABLE'
@@ -4118,7 +4118,7 @@ describe('createGitHubSlice.fetchPRForBranch', () => {
       number: 12,
       title: 'Existing same-ms hosted review status',
       state: 'open',
-      url: 'https://github.com/acme/orca/pull/12',
+      url: 'https://github.com/acme/aio-ade/pull/12',
       status: 'pending',
       updatedAt: '2026-03-28T00:00:00Z',
       mergeable: 'UNKNOWN'
@@ -4182,7 +4182,7 @@ describe('createGitHubSlice.fetchPRForBranch', () => {
             number: 12,
             title: 'Existing PR',
             state: 'open',
-            url: 'https://github.com/acme/orca/pull/12',
+            url: 'https://github.com/acme/aio-ade/pull/12',
             status: 'pending',
             updatedAt: '2026-03-28T00:00:00Z',
             mergeable: 'UNKNOWN'
@@ -4246,7 +4246,7 @@ describe('createGitHubSlice.fetchPRForBranch', () => {
       number: 5,
       title: 'GitLab MR',
       state: 'open',
-      url: 'https://gitlab.com/acme/orca/-/merge_requests/5',
+      url: 'https://gitlab.com/acme/aio-ade/-/merge_requests/5',
       status: 'pending',
       updatedAt: '2026-03-28T00:00:00Z',
       mergeable: 'UNKNOWN'
@@ -4432,7 +4432,7 @@ describe('createGitHubSlice.fetchPRForBranch', () => {
       number: 5,
       title: 'GitLab MR',
       state: 'open',
-      url: 'https://gitlab.com/acme/orca/-/merge_requests/5',
+      url: 'https://gitlab.com/acme/aio-ade/-/merge_requests/5',
       status: 'success',
       updatedAt: '2026-03-28T00:00:00Z',
       mergeable: 'MERGEABLE'
@@ -4490,7 +4490,7 @@ describe('createGitHubSlice.fetchPRForBranch', () => {
       number: 5,
       title: 'GitLab MR',
       state: 'open',
-      url: 'https://gitlab.com/acme/orca/-/merge_requests/5',
+      url: 'https://gitlab.com/acme/aio-ade/-/merge_requests/5',
       status: 'success',
       updatedAt: '2026-03-28T00:00:00Z',
       mergeable: 'MERGEABLE'
@@ -4535,7 +4535,7 @@ describe('createGitHubSlice.fetchPRForBranch', () => {
             number: 12,
             title: 'Old GitHub PR',
             state: 'open',
-            url: 'https://github.com/acme/orca/pull/12',
+            url: 'https://github.com/acme/aio-ade/pull/12',
             status: 'pending',
             updatedAt: '2026-03-28T00:00:00Z',
             mergeable: 'UNKNOWN'
@@ -4571,7 +4571,7 @@ describe('createGitHubSlice.fetchPRForBranch', () => {
       number: 5,
       title: 'GitLab MR',
       state: 'open' as const,
-      url: 'https://gitlab.com/acme/orca/-/merge_requests/5',
+      url: 'https://gitlab.com/acme/aio-ade/-/merge_requests/5',
       status: 'success' as const,
       updatedAt: '2026-03-28T00:00:00Z',
       mergeable: 'MERGEABLE' as const
@@ -4847,7 +4847,7 @@ describe('createGitHubSlice.refreshGitHubForWorktreeIfStale', () => {
             number: 44,
             title: 'Hosted review fallback PR',
             state: 'open',
-            url: 'https://github.com/acme/orca/pull/44',
+            url: 'https://github.com/acme/aio-ade/pull/44',
             status: 'pending',
             updatedAt: '2026-03-28T00:00:00Z',
             mergeable: 'UNKNOWN'
@@ -5914,11 +5914,15 @@ describe('createGitHubSlice.fetchWorkItems source/error envelope', () => {
     const sourceContext = {
       kind: 'task-source' as const,
       provider: 'github' as const,
-      projectId: 'github:stablyai/orca',
+      projectId: 'github:keepmeside/aio-ade-platform',
       hostId: 'runtime:source-runtime' as const,
       projectHostSetupId: 'setup-1',
       repoId: 'source-runtime-repo-id',
-      providerIdentity: { provider: 'github' as const, owner: 'stablyai', repo: 'orca' }
+      providerIdentity: {
+        provider: 'github' as const,
+        owner: 'keepmeside',
+        repo: 'aio-ade-platform'
+      }
     }
 
     await store.getState().fetchWorkItems('caller-repo-id', '/server/repo', 24, 'is:open', {
@@ -5957,22 +5961,29 @@ describe('createGitHubSlice.fetchWorkItems source/error envelope', () => {
       hostId: 'local' as const,
       projectHostSetupId: 'setup-1',
       repoId: 'repo-1',
-      providerIdentity: { provider: 'github' as const, owner: 'acme', repo: 'orca' }
+      providerIdentity: { provider: 'github' as const, owner: 'acme', repo: 'aio-ade' }
     }
     const secondSourceContext = {
       ...firstSourceContext,
-      providerIdentity: { provider: 'github' as const, owner: 'stablyai', repo: 'orca' }
+      providerIdentity: {
+        provider: 'github' as const,
+        owner: 'keepmeside',
+        repo: 'aio-ade-platform'
+      }
     }
     mockApi.gh.listWorkItems
       .mockResolvedValueOnce({
         items: [{ type: 'issue', number: 1, title: 'Acme', url: 'https://example.test/1' }],
-        sources: { issues: { owner: 'acme', repo: 'orca' }, prs: { owner: 'acme', repo: 'orca' } }
+        sources: {
+          issues: { owner: 'acme', repo: 'aio-ade' },
+          prs: { owner: 'acme', repo: 'aio-ade' }
+        }
       })
       .mockResolvedValueOnce({
         items: [{ type: 'issue', number: 2, title: 'Stably', url: 'https://example.test/2' }],
         sources: {
-          issues: { owner: 'stablyai', repo: 'orca' },
-          prs: { owner: 'stablyai', repo: 'orca' }
+          issues: { owner: 'keepmeside', repo: 'aio-ade-platform' },
+          prs: { owner: 'keepmeside', repo: 'aio-ade-platform' }
         }
       })
 
@@ -7224,15 +7235,18 @@ describe('IssueSourceIndicator suppression', () => {
 
     // Same slug → null (no information to convey)
     expect(sameGitHubOwnerRepo({ owner: 'o', repo: 'r' }, { owner: 'o', repo: 'r' })).toBe(true)
-    // Case-insensitive equality — the parent design doc calls out that `StablyAI/Orca`
-    // and `stablyai/orca` resolve to the same repo and must suppress.
+    // Case-insensitive equality — the parent design doc calls out that `KeepMeSide/AIO-ADE-Platform`
+    // and `keepmeside/aio-ade-platform` resolve to the same repo and must suppress.
     expect(
-      sameGitHubOwnerRepo({ owner: 'StablyAI', repo: 'Orca' }, { owner: 'stablyai', repo: 'orca' })
+      sameGitHubOwnerRepo(
+        { owner: 'KeepMeSide', repo: 'AIO-ADE-Platform' },
+        { owner: 'keepmeside', repo: 'aio-ade-platform' }
+      )
     ).toBe(true)
     expect(
       sameGitHubOwnerRepo(
-        { owner: 'stablyai', repo: 'orca', host: 'github.com' },
-        { owner: 'stablyai', repo: 'orca', host: 'ghe.example.test' }
+        { owner: 'keepmeside', repo: 'aio-ade-platform', host: 'github.com' },
+        { owner: 'keepmeside', repo: 'aio-ade-platform', host: 'ghe.example.test' }
       )
     ).toBe(false)
     expect(sameGitHubOwnerRepo({ owner: 'a', repo: 'r' }, { owner: 'b', repo: 'r' })).toBe(false)

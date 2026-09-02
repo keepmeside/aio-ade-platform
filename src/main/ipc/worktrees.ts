@@ -27,7 +27,7 @@ import type {
   GitHubPrStartPoint,
   GitPushTarget,
   GitWorktreeInfo,
-  OrcaHooks,
+  AioAdeHooks,
   Repo,
   RemoveWorktreeResult,
   Worktree,
@@ -57,7 +57,7 @@ import type {
 import { isAdmissibleDirectSshAuthority } from '../../shared/ssh-retained-payload-admission'
 import {
   applyMetadataFallbackVisibility,
-  buildKnownOrcaWorkspaceLayouts,
+  buildKnownAioAdeWorkspaceLayouts,
   isLegacyRepoForExternalWorktreeVisibility,
   toDetectedWorktree
 } from '../../shared/worktree-ownership'
@@ -86,11 +86,11 @@ import {
   getEffectiveHooksFromConfig,
   getSetupRunnerEnvVars,
   loadHooks,
-  parseOrcaYaml,
+  parseAioAdeYaml,
   readIssueCommand,
   runHook,
   hasHooksFile,
-  hasUnrecognizedOrcaYamlKeys,
+  hasUnrecognizedAioAdeYamlKeys,
   writeIssueCommand
 } from '../hooks'
 import {
@@ -116,7 +116,10 @@ import {
   isENOENT,
   registerWorktreeRootsForRepo
 } from './filesystem-auth'
-import type { OrcaRuntimeService, RuntimeWorktreeLifecycleEvent } from '../runtime/orca-runtime'
+import type {
+  AioAdeRuntimeService,
+  RuntimeWorktreeLifecycleEvent
+} from '../runtime/aio-ade-runtime'
 import { killAllProcessesForWorktree } from '../runtime/worktree-teardown'
 import { clearProviderPtyState, getLocalPtyProvider, getSshPtyProvider } from './pty'
 import { findExistingWorktreeSymlinkPaths, removeWorktreeLinkedPaths } from './worktree-symlinks'
@@ -152,7 +155,7 @@ type RemoveWorktreeArgs = {
 type DetectedWorktreeRequestArgs = { repoId: string } | ListDetectedWorktreesArgs
 
 async function stopPtysForDestructiveWorktreeRemoval(
-  runtime: OrcaRuntimeService,
+  runtime: AioAdeRuntimeService,
   worktreeId: string,
   connectionId?: string
 ): Promise<void> {
@@ -201,14 +204,14 @@ import { advertisedUrlWatcher } from '../ports/advertised-url-watcher'
 import { localhostWorktreeLabelProxy } from '../localhost-worktree-label-proxy'
 import {
   assertWorktreeDoesNotContainRegisteredWorktree,
-  canCleanupUnregisteredOrcaLeftoverDirectory,
-  canCleanupUnregisteredOrcaWorktreeDirectory,
+  canCleanupUnregisteredAioAdeLeftoverDirectory,
+  canCleanupUnregisteredAioAdeWorktreeDirectory,
   canSafelyRemoveOrphanedWorktreeDirectory,
   findRegisteredDeletableWorktree,
   isDangerousWorktreeRemovalPath,
   isWorktreePathMissing,
   ORPHANED_WORKTREE_DIRECTORY_MESSAGE,
-  stripOrcaProvenanceMetaUpdates,
+  stripAioAdeProvenanceMetaUpdates,
   UNREGISTERED_MISSING_WORKTREE_MESSAGE
 } from '../worktree-removal-safety'
 import { DEFAULT_WORKSPACE_STATUS_ID } from '../../shared/workspace-statuses'
@@ -230,6 +233,21 @@ import {
   removeStaleLocalWorktreeRegistrationAfterFilesystemRemoval,
   recoverLocalWindowsWorktreeRemoval
 } from '../local-worktree-removal-recovery'
+import {
+  getRepoAppRelativeCandidates,
+  LEGACY_PROJECT_CONFIG_FILE_NAME,
+  PROJECT_CONFIG_FILE_NAME,
+  REPO_APP_DIR_NAME
+} from '../../shared/repo-app-paths'
+import { readRemoteProjectConfig } from '../remote-project-config-read'
+
+const ISSUE_COMMAND_FILENAME = 'issue-command'
+
+/* Why the canonical name only: writes go to the canonical directory, so an entry for the
+ * pre-rebrand one does not keep the new directory out of the user's commits. */
+function isRepoAppDirIgnored(gitignoreContent: string): boolean {
+  return new RegExp(`^${REPO_APP_DIR_NAME.replace('.', '\\.')}/?$`, 'm').test(gitignoreContent)
+}
 
 const WORKTREE_ARCHIVE_HOOK_TIMEOUT_MS = 120_000
 const WORKTREE_LIST_ALL_CONCURRENCY = 8
@@ -372,7 +390,7 @@ function getWorktreeRemovalInFlightKey(worktreeId: string, hostId?: ExecutionHos
   return `${hostId ?? ''}\0${worktreeId}`
 }
 
-async function getArchiveHooksForRemoval(repo: Repo): Promise<OrcaHooks | null> {
+async function getArchiveHooksForRemoval(repo: Repo): Promise<AioAdeHooks | null> {
   if (!repo.connectionId) {
     return getEffectiveHooks(repo)
   }
@@ -383,9 +401,8 @@ async function getArchiveHooksForRemoval(repo: Repo): Promise<OrcaHooks | null> 
   }
 
   try {
-    const result = await fsProvider.readFile(joinWorktreeRelativePath(repo.path, 'orca.yaml'))
-    const yamlHooks = result.isBinary ? null : parseOrcaYaml(result.content)
-    return getEffectiveHooksFromConfig(repo, yamlHooks)
+    const config = await readRemoteProjectConfig(fsProvider, repo.path)
+    return getEffectiveHooksFromConfig(repo, config.hooks)
   } catch {
     return getEffectiveHooksFromConfig(repo, null)
   }
@@ -784,7 +801,7 @@ function buildDetectedGitWorktrees(
   gitWorktrees: GitWorktreeInfo[]
 ): DetectedWorktree[] {
   const settings = store.getSettings()
-  const knownOrcaLayouts = buildKnownOrcaWorkspaceLayouts(settings, repo)
+  const knownAioAdeLayouts = buildKnownAioAdeWorkspaceLayouts(settings, repo)
   const isLegacyRepoForVisibility = isLegacyRepoForExternalWorktreeVisibility(repo)
   // Why: a prunable registration has no working directory (issue #8389); only this listing omits it — cleanup flows list separately.
   const liveWorktrees = dedupeWorktreesByPath(
@@ -803,7 +820,7 @@ function buildDetectedGitWorktrees(
       worktree,
       meta,
       settings,
-      knownOrcaLayouts,
+      knownAioAdeLayouts,
       isLegacyRepoForVisibility,
       agentScratchWorktreePathMatcher
     })
@@ -817,7 +834,7 @@ function buildDetectedGitWorktrees(
       worktree: mergeWorktree(repo.id, gitWorktree, meta, repo.displayName),
       meta,
       settings,
-      knownOrcaLayouts,
+      knownAioAdeLayouts,
       isLegacyRepoForVisibility,
       agentScratchWorktreePathMatcher
     })
@@ -945,7 +962,7 @@ function buildFolderDetectedWorktrees(store: Store, repo: Repo): DetectedWorktre
       worktree,
       meta: store.getWorktreeMeta(worktree.id),
       settings,
-      knownOrcaLayouts: [],
+      knownAioAdeLayouts: [],
       isLegacyRepoForVisibility: true
     })
   )
@@ -981,8 +998,8 @@ function createFolderWorkspace(
     displayName: args.displayName || args.name,
     lastActivityAt: now,
     createdAt: now,
-    orcaCreatedAt: now,
-    orcaCreationSource: 'desktop',
+    aioAdeCreatedAt: now,
+    aioAdeCreationSource: 'desktop',
     ...(args.automationProvenance ? { automationProvenance: args.automationProvenance } : {}),
     ...(args.cliProvenance ? { cliProvenance: args.cliProvenance } : {}),
     ...(args.createdWithAgent ? { createdWithAgent: args.createdWithAgent } : {}),
@@ -1025,7 +1042,7 @@ function buildDisconnectedDetectedWorktrees(
       worktree,
       meta,
       settings,
-      knownOrcaLayouts: [],
+      knownAioAdeLayouts: [],
       isLegacyRepoForVisibility: true,
       agentScratchWorktreePathMatcher
     })
@@ -1524,7 +1541,7 @@ function filterLineageForHost(
   return { worktreeLineageById, workspaceLineageByChildKey }
 }
 
-async function hydrateLineageWithinDeadline(runtime: OrcaRuntimeService): Promise<boolean> {
+async function hydrateLineageWithinDeadline(runtime: AioAdeRuntimeService): Promise<boolean> {
   let timeout: ReturnType<typeof setTimeout> | undefined
   const hydration = Promise.resolve()
     .then(() => runtime.hydrateInferredWorktreeLineage())
@@ -1546,7 +1563,7 @@ async function hydrateLineageWithinDeadline(runtime: OrcaRuntimeService): Promis
 
 async function listDesktopLineageForHost(
   store: Store,
-  runtime: OrcaRuntimeService,
+  runtime: AioAdeRuntimeService,
   args: ListDesktopLineageForHostArgs
 ): Promise<HostLineageSnapshot> {
   const parsedHost = parseExecutionHostId(args?.executionHostId)
@@ -1737,7 +1754,7 @@ async function listHostQualifiedDetectedWorktrees(
 export function registerWorktreeHandlers(
   mainWindow: BrowserWindow,
   store: Store,
-  runtime: OrcaRuntimeService,
+  runtime: AioAdeRuntimeService,
   options?: { onWorktreeLifecycle?: (event: RuntimeWorktreeLifecycleEvent) => void }
 ): void {
   const detectedWorktreeCancellations = createSenderScopedRequestCancellations()
@@ -2246,7 +2263,7 @@ export function registerWorktreeHandlers(
           const fsProvider = repo.connectionId ? getSshFilesystemProvider(repo.connectionId) : null
           let canCleanOrphanedDirectory = false
           if (
-            canCleanupUnregisteredOrcaWorktreeDirectory({
+            canCleanupUnregisteredAioAdeWorktreeDirectory({
               meta: removedMeta
             })
           ) {
@@ -2336,7 +2353,7 @@ export function registerWorktreeHandlers(
               localWorktreeGitOptions
             )
             if (
-              await canCleanupUnregisteredOrcaLeftoverDirectory({
+              await canCleanupUnregisteredAioAdeLeftoverDirectory({
                 meta: removedMeta,
                 worktreePath,
                 runtimeWorktreePath,
@@ -2376,10 +2393,10 @@ export function registerWorktreeHandlers(
           }
           if (await isAlreadyRemovedWorktreePath(repo, worktreePath, localWorktreeGitOptions)) {
             if (!args.force && !removedMeta) {
-              // Why: without persisted metadata, require the renderer recovery path before deleting Orca-only state for an unregistered path.
+              // Why: without persisted metadata, require the renderer recovery path before deleting AIO-ADE-only state for an unregistered path.
               throw new Error(UNREGISTERED_MISSING_WORKTREE_MESSAGE)
             }
-            // Why: a manually deleted worktree is already gone; persisted metadata proves it was an Orca-known row, so no force is needed.
+            // Why: a manually deleted worktree is already gone; persisted metadata proves it was an AIO-ADE-known row, so no force is needed.
             if (repo.connectionId) {
               await cleanupUnusedWorktreePushTargetRemoteSsh(
                 provider!,
@@ -2547,7 +2564,7 @@ export function registerWorktreeHandlers(
           )
         }
 
-        // Why: `orca.yaml` shared directories are symlinked in too, and a
+        // Why: `aio-ade.yaml` shared directories are symlinked in too, and a
         // directory-only ignore rule leaves those links untracked, so removal must
         // tolerate and unlink them exactly like the per-user shared paths.
         const linkedPaths = getWorktreeSharedLinkPaths(repo)
@@ -2838,7 +2855,7 @@ export function registerWorktreeHandlers(
               firstAgentMessageRenameError: null
             }
           : args.updates
-      const meta = store.setWorktreeMeta(args.worktreeId, stripOrcaProvenanceMetaUpdates(updates))
+      const meta = store.setWorktreeMeta(args.worktreeId, stripAioAdeProvenanceMetaUpdates(updates))
       // Do NOT notify here: renderer already applied this optimistically; a notification would re-sort the sidebar (bug PR #209).
       if (args.updates.displayName !== undefined) {
         // Why: remote clients have no optimistic rename and stopped polling titles, so push a remote-only invalidation; gate on displayName so per-click isUnread updates stay event-free.
@@ -2933,11 +2950,11 @@ export function registerWorktreeHandlers(
           return { status: 'error', hasHooks: false, hooks: null, mayNeedUpdate: false }
         }
         try {
-          const result = await fsProvider.readFile(joinWorktreeRelativePath(repo.path, 'orca.yaml'))
+          const config = await readRemoteProjectConfig(fsProvider, repo.path)
           return {
             status: 'ok',
-            hasHooks: !result.isBinary,
-            hooks: result.isBinary ? null : parseOrcaYaml(result.content),
+            hasHooks: config.hooks !== null,
+            hooks: config.hooks,
             mayNeedUpdate: false
           }
         } catch (error) {
@@ -2952,8 +2969,8 @@ export function registerWorktreeHandlers(
 
       const has = hasHooksFile(repo.path)
       const hooks = has ? loadHooks(repo.path) : null
-      // Why: unrecognised top-level keys mean the file is well-formed but from a newer Orca; suggest updating rather than "could not be parsed".
-      const mayNeedUpdate = has && !hooks && hasUnrecognizedOrcaYamlKeys(repo.path)
+      // Why: unrecognised top-level keys mean the file is well-formed but from a newer AIO-ADE; suggest updating rather than "could not be parsed".
+      const mayNeedUpdate = has && !hooks && hasUnrecognizedAioAdeYamlKeys(repo.path)
       return {
         status: 'ok',
         hasHooks: has,
@@ -3056,7 +3073,10 @@ export function registerWorktreeHandlers(
         }
       }
       if (repo.connectionId) {
-        const issueCommandPath = joinWorktreeRelativePath(repo.path, '.orca/issue-command')
+        const overrideCandidates = getRepoAppRelativeCandidates(ISSUE_COMMAND_FILENAME).map(
+          (relative) => joinWorktreeRelativePath(repo.path, relative)
+        )
+        const issueCommandPath = overrideCandidates[0]
         const fsProvider = getSshFilesystemProvider(repo.connectionId)
         if (!fsProvider) {
           return {
@@ -3071,23 +3091,37 @@ export function registerWorktreeHandlers(
 
         let status: 'ok' | 'error' = 'ok'
         let localContent: string | null = null
+        let localPath = issueCommandPath
         let sharedContent: string | null = null
-        try {
-          const result = await fsProvider.readFile(issueCommandPath)
-          localContent = result.isBinary ? null : result.content.trim() || null
-        } catch (error) {
-          if (!isENOENT(error)) {
-            status = 'error'
+        for (const candidate of overrideCandidates) {
+          try {
+            const result = await fsProvider.readFile(candidate)
+            const content = result.isBinary ? null : result.content.trim() || null
+            if (content) {
+              localContent = content
+              localPath = candidate
+              break
+            }
+          } catch (error) {
+            if (!isENOENT(error)) {
+              status = 'error'
+            }
           }
         }
-        try {
-          const result = await fsProvider.readFile(joinWorktreeRelativePath(repo.path, 'orca.yaml'))
-          sharedContent = result.isBinary
-            ? null
-            : parseOrcaYaml(result.content)?.issueCommand?.trim() || null
-        } catch (error) {
-          if (!isENOENT(error)) {
-            status = 'error'
+        for (const fileName of [PROJECT_CONFIG_FILE_NAME, LEGACY_PROJECT_CONFIG_FILE_NAME]) {
+          try {
+            const result = await fsProvider.readFile(joinWorktreeRelativePath(repo.path, fileName))
+            const issueCommand = result.isBinary
+              ? null
+              : parseAioAdeYaml(result.content)?.issueCommand?.trim() || null
+            if (issueCommand) {
+              sharedContent = issueCommand
+              break
+            }
+          } catch (error) {
+            if (!isENOENT(error)) {
+              status = 'error'
+            }
           }
         }
         const effectiveContent = localContent ?? sharedContent
@@ -3096,7 +3130,7 @@ export function registerWorktreeHandlers(
           localContent,
           sharedContent,
           effectiveContent,
-          localFilePath: issueCommandPath,
+          localFilePath: localPath,
           source: localContent
             ? ('local' as const)
             : sharedContent
@@ -3116,7 +3150,9 @@ export function registerWorktreeHandlers(
         return
       }
       if (repo.connectionId) {
-        const issueCommandPath = joinWorktreeRelativePath(repo.path, '.orca/issue-command')
+        const overrideCandidates = getRepoAppRelativeCandidates(ISSUE_COMMAND_FILENAME).map(
+          (relative) => joinWorktreeRelativePath(repo.path, relative)
+        )
         const fsProvider = getSshFilesystemProvider(repo.connectionId)
         if (!fsProvider) {
           throw new Error(
@@ -3125,28 +3161,34 @@ export function registerWorktreeHandlers(
         }
         const trimmed = args.content.trim()
         if (!trimmed) {
-          await fsProvider.deletePath(issueCommandPath, false).catch((error: unknown) => {
-            if (!isENOENT(error)) {
-              throw error
-            }
-          })
+          // Why: clear both, or a pre-rebrand override silently keeps winning.
+          for (const candidate of overrideCandidates) {
+            await fsProvider.deletePath(candidate, false).catch((error: unknown) => {
+              if (!isENOENT(error)) {
+                throw error
+              }
+            })
+          }
           return
         }
-        await fsProvider.createDir(joinWorktreeRelativePath(repo.path, '.orca'))
+        await fsProvider.createDir(joinWorktreeRelativePath(repo.path, REPO_APP_DIR_NAME))
         const gitignorePath = joinWorktreeRelativePath(repo.path, '.gitignore')
         try {
           const result = await fsProvider.readFile(gitignorePath)
-          if (!result.isBinary && !/^\.orca\/?$/m.test(result.content)) {
+          if (!result.isBinary && !isRepoAppDirIgnored(result.content)) {
             const separator = result.content.endsWith('\n') ? '' : '\n'
-            await fsProvider.writeFile(gitignorePath, `${result.content}${separator}.orca\n`)
+            await fsProvider.writeFile(
+              gitignorePath,
+              `${result.content}${separator}${REPO_APP_DIR_NAME}\n`
+            )
           }
         } catch (error) {
           if (!isENOENT(error)) {
             throw error
           }
-          await fsProvider.writeFile(gitignorePath, '.orca\n')
+          await fsProvider.writeFile(gitignorePath, `${REPO_APP_DIR_NAME}\n`)
         }
-        await fsProvider.writeFile(issueCommandPath, `${trimmed}\n`)
+        await fsProvider.writeFile(overrideCandidates[0], `${trimmed}\n`)
         return
       }
       writeIssueCommand(repo.path, args.content)

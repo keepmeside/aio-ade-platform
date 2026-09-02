@@ -17,9 +17,9 @@ vi.mock('fs', () => ({
 
 vi.mock('./relay-protocol', () => ({
   RELAY_VERSION: '0.1.0',
-  RELAY_REMOTE_DIR: '.orca-remote',
+  RELAY_REMOTE_DIR: '.aio-ade-remote',
   parseUnameToRelayPlatform: vi.fn().mockReturnValue('linux-x64'),
-  RELAY_SENTINEL: 'ORCA-RELAY v0.1.0 READY\n',
+  RELAY_SENTINEL: 'AIO_ADE-RELAY v0.1.0 READY\n',
   RELAY_SENTINEL_TIMEOUT_MS: 10_000
 }))
 
@@ -42,7 +42,7 @@ vi.mock('./ssh-remote-node-resolution', () => ({
 
 vi.mock('./ssh-relay-versioned-install', () => ({
   readLocalFullVersion: vi.fn().mockReturnValue('0.1.0+testhash'),
-  computeRemoteRelayDir: (home: string, v: string) => `${home}/.orca-remote/relay-${v}`,
+  computeRemoteRelayDir: (home: string, v: string) => `${home}/.aio-ade-remote/relay-${v}`,
   isRelayAlreadyInstalled: vi.fn().mockResolvedValue(false),
   finalizeInstall: vi.fn().mockResolvedValue(undefined),
   abandonInstall: vi.fn().mockResolvedValue(undefined),
@@ -90,7 +90,7 @@ type TransferOptions = { sftpNamespace?: SftpNamespacePathMapping }
 
 const SHELL_HOME = '/home/u'
 const SFTP_HOME = '/homes/u'
-const RELAY_SUFFIX = '.orca-remote/relay-0.1.0+testhash'
+const RELAY_SUFFIX = '.aio-ade-remote/relay-0.1.0+testhash'
 const SHELL_RELAY_DIR = `${SHELL_HOME}/${RELAY_SUFFIX}`
 const SFTP_RELAY_DIR = `${SFTP_HOME}/${RELAY_SUFFIX}`
 const MARKER_PATTERN = /\.sftp-namespace-[0-9a-f]{32}/
@@ -229,13 +229,13 @@ function feed(responses: string[]): void {
 
 // POSIX first install, healthy npm install and node-pty probe.
 const POSIX_FIRST_INSTALL = [
-  '__ORCA_REMOTE_PLATFORM__ Linux x86_64',
+  '__AIO_ADE_REMOTE_PLATFORM__ Linux x86_64',
   SHELL_HOME,
   '', // mkdir remoteDir (+ install-owner marker)
   '', // chmod +x node
   '', // npm install native deps
   '', // chmod prebuilds
-  'ORCA-NPTY-PROBE-OK\n',
+  'AIO_ADE-NPTY-PROBE-OK\n',
   '', // rm probe stderr
   'DEAD',
   'READY'
@@ -243,14 +243,14 @@ const POSIX_FIRST_INSTALL = [
 
 // POSIX repair of an installed dir whose native deps are missing.
 const POSIX_REPAIR = [
-  '__ORCA_REMOTE_PLATFORM__ Linux x86_64',
+  '__AIO_ADE_REMOTE_PLATFORM__ Linux x86_64',
   SHELL_HOME,
   'MISSING', // probe before the repair lock
   'MISSING', // re-probe under the lock
   '', // install-owner marker
   '', // npm install native deps
   '', // chmod prebuilds
-  'ORCA-NPTY-PROBE-OK\n',
+  'AIO_ADE-NPTY-PROBE-OK\n',
   '', // rm probe stderr
   'DEAD',
   'READY'
@@ -423,7 +423,7 @@ describe('relay install writes on a split SFTP namespace', () => {
     vi.mocked(parseUnameToRelayPlatform).mockReturnValue('win32-x64')
     const conn = makeConnection(capture)
     feed([
-      '__ORCA_REMOTE_PLATFORM__ Windows AMD64',
+      '__AIO_ADE_REMOTE_PLATFORM__ Windows AMD64',
       'C:\\Users\\u',
       '' // mkdir remoteDir
     ])
@@ -435,8 +435,8 @@ describe('relay install writes on a split SFTP namespace', () => {
     expect(execCommands().some((command) => MARKER_PATTERN.test(command))).toBe(false)
     expect(capture.realpathCalls).toEqual([])
     expect(capture.writePaths).toEqual([
-      'C:/Users/u/.orca-remote/relay-0.1.0+testhash/.version',
-      'C:/Users/u/.orca-remote/relay-0.1.0+testhash/package.json'
+      'C:/Users/u/.aio-ade-remote/relay-0.1.0+testhash/.version',
+      'C:/Users/u/.aio-ade-remote/relay-0.1.0+testhash/package.json'
     ])
   })
 
@@ -536,13 +536,13 @@ describe('relay repair writes on a split SFTP namespace', () => {
   it('does not stamp a marker when repairing over system SSH', async () => {
     const conn = makeConnection(capture, { systemSsh: true, transferMethods: true })
     feed([
-      '__ORCA_REMOTE_PLATFORM__ Linux x86_64',
+      '__AIO_ADE_REMOTE_PLATFORM__ Linux x86_64',
       SHELL_HOME,
       'MISSING',
       'MISSING',
       '', // npm install native deps
       '', // chmod prebuilds
-      'ORCA-NPTY-PROBE-OK\n',
+      'AIO_ADE-NPTY-PROBE-OK\n',
       '', // rm probe stderr
       'DEAD',
       'READY'
@@ -558,12 +558,12 @@ describe('relay repair writes on a split SFTP namespace', () => {
 
   it('degrades to shell paths when marker creation fails outright', async () => {
     const conn = makeConnection(capture)
-    feed(['__ORCA_REMOTE_PLATFORM__ Linux x86_64', SHELL_HOME, 'MISSING', 'MISSING'])
+    feed(['__AIO_ADE_REMOTE_PLATFORM__ Linux x86_64', SHELL_HOME, 'MISSING', 'MISSING'])
     vi.mocked(execCommand).mockRejectedValueOnce(new Error('read-only file system'))
     feed([
       '', // npm install native deps
       '', // chmod prebuilds
-      'ORCA-NPTY-PROBE-OK\n',
+      'AIO_ADE-NPTY-PROBE-OK\n',
       '', // rm probe stderr
       'DEAD',
       'READY'
@@ -580,7 +580,7 @@ describe('relay repair writes on a split SFTP namespace', () => {
 
   it('keeps the repair lock when marker creation has unconfirmed termination', async () => {
     const conn = makeConnection(capture)
-    feed(['__ORCA_REMOTE_PLATFORM__ Linux x86_64', SHELL_HOME, 'MISSING', 'MISSING'])
+    feed(['__AIO_ADE_REMOTE_PLATFORM__ Linux x86_64', SHELL_HOME, 'MISSING', 'MISSING'])
     vi.mocked(execCommand).mockRejectedValueOnce(
       Object.assign(new Error('marker teardown unconfirmed'), { sshChannelCloseConfirmed: false })
     )

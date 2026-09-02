@@ -1,4 +1,10 @@
 import { translate } from '@/i18n/i18n'
+import { PLUGIN_MANIFEST_FILENAMES } from '../../../../shared/plugins/plugin-brand-tokens'
+// Why: an installed plugin may still ship the pre-rebrand manifest name, and the error detail
+// quotes whichever name the host looked for.
+function mentionsPluginManifest(detail: string): boolean {
+  return PLUGIN_MANIFEST_FILENAMES.some((fileName) => detail.includes(fileName))
+}
 
 function errorText(cause: unknown): string {
   return (cause instanceof Error ? cause.message : String(cause)).toLowerCase()
@@ -6,22 +12,22 @@ function errorText(cause: unknown): string {
 
 export function pluginInstallErrorMessage(cause: unknown): string {
   const detail = errorText(cause)
-  if (detail.includes('orca-plugin.json') && /(missing|unreadable|no )/.test(detail)) {
+  if (mentionsPluginManifest(detail) && /(missing|unreadable|no )/.test(detail)) {
     return translate(
       'auto.components.settings.pluginError.installManifestMissing',
-      "No readable orca-plugin.json was found. Choose the plugin's root folder."
+      "No readable aio-ade-plugin.json was found. Choose the plugin's root folder."
     )
   }
   if (detail.includes('invalid manifest')) {
     return translate(
       'auto.components.settings.pluginError.installManifestInvalid',
-      'orca-plugin.json is invalid. Ask the plugin author to fix the manifest.'
+      'aio-ade-plugin.json is invalid. Ask the plugin author to fix the manifest.'
     )
   }
-  if (detail.includes('requires orca')) {
+  if (detail.includes('requires aio-ade')) {
     return translate(
       'auto.components.settings.pluginError.incompatible',
-      'This plugin requires a different Orca version.'
+      'This plugin requires a different AIO-ADE version.'
     )
   }
   if (/(symlink|outside|absolute|path traversal|drive prefix)/.test(detail)) {
@@ -33,13 +39,13 @@ export function pluginInstallErrorMessage(cause: unknown): string {
   if (/(exceeds|too many)/.test(detail)) {
     return translate(
       'auto.components.settings.pluginError.installLimit',
-      "The plugin exceeds Orca's install size or file-count limits."
+      "The plugin exceeds AIO-ADE's install size or file-count limits."
     )
   }
   if (/(git|repository|fetch|clone|checkout|remote)/.test(detail)) {
     return translate(
       'auto.components.settings.pluginError.installGit',
-      'Orca could not fetch the pinned Git revision. Check the URL, #ref, access, and system Git setup.'
+      'AIO-ADE could not fetch the pinned Git revision. Check the URL, #ref, access, and system Git setup.'
     )
   }
   return translate(
@@ -50,16 +56,16 @@ export function pluginInstallErrorMessage(cause: unknown): string {
 
 export function invalidPluginErrorMessage(detailValue: string): string {
   const detail = detailValue.toLowerCase()
-  if (detail.includes('missing orca-plugin.json')) {
+  if (mentionsPluginManifest(detail) && detail.includes('missing')) {
     return translate(
       'auto.components.settings.pluginError.invalidManifestMissing',
-      'The plugin root is missing orca-plugin.json. Add it, then refresh plugins.'
+      'The plugin root is missing aio-ade-plugin.json. Add it, then refresh plugins.'
     )
   }
   if (detail.includes('invalid manifest')) {
     return translate(
       'auto.components.settings.pluginError.invalidManifest',
-      'orca-plugin.json is invalid. Fix it, then refresh plugins.'
+      'aio-ade-plugin.json is invalid. Fix it, then refresh plugins.'
     )
   }
   if (detail.includes('artifact')) {
@@ -68,10 +74,10 @@ export function invalidPluginErrorMessage(detailValue: string): string {
       'A declared worker or panel file is missing or unsafe. Fix the plugin files, then refresh.'
     )
   }
-  if (detail.includes('requires orca')) {
+  if (detail.includes('requires aio-ade')) {
     return translate(
       'auto.components.settings.pluginError.incompatible',
-      'This plugin requires a different Orca version.'
+      'This plugin requires a different AIO-ADE version.'
     )
   }
   return translate(
