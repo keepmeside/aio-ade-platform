@@ -27,6 +27,21 @@ Phase 01-05 verify local-only vì repo còn private và Actions bị billing-blo
 - Functional: các tiêu chí 3-OS bị defer từ phase 03 và 05 (packaged smoke, PATH/uninstall trên Windows shims + macOS/Linux links + WSL + SSH host, artifact naming `aio-ade-*`, build metadata nhất quán, chỉ-một-binary-không-alias) được verify thật ở đây và tick lại vào phase gốc.
 - Functional: xác nhận **artifact unsigned chạy được** trên cả 3 OS sau khi bypass (macOS: `right-click → Open` / `xattr -d com.apple.quarantine`; Windows: SmartScreen "Run anyway"). Đây là trạng thái đã duyệt cho bản đầu, không phải bug — nhưng phải verify là app thực sự khởi động được, không bị chặn cứng.
 - Functional: xác nhận **updater đã tắt** và release workflow là manual-dispatch, chỉ stable channel, không auto-tag.
+
+### Đã đóng trước phase này: git binary compatibility matrix (2026-09-02)
+
+`deferred-verification.md` xếp D19 (matrix git 2.25.5 / 2.38.1 / 2.49.1) vào phase này, **nhưng chính nó ghi chú D19 "không thực sự deferred"** vì docker có trên máy dev. Không ai chạy. Giờ đã chạy — 4 leg, mỗi leg 5 test, **tất cả xanh**:
+
+| Leg | Version | Nguồn | Có trong CI? |
+|---|---|---|---|
+| source build | **2.25.5** — baseline core-workflow theo `AGENTS.md` | build từ tarball kernel.org, checksum khớp pin trong `pr.yml:124` | có |
+| host binary | **2.34.1** | git của máy này | **không** — CI chỉ test 2.25.5/2.38.1/2.49.1 |
+| docker | 2.38.1 | `alpine/git:edge-2.38.1` | có |
+| docker | 2.49.1 | `alpine/git:v2.49.1` | có |
+
+Leg 2.34.1 là leg có giá trị riêng: nó nằm **dưới ngưỡng 2.36 của `worktree list -z`**, nên nó đi vào đúng nhánh fallback mà máy dev git mới và cả 3 leg CI đều không chạm. Suite gated bằng `AIO_ADE_GIT_COMPAT_IMAGE` / `AIO_ADE_GIT_COMPAT_BINARY`, nên full suite bỏ qua nó im lặng — đây là coverage đã tồn tại nhưng chưa từng chạy.
+
+Phase này chỉ cần re-run 3 leg CI trên matrix để có evidence trên runner thật; không cần điều tra lại.
 - Non-functional: fix nhóm (a) là commit riêng theo phase gốc gây ra nó, không trộn vào commit publication của phase 08.
 - Non-functional: nếu một regression không sửa được trong phase này, mở issue và ghi vào `decisions.md` thay vì để tiêu chí phase cũ tick sai.
 
