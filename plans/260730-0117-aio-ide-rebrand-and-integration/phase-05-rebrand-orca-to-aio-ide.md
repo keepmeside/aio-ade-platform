@@ -166,7 +166,7 @@ Bảy vị trí trên là chỗ rename **không chạy**. Lớp này ngược l�
 - `pnpm lint` (8 gate): **xanh** — nhưng chỉ sau khi sửa, xem mục dưới. Lần đo trước ghi "xanh" mà không chạy gate đầy đủ.
 - `pnpm typecheck` (3 project): **xanh**.
 - `pnpm test` full suite: **đã chạy và đã đóng 2026-09-02.** Xem mục dưới.
-- Build desktop thật: defer phase 12 theo `deferred-verification.md`.
+- Build desktop thật: **`pnpm build:desktop` exit 0 trên Linux 2026-09-02** — 5 bước (typecheck → relay → cli → electron-vite → web-from-renderer) đều xong. Trước đó nó **vỡ từ phase 04** vì một rollup input entry trỏ tới file đã xoá; xem mục cùng tên ở phase 04. Phần còn defer sang phase 12 giờ hẹp lại: **matrix macOS/Windows + packaged artifact**, không còn là "chưa build lần nào".
 
 ### `max-lines` — rebrand làm tràn budget qua formatter
 

@@ -49,6 +49,17 @@ Narrow `TuiAgent` từ roster 35 thành `claude | codex`, dùng compiler errors 
 | `pnpm typecheck` | exit 0 — **chạy sau khi xoá `config/*.tsbuildinfo`**. Lần verify đầu báo xanh sai vì incremental state cũ; 29 lỗi thật nằm trong project `tc.web` |
 | `pnpm lint` | exit 0 (9 sub-check, gồm reliability gates, max-lines ratchet, localization catalog + coverage) |
 | `pnpm test` | 38.841 pass / 1 fail — `project-view-wrapper-source-context-boundary.test.ts` timeout 30s, đúng baseline phase 03, pass khi chạy riêng |
+| `pnpm build:desktop` | **KHÔNG chạy** — và đó là chỗ hổng thật, xem dưới |
+
+### Chỗ hổng: build không nằm trong gate nào (phát hiện 2026-09-02)
+
+Bảng trên có `typecheck`, `lint`, `test` — không có build. Phase 05 cũng vậy, và cả hai defer "build thật" sang phase 12 vì cần CI matrix 3 OS. Hệ quả không ai dự tính: **defer 3-OS thành defer 0-OS**, và desktop build **đã vỡ từ phase 04 mà không ai biết**.
+
+Phase này xoá `src/main/ai-vault/session-scanner-opencode-sqlite-worker-entry.ts` cùng phần opencode, nhưng để lại nó trong `electron.vite.config.ts:205` như một **rollup input entry**. `pnpm build:desktop` fail với `UNRESOLVED_ENTRY` — lỗi cứng, không phải warning, nên nó chặn toàn bộ build.
+
+Không gate nào bắt được: `pnpm test` không bundle, `pnpm typecheck` không resolve bundler entry, `pnpm lint` cũng không. Nếu để nguyên, failure đầu tiên sẽ là CI matrix ở phase 12 — **sau** khi flip public bất khả nghịch.
+
+Đã sửa 2026-09-02: xoá entry chết, và thêm guard `config/scripts/bundler-entry-paths.test.mjs` assert mọi `resolve('…')` trong config bundler trỏ tới path tồn tại thật. Guard đã được chứng minh red/green: thêm lại entry chết → đỏ và in đúng tên path thiếu.
 
 Quy mô: 485+ file, khoảng +2.700 / −55.700 so với `18fa088c1`. Locale prune tổng cộng 85 key (61 + 24 sau khi xoá UI chết), parity 11.432 key × 5 locale.
 

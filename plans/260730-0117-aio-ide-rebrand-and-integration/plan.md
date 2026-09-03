@@ -114,13 +114,13 @@ Plan này chỉ tạo roadmap và artifact review. Sau khi duyệt gate, chạy 
 **Scope carve CLI đã chốt (2026-08-22).** Xem row `CLI carve scope` trong [decisions.md](decisions.md).
 
 - **browser (77 command) đã xoá** — 0 consumer, 0 guide ref. CLI: 216 → **139 command**.
-- **emulator + computer: audit đã đảo khuyến nghị, nên GIỮ.** `computer` có consumer runtime thật (RPC error path phát hướng dẫn `orca computer …` cho agent); `emulator` được UI desktop quảng cáo + locale 5 thứ tiếng.
+- **emulator + computer: audit đã đảo khuyến nghị, nên GIỮ.** `computer` có consumer runtime thật (RPC error path phát hướng dẫn `aio-ade computer …` cho agent — trước rebrand là `orca computer …`); `emulator` được UI desktop quảng cáo + locale 5 thứ tiếng.
 - **Linear (27 command): defer sang phase 09.** Blocker thuần docs (115 guide ref) nhưng giá trị xoá thấp, và phase 10 (ACP) có thể đổi việc agent reach gì. Minimal bridge chốt ở **139 command**.
 
 Các gate khác đã đóng — xem [decisions.md](decisions.md). Các quyết định phát sinh trong lúc thực thi:
 
-- **Phase 01:** kết quả history secret scan (17.537 commit). Nếu có secret upstream không rotate được → chạy nhánh contingency đã duyệt.
+- ~~**Phase 01:** kết quả history secret scan.~~ **Đã đóng 2026-09-02:** gitleaks trên mọi ref (16.371 commit, 304 MB) trả **0 finding**. Không có secret của fork hay của upstream phải rotate, nên **không dùng nhánh contingency nào**. Config đã install ở root (`.gitleaks.toml`), mỗi allowlist entry có verdict viết ra.
 - **Phase 09:** xoá thật `serve` hay giữ.
 - **Phase 11:** verdict Tauri GO/NO-GO. Nếu bundle size xấu >10% (khả năng cao vì Node sidecar) → cần quyết định user riêng.
 - **Sau khi mua cert:** bật signing + notarization, rồi mới bật auto-update.
-- Ai sở hữu release channel, signing và notarization credentials?
+- Ai sở hữu release channel, signing và notarization credentials? (Vẫn mở. Lưu ý: bản ghi cũ "Keepmeside sở hữu credentials" **đã bị thay thế** — row `Signing/notarization` trong `decisions.md` nói chưa có cert, ship unsigned. Câu hỏi còn lại là ai giữ credentials **sau khi mua**.)
