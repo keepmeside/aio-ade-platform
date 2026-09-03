@@ -91,6 +91,21 @@ module.exports = {
     // it is gitignored, but exclude it defensively so a stray local capture at
     // package time never bloats app.asar.
     '!pr-evidence{,/**/*}',
+    // Why: plans/ is internal operating history — decision log, coupling maps, secret-scan
+    // triage. It was removed from the repository so it would not go public with the source, yet
+    // it still packed into every install (64 files, 1.1 MB in 1.4.162) because nothing here
+    // negated it. `files` is all-negation, so silence means "ship it".
+    '!plans{,/**/*}',
+    // Why: agent/tool state and editor-side indexes. No runtime reader; some carry local paths.
+    '!{.claude,.code-review-graph,.codegraph}{,/**/*}',
+    // Why: lint, formatter, scanner and toolchain config; consumed by CI and the dev shell only.
+    '!{.gitleaks.toml,.nvmrc,.oxfmtrc.json,.oxlintrc.json,pnpm-workspace.yaml,vite.web.config.ts,components.json}',
+    // Why: a per-checkout workspace policy file. The app reads the one in the user's repository,
+    // never one beside its own binary.
+    '!aio-ade.yaml',
+    // Why: build-time vite plugin source and repo tooling (e2e harnesses, benchmarks).
+    '!build-plugins{,/**/*}',
+    '!tools{,/**/*}',
     '!Casks{,/**/*}',
     '!{AGENTS.md,CLAUDE.md,DEVELOPING.md,bundle-size-progress.md,ORCHESTRATION_IMPLEMENTATION_CHECKLIST.md,ORCHESTRATION_STRUCTURED_OUTPUT_DESIGN.md}',
     '!out/**/*.test.js',

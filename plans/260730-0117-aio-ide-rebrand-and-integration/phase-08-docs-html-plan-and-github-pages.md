@@ -112,6 +112,18 @@ Phân loại theo *vai trò của URL*, không theo pattern:
 
 Guard đi kèm: scan brand giờ **tự nhận** citation upstream theo *hình dạng* (`github.com/stablyai/orca/(issues|pull)/N`) thay vì allowlist 11 path. Khác biệt quan trọng: allowlist theo path sẽ tắt scan cho cả file, còn cách này chỉ trừ đúng URL — file chứa citation vẫn bị quét cho mọi occurrence khác. Có test riêng chứng minh điều đó (`subtracts only the citation, so a real miss beside one still fails`).
 
+## Packaging leak tìm được khi verify artifact (2026-09-03)
+
+Mở `app.asar` của bản Linux packaged (`electron-builder --linux --dir`) để verify identity thì thấy nó chứa **`plans/` — 64 file, 1,1 MB**, gồm `decisions.md`, `secret-scan-triage.md`, coupling map. Tức là nội dung đã cố ý gỡ khỏi repo để không public **vẫn nằm trong mọi bản cài của user**. Cùng lọt: `tools/` (e2e harness, benchmark), `.claude/`, `.gitleaks.toml`, `.oxlintrc.json`, `pnpm-workspace.yaml`, `vite.web.config.ts`, `aio-ade.yaml` của checkout.
+
+Nguyên nhân là lớp lỗi repo này đã gặp ở 1.4.160-rc.3 (`examples/hostile-panel` ship vào asar): `files` trong `electron-builder.config.cjs` là danh sách **toàn negation**, nên thư mục nào không có `!` là **ship**. Im lặng nghĩa là "đóng gói".
+
+Trên máy dev, asar còn phình từ 113 MB lên **1,58 GB** vì nuốt luôn `.code-review-graph/graph.db` (2,0 GB) và `.codegraph/` (742 MB) — hai cái này gitignored nên **CI release không bị**, nhưng `plans/`/`tools/`/config thì tracked và **đã ship thật** trong mọi bản CI trước đây.
+
+Đã sửa (TDD: test đỏ trước, drive `FileMatcher` thật của app-builder-lib chứ không pin chuỗi pattern): 7 negation mới trong `files`, và test đối chứng rằng `out/`, `package.json`, `LICENSE`, `NOTICE` vẫn ship. Sau sửa, top-level của asar chỉ còn `LICENSE NOTICE out package.json resources`; artifact Linux có executable `aio-ade`, không có `orca*`, `productName: AIO-ADE`, `license: MIT`.
+
+**Gate item 3 (PII) được mở rộng bởi phát hiện này:** quét PII trong docs/plans/issues là chưa đủ — phải quét **cả bundle đã đóng gói**, vì `files` all-negation biến mọi thứ tracked thành user-visible. Đã quét: 0 legacy token trong `out/`, không còn `plans/`.
+
 ## Success Criteria
 
 - [x] Mở `plan.html` local không network vẫn đủ nội dung và tương tác; nội dung khớp `plan.md` + phase files hiện tại (gồm 09/10/11/12) — **khớp theo cấu tạo**, vì nó được sinh từ chính hai nguồn đó. 184 KB, 0 external asset, đọc được không JS (`.phase-detail[hidden]` được noscript stylesheet mở lại). **Tương tác được verify bằng cách chạy thật, không phải bằng assert markup:** `render-plan-html-interaction.test.mjs` load trang vào happy-dom, execute script inline của chính nó, rồi bấm card (dialog mở đúng phase body), đóng dialog (node được trả về `#phase-details` và hidden lại), gõ filter (thu hẹp đúng, và **tìm cả trong body phase** không chỉ label card), bật/tắt chip status. 6 test.

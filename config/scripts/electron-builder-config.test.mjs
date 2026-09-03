@@ -71,6 +71,44 @@ describe('electron-builder config', () => {
     expect(packs('out/main/examples/index.js')).toBe(true)
   })
 
+  /* Same failure mode as examples/, found the same way — by opening the asar. The plan directory
+   * is internal operating history that was removed from the repository so it would not go public
+   * with the source; it was still packed into every user's install, 64 files and 1.1 MB, because
+   * nothing negated it. The other entries here are tool state, lint config and workspace
+   * manifests that a running app has no reader for. Driving the real matcher, as above. */
+  it('keeps plans, tool state and workspace config out of app.asar', () => {
+    const matcher = new FileMatcher('/app', '/dest', (value) => value, electronBuilderConfig.files)
+    matcher.prependPattern('**/*')
+    const isPacked = matcher.createFilter()
+    const packs = (repoPath) => isPacked(join('/app', repoPath), { isDirectory: () => false })
+
+    for (const repoOnly of [
+      'plans/260730-0117-aio-ide-rebrand-and-integration/decisions.md',
+      'plans/260730-0117-aio-ide-rebrand-and-integration/research/baseline/secret-scan-triage.md',
+      'plans/reports/anything.md',
+      '.claude/settings.json',
+      '.code-review-graph/graph.db',
+      '.codegraph/index.sqlite',
+      '.gitleaks.toml',
+      '.nvmrc',
+      '.oxfmtrc.json',
+      '.oxlintrc.json',
+      'pnpm-workspace.yaml',
+      'vite.web.config.ts',
+      'components.json',
+      'aio-ade.yaml',
+      'build-plugins/anything.cjs',
+      'tools/win-crash-survival-e2e/run.mjs'
+    ]) {
+      expect(packs(repoOnly), repoOnly).toBe(false)
+    }
+    // Runtime content, and the attribution the licence requires, still ship.
+    expect(packs('out/main/index.js')).toBe(true)
+    expect(packs('package.json')).toBe(true)
+    expect(packs('LICENSE')).toBe(true)
+    expect(packs('NOTICE')).toBe(true)
+  })
+
   it('keeps runtime resources available through extraResources', () => {
     const bundledPluginResources = expect.objectContaining({
       from: 'resources/plugins/launch',
