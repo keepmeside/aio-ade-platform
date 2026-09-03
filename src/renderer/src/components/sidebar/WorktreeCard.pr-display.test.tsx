@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import type { ReactNode } from 'react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { HostedReviewInfo } from '../../../../shared/hosted-review'
 import type {
   GlobalSettings,
@@ -158,6 +158,10 @@ function getInlineRenameTitleTag(markup: string): string {
 }
 
 describe('WorktreeCard linked PR display', () => {
+  // Pays the component's module-graph transform once (7.6s idle, past 20s under full-suite load)
+  // so the per-test budgets below measure assertions, not the loader.
+  beforeAll(() => import('./WorktreeCard'), 90_000)
+
   beforeEach(() => {
     vi.clearAllMocks()
     worktreeCardProperties = ['status']
