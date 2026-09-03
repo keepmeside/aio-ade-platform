@@ -5,14 +5,15 @@ import {
   isOrchestrationMutation,
   orchestrationMigrationData
 } from '../../shared/orchestration-rpc-contract'
-import { parsePairingCode, type PairingOffer } from '../../shared/pairing'
+import type { PairingOffer } from '../../shared/pairing'
 import { launchAioAdeApp } from './launch'
 import { getDefaultUserDataPath, readMetadata } from './metadata'
 import { getCliStatus, resolveDesktopWindowStatus } from './status'
 import { sendRequest } from './transport'
 import { RuntimeClientError, RuntimeRpcFailureError, type RuntimeRpcSuccess } from './types'
 import type { sendWebSocketRequest } from './websocket-transport'
-import { markEnvironmentUsed, resolveEnvironmentPairingOffer } from './environments'
+import { markEnvironmentUsed } from './environments'
+import { resolveRemotePairing } from './remote-pairing'
 import { describeRuntimeCompatBlock, evaluateRuntimeCompat } from '../../shared/protocol-compat'
 import {
   MIN_COMPATIBLE_RUNTIME_SERVER_VERSION,
@@ -297,33 +298,6 @@ function throwDesktopActivationBlocked(): never {
     'desktop_activation_blocked',
     'AIO-ADE is running headlessly, but it cannot open a desktop window safely because the persistent terminal provider is unavailable. Quit AIO-ADE normally and start the app again; do not use open -n.'
   )
-}
-
-function resolveRemotePairing(
-  userDataPath: string,
-  pairingCode: string | null,
-  environmentSelector: string | null
-): PairingOffer | null {
-  if (pairingCode && environmentSelector) {
-    throw new RuntimeClientError(
-      'invalid_argument',
-      'Use either --pairing-code or --environment, not both.'
-    )
-  }
-  if (environmentSelector) {
-    return resolveEnvironmentPairingOffer(userDataPath, environmentSelector)
-  }
-  if (!pairingCode) {
-    return null
-  }
-  const pairing = parsePairingCode(pairingCode)
-  if (!pairing) {
-    throw new RuntimeClientError(
-      'invalid_argument',
-      'Invalid remote pairing code. Expected an aio-ade://pair?... URL or bare pairing payload.'
-    )
-  }
-  return pairing
 }
 
 function delay(ms: number): Promise<void> {
