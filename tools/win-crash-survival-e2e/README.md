@@ -2,7 +2,7 @@
 
 **Windows only.** Proves that a **crash of AIO-ADE's main process** does not orphan
 open terminal PTYs — the regression behind
-[GitHub #7742](https://github.com/keepmeside/aio-ade-platform/issues/7742) —
+[GitHub #7742](https://github.com/stablyai/orca/issues/7742) —
 with machine-checkable assertions against an **already-installed, packaged**
 `AIO-ADE.exe`.
 

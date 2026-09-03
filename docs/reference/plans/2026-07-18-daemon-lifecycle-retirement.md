@@ -20,10 +20,10 @@ alongside v22 and older versions.
 
 ## Inputs and scope decision
 
-Issue: <https://github.com/keepmeside/aio-ade-platform/issues/9138>
+Issue: <https://github.com/stablyai/orca/issues/9138>
 
 Reviewed design comment by AmethystLiang:
-<https://github.com/keepmeside/aio-ade-platform/issues/9138#issuecomment-5006601124>
+<https://github.com/stablyai/orca/issues/9138#issuecomment-5006601124>
 
 The reviewed comment correctly identifies two different problems:
 

@@ -2,7 +2,7 @@
 
 ## Problem
 
-GitHub issue [#5864](https://github.com/keepmeside/aio-ade-platform/issues/5864) reports that AIO-ADE on Windows v0.14.80 fails to delete a workspace created from a project `+` button:
+GitHub issue [#5864](https://github.com/stablyai/orca/issues/5864) reports that AIO-ADE on Windows v0.14.80 fails to delete a workspace created from a project `+` button:
 
 `Error invoking remote method 'worktrees:remove': Error: Refusing to delete unregistered worktree path: C:/Users/user/aio-ade/workspaces/ops-tools/packaging-improvements-2`
 

@@ -100,7 +100,17 @@ User chọn hướng **repo public** (hàng 2 của matrix cũ nhưng áp dụng
 | 4. Workflow / runner audit | **PASS (đã enumerate)** | 8 label `runs-on` phân biệt; 3 repo guard đã là `keepmeside/aio-ade-platform`; **còn 2 chỗ thuộc phase 12** (Blacksmith runner label, `track-community-prs.yaml` `owner:` + `PROJECT_OWNER`); 1 `pull_request_target` duy nhất không checkout PR head. **Chưa làm được:** set Actions permissions cho external contributor — là setting của owner |
 | 5. Upstream endpoints inert | **PASS** | `TELEMETRY_ENABLED = false`, `TELEMETRY_INGEST_HOST = telemetry.aio-ade.keepmeside.dev`, `UPDATE_CHANNEL_AUTHENTICATED = false`. 0 occurrence `i.posthog.com` và `onorca.dev` trong source. `stablyai/orca` còn lại: attribution MIT bắt buộc trong `README.md:241` + văn xuôi plan. `stablyai/orca-*` trong `resources/plugins/launch/` là repo upstream của 3 plugin bundled — persisted identity, **không được rename** |
 
-**Phát hiện chưa đóng, cần quyết định:** rebrand đã rewrite `stablyai/orca` → `keepmeside/aio-ade-platform` **bên trong URL issue/PR**, nên có **178 link phân biệt** dạng `github.com/keepmeside/aio-ade-platform/issues/NNNN` trong khi repo này chỉ có 2 issue. Rewrite đúng cú pháp nhưng sai nghĩa: những issue đó nằm ở tracker của upstream. Sau flip chúng thành link chết trỏ vào chính repo mình. Chọn một: trỏ lại `stablyai/orca` (đúng nơi issue tồn tại, nhưng đưa URL upstream trở lại), hoặc gỡ link giữ số, hoặc để phase 09 xử lý.
+**Đã đóng 2026-09-02 — link issue bị rewrite sai nghĩa.** Rebrand rewrite `stablyai/orca` → `keepmeside/aio-ade-platform` **bên trong URL issue/PR**, tạo 178 link phân biệt / 333 occurrence trỏ vào một tracker chỉ có 2 issue. Đúng cú pháp, sai nghĩa. Bằng chứng: `git show 631b3b0e7:<file>` cho thấy mỗi file citation có **đúng cùng số** occurrence `stablyai/orca/issues/N` trước rebrand — rewrite 1:1.
+
+Phân loại theo *vai trò của URL*, không theo pattern:
+
+| Nhóm | Số | Xử lý |
+|---|---:|---|
+| Citation issue/PR thật của upstream (11 file: `reliability-gates.jsonc` 131, doc `2026-07-21-windows-daemon…` 53, 9 file còn lại 11) | 195 occurrence | **Trỏ lại `stablyai/orca`** — issue chỉ tồn tại ở tracker upstream |
+| Fixture test (29 file) | phần còn lại | **Giữ tên mới.** Owner/repo là dữ liệu tổng hợp; tên của chính mình mới đúng |
+| Sample URL trong UI (`link-routing-preference-dialog.tsx`, `pull/1234`) | 1 | **Giữ tên mới** — đây là ví dụ hiển thị cho user, phải trông giống repo mình |
+
+Guard đi kèm: scan brand giờ **tự nhận** citation upstream theo *hình dạng* (`github.com/stablyai/orca/(issues|pull)/N`) thay vì allowlist 11 path. Khác biệt quan trọng: allowlist theo path sẽ tắt scan cho cả file, còn cách này chỉ trừ đúng URL — file chứa citation vẫn bị quét cho mọi occurrence khác. Có test riêng chứng minh điều đó (`subtracts only the citation, so a real miss beside one still fails`).
 
 ## Success Criteria
 

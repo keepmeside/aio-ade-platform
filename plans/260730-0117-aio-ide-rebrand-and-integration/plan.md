@@ -59,7 +59,7 @@ Chuyển fork Orca thành **AIO-ADE** (machine token `aio-ade`; org/author token
 | [05 Rebrand Orca thành aio-ade](phase-05-rebrand-orca-to-aio-ide.md) | **completed** 2026-09-02 — full suite xanh thật: 3.729 file / 38.953 test, 0 đỏ (Node 24). Lần đo đầu có **23 đỏ / 16 file**: 3 defect production (partition browser-session lệch với security guard, scan brand đang đỏ, alias trùng), 17 expectation gắn cứng vào độ dài/offset token, 1 bundle build stale, 1 timeout do tải | 3 đến 5 ngày | 04 |
 | [06 Account và API profile switcher](phase-06-account-and-api-profile-switcher.md) | pending | 5 đến 6 tuần, chia 06A/06B | 04, 05, **12** |
 | [07 Tích hợp tính năng chọn lọc từ upstream (canvas: Excalidraw)](phase-07-upstream-feature-integrations.md) | staged | theo tranche | 05, 06 |
-| [08 HTML review, repo public sau rebrand và Pages](phase-08-docs-html-plan-and-github-pages.md) | pending (public đã duyệt, flip sau phase 05) | 2 đến 4 ngày | 05; pre-publication gate |
+| [08 HTML review, repo public sau rebrand và Pages](phase-08-docs-html-plan-and-github-pages.md) | **blocked-on-owner** 2026-09-02 — 4/6 tiêu chí xong: `plan.html` giờ **generate trong CI** từ `plan.md` + phase files (không còn file viết tay stale), publication guard 4 rule + 14 test, pre-publication gate **pass cả 5 item** (gitleaks 16.371 commit → 0 finding). Còn lại **chỉ hành động của owner**: flip visibility, bật Pages, dispatch | 2 đến 4 ngày | 05; pre-publication gate |
 | [12 Post-flip CI matrix và regression triage](phase-12-post-flip-ci-matrix-and-regression-triage.md) | pending — **chạy ngay sau 08** | 2 đến 5 ngày (mở theo số regression) | 08 |
 | [09 Codebase cleanup sau rebrand](phase-09-codebase-cleanup-sau-rebrand.md) | pending | 2 đến 3 ngày | 05, 12 |
 | [10 ACP generic agent support](phase-10-acp-generic-agent-support.md) | pending | 3 đến 5 engineer-weeks | 04, 06A (milestone trong phase 06) |
@@ -94,6 +94,16 @@ Chuyển fork Orca thành **AIO-ADE** (machine token `aio-ade`; org/author token
 - [Full feature catalog: 176 rows](feature-catalog.md)
 - [Research reports](research/) — gồm `electrobun-migration-feasibility.md`, `rust-gpui-hybrid-migration.md`, `tauri-v2-migration-feasibility.md`, `acp-generic-agent-support.md`
 - [aio-ade HTML plan](plan.html)
+
+## Trạng thái thực thi 2026-09-02
+
+Phase 05 đóng thật (full suite xanh: 3.729 file / 38.953 test, `lint` 8 gate xanh sau khi tách `remote-pairing.ts`, `typecheck` 3 project xanh). Phase 08 xong phần agent làm được; **toàn bộ phần còn lại của chương trình chờ owner flip visibility**, vì:
+
+- Phase 12 (gate CI đầu tiên) `blockedBy` 08 — cần Actions chạy được, tức cần repo public hoặc sửa billing.
+- Phase 06, 09, 11 đều `blockedBy` 12.
+- Phase 07 `blockedBy` 06; phase 10 `blockedBy` 06A.
+
+Nói cách khác: không có phase nào tiến được thêm mà không có hành động của owner. Ba việc owner phải làm, theo thứ tự: (1) flip `keepmeside/aio-ade-platform` sang public, (2) bật Pages với source **GitHub Actions**, (3) set Actions permissions cho external contributor. Sau đó dispatch `aio-ide-plan-pages.yml` và bắt đầu phase 12.
 
 ## Handoff
 

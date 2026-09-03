@@ -207,11 +207,42 @@ function isClassified(path: string): boolean {
   return CLASSIFIED_PATHS.some((entry) => path.startsWith(entry.prefix))
 }
 
+/* A citation of upstream's issue tracker classifies itself.
+ *
+ * These issues exist only in the repository upstream owns, so the URL has to name it; the rebrand
+ * rewrote 195 of them into this fork's slug, which was syntactically clean and pointed every reader
+ * at a tracker holding two issues. Recognising the shape rather than allowlisting the eleven files
+ * that hold them means a new citation needs no new entry, and — unlike a path allowlist — a file
+ * carrying a citation is still scanned for every other occurrence. */
+const UPSTREAM_ISSUE_CITATION = /https?:\/\/github\.com\/stablyai\/orca\/(?:issues|pull)\/\d+/gu
+
+function hasUnclassifiedOccurrence(path: string): boolean {
+  const withoutCitations = readFileSync(path, 'utf-8').replace(UPSTREAM_ISSUE_CITATION, '')
+  return new RegExp(LEGACY_TOKEN_PATTERN, 'u').test(withoutCitations)
+}
+
 describe('brand token scan', () => {
   it('leaves no unclassified legacy token in a shipped tree', () => {
-    const unclassified = grepLegacyToken(SHIPPED_ROOTS).filter((path) => !isClassified(path))
+    const unclassified = grepLegacyToken(SHIPPED_ROOTS)
+      .filter((path) => !isClassified(path))
+      .filter(hasUnclassifiedOccurrence)
 
     expect(unclassified).toEqual([])
+  })
+
+  it('subtracts only the citation, so a real miss beside one still fails', () => {
+    /* The citation filter is the one place this scan removes text before deciding. If it stripped a
+     * line rather than a URL, a genuine occurrence sharing a file with a citation would vanish and
+     * the scan would get quieter for the wrong reason. */
+    const citation = 'see https://github.com/stablyai/orca/issues/8457 for the report'
+    const strip = (text: string) => text.replace(UPSTREAM_ISSUE_CITATION, '')
+    const stillMatches = (text: string) => new RegExp(LEGACY_TOKEN_PATTERN, 'u').test(strip(text))
+
+    expect(stillMatches(citation)).toBe(false)
+    expect(stillMatches(`${citation}\nconst dir = '~/.orca'`)).toBe(true)
+    expect(stillMatches(`${citation} and Orca Profiles`)).toBe(true)
+    // A repository URL that is not an issue citation is not self-classifying.
+    expect(stillMatches('https://github.com/stablyai/orca.git')).toBe(true)
   })
 
   it('keeps every legacy-data reader that an existing install depends on', () => {

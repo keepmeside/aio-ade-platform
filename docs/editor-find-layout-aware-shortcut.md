@@ -2,7 +2,7 @@
 
 ## Problem
 
-Issue [#7953](https://github.com/keepmeside/aio-ade-platform/issues/7953) reports that `Cmd+F` can type `f` into a TypeScript file instead of opening find on macOS.
+Issue [#7953](https://github.com/stablyai/orca/issues/7953) reports that `Cmd+F` can type `f` into a TypeScript file instead of opening find on macOS.
 
 AIO-ADE's editable Monaco surfaces currently install its layout-aware save shortcut through `editor-shortcuts.ts` (`src/renderer/src/components/editor/editor-shortcuts.ts:18`), but leave find entirely to Monaco's internal keycode dispatch. AIO-ADE already declares `editor.find` as `Mod+F` (`src/shared/keybindings.ts:784`) and its matcher resolves logical keys before physical-code fallback (`src/shared/keybindings.ts:2041`).
 

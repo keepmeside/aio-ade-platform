@@ -163,9 +163,22 @@ Bảy vị trí trên là chỗ rename **không chạy**. Lớp này ngược l�
 
 ## Việc còn lại của phase 05
 
-- `pnpm lint` (8 gate) và `pnpm typecheck` (3 project): **xanh**.
+- `pnpm lint` (8 gate): **xanh** — nhưng chỉ sau khi sửa, xem mục dưới. Lần đo trước ghi "xanh" mà không chạy gate đầy đủ.
+- `pnpm typecheck` (3 project): **xanh**.
 - `pnpm test` full suite: **đã chạy và đã đóng 2026-09-02.** Xem mục dưới.
 - Build desktop thật: defer phase 12 theo `deferred-verification.md`.
+
+### `max-lines` — rebrand làm tràn budget qua formatter
+
+`src/cli/runtime/client.ts` đứng ở **300/300 counted line** trước rebrand. Rename làm tên env var dài ra:
+
+```
+remotePairingCode = process.env.ORCA_PAIRING_CODE ?? process.env.ORCA_REMOTE_PAIRING ?? null,
+```
+
+vượt print width nên formatter tách thành 3 dòng → **302/300**, `pnpm lint` đỏ. Đây lại là lớp coupled-constant: rename đúng, nhưng một *ngân sách* gắn với độ dài dòng thì vỡ.
+
+`AGENTS.md` cấm cả `max-lines` disable lẫn per-file bump, và `config/max-lines-baseline.txt` là ratchet **chỉ được co lại**. Nên fix là **tách module thật**: `resolveRemotePairing` (26 dòng, chỉ phụ thuộc `parsePairingCode` / `resolveEnvironmentPairingOffer` / `RuntimeClientError`) sang `src/cli/runtime/remote-pairing.ts`. Đây là seam có nghĩa — "chọn runtime nào để nói chuyện" là quyết định một lần trước mọi request và fail bằng argument error, khác hẳn transport error của client. `client.ts` còn **277/300**. Logic này trước chỉ có coverage gián tiếp qua `src/cli/index.test.ts`; giờ có 5 test trực tiếp.
 
 ## Full suite: kết quả thật (2026-09-02)
 
