@@ -114,7 +114,7 @@ Guard đi kèm: scan brand giờ **tự nhận** citation upstream theo *hình d
 
 ## Success Criteria
 
-- [x] Mở `plan.html` local không network vẫn đủ nội dung và tương tác; nội dung khớp `plan.md` + phase files hiện tại (gồm 09/10/11/12) — **khớp theo cấu tạo**, vì nó được sinh từ chính hai nguồn đó. 184 KB, 0 external asset, đọc được không JS (`.phase-detail[hidden]` được noscript stylesheet mở lại).
+- [x] Mở `plan.html` local không network vẫn đủ nội dung và tương tác; nội dung khớp `plan.md` + phase files hiện tại (gồm 09/10/11/12) — **khớp theo cấu tạo**, vì nó được sinh từ chính hai nguồn đó. 184 KB, 0 external asset, đọc được không JS (`.phase-detail[hidden]` được noscript stylesheet mở lại). **Tương tác được verify bằng cách chạy thật, không phải bằng assert markup:** `render-plan-html-interaction.test.mjs` load trang vào happy-dom, execute script inline của chính nó, rồi bấm card (dialog mở đúng phase body), đóng dialog (node được trả về `#phase-details` và hidden lại), gõ filter (thu hẹp đúng, và **tìm cả trong body phase** không chỉ label card), bật/tắt chip status. 6 test.
 - [x] Private-URL guard đã sửa cho threat model sau flip và chạy xanh trên `plan.html` mới (không false-positive vì URL repo trong bảng baseline) — `plan-html-publish-guard.mjs`, 4 rule, 14 test.
 - [x] Pre-publication gate pass cả 5 items — xem bảng "Kết quả pre-publication gate". Nhánh contingency **không cần dùng**: scan 16.371 commit trả 0 finding, nên không có secret nào của fork hay của upstream phải rotate. Còn 1 item của owner (Actions permissions cho external contributor) và 1 phát hiện chờ quyết định (178 link issue bị rewrite).
 - [ ] Owner là người flip visibility; có xác nhận `gh repo view --json visibility` = PUBLIC sau flip.
