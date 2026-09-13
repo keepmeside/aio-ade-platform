@@ -52,7 +52,7 @@ Cleanup theo pipeline evidence-first: inventory (knip/depcheck/ts-prune hoặc c
 - [x] `max-lines` baseline chỉ shrink (`--prune`), không reset. **Verify 2026-09-13:** chưa từng chạy `--init`. `check-max-lines-ratchet.mjs` **return 1 khi có stale entry**, và `pnpm lint` exit 0 với `max-lines ratchet OK — 327 grandfathered suppression(s), no new bypasses` → **0 entry stale**, tức các file đã xoá không để lại entry mồ côi. Không có gì để `--prune`.
 - [x] Compat-window và reserved-seam items của phase 04/05/06/07/10 còn nguyên và test của chúng xanh. **Verify nhóm 1:** passive title detection (`HERMES_AGENT_NAME_RE`, `terminal-title-*`, `agent-title-*`), historical `AgentType` enum, `openclaude` native-chat layer, `aio-ide-plan-pages.yml`, exclusion `tools/` — tất cả còn nguyên; full suite 3.734 file xanh. **Verify nhóm 3 (2026-09-13):** passive-detection map `Pi: 'pi'` / `OMP: 'omp'` còn nguyên sau khi sửa comment; owner-threading seam (35 call site / 8 file) **giữ nguyên có quyết định**, không xoá; 642 test blast radius xanh. Re-verify lại sau mỗi nhóm sau.
 - [ ] Quyết định `serve`: xoá hoặc giữ, có lý do ghi trong cleanup manifest. Nếu xoá thì dependency riêng của nó cũng đi cùng. *(Cần user quyết — input là `research/baseline/serve-dependency-inventory.md`.)*
-- [ ] Toàn bộ pipeline verify xanh; packaged smoke pass trên ít nhất một OS desktop. *(Đã xanh local 2026-09-13: lint 8 gate, typecheck 3 project, full test **3.734 file / 38.994 test, 0 đỏ, exit 0**, và **`build:desktop` exit 0 cả 5 stage** — trước đó ghi "chờ phase 12", nhưng repo có bài học một bundler entry chết làm build fail mà typecheck/lint/test không thấy. **Còn lại: packaged smoke.** Box này headless nhưng có `xvfb-run` + `electron-builder` nên smoke Linux làm được local; matrix 3 OS vẫn thuộc phase 12. Chi tiết trong [cleanup manifest](reports/cleanup-manifest.md).)*
+- [x] Toàn bộ pipeline verify xanh; packaged smoke pass trên ít nhất một OS desktop. **Đóng 2026-09-13 trên Linux**, chạy đúng procedure của job CI (`pr.yml` "Package unpacked app" + "Smoke packaged CLI" — job đó chạy `ubuntu-latest` nên đây là tái hiện trung thực, không phải thay thế): `build:desktop` exit 0 (5 stage) → `build:native` → `ensure:electron-runtime` → `electron-builder --dir` (`dist/linux-unpacked` 526 MB, `app.asar` 118,9 MB) → `smoke-packaged-cli.mjs --app-dir=dist/linux-unpacked`: `resources/bin/aio-ade --help` **chạy thành công ngoài repo**, exit 0; `verify-packaged-plugin-resources` OK (1 plugin). Brand-scan lại theo step 6: `brand-token-contract.test.ts` 6/6 pass và **0 token `orca`** trong danh sách file của `app.asar` build sạch. Matrix 3 OS vẫn thuộc phase 12.
 
 ## Tiến độ
 
@@ -128,15 +128,34 @@ không chạy được.
   Đã ghi thành rủi ro thứ tư của phase 12 kèm mitigation triage, vì runner CI thường
   2-4 core (tải xấu hơn máy dev 16 core đã sinh flake).
 
-**Phát hiện mới, chưa sửa:** `asarUnpack` trong `config/electron-builder.config.cjs`
-còn **8 glob chết** trỏ tới `out/main/<agent>/**` không tồn tại — 7 do `631b3b0e7`
-xoá `src/main/<dir>` (antigravity, copilot, cursor, droid, gemini, grok, hermes), 1
-(`claude`) khác nguyên nhân: source còn nhưng bị bundle vào `index.js`. Tác hại thấp
-(glob không match thì không unpack gì, build vẫn exit 0) nhưng là config chết. **Để
-phase 12** vì thuộc nhóm 4 và vì `win32-utils.js` trong cùng danh sách là entry
-platform-conditional trông y hệt glob chết — prune đúng cần đối chiếu `out/` thật
-trên cả 3 OS. Bảng chi tiết + cách verify sớm nếu muốn: [cleanup
-manifest](reports/cleanup-manifest.md).
+**Phát hiện mới, chưa sửa (2):**
+
+1. `asarUnpack` trong `config/electron-builder.config.cjs` còn **8 glob chết** trỏ
+   tới `out/main/<agent>/**` không tồn tại — 7 do `631b3b0e7` xoá `src/main/<dir>`
+   (antigravity, copilot, cursor, droid, gemini, grok, hermes), 1 (`claude`) khác
+   nguyên nhân: source còn nhưng bị bundle vào `index.js`. Tác hại thấp (glob không
+   match thì không unpack gì, build vẫn exit 0) nhưng là config chết. **Để phase 12**
+   vì thuộc nhóm 4 và vì `win32-utils.js` trong cùng danh sách là entry
+   platform-conditional trông y hệt glob chết — prune đúng cần đối chiếu `out/` thật
+   trên cả 3 OS.
+2. **`out/` không bao giờ được clean**, nên module đã xoá khỏi `src/` vẫn nằm lại
+   trong `out/` và **vẫn bị đóng vào `app.asar`** của build local. Đo được **17 entry
+   stale** trước khi clean: 2 binary shim `out/bin/orca{,-dev}` (từ 2026-09-01, trước
+   rebrand), 6 module `orca-*`, 3 `hermes-*` (gồm đúng module nhóm 1 vừa xoá), 3
+   `pi-*`, 3 module khác. Nguyên nhân: không script build nào clean `out/`, `tsc`
+   không xoá output mồ côi, và `files` là all-negation nên *silence means ship*.
+   **Phạm vi: CHỈ build local** — `out/`/`dist/` gitignored, runner ephemeral,
+   `e2e.yml` dùng `upload/download-artifact` trong cùng run (không phải
+   `actions/cache`), `release-cut.yml` chỉ cache thư mục download của electron-builder.
+   **Chứng minh:** `rm -rf out dist` + build lại → 0 entry stale, 0 token `orca`,
+   0 orphan trong `out/shared`. Kết luận pre-publication của phase 08 **vẫn đứng**
+   (artifact release build trên runner sạch), nhưng claim "0 legacy token trong
+   `out/`" phải hiểu là **về build sạch**, không phải về mọi `out/` tích luỹ. Chưa
+   sửa: thuộc nhóm 4, là thay đổi build pipeline chứ không phải dọn dead code, và ba
+   hướng sửa (clean step / script `clean` riêng / guard phát hiện orphan) đều có
+   trade-off cần quyết định. Chi tiết + bảng so sánh dirty-vs-clean trong
+   [cleanup manifest](reports/cleanup-manifest.md).
+
 
 
 
