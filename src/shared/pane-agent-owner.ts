@@ -35,8 +35,9 @@ export type PaneAgentOwnerSignals = {
  * process signal exists, so it leads. Once launch metadata is gone — a mirrored
  * or restored pane drops the host-owned launchAgent — the owner must fall
  * through to a durable pane identity rather than to the raw title, because a
- * wrapper agent's title (OMP emits Pi-compatible frames) cannot be told apart
- * from the agent it wraps. The host-stamped hook identity is that durable,
+ * title only reports what last wrote it: a reused pane still carries its
+ * previous agent's title, and a child process can write its own. The
+ * host-stamped hook identity is that durable,
  * published, mirror-safe anchor; the last completed hook and the hibernated
  * session record carry it across the windows where no live hook exists. Ranking
  * launch/live-hook above the completed/sleeping records keeps a genuine pane on

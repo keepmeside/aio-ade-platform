@@ -7,8 +7,9 @@ import {
 } from './terminal-renderer-policy'
 
 /**
- * Owner-aware display label. Wraps the compatible-owner title normalization so
- * the display label follows the resolved owner rather than raw wrapper text.
+ * Owner-aware display label. Routes through the compatible-owner normalization seam, which is a
+ * pass-through today: no shipped agent shares a title identity with another, so the label is the
+ * normalized title as received.
  */
 export function resolvePaneDisplayTitle(
   title: string,

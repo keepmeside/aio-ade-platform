@@ -22,7 +22,8 @@ function titleShowsNoAgent(title: string, defaultTitle?: string): boolean {
 }
 
 /**
- * Resolves wrapper-compatible signal identity against the launch owner.
+ * Resolves a signal's identity against the launch owner. Pass-through today: no shipped agent
+ * shares a title identity with another, so the owner only matters once one does.
  */
 function resolveSignalAgentForLaunchOwner(
   signalAgent: TuiAgent | null | undefined,
@@ -78,7 +79,8 @@ export function resolveTabAgentFromSignals(args: {
   launchAgent?: TuiAgent
 }): TuiAgent | null {
   const launchAgent = args.launchAgent ?? null
-  // Durable focused-pane owner (launch intent → hook → session); focused-pane-scoped so a sibling can't re-own the focused title (would mislabel a Pi pane as OMP).
+  // Durable focused-pane owner (launch intent → hook → session); focused-pane-scoped so a sibling's
+  // identity can never be threaded into the focused pane's resolution below.
   const owner = resolvePaneAgentOwner({
     launchAgent,
     hookAgent: args.hookAgent,
@@ -86,7 +88,7 @@ export function resolveTabAgentFromSignals(args: {
     sleepingSessionAgent: args.sleepingSessionAgent
   }) as TuiAgent | null
 
-  // The live/idle split governs title override: a LIVE hook is never title-overridden; an IDLE record can be reclaimed by a cross-group title. Siblings normalize vs launchAgent only.
+  // The live/idle split governs title override: a LIVE hook is never title-overridden; an IDLE record can be reclaimed by a title naming a different agent. Siblings resolve vs launchAgent only.
   const liveFocusedIdentity = resolveSignalAgentForLaunchOwner(args.hookAgent, owner)
   const liveSiblingIdentity = resolveSignalAgentForLaunchOwner(args.siblingHookAgent, launchAgent)
   // Why: OSC 133;D proves this local pane returned to shell, so the idle identity is stale; remote titles lag runtime, so keep it there.
@@ -104,7 +106,7 @@ export function resolveTabAgentFromSignals(args: {
     launchAgent
   )
 
-  // Title carries identity only as a reuse override (names a DIFFERENT-group agent) or a legacy standalone id when no hook — same-group titles say nothing (OMP wraps Pi), so the record wins.
+  // Title carries identity only as a reuse override (names a DIFFERENT agent than the pane's prior identity) or a legacy standalone id when no hook — a title agreeing with the record says nothing, so the record wins.
   const explicitTitleAgent = resolveSignalAgentForLaunchOwner(
     resolveExplicitTerminalTitleAgentType(args.title),
     owner
@@ -136,7 +138,8 @@ export function resolveTabAgentFromSignals(args: {
     processShellForeground: args.processShellForeground
   })
   const activeLaunchAgent = launchedAgentExited ? null : launchAgent
-  // Why: re-own the foreground process within its title-identity group so OMP's nested pi (shell → omp → pi) can't flip an OMP-owned tab's icon.
+  // Why: resolve the foreground process against the pane owner, so a nested child process cannot flip
+  // the tab's icon. Pass-through until an agent shares a title identity with another.
   const processAgent = resolveSignalAgentForLaunchOwner(args.processAgent, owner)
   const sleepingSessionAgent = args.sleepingSessionAgent ?? null
   // Identity-first precedence (see JSDoc): live hook > process > title > idle > sleeping > launch > sibling.
@@ -159,8 +162,8 @@ export function resolveTabAgentFromSignals(args: {
  * Identity-first precedence:
  *
  * 1. Live focused hook — ground truth while the agent works; never title-overridden.
- * 2. Process identity — recognized foreground process (local only); re-owned within its title-identity group so OMP's nested `pi` (shell → omp → pi) can't flip the icon.
- * 3. Title — only a reuse override (names a DIFFERENT-group agent) or a legacy standalone identity when the pane has no hook.
+ * 2. Process identity — recognized foreground process (local only), resolved against the pane owner.
+ * 3. Title — only a reuse override (names a DIFFERENT agent) or a legacy standalone identity when the pane has no hook.
  * 4. Idle focused identity — the pane's own hook record after it went idle; suppressed locally once OSC 133;D proves exit.
  * 5. Sleeping session identity — a hibernated pane's captured session record.
  * 6. launchAgent — bootstrap before any hook/process signal; cleared once exit evidence shows it left.

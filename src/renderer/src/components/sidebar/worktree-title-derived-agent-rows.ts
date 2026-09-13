@@ -118,8 +118,8 @@ export function buildTitleDerivedAgentRows(args: {
 }
 
 /**
- * Constructs a dashboard agent row from a terminal tab's title fallback,
- * normalising Pi-compatible agent names to their owner.
+ * Constructs a dashboard agent row from a terminal tab's title fallback. The title goes through the
+ * owner-normalization seam, which is a pass-through until an agent shares a title identity.
  */
 function buildTitleDerivedAgentRow(args: {
   tab: TerminalTab
@@ -196,8 +196,8 @@ export function resolveTitleDerivedAgentType(title: string, label: string): Agen
 }
 
 /**
- * Determines the agent type from a terminal title, normalising Pi-compatible
- * agents to their authoritative owner if specified.
+ * Determines the agent type from a terminal title. `ownerAgentType` feeds the owner-normalization
+ * seam, a pass-through until an agent shares a title identity with another.
  */
 export function resolveAgentTypeFromTerminalTitle(
   title: string | null | undefined,

@@ -549,7 +549,7 @@ function shouldReplaceTerminalTab(
   )
 }
 
-/** Constructs mirrored terminal tabs from the mobile session status payload, normalising Pi-compatible agent titles under launch ownership. */
+/** Constructs mirrored terminal tabs from the mobile session status payload; titles route through the owner-normalization seam, a pass-through until an agent shares a title identity. */
 function buildMirroredTerminalTabs(
   snapshot: RuntimeMobileSessionTabsResult,
   environmentId: string,

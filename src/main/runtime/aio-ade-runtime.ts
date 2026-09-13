@@ -4979,8 +4979,8 @@ export class AioAdeRuntimeService {
   }
 
   /**
-   * Publishes a PTY-backed terminal tab snapshot to the synced mobile session,
-   * normalizing Pi-compatible titles based on launch or foreground ownership.
+   * Publishes a PTY-backed terminal tab snapshot to the synced mobile session, resolving the
+   * title's owner from launch or foreground evidence.
    */
   private publishPtyBackedMobileSessionTerminal(
     worktreeId: string,
@@ -26727,7 +26727,7 @@ export class AioAdeRuntimeService {
           )
         : null
       const launchAgent = tab.launchAgent ?? liveLeafPty?.launchAgent ?? pty?.launchAgent ?? null
-      // Why: a retained OMP hook stays stable while wrapper foreground reads can report Pi.
+      // Why: a retained hook record is stabler than a foreground read, which can report a nested child.
       const ownerAgent =
         resolvePaneAgentOwner({
           launchAgent,
@@ -26905,7 +26905,7 @@ export class AioAdeRuntimeService {
         return {}
       }
     }
-    // Why: a retained OMP hook stays stable while wrapper foreground reads can report Pi.
+    // Why: a retained hook record is stabler than a foreground read, which can report a nested child.
     const ownerAgent =
       resolvePaneAgentOwner({
         launchAgent: tab.launchAgent ?? pty?.launchAgent ?? null,

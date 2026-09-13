@@ -1620,9 +1620,9 @@ export function connectPanePty(
    * Resolves the authoritative owner agent type for this pane, checking tab launch,
    * pane startup, typed command ownership, and store state configuration.
    *
-   * Why: launch ownership wins so Pi-compatible live titles/hooks can't repaint an
-   * OMP-owned pane back to Pi; command ownership covers manually typed `omp`
-   * in generic terminals where launch metadata does not exist.
+   * Why: launch ownership wins so a title or hook written later cannot repaint the pane as a
+   * different agent; command ownership covers a manually typed agent command in a generic
+   * terminal where launch metadata does not exist.
    */
   const getAuthoritativePaneAgent = (): AgentType | undefined => {
     const state = useAppStore.getState()

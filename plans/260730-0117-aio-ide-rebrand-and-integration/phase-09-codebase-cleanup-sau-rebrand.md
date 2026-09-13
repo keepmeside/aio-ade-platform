@@ -29,7 +29,7 @@ Cleanup theo pipeline evidence-first: inventory (knip/depcheck/ts-prune hoặc c
 ## Related Code Files
 
 - Scan toàn bộ: `src/`, `config/`, `.github/workflows/`, `resources/`, `docs/`, `tests/`.
-- Modify: `package.json` (deps/scripts), `config/reliability-gates.jsonc` (hand-maintained: `config/scripts/check-reliability-gates.mjs` không có write path; gate ids `mobile-ui.*`, `mobile-relay.*` bị phase 02 orphan), `config/max-lines-baseline.txt` (qua `node config/scripts/check-max-lines-ratchet.mjs --prune`), `.oxlintrc.json` (root — không phải `config/oxlint*`, đó là plugin configs), locale files tại `src/renderer/src/i18n/locales/`.
+- Modify: `package.json` (deps/scripts), `config/reliability-gates.jsonc` (hand-maintained: `config/scripts/check-reliability-gates.mjs` không có write path; ~~gate ids `mobile-ui.*`, `mobile-relay.*` bị phase 02 orphan~~ — **đính chính: không id nào orphan**, xem step 5), `config/max-lines-baseline.txt` (qua `node config/scripts/check-max-lines-ratchet.mjs --prune`), `.oxlintrc.json` (root — không phải `config/oxlint*`, đó là plugin configs), locale files tại `src/renderer/src/i18n/locales/`.
 - Delete: dead modules/tests/assets/workflows theo manifest sinh ra trong phase.
 - Create: `plans/260730-0117-aio-ide-rebrand-and-integration/reports/cleanup-manifest.md` (danh sách xoá + evidence + nhóm giữ lại). **Đã tạo 2026-09-03** với nhóm 1.
 
@@ -39,19 +39,20 @@ Cleanup theo pipeline evidence-first: inventory (knip/depcheck/ts-prune hoặc c
 2. Chạy inventory: unused exports/files/deps, grep reverse-import cho mọi candidate, đối chiếu dynamic import/require và asset refs trong `config/electron-builder.config.cjs`.
 3. Phân loại candidate thành: dead (xoá), compat-window (giữ, ghi chú expiry), reserved-seam (giữ, ghi phase pending sở hữu nó), unknown (giữ, ghi lý do). Danh sách compat-window lấy từ phase 04/05 success criteria. Lưu ý contention: nếu phase 06/07/10 đang chạy song song, không purge `package.json` deps trong cùng window — dọn deps sau khi các phase đó merge.
 4. Xoá theo nhóm, mỗi nhóm một commit: (a) dead modules+tests, (b) assets/icons + locale keys (dùng script sẵn có: `sync:localization-catalog`, `audit:localization`, `verify:localization-coverage`, allowlist `config/localization-coverage-allowlist.json` — không prune key thủ công), (c) workflows/scripts, (d) deps/config gates.
-5. Config gates: `node config/scripts/check-max-lines-ratchet.mjs --prune` (shrink-only; KHÔNG `--init`, nó reset ratchet và hấp thụ suppression mới). `config/reliability-gates.jsonc` sửa tay có review vì `check-reliability-gates.mjs` là check-only — gỡ các gate id đã orphan (`mobile-ui.*`, `mobile-relay.*`).
+5. Config gates: `node config/scripts/check-max-lines-ratchet.mjs --prune` (shrink-only; KHÔNG `--init`, nó reset ratchet và hấp thụ suppression mới). `config/reliability-gates.jsonc` sửa tay có review vì `check-reliability-gates.mjs` là check-only — ~~gỡ các gate id đã orphan (`mobile-ui.*`, `mobile-relay.*`)~~ **đính chính 2026-09-13: premise sai, không có việc phải làm.** Không gate id `mobile-ui.*` nào tồn tại; `mobile-relay.endpoint-recovery` không orphan (coverageNotes đã reconcile cho phase 02, test file nó trỏ tới tồn tại và pass). Chi tiết trong [cleanup manifest](reports/cleanup-manifest.md). `--prune` cũng không có gì để làm: 0 stale entry.
 6. Full verify: lint, typecheck, test, build:desktop, packaged smoke; chạy brand-scan lại để xác nhận không lộ token `orca` user-visible mới.
 7. Viết cleanup manifest report.
 
 ## Success Criteria
 
 - [x] Inventory tool đã chọn + pin (hoặc quyết định không dùng tool được ghi rõ) trước bất kỳ lần xoá nào. **Chọn option (b)**: không thêm devDep, dùng `tsc --noEmit` (3 project) + `grep -r` reverse-import. Lý do ghi trong [cleanup manifest](reports/cleanup-manifest.md).
-- [ ] Inventory evidence + reverse-import evidence tồn tại cho mọi file bị xoá. *(Nhóm 1 xong — 2 file xoá đều có evidence. Nhóm 2-5 chưa xoá gì.)*
-- [ ] Không còn workflow/script/gate ref tới path không tồn tại (gồm gate ids `mobile-*` orphan).
-- [ ] `package.json` không còn dependency unused theo tool đã chọn (nếu chọn không dùng tool, tiêu chí này thay bằng: mọi dep còn lại có ít nhất một import/script reference chứng minh được).
-- [ ] `max-lines` baseline chỉ shrink (`--prune`), không reset.
-- [x] Compat-window và reserved-seam items của phase 04/05/06/07/10 còn nguyên và test của chúng xanh. **Verify nhóm 1:** passive title detection (`HERMES_AGENT_NAME_RE`, `terminal-title-*`, `agent-title-*`), historical `AgentType` enum, `openclaude` native-chat layer, `aio-ide-plan-pages.yml`, exclusion `tools/` — tất cả còn nguyên; full suite 3.734 file xanh. Re-verify lại sau mỗi nhóm sau.- [ ] Quyết định `serve`: xoá hoặc giữ, có lý do ghi trong cleanup manifest. Nếu xoá thì dependency riêng của nó cũng đi cùng.
-- [ ] Toàn bộ pipeline verify xanh; packaged smoke pass trên ít nhất một OS desktop. *(Nhóm 1: lint 8 gate + typecheck 3 project + full test xanh. `build:desktop` và packaged smoke chưa chạy — chờ phase 12 CI matrix.)*
+- [ ] Inventory evidence + reverse-import evidence tồn tại cho mọi file bị xoá. *(3 file đã xoá — 2 ở nhóm 1, 1 ở nhóm 3 — cả 3 đều có evidence trong [cleanup manifest](reports/cleanup-manifest.md). Nhóm 2/4/5 chưa xoá gì.)*
+- [x] Không còn workflow/script/gate ref tới path không tồn tại (gồm gate ids `mobile-*` orphan). **Verify 2026-09-13, static, không cần CI:** `pnpm lint` → `Reliability gate manifest check passed for 51 gate(s)` (script validate path từng gate); 26 path script mà `.github/workflows/` ref qua `node|bash|sh|python3|npx` → tồn tại hết; 57 path trong `package.json` scripts → tồn tại hết; 3 composite action `uses: ./…` → tồn tại hết; 0 shell-source ref; 0 ref tới file đã xoá ngoài `plans/`. **Premise về gate `mobile-*` sai** (xem đính chính trong manifest): không gate id `mobile-ui.*` nào tồn tại, và `mobile-relay.endpoint-recovery` không orphan. Orphan thật duy nhất tìm được (`verify-agent-hook-stdin-lifecycle.mjs`) đã xoá ở nhóm 3.
+- [ ] `package.json` không còn dependency unused theo tool đã chọn (nếu chọn không dùng tool, tiêu chí này thay bằng: mọi dep còn lại có ít nhất một import/script reference chứng minh được). *(Chờ phase 12 + sau khi 06/07/10 merge, theo contention note ở step 3.)*
+- [x] `max-lines` baseline chỉ shrink (`--prune`), không reset. **Verify 2026-09-13:** chưa từng chạy `--init`. `check-max-lines-ratchet.mjs` **return 1 khi có stale entry**, và `pnpm lint` exit 0 với `max-lines ratchet OK — 327 grandfathered suppression(s), no new bypasses` → **0 entry stale**, tức các file đã xoá không để lại entry mồ côi. Không có gì để `--prune`.
+- [x] Compat-window và reserved-seam items của phase 04/05/06/07/10 còn nguyên và test của chúng xanh. **Verify nhóm 1:** passive title detection (`HERMES_AGENT_NAME_RE`, `terminal-title-*`, `agent-title-*`), historical `AgentType` enum, `openclaude` native-chat layer, `aio-ide-plan-pages.yml`, exclusion `tools/` — tất cả còn nguyên; full suite 3.734 file xanh. **Verify nhóm 3 (2026-09-13):** passive-detection map `Pi: 'pi'` / `OMP: 'omp'` còn nguyên sau khi sửa comment; owner-threading seam (35 call site / 8 file) **giữ nguyên có quyết định**, không xoá; 642 test blast radius xanh. Re-verify lại sau mỗi nhóm sau.
+- [ ] Quyết định `serve`: xoá hoặc giữ, có lý do ghi trong cleanup manifest. Nếu xoá thì dependency riêng của nó cũng đi cùng. *(Cần user quyết — input là `research/baseline/serve-dependency-inventory.md`.)*
+- [ ] Toàn bộ pipeline verify xanh; packaged smoke pass trên ít nhất một OS desktop. *(Nhóm 1: lint 8 gate + typecheck 3 project + full test 3.734 file / 38.994 test xanh. Nhóm 3: lint + typecheck + 642 test blast radius xanh. `build:desktop` và packaged smoke chưa chạy — chờ phase 12 CI matrix.)*
 
 ## Tiến độ
 
@@ -79,6 +80,36 @@ xác minh:** `config/scripts/verify-agent-hook-stdin-lifecycle.mjs` (nhóm 3) c�
 `mobile-*` trong `config/reliability-gates.jsonc` (nhóm 4) chạy qua script
 check-only trong `pnpm lint`. Cả hai verify được local; xem candidate list trong
 cleanup manifest.
+
+**Nhóm 3 — phần verify được local: đóng 2026-09-13.** Ba việc, đều không cần
+packaged smoke:
+
+1. **Xoá `config/scripts/verify-agent-hook-stdin-lifecycle.mjs` (396 LoC).** Zero
+   caller đã xác minh lại bằng `grep -r` toàn repo (chỉ plan doc nhắc tên nó):
+   không script `package.json`, không workflow, không gate id, không entry
+   max-lines baseline, không gì glob `config/scripts/`. Chạy thử nó để chứng minh
+   nó *broken* chứ không chỉ mồ côi: throw `ENOENT … antigravity-hook.sh` ở entry
+   đầu của `MANAGED_SCRIPTS` vì `readGeneratedScripts` gọi `statSync` trần; 8/12
+   entry không còn generator sau khi roster thu lại. Không phải reserved seam —
+   không phase pending nào nhận nó.
+2. **Sửa 12 comment rot / 7 file** mô tả cross-agent title re-ownership như hành
+   vi còn sống (`use-tab-agent.ts`, `terminal-title-evidence.ts`,
+   `worktree-title-derived-agent-rows.ts`, `web-session-tabs-sync.ts`,
+   `pane-agent-owner.ts`, `pty-connection.ts`, `aio-ade-runtime.ts`). Sau sửa,
+   grep các pattern `Pi-compatible`/`OMP emits`/`identity group`/`nested pi` trên
+   `src` (trừ test) trả 0 hit. Passive-detection map `Pi: 'pi'`, `OMP: 'omp'` giữ
+   nguyên — nó thuộc lớp detect agent ngoài roster, không phải cơ chế đã gỡ.
+3. **Quyết định GIỮ owner-threading** thay vì xoá như candidate list gợi ý. Đây
+   đúng là seam mà mục "KHÔNG xoá" của phase này bảo vệ (ACP/phase 10), và nhóm 1
+   đã quyết không inline 35 call site. Xoá threading thì phải bỏ param `owner`
+   khỏi signature của 3 normalizer — tức chính là inline. Chi phí giữ chỉ là
+   property read thuần. Lý do đầy đủ trong cleanup manifest.
+
+Verify: blast radius 7 file test / **642 pass**, typecheck 3 project xanh, lint 8
+gate xanh. Mọi thay đổi `src/` là comment-only (chứng minh bằng `git diff` lọc bỏ
+dòng comment → rỗng), thay đổi hành vi duy nhất là xoá script không ai gọi và
+không chạy được, nên không chạy lại full suite — nhóm 1 đã đo 3.734 file /
+38.994 test xanh trên đúng cây code này.
 
 
 ## Risk Assessment
