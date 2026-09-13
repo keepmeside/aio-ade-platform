@@ -1,13 +1,9 @@
 import type { TuiAgent } from './types'
 import { getCliCommandNameForPlatform } from './cli-command-name'
 
-export type AgentPromptInjectionMode =
-  | 'argv'
-  | 'flag-prompt'
-  | 'flag-prompt-interactive'
-  | 'flag-interactive'
-  | 'hermes-query'
-  | 'stdin-after-start'
+/* Two modes since the roster narrowed: Claude and Codex take the prompt on the command line, Agent
+ * Teams receives it over stdin after the TUI is up. */
+export type AgentPromptInjectionMode = 'argv' | 'stdin-after-start'
 
 export type DraftPasteReadySignal =
   | 'render-quiet-after-bracketed-paste'

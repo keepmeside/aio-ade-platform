@@ -909,7 +909,7 @@ describe('LocalPtyProvider', () => {
           cols: 80,
           rows: 24,
           cwd: '\\\\wsl.localhost\\Ubuntu\\home\\jin\\repo',
-          env: { AIO_ADE_HERMES_STARTUP_QUERY: 'line one\nline two' }
+          env: {}
         })
       } finally {
         if (savedCodexHome === undefined) {
@@ -928,11 +928,7 @@ describe('LocalPtyProvider', () => {
       expect(spawnCall[0]).toBe('wsl.exe')
       expect(spawnCall[2].env.AIO_ADE_TERMINAL_HANDLE).toBe('term_wsl')
       expect(spawnCall[2].env.WSLENV?.split(':')).toEqual(
-        expect.arrayContaining([
-          'AIO_ADE_TERMINAL_HANDLE/u',
-          'AIO_ADE_HERMES_STARTUP_QUERY',
-          POWERLEVEL10K_WIZARD_DISABLE_ENV
-        ])
+        expect.arrayContaining(['AIO_ADE_TERMINAL_HANDLE/u', POWERLEVEL10K_WIZARD_DISABLE_ENV])
       )
     })
 

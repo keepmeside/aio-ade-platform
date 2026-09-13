@@ -62,7 +62,6 @@ import { isShellProcess } from '../../shared/shell-process-detection'
 import { parsePtySessionId } from './pty-session-id'
 import { getAgentForegroundContextPaths } from '../providers/agent-foreground-context-paths'
 import { assertSafeAgentStartupCwd, resolveSafePtyDefaultCwd } from '../providers/pty-default-cwd'
-import { AIO_ADE_HERMES_STARTUP_QUERY_ENV } from '../../shared/hermes-startup-query'
 import type { TuiAgent } from '../../shared/types'
 import { forceKillPosixPtyProcessGroups } from '../pty/posix-pty-process-groups'
 
@@ -699,10 +698,6 @@ export function createPtySubprocess(opts: PtySubprocessOptions): SubprocessHandl
       if (env.CLAUDE_CONFIG_DIR) {
         // Why: non-default env vars need WSLENV import to cross Windows wsl.exe into the Linux side.
         addWslEnvKeys(env, ['CLAUDE_CONFIG_DIR'])
-      }
-      if (env[AIO_ADE_HERMES_STARTUP_QUERY_ENV] !== undefined) {
-        // Why: wsl.exe drops custom Windows env vars unless named in WSLENV.
-        addWslEnvKeys(env, [AIO_ADE_HERMES_STARTUP_QUERY_ENV])
       }
     } else if (codexHomeWslInfo || isWslCodexHomeForHost(env.CODEX_HOME)) {
       // Why: WSL Codex homes are Linux paths; also drop AIO_ADE_CODEX_HOME since shell-ready restores CODEX_HOME from it.

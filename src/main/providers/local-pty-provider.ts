@@ -60,7 +60,6 @@ import { canConfirmAgentFromConsolePresence } from './windows-console-foreground
 import { forceKillPosixPtyProcessGroups } from '../pty/posix-pty-process-groups'
 import { shouldUseShellReadyStartupDelivery } from '../../shared/codex-startup-delivery'
 import { assertSafeAgentStartupCwd, resolveSafePtyDefaultCwd } from './pty-default-cwd'
-import { AIO_ADE_HERMES_STARTUP_QUERY_ENV } from '../../shared/hermes-startup-query'
 import { PhysicalExitTracker } from '../../shared/physical-exit-tracker'
 import { mergeGitConfigEnvProtocol } from '../../shared/git-credential-prompt-env'
 import { PtyStartupIngress, type PtyIngressEmission } from '../../shared/pty-startup-ingress'
@@ -725,10 +724,6 @@ export class LocalPtyProvider implements IPtyProvider {
         if (finalEnv.CLAUDE_CONFIG_DIR) {
           // Why: managed WSL Claude passes a Linux CLAUDE_CONFIG_DIR through wsl.exe; non-default vars need WSLENV import.
           addWslEnvKeys(finalEnv, ['CLAUDE_CONFIG_DIR'])
-        }
-        if (finalEnv[AIO_ADE_HERMES_STARTUP_QUERY_ENV] !== undefined) {
-          // Why: wsl.exe drops custom Windows env vars; the startup wrapper needs this imported inside WSL.
-          addWslEnvKeys(finalEnv, [AIO_ADE_HERMES_STARTUP_QUERY_ENV])
         }
       } else if (codexHomeWslInfo || isWslCodexHomeForHost(finalEnv.CODEX_HOME)) {
         // Why: WSL Codex homes are Linux paths Windows can't use; also drop AIO_ADE_CODEX_HOME (shell-ready restores CODEX_HOME from it).

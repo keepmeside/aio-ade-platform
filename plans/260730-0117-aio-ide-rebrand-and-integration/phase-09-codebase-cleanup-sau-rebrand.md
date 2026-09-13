@@ -1,7 +1,7 @@
 ---
 phase: 9
 title: "Codebase cleanup sau rebrand"
-status: pending
+status: in-progress
 priority: P2
 effort: "2-3d"
 dependencies: [5, 12]
@@ -31,7 +31,7 @@ Cleanup theo pipeline evidence-first: inventory (knip/depcheck/ts-prune hoặc c
 - Scan toàn bộ: `src/`, `config/`, `.github/workflows/`, `resources/`, `docs/`, `tests/`.
 - Modify: `package.json` (deps/scripts), `config/reliability-gates.jsonc` (hand-maintained: `config/scripts/check-reliability-gates.mjs` không có write path; gate ids `mobile-ui.*`, `mobile-relay.*` bị phase 02 orphan), `config/max-lines-baseline.txt` (qua `node config/scripts/check-max-lines-ratchet.mjs --prune`), `.oxlintrc.json` (root — không phải `config/oxlint*`, đó là plugin configs), locale files tại `src/renderer/src/i18n/locales/`.
 - Delete: dead modules/tests/assets/workflows theo manifest sinh ra trong phase.
-- Create: `plans/260730-0117-aio-ide-rebrand-and-integration/reports/cleanup-manifest.md` (danh sách xoá + evidence + nhóm giữ lại).
+- Create: `plans/260730-0117-aio-ide-rebrand-and-integration/reports/cleanup-manifest.md` (danh sách xoá + evidence + nhóm giữ lại). **Đã tạo 2026-09-03** với nhóm 1.
 
 ## Implementation Steps
 
@@ -45,14 +45,41 @@ Cleanup theo pipeline evidence-first: inventory (knip/depcheck/ts-prune hoặc c
 
 ## Success Criteria
 
-- [ ] Inventory tool đã chọn + pin (hoặc quyết định không dùng tool được ghi rõ) trước bất kỳ lần xoá nào.
-- [ ] Inventory evidence + reverse-import evidence tồn tại cho mọi file bị xoá.
+- [x] Inventory tool đã chọn + pin (hoặc quyết định không dùng tool được ghi rõ) trước bất kỳ lần xoá nào. **Chọn option (b)**: không thêm devDep, dùng `tsc --noEmit` (3 project) + `grep -r` reverse-import. Lý do ghi trong [cleanup manifest](reports/cleanup-manifest.md).
+- [ ] Inventory evidence + reverse-import evidence tồn tại cho mọi file bị xoá. *(Nhóm 1 xong — 2 file xoá đều có evidence. Nhóm 2-5 chưa xoá gì.)*
 - [ ] Không còn workflow/script/gate ref tới path không tồn tại (gồm gate ids `mobile-*` orphan).
 - [ ] `package.json` không còn dependency unused theo tool đã chọn (nếu chọn không dùng tool, tiêu chí này thay bằng: mọi dep còn lại có ít nhất một import/script reference chứng minh được).
 - [ ] `max-lines` baseline chỉ shrink (`--prune`), không reset.
-- [ ] Compat-window và reserved-seam items của phase 04/05/06/07/10 còn nguyên và test của chúng xanh.
-- [ ] Quyết định `serve`: xoá hoặc giữ, có lý do ghi trong cleanup manifest. Nếu xoá thì dependency riêng của nó cũng đi cùng.
-- [ ] Toàn bộ pipeline verify xanh; packaged smoke pass trên ít nhất một OS desktop.
+- [x] Compat-window và reserved-seam items của phase 04/05/06/07/10 còn nguyên và test của chúng xanh. **Verify nhóm 1:** passive title detection (`HERMES_AGENT_NAME_RE`, `terminal-title-*`, `agent-title-*`), historical `AgentType` enum, `openclaude` native-chat layer, `aio-ide-plan-pages.yml`, exclusion `tools/` — tất cả còn nguyên; full suite 3.734 file xanh. Re-verify lại sau mỗi nhóm sau.- [ ] Quyết định `serve`: xoá hoặc giữ, có lý do ghi trong cleanup manifest. Nếu xoá thì dependency riêng của nó cũng đi cùng.
+- [ ] Toàn bộ pipeline verify xanh; packaged smoke pass trên ít nhất một OS desktop. *(Nhóm 1: lint 8 gate + typecheck 3 project + full test xanh. `build:desktop` và packaged smoke chưa chạy — chờ phase 12 CI matrix.)*
+
+## Tiến độ
+
+**Nhóm 1 — roster-narrowing fallout: đóng 2026-09-03.** Gỡ đường launch và title
+ownership thành unreachable sau khi roster thu về `claude | claude-agent-teams |
+codex`: xoá `hermes-startup-query.ts` (+windows test), thu `AgentPromptInjectionMode`
+6→2 mode, gỡ `SyntheticAgentTitleProfile.titleIdentityGroup`, gỡ
+`OPENCLAUDE_HOOK_SETTINGS` (dead từ trước), collapse `agent-title-owner.ts` 190→35
+LoC về identity function, gỡ 4 runtime member delay-mobile-snapshot. Làm theo TDD:
+characterisation test viết trước, xanh trên code cũ, giữ xanh sau khi gỡ.
+Evidence + nhóm giữ lại: [cleanup manifest](reports/cleanup-manifest.md).
+
+Review độc lập đã chạy và tự chứng minh lại reachability (0 assignment
+`titleIdentityGroup`, `TUI_AGENT_CONFIG` 3 entry chỉ name 2 mode còn lại) → không
+defect chặn. Sửa theo review, trước khi commit: 2 câu justification **sai** trong
+comment `agent-title-owner.ts` (khai caller so sánh bằng reference để skip
+re-render — 4 call site đều phá reference ngay), `?? undefined` → `|| undefined`
+cho tương đương thật với guard cũ ở `agentType: ''`, và test bổ sung 2 input mà
+cũ/mới lệch nhau.
+
+Nhóm 2-5 (assets/locale, workflows/scripts, deps/config gates, quyết định `serve`)
+chưa chạy — nên chờ phase 12 vì cần packaged smoke trên CI matrix. **Ngoại lệ đã
+xác minh:** `config/scripts/verify-agent-hook-stdin-lifecycle.mjs` (nhóm 3) có
+**zero caller** nên packaged smoke không exercise được nó, và gate id orphan
+`mobile-*` trong `config/reliability-gates.jsonc` (nhóm 4) chạy qua script
+check-only trong `pnpm lint`. Cả hai verify được local; xem candidate list trong
+cleanup manifest.
+
 
 ## Risk Assessment
 

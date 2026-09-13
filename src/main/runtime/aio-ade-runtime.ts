@@ -59,7 +59,6 @@ import {
   type AgentSessionClaimSigner
 } from './agent-session-claim-identity'
 import {
-  hasCompatibleAgentTitleIdentity,
   normalizeCompatibleAgentStatusEntryForOwner,
   normalizeCompatibleAgentTitleForOwner
 } from '../../shared/agent-title-owner'
@@ -2605,7 +2604,6 @@ export class AioAdeRuntimeService {
   private cloneInFlightByPath = new Map<string, Promise<void>>()
   private agentDetector: AgentDetector | null = null
   private ptyForegroundAgentRefreshes = new Map<string, PtyForegroundAgentRefresh>()
-  private ptyDelayedForegroundSnapshotTitleObservations = new Map<string, number>()
   private _orchestrationDb: OrchestrationDb | null = null
   private messageWaitersByHandle = new Map<string, Set<MessageWaiter>>()
   // Why: mobile clients subscribe to terminal output via terminal.subscribe.
@@ -8452,27 +8450,13 @@ export class AioAdeRuntimeService {
       if (agentStatus === 'idle' && prevStatus !== 'idle') {
         this.resolvePtyTuiIdleWaiters(pty, ptyId)
       }
-      const shouldDelayMobileSnapshot =
-        ptyRecordChanged &&
-        this.shouldDelayPtyBackedMobileSnapshotForForegroundAgent(pty, normalizedTitle)
-      let foregroundRefresh: Promise<boolean> | undefined
       // Why: gate on an actual status transition — braille spinner frames
       // mutate the title every tick, so probing per-title-change would stream
       // a foreground query per frame during active work.
       if (prevStatus !== agentStatus) {
-        foregroundRefresh = this.refreshPtyForegroundAgentFromController(ptyId, {
+        void this.refreshPtyForegroundAgentFromController(ptyId, {
           afterTitleObservation: observedAt
         })
-      } else if (shouldDelayMobileSnapshot) {
-        // Why: same-status compatible title changes can arrive before the
-        // foreground owner probe settles; publishing them would flicker.
-        foregroundRefresh = this.getPendingForegroundAgentRefreshForTitle(ptyId, observedAt)
-      }
-      if (foregroundRefresh && shouldDelayMobileSnapshot) {
-        // Why: report "unchanged" so the per-chunk batch skips the mobile
-        // snapshot fan-out; the delayed publish fires when the probe settles.
-        ptyRecordChanged = false
-        this.delayPtyBackedMobileSnapshotForForegroundAgent(ptyId, observedAt, foregroundRefresh)
       }
     }
     for (const leaf of this.getLeavesForPty(ptyId)) {
@@ -14251,50 +14235,12 @@ export class AioAdeRuntimeService {
     return recognizeAgentProcess(confirmedProcess) === null
   }
 
-  private shouldDelayPtyBackedMobileSnapshotForForegroundAgent(
-    pty: RuntimePtyWorktreeRecord,
-    title: string
-  ): boolean {
-    return (
-      !pty.launchAgent && pty.foregroundAgent === null && hasCompatibleAgentTitleIdentity(title)
-    )
-  }
-
   /**
    * Schedules an asynchronous query to check which agent process is currently
    * running in the foreground of a PTY.
    */
   private refreshPtyForegroundAgent(ptyId: string): void {
     void this.refreshPtyForegroundAgentFromController(ptyId)
-  }
-
-  private getPendingForegroundAgentRefreshForTitle(
-    ptyId: string,
-    titleObservedAt: number
-  ): Promise<boolean> | undefined {
-    if (!this.ptyForegroundAgentRefreshes.has(ptyId)) {
-      return undefined
-    }
-    return this.refreshPtyForegroundAgentFromController(ptyId, {
-      afterTitleObservation: titleObservedAt
-    })
-  }
-
-  private delayPtyBackedMobileSnapshotForForegroundAgent(
-    ptyId: string,
-    titleObservedAt: number,
-    foregroundRefresh: Promise<boolean>
-  ): void {
-    this.ptyDelayedForegroundSnapshotTitleObservations.set(ptyId, titleObservedAt)
-    void foregroundRefresh.then((foregroundAgentChanged) => {
-      if (this.ptyDelayedForegroundSnapshotTitleObservations.get(ptyId) !== titleObservedAt) {
-        return
-      }
-      this.ptyDelayedForegroundSnapshotTitleObservations.delete(ptyId)
-      if (!foregroundAgentChanged) {
-        this.touchMobileSessionSnapshotsForPty(ptyId)
-      }
-    })
   }
 
   /**

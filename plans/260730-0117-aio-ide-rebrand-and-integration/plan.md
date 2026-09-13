@@ -2,7 +2,7 @@
 title: "AIO-ADE rebrand, strip and integration roadmap"
 status: approved-gates-updated
 created: 2026-07-30
-updated: 2026-08-27
+updated: 2026-09-03
 authors: [Keepmeside, SalyyS1]
 repository: keepmeside/aio-ade-platform
 blockedBy: []
@@ -61,7 +61,7 @@ Chuyển fork Orca thành **AIO-ADE** (machine token `aio-ade`; org/author token
 | [07 Tích hợp tính năng chọn lọc từ upstream (canvas: Excalidraw)](phase-07-upstream-feature-integrations.md) | staged | theo tranche | 05, 06 |
 | [08 HTML review, repo public sau rebrand và Pages](phase-08-docs-html-plan-and-github-pages.md) | **blocked-on-owner** 2026-09-02 — 4/6 tiêu chí xong: `plan.html` giờ **generate trong CI** từ `plan.md` + phase files (không còn file viết tay stale), publication guard 4 rule + 14 test, pre-publication gate **pass cả 5 item** (gitleaks 16.371 commit → 0 finding). Còn lại **chỉ hành động của owner**: flip visibility, bật Pages, dispatch | 2 đến 4 ngày | 05; pre-publication gate |
 | [12 Post-flip CI matrix và regression triage](phase-12-post-flip-ci-matrix-and-regression-triage.md) | pending — **chạy ngay sau 08** | 2 đến 5 ngày (mở theo số regression) | 08 |
-| [09 Codebase cleanup sau rebrand](phase-09-codebase-cleanup-sau-rebrand.md) | pending | 2 đến 3 ngày | 05, 12 |
+| [09 Codebase cleanup sau rebrand](phase-09-codebase-cleanup-sau-rebrand.md) | **in-progress** 2026-09-03 — nhóm 1 (roster-narrowing fallout) đóng: gỡ đường launch/title-ownership unreachable sau khi roster thu về 3 agent, full suite **3.734 file / 38.994 test, 0 đỏ**. Nhóm 2-5 chờ 12 (cần packaged smoke) | 2 đến 3 ngày | 05, 12 |
 | [10 ACP generic agent support](phase-10-acp-generic-agent-support.md) | pending | 3 đến 5 engineer-weeks | 04, 06A (milestone trong phase 06) |
 | [11 Runtime migration: Tauri v2 feasibility spike + go/no-go](phase-11-runtime-migration-comparative-spike.md) | pending | spike 2 đến 3 tuần | 05, 12 (cần CI cho 3 OS) |
 
@@ -91,19 +91,22 @@ Chuyển fork Orca thành **AIO-ADE** (machine token `aio-ade`; org/author token
 - [Phase 01 baseline evidence](research/baseline/) — `local-verification-baseline.md` (gate thay CI, **yêu cầu Node 24**), `secret-scan-triage.md` (0 secret cần rotate trên 17.537 commit), `deferred-verification.md` (19 tiêu chí defer sang phase 12/owner), `decisions-audit.md`, 4 coupling map cho phase 02/03/05/06, `phase-02-delete-manifest.md`, `serve-dependency-inventory.md` (dữ liệu cho quyết định xoá `serve` ở phase 09)
 - [Research digest](digest-audits.md)
 - [Parallel validation synthesis](reports/parallel-validation-synthesis.md)
+- [Phase 09 cleanup manifest](reports/cleanup-manifest.md) — quyết định inventory tool (option b: compiler + reverse-grep), evidence từng nhóm xoá, và **danh sách giữ lại** (passive title detection, historical `AgentType` enum, reserved seam của 08/10/11)
 - [Full feature catalog: 176 rows](feature-catalog.md)
 - [Research reports](research/) — gồm `electrobun-migration-feasibility.md`, `rust-gpui-hybrid-migration.md`, `tauri-v2-migration-feasibility.md`, `acp-generic-agent-support.md`
 - [aio-ade HTML plan](plan.html)
 
-## Trạng thái thực thi 2026-09-02
+## Trạng thái thực thi 2026-09-03
 
-Phase 05 đóng thật (full suite xanh: 3.729 file / 38.953 test, `lint` 8 gate xanh sau khi tách `remote-pairing.ts`, `typecheck` 3 project xanh). Phase 08 xong phần agent làm được; **toàn bộ phần còn lại của chương trình chờ owner flip visibility**, vì:
+Phase 05 đóng thật (full suite xanh: 3.729 file / 38.953 test, `lint` 8 gate xanh sau khi tách `remote-pairing.ts`, `typecheck` 3 project xanh). Phase 08 xong phần agent làm được; **gate CI và mọi phase phụ thuộc nó chờ owner flip visibility**, vì:
 
 - Phase 12 (gate CI đầu tiên) `blockedBy` 08 — cần Actions chạy được, tức cần repo public hoặc sửa billing.
 - Phase 06, 09, 11 đều `blockedBy` 12.
 - Phase 07 `blockedBy` 06; phase 10 `blockedBy` 06A.
 
-Nói cách khác: không có phase nào tiến được thêm mà không có hành động của owner. Ba việc owner phải làm, theo thứ tự: (1) flip `keepmeside/aio-ade-platform` sang public, (2) bật Pages với source **GitHub Actions**, (3) set Actions permissions cho external contributor. Sau đó dispatch `aio-ide-plan-pages.yml` và bắt đầu phase 12.
+Ba việc owner phải làm, theo thứ tự: (1) flip `keepmeside/aio-ade-platform` sang public, (2) bật Pages với source **GitHub Actions**, (3) set Actions permissions cho external contributor. Sau đó dispatch `aio-ide-plan-pages.yml` và bắt đầu phase 12.
+
+**Việc chạy trước gate (2026-09-03):** phase 09 **nhóm 1** đã làm — nó là fallout phase 04 chủ động defer sang 09 ("passive title detection giữ, sweep ở 09") và verify được hoàn toàn local, không cần CI. Nội dung: gỡ các đường **launch** và **title ownership** thành unreachable sau khi roster thu về `claude | claude-agent-teams | codex` — xoá `hermes-startup-query.ts`, thu `AgentPromptInjectionMode` 6→2 mode, gỡ `SyntheticAgentTitleProfile.titleIdentityGroup`, gỡ `OPENCLAUDE_HOOK_SETTINGS` (dead từ trước), collapse `agent-title-owner.ts` 190→35 LoC, gỡ 4 runtime member delay-mobile-snapshot. Lớp **passive detection** giữ nguyên có chủ ý. Full suite **3.734 file / 38.994 test, 0 đỏ**; lint 8 gate + typecheck 3 project xanh. Review độc lập tự chứng minh lại reachability và không tìm defect chặn; 3 finding (2 câu justification sai trong comment, `??` vs `||` ở `agentType` rỗng, 2 input thiếu trong test) đã sửa trước khi đóng. Nhóm 2-5 của phase 09 (assets/locale, workflows/scripts, deps/config gates, quyết định `serve`) **vẫn chờ 12** vì cần packaged smoke trên CI matrix — **trừ hai item đã xác minh là không cần CI**: một script verify hook có zero caller, và tiêu chí "gate ref tới path không tồn tại" thì `pnpm lint` đã prove (51 gate pass, và gate id `mobile-ui.*` mà requirements nêu thực ra không tồn tại). Evidence: [cleanup manifest](reports/cleanup-manifest.md).
 
 ## Handoff
 

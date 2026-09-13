@@ -15,7 +15,6 @@ import {
 import { TUI_AGENT_CONFIG } from './tui-agent-config'
 import type { StartupCommandDelivery } from './codex-startup-delivery'
 import { buildSleepingAgentLaunchConfig } from './sleeping-agent-launch-config'
-import { planHermesStartupQuery } from './hermes-startup-query'
 import { inlineAgentDraftFitsPlatform } from './agent-draft-platform-limit'
 import type { TuiAgent } from './types'
 import type { SessionOptionValue } from './native-chat-session-options'
@@ -60,13 +59,12 @@ export function buildAgentStartupPlan(args: {
   const shell = resolveStartupShell(platform, args.shell)
   const trimmedPrompt = prompt.trim()
   const config = TUI_AGENT_CONFIG[agent]
-  const usesQuery = config.promptInjectionMode === 'hermes-query' && Boolean(trimmedPrompt)
   const baseCommand = resolveAgentLaunchCommand({
     agent,
     cmdOverrides,
     platform,
     shell,
-    agentArgs: usesQuery ? null : args.agentArgs,
+    agentArgs: args.agentArgs,
     sessionOptions: args.sessionOptions,
     isRemote: args.isRemote
   })
@@ -107,68 +105,6 @@ export function buildAgentStartupPlan(args: {
       launchConfig,
       ...appliedSessionOptionProps(baseCommand.appliedSessionOptions),
       ...(agent === 'codex' ? { startupCommandDelivery: 'shell-ready' as const } : {}),
-      ...(args.agentEnv ? { env: { ...args.agentEnv } } : {})
-    }
-  }
-
-  if (config.promptInjectionMode === 'flag-prompt') {
-    return {
-      agent,
-      launchCommand: `${baseCommand.command} --prompt ${quotedPrompt}`,
-      expectedProcess: config.expectedProcess,
-      followupPrompt: null,
-      launchConfig,
-      ...appliedSessionOptionProps(baseCommand.appliedSessionOptions),
-      ...(args.agentEnv ? { env: { ...args.agentEnv } } : {})
-    }
-  }
-
-  if (config.promptInjectionMode === 'hermes-query') {
-    const queryPlan = planHermesStartupQuery({
-      baseCommand: baseCommand.command,
-      agentArgs: args.agentArgs,
-      prompt: trimmedPrompt,
-      agentEnv: args.agentEnv,
-      platform,
-      shell,
-      isRemote: args.isRemote
-    })
-    if (!queryPlan) {
-      return null
-    }
-    return {
-      agent,
-      // Why: Hermes owns readiness and submission for `chat --query`; AIO-ADE
-      // only bounds and quotes the native invocation before starting the TUI.
-      launchCommand: queryPlan.command,
-      expectedProcess: config.expectedProcess,
-      followupPrompt: null,
-      launchConfig,
-      ...appliedSessionOptionProps(baseCommand.appliedSessionOptions),
-      ...(queryPlan.env ? { env: queryPlan.env } : {})
-    }
-  }
-
-  if (config.promptInjectionMode === 'flag-prompt-interactive') {
-    return {
-      agent,
-      launchCommand: `${baseCommand.command} --prompt-interactive ${quotedPrompt}`,
-      expectedProcess: config.expectedProcess,
-      followupPrompt: null,
-      launchConfig,
-      ...appliedSessionOptionProps(baseCommand.appliedSessionOptions),
-      ...(args.agentEnv ? { env: { ...args.agentEnv } } : {})
-    }
-  }
-
-  if (config.promptInjectionMode === 'flag-interactive') {
-    return {
-      agent,
-      launchCommand: `${baseCommand.command} -i ${quotedPrompt}`,
-      expectedProcess: config.expectedProcess,
-      followupPrompt: null,
-      launchConfig,
-      ...appliedSessionOptionProps(baseCommand.appliedSessionOptions),
       ...(args.agentEnv ? { env: { ...args.agentEnv } } : {})
     }
   }

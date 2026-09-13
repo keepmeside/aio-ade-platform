@@ -320,3 +320,73 @@ describe('tui agent startup plans', () => {
     })
   })
 })
+
+/* Characterisation, written before the unreachable injection modes came out. The narrowed roster
+ * left `argv` and `stdin-after-start` as the only modes any config entry names; `flag-prompt`,
+ * `flag-prompt-interactive`, `flag-interactive` and `hermes-query` became unreachable branches.
+ * Pinning every shipped agent's plan shape makes their removal provably behaviour-neutral. */
+describe('startup plans for every shipped agent', () => {
+  it('claude: argv injection, prompt quoted onto the command line', () => {
+    const plan = buildAgentStartupPlan({
+      agent: 'claude',
+      prompt: 'fix the flaky suite',
+      cmdOverrides: {},
+      platform: 'linux'
+    })
+
+    expect(plan).toMatchObject({
+      agent: 'claude',
+      launchCommand: "claude 'fix the flaky suite'",
+      expectedProcess: 'claude',
+      followupPrompt: null
+    })
+    expect(plan?.env).toBeUndefined()
+  })
+
+  it('codex: argv injection with shell-ready delivery', () => {
+    const plan = buildAgentStartupPlan({
+      agent: 'codex',
+      prompt: 'fix the flaky suite',
+      cmdOverrides: {},
+      platform: 'linux'
+    })
+
+    expect(plan).toMatchObject({
+      agent: 'codex',
+      launchCommand: "codex 'fix the flaky suite'",
+      expectedProcess: 'codex',
+      followupPrompt: null,
+      startupCommandDelivery: 'shell-ready'
+    })
+  })
+
+  it('claude-agent-teams: bare launch, prompt delivered afterwards over stdin', () => {
+    const plan = buildAgentStartupPlan({
+      agent: 'claude-agent-teams',
+      prompt: 'fix the flaky suite',
+      cmdOverrides: {},
+      platform: 'linux'
+    })
+
+    expect(plan).toMatchObject({
+      agent: 'claude-agent-teams',
+      launchCommand: 'aio-ade claude-teams',
+      expectedProcess: 'claude',
+      followupPrompt: 'fix the flaky suite'
+    })
+  })
+
+  it('never emits a startup query env var for any shipped agent', () => {
+    for (const agent of ['claude', 'codex', 'claude-agent-teams'] as const) {
+      const plan = buildAgentStartupPlan({
+        agent,
+        prompt: 'fix the flaky suite',
+        cmdOverrides: {},
+        platform: 'win32',
+        agentEnv: { KEEP: '1' }
+      })
+      expect(plan, agent).not.toBeNull()
+      expect(Object.keys(plan?.env ?? {}), agent).toEqual(['KEEP'])
+    }
+  })
+})

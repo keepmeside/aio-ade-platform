@@ -2672,7 +2672,6 @@ describe('createPtySubprocess', () => {
         cwd: '\\\\wsl.localhost\\Ubuntu\\home\\jin\\repo',
         env: {
           AIO_ADE_TERMINAL_HANDLE: 'term_wsl',
-          AIO_ADE_HERMES_STARTUP_QUERY: 'line one\nline two',
           WSLENV: 'FOO/u'
         }
       })
@@ -2702,7 +2701,6 @@ describe('createPtySubprocess', () => {
       expect.arrayContaining([
         'FOO/u',
         'AIO_ADE_TERMINAL_HANDLE/u',
-        'AIO_ADE_HERMES_STARTUP_QUERY',
         POWERLEVEL10K_WIZARD_DISABLE_ENV
       ])
     )

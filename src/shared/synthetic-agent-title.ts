@@ -4,7 +4,6 @@ export type SyntheticAgentTitleProfile = {
   workingLabel: string
   permissionLabel: string
   idleLabel: string
-  titleIdentityGroup?: string
   synthesizeTerminalTitle?: boolean
   synthesizeWorkingTitle?: boolean
 }
