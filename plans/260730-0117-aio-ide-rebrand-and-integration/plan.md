@@ -61,7 +61,7 @@ Chuyển fork Orca thành **AIO-ADE** (machine token `aio-ade`; org/author token
 | [07 Tích hợp tính năng chọn lọc từ upstream (canvas: Excalidraw)](phase-07-upstream-feature-integrations.md) | staged | theo tranche | 05, 06 |
 | [08 HTML review, repo public sau rebrand và Pages](phase-08-docs-html-plan-and-github-pages.md) | **blocked-on-owner** 2026-09-02 — 4/6 tiêu chí xong: `plan.html` giờ **generate trong CI** từ `plan.md` + phase files (không còn file viết tay stale), publication guard 4 rule + 14 test, pre-publication gate **pass cả 5 item** (gitleaks 16.371 commit → 0 finding). Còn lại **chỉ hành động của owner**: flip visibility, bật Pages, dispatch | 2 đến 4 ngày | 05; pre-publication gate |
 | [12 Post-flip CI matrix và regression triage](phase-12-post-flip-ci-matrix-and-regression-triage.md) | pending — **chạy ngay sau 08** | 2 đến 5 ngày (mở theo số regression) | 08 |
-| [09 Codebase cleanup sau rebrand](phase-09-codebase-cleanup-sau-rebrand.md) | **in-progress** 2026-09-13 — nhóm 1 (roster-narrowing fallout) đóng + commit `2c2771ed8`, full suite **3.734 file / 38.994 test, 0 đỏ**. Nhóm 3 đóng phần verify local được: xoá orphan script 396 LoC (broken, zero caller), sửa 12 comment rot, **quyết định giữ** owner-threading seam. 3/8 tiêu chí xong. Phần còn lại chờ 12 (cần packaged smoke) + 1 quyết định user (`serve`) | 2 đến 3 ngày | 05, 12 |
+| [09 Codebase cleanup sau rebrand](phase-09-codebase-cleanup-sau-rebrand.md) | **in-progress** 2026-09-13 — nhóm 1 đóng + commit `2c2771ed8`; nhóm 3 (phần local) đóng + commit `e9f437138`: xoá orphan script 396 LoC, sửa 12 comment rot, **quyết định giữ** owner-threading seam. Đã chạy local cả hai gate từng defer: **`build:desktop` exit 0** và **full suite 3.734 file / 38.994 test, 0 đỏ, exit 0**. 3/8 tiêu chí đóng. Còn: packaged smoke, nhóm 2, nhóm 4 (gồm **8 glob `asarUnpack` chết** mới tìm ra) chờ 12; nhóm 5 (`serve`) chờ user | 2 đến 3 ngày | 05, 12 |
 | [10 ACP generic agent support](phase-10-acp-generic-agent-support.md) | pending | 3 đến 5 engineer-weeks | 04, 06A (milestone trong phase 06) |
 | [11 Runtime migration: Tauri v2 feasibility spike + go/no-go](phase-11-runtime-migration-comparative-spike.md) | pending | spike 2 đến 3 tuần | 05, 12 (cần CI cho 3 OS) |
 
@@ -120,7 +120,14 @@ Ba việc owner phải làm, theo thứ tự: (1) flip `keepmeside/aio-ade-platf
 
 Verify nhóm 3: blast radius 7 file test **642 pass**, typecheck + lint xanh. Mọi thay đổi `src/` là **comment-only** (chứng minh bằng `git diff` lọc bỏ dòng comment → rỗng) nên không chạy lại full suite.
 
-**Còn lại của phase 09:** nhóm 2 (assets/locale), phần packaged của nhóm 3, nhóm 4 (deps purge) — chờ phase 12; nhóm 5 (quyết định `serve`) — **chờ user**.
+**Hai gate từng ghi "chờ phase 12" hoá ra verify được local, và đã chạy (2026-09-13):**
+
+- **`pnpm build:desktop` → exit 0**, đủ 5 stage, không `UNRESOLVED_ENTRY`. Không defer vì repo đã có bug đúng lớp này: một bundler entry trỏ tới worker bị xoá làm build fail mà typecheck/lint/test không cái nào bắt được, và commit sửa nó ghi rằng defer sang matrix *"produced no coverage at all"*. Nhóm 1 xoá module nên nằm trong lớp rủi ro đó.
+- **Full suite chạy lại → xanh, exit 0** (3.734 file / 38.994 test). Lần chạy trước trên **cùng cây code** đỏ đúng 1 test ở `attach-main-window-services.test.ts`, chạy riêng thì pass 27/27 trong 8,4s → **flake do tải, không phải regression**. Nguyên nhân: `vi.waitFor` timeout mặc định **1s**, không ăn theo `testTimeout: 30_000`, và **204 file test** dùng nó. Đã ghi thành rủi ro thứ tư của phase 12 kèm mitigation triage — runner CI thường 2-4 core, tải xấu hơn máy dev 16 core đã sinh flake.
+
+**Phát hiện mới, để phase 12:** `asarUnpack` trong `config/electron-builder.config.cjs` còn **8 glob chết** (`out/main/<agent>/**` với `out/main/` chỉ thật sự có `agent-hooks`, `chunks`, `codex`). 7 glob mồ côi do `631b3b0e7` xoá `src/main/<dir>`; 1 (`claude`) khác nguyên nhân — source còn nhưng bị bundle vào `index.js`. Tác hại thấp (glob không match thì không unpack gì, build vẫn exit 0), **chưa sửa** vì thuộc nhóm 4 và vì `win32-utils.js` trong cùng danh sách là entry platform-conditional trông y hệt glob chết — prune đúng cần `out/` thật trên cả 3 OS.
+
+**Còn lại của phase 09:** nhóm 2 (assets/locale), packaged smoke, nhóm 4 (deps purge + 8 glob `asarUnpack`) — chờ phase 12; nhóm 5 (quyết định `serve`) — **chờ user**.
 
 ## Handoff
 

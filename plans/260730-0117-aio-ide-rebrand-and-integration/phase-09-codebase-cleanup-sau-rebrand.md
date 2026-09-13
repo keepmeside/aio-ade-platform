@@ -52,7 +52,7 @@ Cleanup theo pipeline evidence-first: inventory (knip/depcheck/ts-prune hoặc c
 - [x] `max-lines` baseline chỉ shrink (`--prune`), không reset. **Verify 2026-09-13:** chưa từng chạy `--init`. `check-max-lines-ratchet.mjs` **return 1 khi có stale entry**, và `pnpm lint` exit 0 với `max-lines ratchet OK — 327 grandfathered suppression(s), no new bypasses` → **0 entry stale**, tức các file đã xoá không để lại entry mồ côi. Không có gì để `--prune`.
 - [x] Compat-window và reserved-seam items của phase 04/05/06/07/10 còn nguyên và test của chúng xanh. **Verify nhóm 1:** passive title detection (`HERMES_AGENT_NAME_RE`, `terminal-title-*`, `agent-title-*`), historical `AgentType` enum, `openclaude` native-chat layer, `aio-ide-plan-pages.yml`, exclusion `tools/` — tất cả còn nguyên; full suite 3.734 file xanh. **Verify nhóm 3 (2026-09-13):** passive-detection map `Pi: 'pi'` / `OMP: 'omp'` còn nguyên sau khi sửa comment; owner-threading seam (35 call site / 8 file) **giữ nguyên có quyết định**, không xoá; 642 test blast radius xanh. Re-verify lại sau mỗi nhóm sau.
 - [ ] Quyết định `serve`: xoá hoặc giữ, có lý do ghi trong cleanup manifest. Nếu xoá thì dependency riêng của nó cũng đi cùng. *(Cần user quyết — input là `research/baseline/serve-dependency-inventory.md`.)*
-- [ ] Toàn bộ pipeline verify xanh; packaged smoke pass trên ít nhất một OS desktop. *(Nhóm 1: lint 8 gate + typecheck 3 project + full test 3.734 file / 38.994 test xanh. Nhóm 3: lint + typecheck + 642 test blast radius xanh. `build:desktop` và packaged smoke chưa chạy — chờ phase 12 CI matrix.)*
+- [ ] Toàn bộ pipeline verify xanh; packaged smoke pass trên ít nhất một OS desktop. *(Đã xanh local 2026-09-13: lint 8 gate, typecheck 3 project, full test **3.734 file / 38.994 test, 0 đỏ, exit 0**, và **`build:desktop` exit 0 cả 5 stage** — trước đó ghi "chờ phase 12", nhưng repo có bài học một bundler entry chết làm build fail mà typecheck/lint/test không thấy. **Còn lại: packaged smoke.** Box này headless nhưng có `xvfb-run` + `electron-builder` nên smoke Linux làm được local; matrix 3 OS vẫn thuộc phase 12. Chi tiết trong [cleanup manifest](reports/cleanup-manifest.md).)*
 
 ## Tiến độ
 
@@ -108,8 +108,36 @@ packaged smoke:
 Verify: blast radius 7 file test / **642 pass**, typecheck 3 project xanh, lint 8
 gate xanh. Mọi thay đổi `src/` là comment-only (chứng minh bằng `git diff` lọc bỏ
 dòng comment → rỗng), thay đổi hành vi duy nhất là xoá script không ai gọi và
-không chạy được, nên không chạy lại full suite — nhóm 1 đã đo 3.734 file /
-38.994 test xanh trên đúng cây code này.
+không chạy được.
+
+**Sau đó đã chạy lại thật hai gate mà nhóm 1/3 ghi "chờ phase 12", vì cả hai verify
+được local:**
+
+- **`pnpm build:desktop` → exit 0**, đủ 5 stage (typecheck; relay; cli với
+  `verify-cli-bin` xanh; electron-vite 1.886 + 17 + 9.149 module, không
+  `UNRESOLVED_ENTRY`; web projection 765 file). Lý do không defer: repo đã có bug
+  đúng lớp này — một bundler entry trỏ tới worker bị xoá làm build fail mà
+  typecheck/lint/test **không cái nào bắt được**, và commit sửa nó ghi rằng defer
+  sang matrix "produced no coverage at all". Nhóm 1 xoá module nên nằm trong lớp rủi
+  ro đó. Đã kiểm thêm: không build config nào reference `hermes-startup-query`.
+- **Full suite chạy lại → xanh hoàn toàn, exit 0** (3.734 file / 38.994 test). Lần
+  chạy trước đó trên cùng cây code đỏ đúng **1 test** ở
+  `src/main/window/attach-main-window-services.test.ts`; chạy riêng pass 27/27 trong
+  8,4s. **Kết luận: flake do tải, không phải regression** — `vi.waitFor` có timeout
+  mặc định **1s**, không ăn theo `testTimeout: 30_000`, và **204 file test** dùng nó.
+  Đã ghi thành rủi ro thứ tư của phase 12 kèm mitigation triage, vì runner CI thường
+  2-4 core (tải xấu hơn máy dev 16 core đã sinh flake).
+
+**Phát hiện mới, chưa sửa:** `asarUnpack` trong `config/electron-builder.config.cjs`
+còn **8 glob chết** trỏ tới `out/main/<agent>/**` không tồn tại — 7 do `631b3b0e7`
+xoá `src/main/<dir>` (antigravity, copilot, cursor, droid, gemini, grok, hermes), 1
+(`claude`) khác nguyên nhân: source còn nhưng bị bundle vào `index.js`. Tác hại thấp
+(glob không match thì không unpack gì, build vẫn exit 0) nhưng là config chết. **Để
+phase 12** vì thuộc nhóm 4 và vì `win32-utils.js` trong cùng danh sách là entry
+platform-conditional trông y hệt glob chết — prune đúng cần đối chiếu `out/` thật
+trên cả 3 OS. Bảng chi tiết + cách verify sớm nếu muốn: [cleanup
+manifest](reports/cleanup-manifest.md).
+
 
 
 ## Risk Assessment

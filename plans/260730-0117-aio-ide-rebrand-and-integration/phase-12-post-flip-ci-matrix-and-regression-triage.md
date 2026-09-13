@@ -49,6 +49,7 @@ Phase này chỉ cần re-run 3 leg CI trên matrix để có evidence trên run
 
 - Modify: `.github/workflows/release-mac-build.yml` (runner label + lý do SignPath đã lỗi thời), `track-community-prs.yaml` (`owner:` và `PROJECT_OWNER`). Ba repo guard đã đóng ở phase 05 — không mở lại.
 - Modify: source files theo regression tìm được (scope mở, thuộc phase gốc).
+- Modify (carry-over từ phase 09, đã có evidence sẵn): `config/electron-builder.config.cjs` — prune **8 glob chết** trong `asarUnpack` (`out/main/{antigravity,claude,copilot,cursor,droid,gemini,grok,hermes}/**`; `out/main/` thật chỉ có `agent-hooks`, `chunks`, `codex`). Lý do phải làm ở phase này chứ không phải phase 09: `win32-utils.js` trong cùng danh sách là entry platform-conditional **trông y hệt glob chết** khi check trên Linux, nên prune đúng cần đối chiếu `out/` thật trên cả 3 OS của matrix. 7 glob roster-fallout xoá an toàn trên mọi platform (source đã bị `631b3b0e7` xoá); `claude` cần quyết định riêng vì source vẫn còn, nó chết do bundler gộp vào `index.js`. Bảng đầy đủ trong [cleanup manifest](reports/cleanup-manifest.md).
 - Create: `plans/260730-0117-aio-ide-rebrand-and-integration/reports/post-flip-ci-triage.md` (bảng failure → phân loại → owner → trạng thái).
 
 ## Implementation Steps
@@ -75,3 +76,23 @@ Rủi ro chính: **CI xanh giả**. Nếu runner label Blacksmith và token owne
 Rủi ro thứ hai: **scope mở**. Số regression không biết trước. Mitigation: phase riêng có effort range mở, phân loại bắt buộc, và cho phép defer bằng issue thay vì kéo dài vô hạn.
 
 Rủi ro thứ ba: **regression phát hiện quá muộn** — đây là chi phí đã chấp nhận của quyết định flip-sau-phase-05. Tín hiệu assumption vỡ: nếu nhóm (a) lớn tới mức phải reopen phase 02/03/04, dừng lại và báo user để re-plan thứ tự thay vì fix chồng trong phase này.
+
+Rủi ro thứ tư: **test flake do tải, bị triage nhầm thành regression.** Đã quan sát thật
+2026-09-13 trên máy dev 16 core: cùng một cây code, chạy full suite hai lần — lần 1
+đỏ đúng 1 test ở `src/main/window/attach-main-window-services.test.ts`, lần 2 xanh
+hoàn toàn (3.734 file / 38.994 test, 0 đỏ, exit 0). File đó chạy riêng thì pass 27/27
+trong 8,4s. Nguyên nhân: hai test dùng `vi.waitFor`, **timeout mặc định của nó là 1s
+và không ăn theo `testTimeout: 30_000`** trong `config/vitest.config.ts`. Repo đã gặp
+đúng lớp lỗi này trước đó (commit sửa WorktreeCard timeout "trên full run trong khi
+pass lúc chạy riêng").
+
+Vì sao phase này phải quan tâm: **204 file test** dùng `vi.waitFor`. Runner CI thường
+2-4 core, tức điều kiện tải xấu hơn máy dev đã sinh flake, và nhiều job matrix chạy
+song song. Một flake loại này sẽ xuất hiện dưới dạng "regression chưa rõ nguyên nhân"
+và tốn slot triage.
+
+Mitigation đề xuất: khi triage, **luôn chạy lại job đỏ trước khi phân loại (a)/(b)/(c)**
+— flake tải tự hết khi chạy lại. Nếu một file đỏ lặp lại nhiều lần trên cùng runner
+nhưng xanh khi chạy riêng, xếp nó thành nhóm riêng (flake hạ tầng) thay vì regression
+sản phẩm, và sửa bằng cách truyền timeout tường minh cho `vi.waitFor` hoặc pre-resolve
+mock — không phải bằng cách tăng `testTimeout` (không có tác dụng với `waitFor`).
