@@ -231,8 +231,7 @@ function buildCases(isolatedUserData) {
     return (seed >>> 0) / 0x100000000
   }
   // Why: check the draw POOL, not just the 400 cases it happens to produce.
-  // `serve` sat in this array for the whole review because the per-case scan
-  // never named it, and the cases that drew it only survived by accident.
+  // Why: check the draw POOL, not just the 400 cases it happens to produce.
   assertTokensSafe(tokens, 'fuzz token pool')
   assertFuzzPoolDeclaredReadOnly(tokens)
   for (let index = 0; index < 400; index += 1) {
@@ -252,15 +251,15 @@ function buildCases(isolatedUserData) {
 // Why: this script shells out to the REAL CLI with the developer's own HOME and
 // PATH, so an argv that reaches the wrong verb does real damage. Two classes:
 //
-//   1. FOREGROUND — `aio-ade serve` runs AIO-ADE until Ctrl+C and `aio-ade open` /
-//      `claude-teams` spawn processes that outlive the case. A blocking case
-//      does not fail the run, it stalls it, which is worse than a mismatch.
+//   1. FOREGROUND — `aio-ade open` / `claude-teams` spawn processes that
+//      outlive the case. A blocking case does not fail the run, it stalls it,
+//      which is worse than a mismatch.
 //   2. MUTATING — writes outside AIO_ADE_USER_DATA_PATH (`agent hooks off` parks
 //      the real ~/.claude hooks) or drives real browser/desktop input.
 //
 // Group tokens whose subcommands split read/write (`capture`, `intercept`,
 // `label`, `relation`) are denied wholesale: the fuzzer cannot tell them apart.
-const FOREGROUND_TOKENS = ['serve', 'open', 'claude-teams', 'exec', 'eval', 'launch', 'attach']
+const FOREGROUND_TOKENS = ['open', 'claude-teams', 'exec', 'eval', 'launch', 'attach']
 const MUTATING_TOKENS = [
   // persistent config and registry state
   'on',
@@ -374,8 +373,7 @@ const UNSAFE_TOKENS = new Map([
   ...MUTATING_TOKENS.map((token) => [token, 'can write outside AIO_ADE_USER_DATA_PATH'])
 ])
 
-// Why: the deny list only catches verbs someone already thought of — `serve`
-// sat in the fuzz pool for the whole review because nobody added it. The pool
+// Why: the deny list only catches verbs someone already thought of. The pool
 // is therefore ALSO checked against this allowlist, so a token added to the
 // pool fails closed until it is consciously declared read-only here.
 const READ_ONLY_FUZZ_TOKENS = new Set([

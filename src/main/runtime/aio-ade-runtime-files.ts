@@ -1322,7 +1322,7 @@ export class RuntimeFileCommands {
           const close = watchWindowsRuntimeFileExplorer(rootPath, callback, onTerminalError)
           return { unsubscribe: close, rootPaths: [target.path, rootPath] }
         }
-        // Why: the forked watcher keeps the blocking crawl and native faults out of the main/`serve` process (issues #5308, #8212).
+        // Why: the forked watcher keeps the blocking crawl and native faults out of the host's main process (issues #5308, #8212).
         const dispose = await watchFileExplorerInWatcherProcess(
           rootPath,
           callback,

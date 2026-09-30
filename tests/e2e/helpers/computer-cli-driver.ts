@@ -1,4 +1,4 @@
-import { execFile, spawn, type ChildProcess } from 'node:child_process'
+import { execFile } from 'node:child_process'
 import { access, mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -8,9 +8,6 @@ import { createElectronHomeIsolation } from './electron-home-isolation'
 const execFileAsync = promisify(execFile)
 const RUNTIME_METADATA_FILE = 'aio-ade-runtime.json'
 let aioAdeDevUserDataPath: string | null = null
-let aioAdeServeProcess: ChildProcess | null = null
-let aioAdeServeStdout = ''
-let aioAdeServeStderr = ''
 
 export type CliResult = {
   stdout: string
@@ -64,29 +61,14 @@ async function runAioAdeCliOnce(args: string[]): Promise<CliResult> {
 }
 
 export async function ensureAioAdeRuntimeLaunched(): Promise<void> {
-  if (!process.env.AIO_ADE_COMPUTER_CLI && process.platform === 'win32') {
-    await ensureAioAdeRuntimeServed()
-    return
-  }
   await runAioAdeCli(['open', '--json'], { retryMissingRuntimeMetadata: false })
   await waitForAioAdeRuntimeReady()
 }
 
 export async function stopAioAdeRuntime(): Promise<void> {
-  const processToStop = aioAdeServeProcess
-  if (!processToStop?.pid) {
-    return
-  }
-  aioAdeServeProcess = null
-  if (process.platform === 'win32') {
-    try {
-      await execFileAsync('taskkill.exe', ['/PID', String(processToStop.pid), '/T', '/F'])
-    } catch {
-      // The foreground test runtime may already have exited.
-    }
-    return
-  }
-  processToStop.kill()
+  // Why: the runtime is a launched desktop session, not a child process this
+  // driver owns — a test must not kill it. Left as a no-op teardown hook so the
+  // spec call sites keep their shape.
 }
 
 export function parseJsonOutput<T>(stdout: string): T {
@@ -123,11 +105,7 @@ async function waitForAioAdeRuntimeReady(): Promise<void> {
     await delay(250)
   }
 
-  const detail = [
-    lastError instanceof Error ? `Last error: ${lastError.message}` : null,
-    aioAdeServeStdout.trim() ? `serve stdout: ${aioAdeServeStdout.trim()}` : null,
-    aioAdeServeStderr.trim() ? `serve stderr: ${aioAdeServeStderr.trim()}` : null
-  ]
+  const detail = [lastError instanceof Error ? `Last error: ${lastError.message}` : null]
     .filter(Boolean)
     .join(' ')
   throw new Error(`AIO-ADE runtime metadata was not ready at ${metadataPath}.${detail}`)
@@ -135,32 +113,6 @@ async function waitForAioAdeRuntimeReady(): Promise<void> {
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-async function ensureAioAdeRuntimeServed(): Promise<void> {
-  if (!aioAdeServeProcess || aioAdeServeProcess.exitCode !== null) {
-    const devCli = join(process.cwd(), 'config/scripts/aio-ade-dev.mjs')
-    const env = await createComputerE2ERuntimeEnv()
-    aioAdeServeStdout = ''
-    aioAdeServeStderr = ''
-    aioAdeServeProcess = spawn(process.execPath, [devCli, 'serve', '--no-pairing', '--json'], {
-      env,
-      windowsHide: true
-    })
-    aioAdeServeProcess.stdout?.on('data', (chunk) => {
-      aioAdeServeStdout += String(chunk)
-    })
-    aioAdeServeProcess.stderr?.on('data', (chunk) => {
-      aioAdeServeStderr += String(chunk)
-    })
-    aioAdeServeProcess.once('exit', () => {
-      aioAdeServeProcess = null
-    })
-    process.once('exit', () => {
-      aioAdeServeProcess?.kill()
-    })
-  }
-  await waitForAioAdeRuntimeReady()
 }
 
 async function createComputerE2ERuntimeEnv(): Promise<NodeJS.ProcessEnv> {

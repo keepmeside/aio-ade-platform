@@ -18,7 +18,6 @@ import { ipcMain } from 'electron'
 import type {
   FolderWorkspace,
   ProjectGroup,
-  Tab,
   TerminalLayoutSnapshot,
   WorktreeLineage,
   WorktreeMeta,
@@ -2005,142 +2004,15 @@ describe('AioAdeRuntimeService', () => {
     })
   })
 
-  it('advertises headless browser capability when an offscreen backend backs a windowless host', () => {
-    const runtime = createRuntime()
-    runtime.setOffscreenBrowserBackend({ createTab: vi.fn(), closeTab: vi.fn() })
-
-    const capabilities = runtime.getStatus().capabilities
-    // Headless serve can still create/stream pages, so screencast is supported...
-    expect(capabilities).toContain('browser.screencast.v1')
-    // ...and the headless marker tells clients not to fall back to a local tab.
-    expect(capabilities).toContain('browser.headless.v1')
-    expect(capabilities).toContain('browser.certificate-trust.v1')
-  })
-  it('surfaces live offscreen load failures in headless browser snapshots', () => {
-    const runtime = createRuntime()
-    runtime.setOffscreenBrowserBackend({ createTab: vi.fn(), closeTab: vi.fn() })
-    runtime.setAgentBrowserBridge({
-      tabList: vi.fn(() => ({
-        tabs: [
-          {
-            browserPageId: 'page-certificate-error',
-            index: 0,
-            url: 'https://localhost:3443/',
-            title: 'Local HTTPS',
-            active: true,
-            loadError: {
-              code: -202,
-              description: 'ERR_CERT_AUTHORITY_INVALID',
-              validatedUrl: 'https://localhost:3443/'
-            },
-            certificateFailure: {
-              challengeId: 'challenge-1',
-              browserPageId: 'page-certificate-error',
-              errorCode: -202,
-              error: 'ERR_CERT_AUTHORITY_INVALID',
-              origin: 'https://localhost:3443',
-              displayHost: 'localhost:3443',
-              canProceed: true,
-              observedAt: 123
-            }
-          }
-        ]
-      }))
-    } as never)
-    const browserTabs = runtime['buildHeadlessMobileSessionBrowserTabs'](TEST_WORKTREE_ID)
-    expect(browserTabs).toContainEqual(
-      expect.objectContaining({
-        type: 'browser',
-        browserPageId: 'page-certificate-error',
-        loadError: {
-          code: -202,
-          description: 'ERR_CERT_AUTHORITY_INVALID',
-          validatedUrl: 'https://localhost:3443/'
-        },
-        certificateFailure: {
-          challengeId: 'challenge-1',
-          browserPageId: 'page-certificate-error',
-          errorCode: -202,
-          error: 'ERR_CERT_AUTHORITY_INVALID',
-          origin: 'https://localhost:3443',
-          displayHost: 'localhost:3443',
-          canProceed: true,
-          observedAt: 123
-        }
-      })
-    )
-  })
-
-  it('detects headless browser-tab changes by field, treating absent and null loadError alike', () => {
-    const runtime = createRuntime()
-    const base = {
-      type: 'browser' as const,
-      id: 'page-1',
-      title: 'Local',
-      browserWorkspaceId: 'page-1',
-      browserPageId: 'page-1',
-      url: 'https://localhost:3443/',
-      loading: false,
-      canGoBack: false,
-      canGoForward: false,
-      isActive: true
-    }
-    const err = {
-      code: -202,
-      description: 'ERR_CERT_AUTHORITY_INVALID',
-      validatedUrl: 'https://localhost:3443/'
-    }
-    const certificateFailure = {
-      challengeId: 'challenge-1',
-      browserPageId: 'page-1',
-      errorCode: -202,
-      error: 'ERR_CERT_AUTHORITY_INVALID',
-      origin: 'https://localhost:3443',
-      displayHost: 'localhost:3443',
-      canProceed: true,
-      observedAt: 123
-    }
-    const unchanged = (a: unknown[], b: unknown[]): boolean =>
-      runtime['headlessBrowserTabsUnchanged'](a as never, b as never)
-
-    // Absent vs explicit null loadError are equivalent (the JSON.stringify trap).
-    expect(unchanged([{ ...base }], [{ ...base, loadError: null }])).toBe(true)
-    expect(unchanged([{ ...base, loadError: err }], [{ ...base, loadError: { ...err } }])).toBe(
-      true
-    )
-    // A load-error-only change (identical ids/order) must not be missed.
-    expect(unchanged([{ ...base }], [{ ...base, loadError: err }])).toBe(false)
-    expect(
-      unchanged([{ ...base, loadError: err }], [{ ...base, loadError: { ...err, code: -200 } }])
-    ).toBe(false)
-    expect(
-      unchanged(
-        [{ ...base, certificateFailure }],
-        [{ ...base, certificateFailure: { ...certificateFailure } }]
-      )
-    ).toBe(true)
-    expect(unchanged([{ ...base }], [{ ...base, certificateFailure }])).toBe(false)
-    expect(
-      unchanged(
-        [{ ...base, certificateFailure }],
-        [{ ...base, certificateFailure: { ...certificateFailure, challengeId: 'challenge-2' } }]
-      )
-    ).toBe(false)
-    // Scalar and length changes are detected.
-    expect(unchanged([{ ...base }], [{ ...base, title: 'Changed' }])).toBe(false)
-    expect(unchanged([{ ...base }], [{ ...base, isActive: false }])).toBe(false)
-    expect(unchanged([{ ...base }], [{ ...base }, { ...base, id: 'page-2' }])).toBe(false)
-  })
-
-  it('does not advertise headless browser capability when a renderer window exists', () => {
+  it('advertises certificate trust and screencast when a renderer window exists', () => {
     const runtime = createRuntime()
     electronMocks.BrowserWindow.fromId.mockReturnValue({ isDestroyed: () => false } as never)
     runtime.attachWindow(TEST_WINDOW_ID)
-    runtime.setOffscreenBrowserBackend({ createTab: vi.fn(), closeTab: vi.fn() })
 
-    expect(runtime.getStatus().capabilities).not.toContain('browser.headless.v1')
-    // Desktop webviews still host certificate trust, so the proceed capability stays advertised for remote clients controlling those pages.
+    // Desktop webviews host certificate trust + screencast, so both stay advertised for remote clients controlling those pages.
     expect(runtime.getStatus().capabilities).toContain('browser.certificate-trust.v1')
+    expect(runtime.getStatus().capabilities).toContain('browser.screencast.v1')
+    expect(runtime.getStatus().capabilities).not.toContain('browser.headless.v1')
   })
 
   it('does not advertise certificate trust when no browser backend is available', () => {
@@ -2148,25 +2020,6 @@ describe('AioAdeRuntimeService', () => {
 
     expect(runtime.getStatus().capabilities).not.toContain('browser.certificate-trust.v1')
     expect(runtime.getStatus().capabilities).not.toContain('browser.screencast.v1')
-  })
-
-  it('closes a worktree’s offscreen browser pages when its metadata is removed (leak fix)', () => {
-    const runtime = createRuntime()
-    const closeTab = vi.fn().mockResolvedValue(undefined)
-    runtime.setOffscreenBrowserBackend({ createTab: vi.fn(), closeTab })
-    runtime.setAgentBrowserBridge({
-      tabList: vi.fn((worktreeId: string) =>
-        worktreeId === TEST_WORKTREE_ID
-          ? { tabs: [{ browserPageId: 'page-a' }, { browserPageId: 'page-b' }] }
-          : { tabs: [] }
-      )
-    } as never)
-
-    runtime['removeWorktreeMetadataAndHistory'](store as never, TEST_WORKTREE_ID)
-
-    expect(closeTab).toHaveBeenCalledWith('page-a')
-    expect(closeTab).toHaveBeenCalledWith('page-b')
-    expect(closeTab).toHaveBeenCalledTimes(2)
   })
 
   it('claims the first window as authoritative and ignores later windows', () => {
@@ -22226,95 +22079,6 @@ describe('AioAdeRuntimeService', () => {
     expect(surface?.type === 'terminal' && surface.isPinned).toBe(true)
   })
 
-  it('persists headless browser tab color + pin and surfaces them through a cold rehydrate', async () => {
-    const browserTab: Tab = {
-      id: 'browser-page-1',
-      entityId: 'browser-page-1',
-      groupId: 'group-1',
-      worktreeId: TEST_WORKTREE_ID,
-      contentType: 'browser',
-      label: 'Live Browser',
-      customLabel: null,
-      color: null,
-      sortOrder: 1,
-      createdAt: 2,
-      isPreview: false,
-      isPinned: false
-    }
-    const session = makeWorkspaceSessionWithHeadlessTerminal({
-      unifiedTabs: { [TEST_WORKTREE_ID]: [browserTab] },
-      tabGroups: {
-        [TEST_WORKTREE_ID]: [
-          {
-            id: 'group-1',
-            worktreeId: TEST_WORKTREE_ID,
-            activeTabId: 'browser-page-1',
-            tabOrder: ['browser-page-1']
-          }
-        ]
-      }
-    })
-    const { runtimeStore, getSession } = makeRuntimeStoreWithWorkspaceSession(session)
-    const runtime = new AioAdeRuntimeService(runtimeStore as never)
-    runtime.setOffscreenBrowserBackend({ createTab: vi.fn(), closeTab: vi.fn() })
-    runtime.setAgentBrowserBridge({
-      tabList: vi.fn(() => ({
-        tabs: [
-          {
-            browserPageId: 'browser-page-1',
-            index: 0,
-            url: 'https://example.com/',
-            title: 'Live Browser',
-            active: true
-          }
-        ]
-      }))
-    } as never)
-
-    await runtime.listMobileSessionTabs(`id:${TEST_WORKTREE_ID}`)
-    await runtime.setMobileSessionTabProps(`id:${TEST_WORKTREE_ID}`, {
-      tabId: 'browser-page-1',
-      color: '#3b82f6',
-      isPinned: true
-    })
-
-    const persisted = getSession().unifiedTabs?.[TEST_WORKTREE_ID]?.find(
-      (tab) => tab.id === 'browser-page-1'
-    )
-    expect(persisted?.color).toBe('#3b82f6')
-    expect(persisted?.isPinned).toBe(true)
-
-    runtime['mobileSessionTabsByWorktree'].delete(TEST_WORKTREE_ID)
-    runtime['hydrateHeadlessMobileSessionTabsFromWorkspaceSession'](TEST_WORKTREE_ID)
-    const rehydrated = await runtime.listMobileSessionTabs(`id:${TEST_WORKTREE_ID}`)
-    const surface = rehydrated.tabs.find(
-      (tab) => tab.type === 'browser' && tab.id === 'browser-page-1'
-    )
-    expect(surface?.type === 'browser' && surface.color).toBe('#3b82f6')
-    expect(surface?.type === 'browser' && surface.isPinned).toBe(true)
-
-    await runtime.setMobileSessionTabProps(`id:${TEST_WORKTREE_ID}`, {
-      tabId: 'browser-page-1',
-      color: null,
-      isPinned: false
-    })
-
-    const cleared = getSession().unifiedTabs?.[TEST_WORKTREE_ID]?.find(
-      (tab) => tab.id === 'browser-page-1'
-    )
-    expect(cleared?.color).toBeNull()
-    expect(cleared?.isPinned).toBe(false)
-
-    runtime['mobileSessionTabsByWorktree'].delete(TEST_WORKTREE_ID)
-    runtime['hydrateHeadlessMobileSessionTabsFromWorkspaceSession'](TEST_WORKTREE_ID)
-    const rehydratedCleared = await runtime.listMobileSessionTabs(`id:${TEST_WORKTREE_ID}`)
-    const clearedSurface = rehydratedCleared.tabs.find(
-      (tab) => tab.type === 'browser' && tab.id === 'browser-page-1'
-    )
-    expect(clearedSurface?.type === 'browser' && clearedSurface.color).toBeNull()
-    expect(clearedSurface?.type === 'browser' && clearedSurface.isPinned).toBe(false)
-  })
-
   it('persists headless tab viewMode and surfaces it through a cold rehydrate', async () => {
     const session = makeWorkspaceSessionWithHeadlessTerminal()
     const { runtimeStore, getSession } = makeRuntimeStoreWithWorkspaceSession(session)
@@ -22440,37 +22204,6 @@ describe('AioAdeRuntimeService', () => {
     const right = after.tabGroups!.find((g) => g.id === rightGroupId)!
     expect(left.tabOrder).toHaveLength(2) // original + the targeted create
     expect(right.tabOrder).toHaveLength(1) // unchanged
-  })
-
-  it('appendBrowserTabOrder keeps a browser in its group across rebuilds (durability)', () => {
-    const runtime = new AioAdeRuntimeService(store)
-    const groups = [
-      { id: 'left', activeTabId: 'web-terminal-a', tabOrder: ['web-terminal-a'] },
-      { id: 'right', activeTabId: 'web-terminal-b', tabOrder: ['web-terminal-b'] }
-    ]
-
-    // First create: a new browser targeted at the RIGHT group lands there.
-    const afterCreate = runtime['appendBrowserTabOrder'](groups, ['browser-1'], {
-      tabId: 'browser-1',
-      groupId: 'right'
-    })
-    expect(afterCreate.find((g) => g.id === 'right')!.tabOrder).toContain('browser-1')
-    expect(afterCreate.find((g) => g.id === 'left')!.tabOrder).not.toContain('browser-1')
-
-    // Rebuild: the terminal distributor drops the browser id, so appendBrowserTabOrder must restore it to its prior group, not group[0].
-    const rebuiltGroups = [
-      { id: 'left', activeTabId: 'web-terminal-a', tabOrder: ['web-terminal-a'] },
-      { id: 'right', activeTabId: 'web-terminal-b', tabOrder: ['web-terminal-b'] }
-    ]
-    const priorAssignment = runtime['collectBrowserGroupAssignment'](afterCreate, ['browser-1'])
-    const afterRebuild = runtime['appendBrowserTabOrder'](
-      rebuiltGroups,
-      ['browser-1'],
-      undefined,
-      priorAssignment
-    )
-    expect(afterRebuild.find((g) => g.id === 'right')!.tabOrder).toContain('browser-1')
-    expect(afterRebuild.find((g) => g.id === 'left')!.tabOrder).not.toContain('browser-1')
   })
 
   it('keeps preserved headless mobile session publication epochs idempotent', async () => {
@@ -26470,7 +26203,7 @@ describe('AioAdeRuntimeService', () => {
     }
   })
 
-  it('reports browser tab creation as unsupported for a windowless host with no offscreen backend', async () => {
+  it('reports browser tab creation as unsupported for a windowless host', async () => {
     const runtime = new AioAdeRuntimeService(store)
     runtime.syncWindowGraph(0, { tabs: [], leaves: [] })
 
@@ -26480,18 +26213,6 @@ describe('AioAdeRuntimeService', () => {
       code: 'browser_error',
       message: expect.stringContaining('does not support browser panes')
     })
-  })
-
-  it('creates a browser tab via the offscreen backend for a headless runtime server', async () => {
-    const runtime = new AioAdeRuntimeService(store)
-    runtime.syncWindowGraph(0, { tabs: [], leaves: [] })
-    const createTab = vi.fn(async () => ({ browserPageId: 'page-headless' }))
-    runtime.setOffscreenBrowserBackend({ createTab, closeTab: vi.fn() })
-
-    await expect(
-      runtime.browserTabCreate({ worktree: `id:${TEST_WORKTREE_ID}`, url: 'https://example.com' })
-    ).resolves.toEqual({ browserPageId: 'page-headless' })
-    expect(createTab).toHaveBeenCalledWith(expect.objectContaining({ url: 'https://example.com' }))
   })
 
   it('cancels an in-flight same-connection browser screencast before replacing it', async () => {

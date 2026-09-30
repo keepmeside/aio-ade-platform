@@ -336,7 +336,7 @@ describe.skipIf(process.platform === 'win32')('RuntimeClient', () => {
     expect(statusRequests).toBeGreaterThan(1)
   })
 
-  it('openAioAde fails explicitly when the serve owner cannot promote safely', async () => {
+  it('openAioAde fails explicitly when the remote owner cannot promote safely', async () => {
     const userDataPath = mkdtempSync(join(tmpdir(), 'aio-ade-runtime-client-'))
     const endpoint = join(userDataPath, 'runtime.sock')
     const server = createServer((socket) => {

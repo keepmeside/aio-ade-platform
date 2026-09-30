@@ -2468,8 +2468,6 @@ app.on('will-quit', (e) => {
   stats?.flush()
   // Why: agent-browser daemon processes would otherwise linger after quit, holding ports and stale session state on disk.
   runtime?.getAgentBrowserBridge()?.destroyAllSessions()
-  // Why: headless offscreen browser windows are main-process owned; tear them down explicitly on quit.
-  runtime?.getOffscreenBrowserBackend()?.destroyAll?.()
   browserManager.setBrowserGuestStateChangedListener(null)
   const emulatorShutdown = runtime?.getEmulatorBridge()?.destroyAllSessions() ?? Promise.resolve()
   killAllPty()

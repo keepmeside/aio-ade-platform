@@ -51,7 +51,7 @@ Cleanup theo pipeline evidence-first: inventory (knip/depcheck/ts-prune hoặc c
 - [ ] `package.json` không còn dependency unused theo tool đã chọn (nếu chọn không dùng tool, tiêu chí này thay bằng: mọi dep còn lại có ít nhất một import/script reference chứng minh được). *(Chờ phase 12 + sau khi 06/07/10 merge, theo contention note ở step 3.)*
 - [x] `max-lines` baseline chỉ shrink (`--prune`), không reset. **Verify 2026-09-13:** chưa từng chạy `--init`. `check-max-lines-ratchet.mjs` **return 1 khi có stale entry**, và `pnpm lint` exit 0 với `max-lines ratchet OK — 327 grandfathered suppression(s), no new bypasses` → **0 entry stale**, tức các file đã xoá không để lại entry mồ côi. Không có gì để `--prune`.
 - [x] Compat-window và reserved-seam items của phase 04/05/06/07/10 còn nguyên và test của chúng xanh. **Verify nhóm 1:** passive title detection (`HERMES_AGENT_NAME_RE`, `terminal-title-*`, `agent-title-*`), historical `AgentType` enum, `openclaude` native-chat layer, `aio-ide-plan-pages.yml`, exclusion `tools/` — tất cả còn nguyên; full suite 3.734 file xanh. **Verify nhóm 3 (2026-09-13):** passive-detection map `Pi: 'pi'` / `OMP: 'omp'` còn nguyên sau khi sửa comment; owner-threading seam (35 call site / 8 file) **giữ nguyên có quyết định**, không xoá; 642 test blast radius xanh. Re-verify lại sau mỗi nhóm sau.
-- [ ] Quyết định `serve`: xoá hoặc giữ, có lý do ghi trong cleanup manifest. Nếu xoá thì dependency riêng của nó cũng đi cùng. *(Cần user quyết — input là `research/baseline/serve-dependency-inventory.md`.)*
+- [x] Quyết định `serve`: **xoá** — user chọn xoá thật, không giữ flag. Đã xoá command + spec + handler + launcher + supervisor + handoff + argv branch + readiness pair + activation gate + virtual-display + headless PTY registration + headless automation dispatcher + pairing repro harness + headless Linux guide + gate `runtime.headless-desktop-promotion-continuity` + mọi test/doc/config của nó. Dependency riêng (`serve-update-supervisor`, `serve-update-handoff`, `serve-signal-exit-diagnostic`, `OffscreenBrowserBackend`*, `headless-dispatch`/`headless-workspace-create`, pairing-repro script + docker harness, `preferPinnedWsPort`, `AIO_ADE_APPIMAGE_NO_SANDBOX`, `registerHeadlessPtyRuntime`, `UpdateInstallMode` union, `HOST_INTERACTIVE_COMMANDS['serve']`) đi cùng. **Giữ compat-window:** `RemoteServerUpdateInstallMode` headless tokens (wire — peer cũ report), `BROWSER_HEADLESS_RUNTIME_CAPABILITY` + `HEADLESS_RUNTIME_WINDOW_ID` (peer cũ publish), `'serve'` trong `APPIMAGE_CLI_COMMAND_NAMES` (routing allowlist). Evidence + lý do: [cleanup manifest](reports/cleanup-manifest.md). *(`*` = sweep đang chạy)*
 - [x] Toàn bộ pipeline verify xanh; packaged smoke pass trên ít nhất một OS desktop. **Đóng 2026-09-13 trên Linux**, chạy đúng procedure của job CI (`pr.yml` "Package unpacked app" + "Smoke packaged CLI" — job đó chạy `ubuntu-latest` nên đây là tái hiện trung thực, không phải thay thế): `build:desktop` exit 0 (5 stage) → `build:native` → `ensure:electron-runtime` → `electron-builder --dir` (`dist/linux-unpacked` 526 MB, `app.asar` 118,9 MB) → `smoke-packaged-cli.mjs --app-dir=dist/linux-unpacked`: `resources/bin/aio-ade --help` **chạy thành công ngoài repo**, exit 0; `verify-packaged-plugin-resources` OK (1 plugin). Brand-scan lại theo step 6: `brand-token-contract.test.ts` 6/6 pass và **0 token `orca`** trong danh sách file của `app.asar` build sạch. Matrix 3 OS vẫn thuộc phase 12.
 
 ## Tiến độ
@@ -80,6 +80,19 @@ xác minh:** `config/scripts/verify-agent-hook-stdin-lifecycle.mjs` (nhóm 3) c�
 `mobile-*` trong `config/reliability-gates.jsonc` (nhóm 4) chạy qua script
 check-only trong `pnpm lint`. Cả hai verify được local; xem candidate list trong
 cleanup manifest.
+
+**Nhóm 5 — quyết định `serve`: xoá đã chốt, sweep đang hoàn tất.** User chọn
+**xoá thật**; commit `054e3c3a9` (84 file, −6.761/+343) mang phần lớn việc xoá
+theo inventory: CLI spec/handler/flag/launcher/supervisor/handoff, main
+`--serve*` argv + readiness/activation/virtual-display, updater install-mode
+threading, headless PTY registration, headless automation dispatcher + module,
+pairing-repro script + docker harness + guide, gate
+`runtime.headless-desktop-promotion-continuity`, locale `pairingCommand`, ~20
+comment rot. Giữ compat-window: remote-server-update headless tokens,
+`browser.headless.v1` token + `HEADLESS_RUNTIME_WINDOW_ID` (wire), `'serve'`
+trong AppImage allowlist, `serve-sim-*` emulator. **Còn đang làm:** sweep
+`OffscreenBrowserBackend` + dead-branch trong cùng nhóm; đóng nhóm sau verify
+cuối (full suite + build:desktop + packaged smoke). Evidence: [cleanup manifest](reports/cleanup-manifest.md).
 
 **Nhóm 3 — phần verify được local: đóng 2026-09-13.** Ba việc, đều không cần
 packaged smoke:

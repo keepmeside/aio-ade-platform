@@ -641,8 +641,8 @@ describe('WebSocketTransport', () => {
     })
 
     it('binds the preferred port first when preferPinnedPort is set and both are free', async () => {
-      // Why: issue #8535 — `aio-ade serve --port <P>` clients dial the pin. A
-      // free but stale mobile-ws-fallback-port.json must not pre-empt it.
+      // Why: issue #8535 — clients dialing an explicit pinned port must not be
+      // pre-empted by a free but stale mobile-ws-fallback-port.json.
       const preferredPort = await reserveFreePort()
       const fallbackPort = await reserveFreePort()
 

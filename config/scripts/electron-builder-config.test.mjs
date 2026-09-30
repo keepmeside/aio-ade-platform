@@ -403,7 +403,7 @@ describe('electron-builder config', () => {
 
   it('includes @parcel/watcher in the packaged runtime closure', () => {
     // Why: the main process imports '@parcel/watcher' for filesystem change
-    // events; if it is absent from the packaged closure the serve host silently
+    // events; if it is absent from the packaged closure a remote host silently
     // stops propagating file changes to clients (regression guard for #4851).
     const packaged = createPackagedRuntimeNodeModuleResources()
     const packagedTargets = packaged.map((resource) => resource.to)

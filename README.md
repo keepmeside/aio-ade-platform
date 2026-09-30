@@ -203,9 +203,6 @@ Builds are published on [GitHub Releases](https://github.com/keepmeside/aio-ade-
 brew install --cask keepmeside/aio-ade-platform/aio-ade
 ```
 
-Running `aio-ade serve` on a headless Linux server? See the
-[headless Linux server guide](docs/reference/headless-linux-server.md).
-
 ### Builds are not signed yet
 
 There is no code-signing certificate for this project yet, so releases ship unsigned and

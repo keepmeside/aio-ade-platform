@@ -573,12 +573,12 @@ describe('runRemoteAioAdeCli', () => {
 
     const result = await runRemoteAioAdeCli(
       runtime,
-      { argv: ['serve'], cwd: '/home/alice', env: {} },
+      { argv: ['claude-teams'], cwd: '/home/alice', env: {} },
       { ...LEGACY_FALLBACK_OPTIONS, spawn: spawn as never }
     )
 
     expect(result.exitCode).toBe(1)
-    expect(result.stderr).toContain('aio-ade serve')
+    expect(result.stderr).toContain('aio-ade claude-teams')
     expect(result.stderr).toContain('SSH relay bridge')
     expect(spawn).not.toHaveBeenCalled()
   })
@@ -588,7 +588,7 @@ describe('runRemoteAioAdeCli', () => {
 
     const result = await runRemoteAioAdeCli(
       runtime,
-      { argv: ['serve', '--json'], cwd: '/home/alice', env: {} },
+      { argv: ['claude-teams', '--json'], cwd: '/home/alice', env: {} },
       LEGACY_FALLBACK_OPTIONS
     )
 

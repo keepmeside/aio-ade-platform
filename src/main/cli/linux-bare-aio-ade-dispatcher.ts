@@ -61,8 +61,7 @@ export async function installLinuxBareAioAdeDispatcher(
 }
 
 /** Bare-`aio-ade` script that execs the AIO-ADE CLI: the stable AppImage when running
- *  from one, otherwise the bundled `aio-ade` launcher. Shared by the serve
- *  dispatcher and the managed-terminal PATH shim. */
+ *  from one, otherwise the bundled `aio-ade` launcher. */
 export function buildBareAioAdeCliScript(
   resourcesPath: string,
   appImagePath: string | null

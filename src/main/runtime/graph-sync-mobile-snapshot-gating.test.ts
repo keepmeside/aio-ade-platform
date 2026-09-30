@@ -1,8 +1,7 @@
 /**
  * Graph-sync mobile snapshot gating: the serve-only hydrate fast-path must
- * never hide a serve-owned terminal or a headless browser tab, and the
- * changed-worktree coalesced fanout must emit every real change while
- * suppressing no-op syncs entirely.
+ * never hide a serve-owned terminal, and the changed-worktree coalesced
+ * fanout must emit every real change while suppressing no-op syncs entirely.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
@@ -145,8 +144,6 @@ function makeRendererSnapshot(args: {
 
 type RuntimeInternals = {
   buildHeadlessMobileSessionTerminalTabs: (...args: unknown[]) => unknown[]
-  offscreenBrowserBackend: unknown
-  agentBrowserBridge: unknown
   mobileSessionTabsByWorktree: Map<string, RuntimeMobileSessionTabsSnapshot>
 }
 
@@ -206,7 +203,7 @@ describe('graph-sync mobile snapshot gating', () => {
     ])
   })
 
-  it('skips the serve-only hydrate rebuild and emits nothing when no serve ptys and no browser backend', () => {
+  it('skips the serve-only hydrate rebuild and emits nothing when no serve ptys exist', () => {
     const { runtime, events, sync } = createRuntime(
       makeSession({
         tabsByWorktree: { [WT]: [makeTerminalTab('plain-tab', 'repo-1::wt@@abc')] }
@@ -260,34 +257,6 @@ describe('graph-sync mobile snapshot gating', () => {
     vi.advanceTimersByTime(60)
     expect(events).toHaveLength(1)
     expect(events[0]?.publicationEpoch).toBe('renderer:epoch-2')
-  })
-
-  it('hydrates headless browser tabs when an offscreen backend exists despite zero serve terminals', () => {
-    const { runtime, events, sync } = createRuntime(
-      makeSession({
-        tabsByWorktree: { [WT]: [makeTerminalTab('plain-tab', 'repo-1::wt@@abc')] }
-      })
-    )
-    const internals = runtime as unknown as RuntimeInternals
-    internals.offscreenBrowserBackend = { closeTab: vi.fn() }
-    internals.agentBrowserBridge = {
-      tabList: vi.fn(() => ({
-        tabs: [
-          { browserPageId: 'page-1', index: 0, url: 'https://x.test', title: 'X', active: true }
-        ]
-      })),
-      getRegisteredTabs: vi.fn(() => new Map([['page-1', 100]]))
-    }
-
-    sync([])
-    vi.advanceTimersByTime(60)
-
-    expect(events).toHaveLength(1)
-    expect(events[0]?.tabs).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ type: 'browser', browserPageId: 'page-1' })
-      ])
-    )
   })
 
   it('fans out only the changed worktree, never the unchanged sibling (across IPC clones)', () => {
@@ -469,63 +438,6 @@ describe('graph-sync mobile snapshot gating', () => {
     vi.advanceTimersByTime(500)
     expect(events).toHaveLength(0)
     expect(internals.mobileSessionTabsByWorktree.get(WT)).toBe(stored)
-  })
-
-  it('suppresses repeated unchanged syncs with an offscreen browser backend enabled', () => {
-    const { runtime, events, sync } = createRuntime(
-      makeSession({
-        tabsByWorktree: { [WT]: [makeTerminalTab('plain-tab', 'repo-1::wt@@abc')] }
-      })
-    )
-    const internals = runtime as unknown as RuntimeInternals
-    internals.offscreenBrowserBackend = { closeTab: vi.fn() }
-    internals.agentBrowserBridge = {
-      tabList: vi.fn(() => ({
-        tabs: [
-          { browserPageId: 'page-1', index: 0, url: 'https://x.test', title: 'X', active: true }
-        ]
-      })),
-      getRegisteredTabs: vi.fn(() => new Map([['page-1', 100]]))
-    }
-    sync([])
-    vi.advanceTimersByTime(300)
-    expect(events).toHaveLength(1)
-    const stored = internals.mobileSessionTabsByWorktree.get(WT)
-
-    events.length = 0
-    for (let i = 0; i < 5; i++) {
-      sync([])
-    }
-    vi.advanceTimersByTime(500)
-    expect(events).toHaveLength(0)
-    expect(internals.mobileSessionTabsByWorktree.get(WT)).toBe(stored)
-
-    // A real browser change (a newly opened page) must still emit. Same-page
-    // navigation is delivered via the browser-bridge notify path, not graph
-    // sync, so a new tab is the graph-sync-visible browser change.
-    internals.agentBrowserBridge = {
-      tabList: vi.fn(() => ({
-        tabs: [
-          { browserPageId: 'page-1', index: 0, url: 'https://x.test', title: 'X', active: false },
-          { browserPageId: 'page-2', index: 1, url: 'https://y.test', title: 'Y', active: true }
-        ]
-      })),
-      getRegisteredTabs: vi.fn(
-        () =>
-          new Map([
-            ['page-1', 100],
-            ['page-2', 101]
-          ])
-      )
-    }
-    sync([])
-    vi.advanceTimersByTime(60)
-    expect(events).toHaveLength(1)
-    expect(events[0]?.tabs).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ type: 'browser', browserPageId: 'page-2' })
-      ])
-    )
   })
 
   it('drops a closed renderer tab from a mixed renderer+serve snapshot while keeping the serve tab', () => {

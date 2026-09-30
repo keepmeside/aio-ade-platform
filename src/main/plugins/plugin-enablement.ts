@@ -38,7 +38,7 @@ export async function applyPluginConsent(input: {
     throw new Error(`plugin ${pluginKey} changed since its permissions were reviewed`)
   }
   if (input.decision === 'approve') {
-    // Why: IPC and serve callers can bypass the renderer dialog, so main must
+    // Why: IPC and remote-RPC callers can bypass the renderer dialog, so main must
     // prove every instructional byte is still reviewable before enabling it.
     await verifyInstructionalPluginContent(plugin)
   }

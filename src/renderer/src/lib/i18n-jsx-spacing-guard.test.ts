@@ -59,11 +59,6 @@ const CASES: GuardCase[] = [
     label: 'such as main'
   },
   {
-    file: 'components/settings/RuntimeEnvironmentsPane.tsx',
-    afterFallback: 'Run',
-    label: 'Run aio-ade serve'
-  },
-  {
     file: 'components/settings/AutoRenameBranchFromWorkSetting.tsx',
     afterFallback: 'Use',
     label: 'Use {basePrompt}'

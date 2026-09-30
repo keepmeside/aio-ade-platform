@@ -638,7 +638,7 @@ export function promptGuardShellEnv(
 
 /**
  * Force git non-interactive so it fails fast instead of hanging on a prompt with
- * no terminal to answer it; on headless `serve` those stuck calls wedge every
+ * no terminal to answer it; on a renderer-less host those stuck calls wedge every
  * client (issue #5308).
  *
  * - GIT_TERMINAL_PROMPT=0: git errors instead of prompting for credentials.

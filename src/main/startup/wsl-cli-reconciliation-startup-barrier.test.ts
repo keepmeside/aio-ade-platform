@@ -57,7 +57,7 @@ describe('createWslCliReconciliationStartupBarrier', () => {
     }
   })
 
-  it('lets serve reach RPC readiness at budget while reconciliation remains pending', async () => {
+  it('lets a host reach RPC readiness at budget while reconciliation remains pending', async () => {
     vi.useFakeTimers()
     let resolveReconciliation!: () => void
     let reconciliationCompleted = false

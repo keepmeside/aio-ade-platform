@@ -27,7 +27,7 @@ if (!process.env.AIO_ADE_APP_EXECUTABLE && isRunnableFile(electronExecutable)) {
   process.env.AIO_ADE_APP_EXECUTABLE_NEEDS_APP_ROOT = '1'
 }
 
-// Why: headless `aio-ade-dev serve` skips the Electron dev runner that normally installs terminal CLI shims.
+// Why: a dev runtime launched outside the Electron dev runner skips the shim install step.
 prepareDevCliTerminalWrappers({
   repoRoot,
   userDataPath: process.env.AIO_ADE_USER_DATA_PATH,

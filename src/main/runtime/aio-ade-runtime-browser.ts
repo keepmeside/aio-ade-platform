@@ -51,7 +51,6 @@ import type {
 } from '../../shared/runtime-types'
 import type { BrowserCertificateProceedResult } from '../../shared/types'
 import type { AgentBrowserBridge } from '../browser/agent-browser-bridge'
-import type { BrowserBackend } from '../browser/browser-backend'
 import { browserCertificateTrustController, browserManager } from '../browser/browser-manager'
 import { BrowserError } from '../browser/cdp-bridge'
 import {
@@ -144,14 +143,6 @@ export type RuntimeBrowserCommandHost = {
   resolveWorktreeSelector(selector: string): Promise<{ id: string }>
   getAuthoritativeWindow(): BrowserWindow
   getAvailableAuthoritativeWindow(): BrowserWindow | null
-  // Why: headless serve backs pages with a main-process offscreen backend; null when the environment can't support offscreen browsing.
-  getOffscreenBrowserBackend(): BrowserBackend | null
-  // Why: the session-tab snapshot owns focus, so a headless create must mark itself active or paired clients snap back to a terminal.
-  markHeadlessBrowserSessionTabActive?(
-    worktreeId: string | undefined,
-    browserPageId: string,
-    targetGroupId?: string
-  ): void
 }
 
 export class RuntimeBrowserCommands {
@@ -1306,20 +1297,9 @@ export class RuntimeBrowserCommands {
         `Browser profile ${params.profileId} was not found`
       )
     }
-    // Why: headless serve has no renderer <webview>, so back the page with a main-process offscreen WebContents instead.
+    // Why: only a renderer <webview> can host a page; a windowless host has no backend to back one with.
     if (!this.host.getAvailableAuthoritativeWindow()) {
-      const offscreen = this.host.getOffscreenBrowserBackend()
-      if (!offscreen) {
-        throw new BrowserError('browser_error', 'This host does not support browser panes.')
-      }
-      return this.createBrowserTabOffscreen(
-        offscreen,
-        url,
-        worktreeId,
-        params.profileId,
-        params.activate,
-        params.targetGroupId
-      )
+      throw new BrowserError('browser_error', 'This host does not support browser panes.')
     }
     const { browserPageId } = await this.createBrowserTabInRenderer(
       url,
@@ -1614,20 +1594,6 @@ export class RuntimeBrowserCommands {
       }
     }
 
-    // Why: headless serve has no renderer to ask, so destroy the offscreen page directly.
-    const offscreen = this.host.getAvailableAuthoritativeWindow()
-      ? null
-      : this.host.getOffscreenBrowserBackend()
-    if (offscreen) {
-      // Why: resolve the active page for implicit close so we don't report success while closing nothing.
-      const resolvedTabId = tabId ?? bridge.getActivePageId(worktreeId)
-      if (!resolvedTabId) {
-        return { closed: false }
-      }
-      await offscreen.closeTab(resolvedTabId)
-      return { closed: true }
-    }
-
     const win = this.host.getAuthoritativeWindow()
     const requestId = randomUUID()
     await new Promise<void>((resolve, reject) => {
@@ -1690,28 +1656,6 @@ export class RuntimeBrowserCommands {
       )
     }
     return this.enrichBrowserTabInfo(tab)
-  }
-
-  // Why: headless serve path — the offscreen backend registers synchronously, so there is no webview-mount wait.
-  private async createBrowserTabOffscreen(
-    offscreen: BrowserBackend,
-    url: string,
-    worktreeId?: string,
-    profileId?: string,
-    activate?: boolean,
-    targetGroupId?: string
-  ): Promise<{ browserPageId: string }> {
-    const { browserPageId } = await offscreen.createTab({ url, worktreeId, profileId })
-    const bridge = this.host.getAgentBrowserBridge()
-    const wcId = bridge?.getRegisteredTabs(worktreeId).get(browserPageId)
-    if (bridge && wcId != null) {
-      bridge.setActiveTab(wcId, worktreeId)
-    }
-    // Why: only user-initiated creates (activate:true) mark the tab active; agent/background creates must not yank a connected client to it.
-    if (activate === true) {
-      this.host.markHeadlessBrowserSessionTabActive?.(worktreeId, browserPageId, targetGroupId)
-    }
-    return { browserPageId }
   }
 
   private async createBrowserTabInRenderer(

@@ -270,7 +270,7 @@ describe('RuntimeFileCommands file watching', () => {
   })
 
   // Issues #5308/#8212: the local recursive watch runs out of process so the
-  // blocking initial crawl and native faults cannot take down the serve runtime.
+  // blocking initial crawl and native faults cannot take down the host runtime.
   posixWatcherProcessIt('delegates local recursive watching to the watcher process', async () => {
     resolveAuthorizedPathMock.mockResolvedValue('/home5/Brian')
     statMock.mockResolvedValue({ isDirectory: () => true })

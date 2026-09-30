@@ -118,7 +118,7 @@ describe('AppImage CLI redirect', () => {
     expect(spawnOptions?.env).not.toHaveProperty('NODE_REPL_EXTERNAL_MODULE')
   })
 
-  it('forwards an explicit no-sandbox choice to the serve child', async () => {
+  it('forwards CLI launches to the unpacked entrypoint without desktop env leakage', async () => {
     const root = await mkdtemp(join(tmpdir(), 'aio-ade-appimage-cli-redirect-'))
     const cliEntryPath = join(root, 'app.asar.unpacked', 'out', 'cli', 'index.js')
     await mkdir(join(root, 'app.asar.unpacked', 'out', 'cli'), { recursive: true })
@@ -140,7 +140,7 @@ describe('AppImage CLI redirect', () => {
       '/opt/aio-ade/aio-ade',
       [cliEntryPath, 'serve'],
       expect.objectContaining({
-        env: expect.objectContaining({ AIO_ADE_APPIMAGE_NO_SANDBOX: '1' })
+        env: expect.not.objectContaining({ AIO_ADE_APPIMAGE_NO_SANDBOX: '1' })
       })
     )
   })

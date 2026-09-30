@@ -1206,7 +1206,7 @@
       ],
       "knownGaps": [
         "The strongest proof is Electron-as-Node over real daemon PTYs, not a packaged headed AIO-ADE host paired to a separate old client; that is the primary live E2E still required.",
-        "Headless aio-ade serve parity, live Linux, Linux SSH relay, and Windows WSL reconnect are not exercised; Docker SSH would cover only the SSH provider and cannot substitute for paired AIO-ADE-server evidence.",
+        "Paired headless-server parity, live Linux, Linux SSH relay, and Windows WSL reconnect are not exercised; Docker SSH would cover only the SSH provider and cannot substitute for paired AIO-ADE-server evidence.",
         "A topology containing any pre-contract paired desktop viewer remains vulnerable to that viewer's stale reasonless close storm; preserving its intentional-close behavior makes this unavoidable until the viewer upgrades.",
         "Cross-profile daemon inventory and generation handoff/retirement remain the separate #9138/#9229 design.",
         "A dead split leaf stays with its authoritative owner rather than being remotely pruned."
@@ -6065,7 +6065,6 @@
       "owner": "runtime-platform",
       "layer": "process-rpc-contract",
       "surfaces": [
-        "headless aio-ade serve",
         "paired file explorer",
         "runtime editor external-change detection",
         "desktop filesystem watcher",
@@ -6856,10 +6855,10 @@
       "promotionCriteria": [
         "Run the built-entry SIGSEGV harness in soak for at least 100 consecutive passes or 14 days on macOS.",
         "Add an eight-root/six-writer event-loop-delay soak artifact with an explicit latency budget.",
-        "Add a packaged aio-ade serve pairing scenario that proves a connected client refreshes after child replacement."
+        "Add a packaged paired-AIO-ADE-server scenario that proves a connected client refreshes after child replacement."
       ],
       "knownGaps": [
-        "The fault harness bundles the real source supervisor and drives the built child, but it does not launch a packaged aio-ade serve pairing session or exercise app.asar path resolution.",
+        "The fault harness bundles the real source supervisor and drives the built child, but it does not launch a packaged pairing session or exercise app.asar path resolution.",
         "The committed resource probe covers the one-child healthy pool, four-child fault-quarantine ceiling, RSS/CPU sampling, global physical-child cap, and exact-PID cleanup, but sustained six-writer event-loop-delay and CPU soak evidence is still absent.",
         "Linux native watcher fault containment is source-equivalent but not live fault-injected in this evidence run.",
         "Windows native runtime watches bypass this child path; WSL reservation/release is deterministic-contract tested but not live fault-injected, and SSH registration ownership is not live-relay fault-injected."

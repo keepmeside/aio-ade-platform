@@ -113,10 +113,6 @@ export function maybeRedirectAppImageCliLaunch(options: RedirectOptions = {}): R
   }
 
   const childEnv = buildElectronRunAsNodeEnv(env)
-  if (argv.slice(1).includes('--no-sandbox')) {
-    // Why: the operator explicitly disabled Chromium's sandbox; preserve that choice when `serve` launches the Electron child.
-    childEnv.AIO_ADE_APPIMAGE_NO_SANDBOX = '1'
-  }
   const result = spawn(execPath, [cliEntryPath, ...cliArgs], {
     env: childEnv,
     stdio: 'inherit'

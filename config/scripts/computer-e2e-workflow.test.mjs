@@ -29,7 +29,7 @@ describe('computer-use e2e workflow', () => {
     expect(cliDriver).toContain('aio-ade-computer-runtime-')
     expect(cliDriver).toContain('retryMissingRuntimeMetadata')
     expect(cliDriver).toContain('Could not read AIO-ADE runtime metadata')
-    expect(cliDriver).toContain("'serve', '--no-pairing', '--json'")
+    expect(cliDriver).toContain("['open', '--json']")
 
     expect(windowsStoreE2e).toMatch(
       /for \(const buttonName of \['One', 'Plus', 'Two', 'Equals'\]\) \{[\s\S]*findRoleIndex\(state\.result\.snapshot\.treeText, `button \$\{buttonName\}`\)[\s\S]*state = parseJsonOutput/

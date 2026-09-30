@@ -175,7 +175,6 @@ import type {
   ProjectGroupImportMode,
   ProjectGroupImportResult,
   MemorySnapshot,
-  Tab,
   TabGroupLayoutNode,
   TerminalQuickCommand,
   TerminalLayoutSnapshot,
@@ -299,7 +298,6 @@ import {
   type RuntimeMobileSessionTabGroup,
   type RuntimeMobileSessionSnapshotTab,
   type RuntimeMobileSessionTerminalTab,
-  type RuntimeMobileSessionBrowserTab,
   type RuntimeMobileSessionTabsRemovedResult,
   type RuntimeMobileSessionTabsResult,
   type RuntimeMobileSessionTabsSnapshot,
@@ -418,7 +416,6 @@ import {
   type AgentScratchWorktreePathMatcher
 } from '../../shared/agent-scratch-worktrees'
 import {
-  BROWSER_HEADLESS_RUNTIME_CAPABILITY,
   BROWSER_CERTIFICATE_TRUST_RUNTIME_CAPABILITY,
   MIN_COMPATIBLE_RUNTIME_CLIENT_VERSION,
   ORCHESTRATION_CONTRACT_RUNTIME_CAPABILITY,
@@ -512,7 +509,6 @@ import { joinWorktreeRelativePath } from './runtime-relative-paths'
 import { collectMemorySnapshot } from '../memory/collector'
 import { BrowserWindow, ipcMain, Notification } from 'electron'
 import type { AgentBrowserBridge } from '../browser/agent-browser-bridge'
-import type { BrowserBackend } from '../browser/browser-backend'
 import { BrowserError } from '../browser/cdp-bridge'
 import {
   getPRForBranch,
@@ -2593,7 +2589,6 @@ export class AioAdeRuntimeService {
   private worktreeLifecycleListeners = new Set<(event: RuntimeWorktreeLifecycleEvent) => void>()
   private forkBackfillStarted = false
   private agentBrowserBridge: AgentBrowserBridge | null = null
-  private offscreenBrowserBackend: BrowserBackend | null = null
   private emulatorBridge: EmulatorBridge | null = null
   private resolvedWorktreeCache: ResolvedWorktreeCache | null = null
   private resolvedWorktreeInFlight: ResolvedWorktreeInFlight | null = null
@@ -3675,15 +3670,11 @@ export class AioAdeRuntimeService {
   }
 
   getStatus(): RuntimeStatus {
-    // Why: browser panes need a backend that can create and stream a page. A
-    // desktop renderer provides one via <webview>; a headless serve provides one
-    // via the offscreen backend. Either way the same browser.screencast.v1 path
-    // works, so advertise it when either is present. browser.headless.v1
-    // additionally tells clients this host owns browser pages with no renderer,
-    // so they must not fall back to a local desktop browser tab.
-    const hasRenderer = Boolean(this.getAvailableAuthoritativeWindow())
-    const hasOffscreen = !hasRenderer && Boolean(this.offscreenBrowserBackend)
-    const canBrowse = hasRenderer || hasOffscreen
+    // Why: browser panes need a renderer backend that can create and stream a
+    // page via <webview>. Advertise screencast only when one is present — a
+    // renderer-less host cannot create/stream pages, so clients must not treat
+    // browser panes as supported just because runtime RPC is up.
+    const canBrowse = Boolean(this.getAvailableAuthoritativeWindow())
     const capabilities: RuntimeCapability[] = RUNTIME_CAPABILITIES.filter(
       (capability) =>
         (capability !== 'browser.screencast.v1' || canBrowse) &&
@@ -3691,12 +3682,8 @@ export class AioAdeRuntimeService {
         (process.env.AIO_ADE_E2E_DISABLE_RUNTIME_SHARED_CONTROL !== '1' ||
           capability !== REMOTE_RUNTIME_SHARED_CONTROL_CAPABILITY)
     )
-    if (hasOffscreen) {
-      capabilities.push(BROWSER_HEADLESS_RUNTIME_CAPABILITY)
-    }
-    // Why: certificate proceed is owned by the browser-hosting process for both
-    // desktop webviews and offscreen pages. Advertise whenever either backend
-    // can host a page so remote clients can surface Proceed Anyway (Unsafe).
+    // Why: certificate proceed is owned by the browser-hosting process, so
+    // advertise it whenever a renderer can host pages.
     if (canBrowse) {
       capabilities.push(BROWSER_CERTIFICATE_TRUST_RUNTIME_CAPABILITY)
     }
@@ -3705,7 +3692,7 @@ export class AioAdeRuntimeService {
       rendererGraphEpoch: this.rendererGraphEpoch,
       graphStatus: this.graphStatus,
       authoritativeWindowId: this.authoritativeWindowId,
-      desktopWindowStatus: hasRenderer ? 'available' : this.getDesktopWindowStatusFn(),
+      desktopWindowStatus: canBrowse ? 'available' : this.getDesktopWindowStatusFn(),
       liveTabCount: this.tabs.size,
       liveLeafCount: this.leaves.size,
       runtimeProtocolVersion: RUNTIME_PROTOCOL_VERSION,
@@ -3960,14 +3947,6 @@ export class AioAdeRuntimeService {
 
   getAgentBrowserBridge(): AgentBrowserBridge | null {
     return this.agentBrowserBridge
-  }
-
-  setOffscreenBrowserBackend(backend: BrowserBackend | null): void {
-    this.offscreenBrowserBackend = backend
-  }
-
-  getOffscreenBrowserBackend(): BrowserBackend | null {
-    return this.offscreenBrowserBackend
   }
 
   setEmulatorBridge(bridge: EmulatorBridge | null): void {
@@ -4339,30 +4318,25 @@ export class AioAdeRuntimeService {
       allowAttachedWindow?: boolean
       onlyRuntimeOwnedTerminals?: boolean
     } = {}
-  ): Set<string> {
-    // Why: report which worktrees were reconciled in place so callers don't
-    // reconcile them a second time (see notifyMobileSessionTabsChanged).
-    const reconciledWorktreeIds = new Set<string>()
+  ): void {
     if (this.getAvailableAuthoritativeWindow() && options.allowAttachedWindow !== true) {
-      return reconciledWorktreeIds
+      return
     }
     const session = worktreeId
       ? this.getWorkspaceSessionForWorktree(worktreeId)
       : this.store?.getWorkspaceSession?.()
     if (!session) {
-      return reconciledWorktreeIds
+      return
     }
-    // Why: with no runtime-owned candidate in the session and no offscreen
-    // browser backend, this hydrate provably builds zero tabs for
-    // every worktree — skip the per-worktree rebuild entirely (hot on every
-    // graph sync). Scoped to onlyRuntimeOwnedTerminals so full hydrates are
-    // untouched.
+    // Why: with no runtime-owned PTY candidate in the session, this hydrate
+    // provably builds zero tabs for every worktree — skip the per-worktree
+    // rebuild entirely (hot on every graph sync). Scoped to
+    // onlyRuntimeOwnedTerminals so full hydrates are untouched.
     if (
       options.onlyRuntimeOwnedTerminals === true &&
-      !this.offscreenBrowserBackend &&
       !this.workspaceSessionHasRuntimeOwnedPtyCandidate(session)
     ) {
-      return reconciledWorktreeIds
+      return
     }
     const entries =
       worktreeId !== undefined
@@ -4395,15 +4369,9 @@ export class AioAdeRuntimeService {
         options.force !== true &&
         options.onlyRuntimeOwnedTerminals !== true
       ) {
-        // Why: terminals are stable/persisted so we normally skip a rebuild, but
-        // offscreen browser tabs are live and may have been created/closed since.
-        // Reconcile just the browser tabs against the live bridge instead of
-        // leaving a stale snapshot that omits a freshly-opened browser tab.
-        this.reconcileHeadlessMobileSessionBrowserTabs(entryWorktreeId, existing)
-        reconciledWorktreeIds.add(entryWorktreeId)
         continue
       }
-      const terminalTabs = this.buildHeadlessMobileSessionTerminalTabs(
+      const tabs: RuntimeMobileSessionTerminalTab[] = this.buildHeadlessMobileSessionTerminalTabs(
         entryWorktreeId,
         persistedTabs
       ).filter(
@@ -4412,19 +4380,11 @@ export class AioAdeRuntimeService {
           this.hasServeOrSshOwnedBinding(tab) ||
           this.hasRecentExpiredSshLeasePane(entryWorktreeId, tab)
       )
-      // Why: offscreen browser panes are live-only (no persisted session entry),
-      // so include them on every hydrate regardless of the onlyRuntimeOwnedTerminals
-      // filter, which is about terminal PTY ownership and never applies to browsers.
-      const browserTabs = this.buildHeadlessMobileSessionBrowserTabs(entryWorktreeId)
-      const tabs: RuntimeMobileSessionSnapshotTab[] = [...terminalTabs, ...browserTabs]
       if (tabs.length === 0) {
         continue
       }
-      const activeTab = this.pickHeadlessActiveTerminalTab(terminalTabs)
-      const tabOrder = [
-        ...this.collectHeadlessParentTabOrder(terminalTabs),
-        ...browserTabs.map((tab) => tab.id)
-      ]
+      const activeTab = this.pickHeadlessActiveTerminalTab(tabs)
+      const tabOrder = this.collectHeadlessParentTabOrder(tabs)
       const groupId = this.getHeadlessMobileSessionGroupId(entryWorktreeId)
       const mergedTabs =
         options.onlyRuntimeOwnedTerminals === true && existing
@@ -4438,12 +4398,9 @@ export class AioAdeRuntimeService {
       const mergedTerminalTabs = mergedTabs.filter(
         (tab): tab is RuntimeMobileSessionTerminalTab => tab.type === 'terminal'
       )
-      const mergedBrowserOrder = mergedTabs
-        .filter((tab): tab is RuntimeMobileSessionBrowserTab => tab.type === 'browser')
-        .map((tab) => tab.id)
       // Why: a persisted multi-group split must be restored on cold rebuild, or
-      // the headless serve coalesces the user's group layout back into one group
-      // (the persisted tabGroups/tabGroupLayouts would otherwise be write-only).
+      // the headless rebuild coalesces the user's group layout back into one
+      // group (the persisted tabGroups/tabGroupLayouts would be write-only).
       const persistedGroups = session.tabGroups?.[entryWorktreeId]
       const persistedLayout = session.tabGroupLayouts?.[entryWorktreeId]
       const hasPersistedSplit =
@@ -4456,32 +4413,22 @@ export class AioAdeRuntimeService {
           : mergedActiveTab.id
         : null
       const nextTabGroups: RuntimeMobileSessionTabGroup[] = hasPersistedSplit
-        ? this.appendBrowserTabOrder(
-            this.distributeHeadlessTabsAcrossGroups(
-              persistedGroups.map((group) => ({
-                id: group.id,
-                activeTabId: group.activeTabId,
-                tabOrder: [...group.tabOrder],
-                ...(group.recentTabIds ? { recentTabIds: [...group.recentTabIds] } : {})
-              })),
-              this.collectHeadlessParentTabOrder(mergedTerminalTabs),
-              activeTopLevelId
-            ),
-            mergedBrowserOrder,
-            undefined,
-            // Why: distribute drops browser ids (terminal-only), so carry each
-            // browser's persisted group forward instead of coalescing left.
-            this.collectBrowserGroupAssignment(persistedGroups, mergedBrowserOrder)
+        ? this.distributeHeadlessTabsAcrossGroups(
+            persistedGroups.map((group) => ({
+              id: group.id,
+              activeTabId: group.activeTabId,
+              tabOrder: [...group.tabOrder],
+              ...(group.recentTabIds ? { recentTabIds: [...group.recentTabIds] } : {})
+            })),
+            this.collectHeadlessParentTabOrder(mergedTerminalTabs),
+            activeTopLevelId
           )
         : options.onlyRuntimeOwnedTerminals === true && existing?.tabGroups
-          ? this.appendBrowserTabOrder(
-              this.mergeMobileSessionTabGroups(
-                entryWorktreeId,
-                existing.tabGroups,
-                mergedTerminalTabs,
-                mergedActiveTab?.type === 'terminal' ? mergedActiveTab : null
-              ),
-              mergedBrowserOrder
+          ? this.mergeMobileSessionTabGroups(
+              entryWorktreeId,
+              existing.tabGroups,
+              mergedTerminalTabs,
+              mergedActiveTab?.type === 'terminal' ? mergedActiveTab : null
             )
           : [
               {
@@ -4523,13 +4470,12 @@ export class AioAdeRuntimeService {
       // Why: the runtime-owned hydrate runs on EVERY graph sync; when the rebuilt
       // projection matches the existing snapshot, keep the existing object and
       // (epoch, version) untouched so identity-based change detection stays a
-      // pure no-op and unchanged runtime/browser worktrees never fan out.
+      // pure no-op and unchanged runtime-owned worktrees never fan out.
       if (existing && this.headlessMobileSnapshotContentUnchanged(existing, nextSnapshot)) {
         continue
       }
       this.mobileSessionTabsByWorktree.set(entryWorktreeId, nextSnapshot)
     }
-    return reconciledWorktreeIds
   }
 
   // Why: content equality for the hydrate's idempotence check — compares every
@@ -4593,119 +4539,6 @@ export class AioAdeRuntimeService {
       return true
     }
     return false
-  }
-
-  // Why: keep an existing snapshot's browser tabs in sync with the live bridge
-  // without rebuilding stable terminal state. Replaces browser entries with the
-  // current live set and rewrites the browser portion of the primary group order.
-  private reconcileHeadlessMobileSessionBrowserTabs(
-    worktreeId: string,
-    existing: RuntimeMobileSessionTabsSnapshot
-  ): void {
-    if (!this.offscreenBrowserBackend) {
-      return
-    }
-    const liveBrowserTabs = this.buildHeadlessMobileSessionBrowserTabs(worktreeId)
-    const liveIds = liveBrowserTabs.map((tab) => tab.id)
-    const existingBrowserTabs = existing.tabs.filter(
-      (tab): tab is RuntimeMobileSessionBrowserTab => tab.type === 'browser'
-    )
-    const existingBrowserIds = existingBrowserTabs.map((tab) => tab.id)
-    if (this.headlessBrowserTabsUnchanged(liveBrowserTabs, existingBrowserTabs)) {
-      return
-    }
-    const nonBrowserTabs = existing.tabs.filter((tab) => tab.type !== 'browser')
-    const nextTabs: RuntimeMobileSessionSnapshotTab[] = [...nonBrowserTabs, ...liveBrowserTabs]
-    const liveIdSet = new Set(liveIds)
-    const tabGroups = this.appendBrowserTabOrder(
-      (existing.tabGroups ?? []).map((group) => ({
-        ...group,
-        // Drop closed browser ids; appendBrowserTabOrder re-adds the live ones.
-        tabOrder: group.tabOrder.filter(
-          (id) => liveIdSet.has(id) || !existingBrowserIds.includes(id)
-        )
-      })),
-      liveIds
-    )
-    const activeStillPresent = nextTabs.some((tab) => tab.id === existing.activeTabId)
-    const active = activeStillPresent
-      ? null
-      : (nextTabs.find((tab) => tab.isActive) ?? nextTabs[0] ?? null)
-    this.mobileSessionTabsByWorktree.set(worktreeId, {
-      ...existing,
-      publicationEpoch: `headless-hydrated:${Date.now().toString(36)}`,
-      snapshotVersion: existing.snapshotVersion + 1,
-      ...(activeStillPresent
-        ? {}
-        : { activeTabId: active?.id ?? null, activeTabType: active?.type ?? null }),
-      tabGroups,
-      tabs: nextTabs
-    })
-  }
-
-  // Why: browser session tabs have no parentTabId so the terminal-only group
-  // builder drops them from tabOrder; this re-adds their ids to a group.
-  // Browser tabs are live-only (no persisted session entry), but their GROUP
-  // membership must still survive snapshot rebuilds like terminals'. The
-  // passed-in groups already encode each browser's group (carried from the prior
-  // snapshot / persisted tabGroups), so keep each existing browser id where it
-  // is; only a genuinely-new browser id goes to its create-target group (when
-  // that group exists) and otherwise to the first group. Previously every
-  // browser was force-pushed into group[0], so opening a browser in the right
-  // split group always snapped it back to the left on the next rebuild.
-  private appendBrowserTabOrder(
-    groups: readonly RuntimeMobileSessionTabGroup[],
-    browserTabIds: readonly string[],
-    newTabAssignment?: { tabId: string; groupId: string },
-    // browserPageId -> groupId from the prior/persisted groups. The terminal
-    // distributor rebuilds tabOrder from terminal ids only and drops browser
-    // ids, so this carries each browser's group across rebuilds.
-    priorGroupByBrowserId?: ReadonlyMap<string, string>
-  ): RuntimeMobileSessionTabGroup[] {
-    if (browserTabIds.length === 0) {
-      return [...groups]
-    }
-    const next = groups.map((group) => ({ ...group, tabOrder: [...group.tabOrder] }))
-    if (next.length === 0) {
-      return next
-    }
-    const groupById = new Map(next.map((group) => [group.id, group]))
-    const ownerGroupByTabId = new Map<string, RuntimeMobileSessionTabGroup>()
-    for (const group of next) {
-      for (const id of group.tabOrder) {
-        ownerGroupByTabId.set(id, group)
-      }
-    }
-    for (const id of browserTabIds) {
-      if (ownerGroupByTabId.has(id)) {
-        continue
-      }
-      const priorGroupId = priorGroupByBrowserId?.get(id)
-      const targetGroup =
-        (newTabAssignment?.tabId === id ? groupById.get(newTabAssignment.groupId) : undefined) ??
-        (priorGroupId ? groupById.get(priorGroupId) : undefined) ??
-        next[0]!
-      targetGroup.tabOrder.push(id)
-    }
-    return next
-  }
-
-  // browserPageId -> groupId from a set of groups (the persisted/prior layout),
-  // so a browser stays in its group across rebuilds that drop browser ids.
-  private collectBrowserGroupAssignment(
-    groups: readonly RuntimeMobileSessionTabGroup[] | undefined,
-    browserTabIds: readonly string[]
-  ): Map<string, string> {
-    const browserIdSet = new Set(browserTabIds)
-    const assignment = new Map<string, string>()
-    for (const group of groups ?? []) {
-      for (const id of group.tabOrder) {
-        if (browserIdSet.has(id)) {
-          assignment.set(id, group.id)
-        }
-      }
-    }
-    return assignment
   }
 
   private isServeOwnedPtyId(ptyId: string | null | undefined): boolean {
@@ -5354,120 +5187,6 @@ export class AioAdeRuntimeService {
           ]
         })
       })
-  }
-
-  // Why: headless serve backs browser panes with offscreen WebContents that live
-  // only in the BrowserManager, never in a renderer graph. Without surfacing them
-  // as session tabs, a session.tabs snapshot (e.g. on terminal open) prunes the
-  // paired browser tab and closing it fails with tab_not_found. Synthesize browser
-  // session tabs from the live bridge so they are first-class alongside terminals.
-  private buildHeadlessMobileSessionBrowserTabs(
-    worktreeId: string
-  ): RuntimeMobileSessionBrowserTab[] {
-    if (!this.offscreenBrowserBackend || !this.agentBrowserBridge?.tabList) {
-      return []
-    }
-    return this.agentBrowserBridge.tabList(worktreeId).tabs.map((tab) => {
-      const persistedProps = this.getPersistedUnifiedSessionTabProps(worktreeId, tab.browserPageId)
-      return {
-        type: 'browser' as const,
-        // Why: an offscreen page has no separate workspace identity, so the page id
-        // is its own workspace id (matches the server's browserWorkspaceId fallback).
-        id: tab.browserPageId,
-        title: tab.title || tab.url || 'Browser',
-        browserWorkspaceId: tab.browserPageId,
-        browserPageId: tab.browserPageId,
-        url: tab.url || 'about:blank',
-        loading: false,
-        canGoBack: false,
-        canGoForward: false,
-        loadError: tab.loadError ?? undefined,
-        certificateFailure: tab.certificateFailure ?? undefined,
-        ...(persistedProps ? { color: persistedProps.color } : {}),
-        ...(persistedProps ? { isPinned: persistedProps.isPinned === true } : {}),
-        isActive: tab.active === true
-      }
-    })
-  }
-
-  // Why: change detection for headless browser tabs. Compares the fields that
-  // actually vary (a JSON.stringify equality was order-sensitive and silently
-  // dropped `undefined` keys, so it only worked while both sides shared one
-  // construction path).
-  private headlessBrowserTabsUnchanged(
-    live: RuntimeMobileSessionBrowserTab[],
-    existing: RuntimeMobileSessionBrowserTab[]
-  ): boolean {
-    if (live.length !== existing.length) {
-      return false
-    }
-    return live.every((tab, index) => {
-      const prev = existing[index]
-      return (
-        tab.id === prev.id &&
-        tab.title === prev.title &&
-        tab.url === prev.url &&
-        tab.isActive === prev.isActive &&
-        (tab.isPinned ?? false) === (prev.isPinned ?? false) &&
-        (tab.color ?? null) === (prev.color ?? null) &&
-        this.browserLoadErrorsEqual(tab.loadError, prev.loadError) &&
-        this.browserCertificateFailuresEqual(tab.certificateFailure, prev.certificateFailure)
-      )
-    })
-  }
-
-  private browserLoadErrorsEqual(
-    a: RuntimeMobileSessionBrowserTab['loadError'],
-    b: RuntimeMobileSessionBrowserTab['loadError']
-  ): boolean {
-    const left = a ?? null
-    const right = b ?? null
-    if (left === right) {
-      return true
-    }
-    if (!left || !right) {
-      return false
-    }
-    return (
-      left.code === right.code &&
-      left.description === right.description &&
-      left.validatedUrl === right.validatedUrl
-    )
-  }
-
-  private browserCertificateFailuresEqual(
-    a: RuntimeMobileSessionBrowserTab['certificateFailure'],
-    b: RuntimeMobileSessionBrowserTab['certificateFailure']
-  ): boolean {
-    const left = a ?? null
-    const right = b ?? null
-    if (left === right) {
-      return true
-    }
-    if (!left || !right) {
-      return false
-    }
-    return (
-      left.challengeId === right.challengeId &&
-      left.browserPageId === right.browserPageId &&
-      left.errorCode === right.errorCode &&
-      left.error === right.error &&
-      left.origin === right.origin &&
-      left.displayHost === right.displayHost &&
-      left.canProceed === right.canProceed &&
-      left.observedAt === right.observedAt
-    )
-  }
-
-  private getPersistedUnifiedSessionTabProps(
-    worktreeId: string,
-    tabId: string
-  ): Pick<Tab, 'color' | 'isPinned'> | null {
-    const tab =
-      this.getWorkspaceSessionForWorktree(worktreeId)?.unifiedTabs?.[worktreeId]?.find(
-        (candidate) => candidate.id === tabId || candidate.entityId === tabId
-      ) ?? null
-    return tab ? { color: tab.color, isPinned: tab.isPinned } : null
   }
 
   private collectPersistedTerminalLeafIds(layout: TerminalLayoutSnapshot | undefined): string[] {
@@ -6340,11 +6059,6 @@ export class AioAdeRuntimeService {
         // just whichever leaf happened to be first in the session snapshot.
         this.notifier?.closeTerminal(tab.parentTabId)
       }
-    } else if (tab.type === 'browser' && this.offscreenBrowserBackend) {
-      // Why: headless browser tabs are offscreen WebContents with no renderer to
-      // route closeSessionTab to. Close the page directly and drop it from the
-      // snapshot so paired clients stop showing it.
-      await this.closeHeadlessMobileBrowserTab(worktreeId, snapshot!, tab)
     } else {
       this.notifier?.closeSessionTab?.(tab.id, worktreeId)
     }
@@ -6387,93 +6101,6 @@ export class AioAdeRuntimeService {
         error
       })
     }
-  }
-
-  private async closeHeadlessMobileBrowserTab(
-    worktreeId: string,
-    snapshot: RuntimeMobileSessionTabsSnapshot,
-    tab: RuntimeMobileSessionBrowserTab
-  ): Promise<void> {
-    if (tab.browserPageId) {
-      await this.offscreenBrowserBackend?.closeTab(tab.browserPageId).catch(() => {})
-    }
-    const nextTabs = snapshot.tabs.filter((candidate) => candidate.id !== tab.id)
-    const active = nextTabs.find((candidate) => candidate.isActive) ?? nextTabs[0] ?? null
-    const nextSnapshot: RuntimeMobileSessionTabsSnapshot = {
-      ...snapshot,
-      publicationEpoch: `headless:${Date.now().toString(36)}`,
-      snapshotVersion: snapshot.snapshotVersion + 1,
-      activeTabId: active?.id ?? null,
-      activeTabType: active?.type ?? null,
-      tabGroups: (snapshot.tabGroups ?? []).map((group) => ({
-        ...group,
-        tabOrder: group.tabOrder.filter((id) => id !== tab.id),
-        activeTabId: group.activeTabId === tab.id ? null : group.activeTabId
-      })),
-      tabs: nextTabs
-    }
-    this.mobileSessionTabsByWorktree.set(worktreeId, nextSnapshot)
-    this.emitMobileSessionTabsSnapshot(nextSnapshot)
-  }
-
-  private markHeadlessBrowserSessionTabActive(
-    worktreeId: string | undefined,
-    browserPageId: string,
-    targetGroupId?: string
-  ): void {
-    if (!this.offscreenBrowserBackend || !worktreeId) {
-      return
-    }
-    // Hydrate first so the freshly created browser tab is present in the snapshot.
-    this.hydrateHeadlessMobileSessionTabsFromWorkspaceSession(worktreeId)
-    const snapshot = this.mobileSessionTabsByWorktree.get(worktreeId)
-    const tab = snapshot?.tabs.find(
-      (candidate): candidate is RuntimeMobileSessionBrowserTab =>
-        candidate.type === 'browser' && candidate.browserPageId === browserPageId
-    )
-    if (!snapshot || !tab) {
-      return
-    }
-    const groups = snapshot.tabGroups ?? []
-    const hasTargetGroup =
-      targetGroupId !== undefined && groups.some((group) => group.id === targetGroupId)
-    // Why: move the new browser into the group whose "+" was clicked, removing it
-    // from wherever the rebuild placed it. Only the TARGET group's activeTabId
-    // (and the global active) change — every other group's active tab is left
-    // intact, so creating in the right group never resets the left group's tab.
-    const nextGroups = hasTargetGroup
-      ? groups.map((group) => {
-          const withoutTab = group.tabOrder.filter((id) => id !== tab.id)
-          if (group.id === targetGroupId) {
-            return { ...group, tabOrder: [...withoutTab, tab.id], activeTabId: tab.id }
-          }
-          return withoutTab.length === group.tabOrder.length
-            ? group
-            : { ...group, tabOrder: withoutTab }
-        })
-      : groups.map((group) =>
-          group.tabOrder.includes(tab.id) ? { ...group, activeTabId: tab.id } : group
-        )
-    const nextSnapshot: RuntimeMobileSessionTabsSnapshot = {
-      ...snapshot,
-      publicationEpoch: `headless:${Date.now().toString(36)}`,
-      snapshotVersion: snapshot.snapshotVersion + 1,
-      ...(hasTargetGroup ? { activeGroupId: targetGroupId } : {}),
-      activeTabId: tab.id,
-      activeTabType: 'browser',
-      tabs: snapshot.tabs.map((candidate) => ({
-        ...candidate,
-        isActive: candidate.id === tab.id
-      })),
-      tabGroups: nextGroups
-    }
-    this.mobileSessionTabsByWorktree.set(worktreeId, nextSnapshot)
-    // Why: browser group membership is otherwise live-only; persist it so a
-    // later rebuild keeps the browser in its group instead of coalescing left.
-    if (hasTargetGroup && nextSnapshot.tabGroupLayout) {
-      this.persistHeadlessTabGroups(worktreeId, nextGroups, nextSnapshot.tabGroupLayout)
-    }
-    this.emitMobileSessionTabsSnapshot(nextSnapshot)
   }
 
   private closeHeadlessMobileTerminalTab(
@@ -21059,19 +20686,6 @@ export class AioAdeRuntimeService {
     store.removeWorktreeMeta(worktreeId)
     advertisedUrlWatcher.forgetWorktree(worktreeId)
     deleteWorktreeHistoryDir(worktreeId)
-    this.closeHeadlessBrowserPagesForWorktree(worktreeId)
-  }
-
-  // Why: headless offscreen browser pages are main-process BrowserWindows that
-  // outlive a worktree unless explicitly closed — removing a worktree without
-  // closing its open panes leaks the windows for the life of the serve process.
-  private closeHeadlessBrowserPagesForWorktree(worktreeId: string): void {
-    if (!this.offscreenBrowserBackend || !this.agentBrowserBridge?.tabList) {
-      return
-    }
-    for (const tab of this.agentBrowserBridge.tabList(worktreeId).tabs) {
-      void this.offscreenBrowserBackend.closeTab(tab.browserPageId).catch(() => {})
-    }
   }
 
   private rememberPreservedBranchCleanupTarget(
@@ -26371,21 +25985,6 @@ export class AioAdeRuntimeService {
     snapshot: RuntimeMobileSessionTabsSnapshot,
     tab: RuntimeMobileSessionSnapshotTab
   ): boolean {
-    // Why: headless offscreen browser tabs exist only server-side, so a renderer-graph merge must keep them, not prune as "not in the graph".
-    if (tab.type === 'browser') {
-      if (!this.offscreenBrowserBackend) {
-        return false
-      }
-      // Why: in a renderer-based merged snapshot the browser entries can also
-      // be renderer-owned, so only pages the offscreen bridge still lists are
-      // runtime-owned and preservable; a pure renderer epoch preserves none.
-      return (
-        this.isHeadlessBuiltMobileSessionPublicationBase(snapshot.publicationEpoch) ||
-        (snapshot.publicationEpoch.includes(':headless-merge:') &&
-          typeof tab.browserPageId === 'string' &&
-          this.getLiveBrowserTabsByPageId(snapshot.worktree).has(tab.browserPageId))
-      )
-    }
     if (tab.type !== 'terminal') {
       return false
     }
@@ -26462,16 +26061,6 @@ export class AioAdeRuntimeService {
     if (!worktreeId) {
       this.notifyMobileSessionTabSnapshots()
       return
-    }
-    if (this.offscreenBrowserBackend) {
-      const reconciled = this.hydrateHeadlessMobileSessionTabsFromWorkspaceSession(worktreeId)
-      // Why: hydrate already reconciles an existing snapshot in place; only reconcile here when it didn't (fresh build or early-returned hydrate).
-      if (!reconciled.has(worktreeId)) {
-        const existing = this.mobileSessionTabsByWorktree.get(worktreeId)
-        if (existing) {
-          this.reconcileHeadlessMobileSessionBrowserTabs(worktreeId, existing)
-        }
-      }
     }
     // Why: structural changes must propagate promptly; cancel any pending coalesced notify since this immediate emit supersedes it.
     this.mobileSessionTabsNotifyCoalescer.cancel(worktreeId)
@@ -30576,10 +30165,7 @@ export class AioAdeRuntimeService {
     getAgentBrowserBridge: () => this.agentBrowserBridge,
     resolveWorktreeSelector: (selector) => this.resolveWorktreeSelector(selector),
     getAuthoritativeWindow: () => this.getAuthoritativeWindow(),
-    getAvailableAuthoritativeWindow: () => this.getAvailableAuthoritativeWindow(),
-    getOffscreenBrowserBackend: () => this.offscreenBrowserBackend,
-    // Why: bind directly, not a wrapper arrow — a hand-listed wrapper dropped targetGroupId, so a right-split browser landed in the left.
-    markHeadlessBrowserSessionTabActive: this.markHeadlessBrowserSessionTabActive.bind(this)
+    getAvailableAuthoritativeWindow: () => this.getAvailableAuthoritativeWindow()
   })
 
   private readonly emulatorCommands = new RuntimeEmulatorCommands({

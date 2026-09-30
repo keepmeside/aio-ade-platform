@@ -235,13 +235,11 @@ export class BrowserManager {
   private readonly annotationViewportBridgeOpsByTabId = new Map<string, Promise<unknown>>()
   private readonly worktreeIdByTabId = new Map<string, string>()
   private readonly policyAttachedGuestIds = new Set<number>()
-  private readonly offscreenGuestIds = new Set<number>()
   private readonly policyCleanupByGuestId = new Map<number, () => void>()
   private readonly clickedLinkFrameNameByGuestId = new Map<number, string>()
   private readonly loadErrorsByGuestId = new Map<number, BrowserLoadError>()
   // Why: did-start-navigation hides the overlay optimistically; stash the cleared error so did-fail-load(-3) can restore an aborted nav.
   private readonly clearedLoadErrorsByGuestId = new Map<number, BrowserLoadError>()
-  private browserGuestStateChangedListener: ((worktreeId: string) => void) | null = null
   private certificateTrustController: BrowserCertificateTrustController | null = null
   private shouldForwardDictationShortcut: (() => boolean) | null = null
   private readonly pendingLoadFailuresByGuestId = new Map<
@@ -256,10 +254,6 @@ export class BrowserManager {
 
   setDictationShortcutForwardingPredicate(predicate: (() => boolean) | null): void {
     this.shouldForwardDictationShortcut = predicate
-  }
-
-  setBrowserGuestStateChangedListener(listener: ((worktreeId: string) => void) | null): void {
-    this.browserGuestStateChangedListener = listener
   }
 
   setCertificateTrustController(controller: BrowserCertificateTrustController): void {
@@ -824,7 +818,6 @@ export class BrowserManager {
           this.clearedLoadErrorsByGuestId.delete(guest.id)
           this.loadErrorsByGuestId.set(guest.id, clearedError)
           this.forwardOrQueueGuestLoadFailure(guest.id, clearedError)
-          this.notifyBrowserGuestStateChanged(guest.id)
         }
         return
       }
@@ -836,7 +829,6 @@ export class BrowserManager {
       )
       this.loadErrorsByGuestId.set(guest.id, loadError)
       this.forwardOrQueueGuestLoadFailure(guest.id, loadError)
-      this.notifyBrowserGuestStateChanged(guest.id)
     }
 
     const didStartNavigationHandler = (
@@ -859,7 +851,6 @@ export class BrowserManager {
       }
       this.clearedLoadErrorsByGuestId.set(guest.id, activeError)
       this.loadErrorsByGuestId.delete(guest.id)
-      this.notifyBrowserGuestStateChanged(guest.id)
     }
 
     const didNavigateHandler = (_event: Electron.Event, url: string): void => {
@@ -953,7 +944,6 @@ export class BrowserManager {
     }
     this.policyAttachedGuestIds.delete(guestWebContentsId)
     this.clickedLinkFrameNameByGuestId.delete(guestWebContentsId)
-    this.offscreenGuestIds.delete(guestWebContentsId)
     this.popupOwnerContextByGuestId.delete(guestWebContentsId)
     // Why: a popup must stop inheriting authorization the moment its owner retires, before Chromium destroys the child.
     if (isPrimaryGuest) {
@@ -1084,39 +1074,6 @@ export class BrowserManager {
     this.annotationViewportBridgeOpsByTabId.delete(browserTabId)
   }
 
-  // Why: a host with no <webview> window backs pages with offscreen WebContents
-  // and skips the webview-only setup.
-  registerOffscreenGuest({
-    browserPageId,
-    worktreeId,
-    sessionProfileId,
-    webContentsId
-  }: {
-    browserPageId: string
-    worktreeId?: string
-    sessionProfileId?: string | null
-    webContentsId: number
-  }): void {
-    const guest = webContents.fromId(webContentsId)
-    if (!guest || guest.isDestroyed()) {
-      return
-    }
-    // Why: offscreen pages have no renderer webview listeners, so main owns their load-failure lifecycle.
-    this.offscreenGuestIds.add(webContentsId)
-    this.attachGuestPolicies(guest)
-    const previousWebContentsId = this.webContentsIdByTabId.get(browserPageId)
-    if (previousWebContentsId !== undefined && previousWebContentsId !== webContentsId) {
-      this.retireStaleGuestWebContents(previousWebContentsId)
-    }
-    this.webContentsIdByTabId.set(browserPageId, webContentsId)
-    this.tabIdByWebContentsId.set(webContentsId, browserPageId)
-    this.sessionProfileIdByPageId.set(browserPageId, sessionProfileId ?? null)
-    if (worktreeId) {
-      this.worktreeIdByTabId.set(browserPageId, worktreeId)
-    }
-    this.certificateTrustController?.onGuestRegistered(webContentsId, browserPageId)
-  }
-
   unregisterAll(): void {
     // Cancel all active grab ops before tearing down registrations
     this.grabSessionController.cancelAll('evicted')
@@ -1128,7 +1085,6 @@ export class BrowserManager {
       this.unregisterGuest(browserTabId)
     }
     this.policyAttachedGuestIds.clear()
-    this.offscreenGuestIds.clear()
     // Why: unregisterGuest skips guests that were policy-attached but never registered; invoke their cleanup closures here.
     for (const cleanup of this.policyCleanupByGuestId.values()) {
       cleanup()
@@ -1181,23 +1137,19 @@ export class BrowserManager {
       return null
     }
     const browserPageId = this.tabIdByWebContentsId.get(webContentsId) ?? null
-    const offscreen = this.offscreenGuestIds.has(webContentsId)
-    if (!offscreen && !this.policyAttachedGuestIds.has(webContentsId)) {
+    if (!this.policyAttachedGuestIds.has(webContentsId)) {
       return null
     }
-    if (!offscreen) {
-      const guest = webContents.fromId(webContentsId)
-      if (!guest || guest.isDestroyed() || guest.getType() !== 'webview') {
-        return null
-      }
+    const guest = webContents.fromId(webContentsId)
+    if (!guest || guest.isDestroyed() || guest.getType() !== 'webview') {
+      return null
     }
     return {
       browserPageId,
       worktreeId: browserPageId ? (this.worktreeIdByTabId.get(browserPageId) ?? null) : null,
       sessionProfileId: browserPageId
         ? (this.sessionProfileIdByPageId.get(browserPageId) ?? null)
-        : null,
-      owner: offscreen ? 'offscreen' : 'desktop-webview'
+        : null
     }
   }
 
@@ -1224,28 +1176,8 @@ export class BrowserManager {
     if (!browserPageId) {
       return
     }
-    if (this.offscreenGuestIds.has(webContentsId)) {
-      this.notifyBrowserGuestStateChanged(webContentsId)
-      return
-    }
     const renderer = this.resolveRendererForBrowserTab(browserPageId)
     renderer?.send('browser:certificate-failure-changed', { browserPageId, failure })
-  }
-
-  private notifyBrowserGuestStateChanged(webContentsId: number): void {
-    if (!this.offscreenGuestIds.has(webContentsId)) {
-      return
-    }
-    const browserPageId = this.tabIdByWebContentsId.get(webContentsId)
-    const worktreeId = browserPageId ? this.worktreeIdByTabId.get(browserPageId) : null
-    if (worktreeId) {
-      // Why: runs inside an Electron guest event dispatch, so an escaping throw would be a fatal uncaught exception.
-      try {
-        this.browserGuestStateChangedListener?.(worktreeId)
-      } catch (error) {
-        console.error('[browser-manager] browserGuestStateChanged listener failed', error)
-      }
-    }
   }
 
   notifyPermissionDenied(args: {

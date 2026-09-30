@@ -39,7 +39,7 @@ export type WebSocketTransportOptions = {
   staticRoot?: string
   // Why: devices paired while the fallback port was active point at it, so it must bind first on later launches or those pairings strand (STA-1511).
   fallbackPort?: number
-  // Why: serve --port clients dial the pinned port; prefer it first so a stale fallback can't steal the pin (issue #8535). Default keeps fallback-first (STA-1511).
+  // Why: clients that dial an explicit pinned port must not be pre-empted by a stale fallback (issue #8535). Default keeps fallback-first (STA-1511).
   preferPinnedPort?: boolean
 }
 
@@ -132,7 +132,7 @@ export class WebSocketTransport implements RpcTransport {
       return
     }
 
-    // Why: bind a persisted fallback first so devices paired to it aren't stranded (STA-1511); serve --port flips to pinned-first (issue #8535); on failure each candidate falls through to OS-assigned port 0.
+    // Why: bind a persisted fallback first so devices paired to it aren't stranded (STA-1511); an explicit pinned port flips to pinned-first (issue #8535); on failure each candidate falls through to OS-assigned port 0.
     const persistedFallbackPort =
       this.fallbackPort !== undefined && this.fallbackPort !== 0 && this.fallbackPort !== this.port
         ? this.fallbackPort

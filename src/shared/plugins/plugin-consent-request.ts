@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 /**
- * Experimental consent write contract shared by desktop IPC and serve RPC.
+ * Experimental consent write contract shared by desktop IPC and remote RPC.
  * The reviewed fingerprint makes approval conditional on the exact manifest
  * trust boundary the user saw, rather than whichever same-key plugin is current.
  */

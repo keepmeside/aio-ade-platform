@@ -7,7 +7,7 @@ import type { PluginAuditLog } from './plugin-audit-log'
 
 /**
  * Host API v0 handler bindings — the one place plugin-originated calls
- * (panel bridge, worker hostCall, serve RPC relay) execute. Handlers
+ * (panel bridge, worker hostCall, remote RPC relay) execute. Handlers
  * delegate to runtime services through the structural `PluginHostServices`
  * interface, so this module stays electron-free and the relay conformance
  * suite can run the identical chokepoint against a fake service set.
