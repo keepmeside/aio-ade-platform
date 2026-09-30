@@ -36,7 +36,7 @@ export function createWorktreePollerWindowVisibility(
   // never-shown BrowserWindow) or still starting up — no show/restore signal is coming
   // to resume it, so parking it would starve worktree freshness forever. Treat
   // never-shown as visible and keep polling; only start parking once we've observed the
-  // window visible at least once. null/destroyed (serve/headless, macOS window-recreation
+  // window visible at least once. null/destroyed (headless, macOS window-recreation
   // gap) stay always-visible so a torn-down window never permanently parks the poller.
   let hasBeenVisible = false
   return {

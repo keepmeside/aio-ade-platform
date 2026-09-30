@@ -1104,7 +1104,7 @@ function openMainWindow(): BrowserWindow {
     }
     trayCreated = true
     if (process.platform === 'darwin') {
-      // Why: route through syncMacMenuBarIcon so startup and the live toggle share one serve-mode/visibility policy.
+      // Why: route through syncMacMenuBarIcon so startup and the live toggle share one visibility policy.
       if (syncMacMenuBarIcon(store.getSettings().showMenuBarIcon !== false)) {
         logStartupMilestone('tray-created')
       }
@@ -2032,9 +2032,6 @@ void app.whenReady().then(async () => {
   })
   runtime = runtimeService
   publishProviderSessionChanges(agentHookServer.getProviderSessionIdentities())
-  browserManager.setBrowserGuestStateChangedListener((worktreeId) => {
-    runtimeService.notifyMobileSessionTabsChanged(worktreeId)
-  })
   automations = new AutomationService(store, {
     claudeUsage,
     codexUsage
@@ -2468,7 +2465,6 @@ app.on('will-quit', (e) => {
   stats?.flush()
   // Why: agent-browser daemon processes would otherwise linger after quit, holding ports and stale session state on disk.
   runtime?.getAgentBrowserBridge()?.destroyAllSessions()
-  browserManager.setBrowserGuestStateChangedListener(null)
   const emulatorShutdown = runtime?.getEmulatorBridge()?.destroyAllSessions() ?? Promise.resolve()
   killAllPty()
   const watcherShutdown = shutdownWatchersOnce()
@@ -2526,8 +2522,7 @@ app.on('will-quit', (e) => {
 })
 
 app.on('window-all-closed', () => {
-  // Why: disposable offscreen browser windows must not take down runtime RPC — the policy fn keeps the app alive.
-  // Why: on macOS a quit-in-progress (Cmd+Q) is canceled by the renderer buffer-capture deferral; re-trigger quit so it actually exits.
+  // Why: the policy fn decides whether window-all-closed quits — non-macOS always quits; on macOS a quit-in-progress (Cmd+Q) is canceled by the renderer buffer-capture deferral, so re-trigger quit when isQuitting.
   if (
     shouldQuitWhenAllWindowsClosed({
       platform: process.platform,

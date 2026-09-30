@@ -125,8 +125,7 @@ describe('BrowserCertificateTrustController', () => {
         return {
           browserPageId: pageByGuestId.get(webContentsId) ?? null,
           worktreeId: 'worktree-1',
-          sessionProfileId: 'profile-1',
-          owner: 'desktop-webview'
+          sessionProfileId: 'profile-1'
         }
       },
       resolveWebContentsIdForPage: (browserPageId) => guestByPageId.get(browserPageId) ?? null,

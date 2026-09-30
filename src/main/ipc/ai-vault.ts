@@ -275,7 +275,7 @@ export function registerAiVaultHandlers(options: AiVaultHandlerOptions = {}): vo
   // Why: configure the SAME shared cache module the runtime RPC method uses so
   // there is exactly one cache instance and neither caller drops codex-home or
   // WSL injection. The runtime also configures these sources from its deps
-  // (serve-mode reachable); this desktop path supplies the same source.
+  // (runtime-reachable); this desktop path supplies the same source.
   configureAiVaultSessionSources(options)
   ipcMain.handle('aiVault:listSessions', (_event, args?: AiVaultListArgs) =>
     listAiVaultSessions(args)

@@ -104,7 +104,6 @@ describe('browserManager', () => {
     webContentsFromIdMock.mockReset()
     openPopupWithOriginBarMock.mockReset()
     browserManager.unregisterAll()
-    browserManager.setBrowserGuestStateChangedListener(null)
     browserManager.setDictationShortcutForwardingPredicate(null)
     browserManager.setSettingsResolver(() => ({}))
   })
@@ -582,45 +581,6 @@ describe('browserManager', () => {
     })
 
     expect(browserManager.getSessionProfileIdForTab('browser-1')).toBe('work')
-  })
-
-  it('tracks offscreen load failures for the owning worktree snapshot', () => {
-    const stateChanged = vi.fn()
-    const offscreenGuest = {
-      id: 605,
-      isDestroyed: vi.fn(() => false),
-      getType: vi.fn(() => 'window'),
-      setBackgroundThrottling: vi.fn(),
-      setWindowOpenHandler: vi.fn(),
-      on: vi.fn(),
-      off: vi.fn(),
-      getURL: vi.fn(() => 'https://localhost:3443/')
-    }
-    webContentsFromIdMock.mockReturnValue(offscreenGuest)
-    browserManager.setBrowserGuestStateChangedListener(stateChanged)
-
-    browserManager.registerOffscreenGuest({
-      browserPageId: 'offscreen-page',
-      worktreeId: 'remote-worktree',
-      webContentsId: offscreenGuest.id
-    })
-    const didFailLoad = offscreenGuest.on.mock.calls.find(
-      ([event]) => event === 'did-fail-load'
-    )?.[1] as (
-      event: unknown,
-      errorCode: number,
-      errorDescription: string,
-      validatedUrl: string,
-      isMainFrame: boolean
-    ) => void
-    didFailLoad(null, -202, 'Certificate authority invalid', 'https://localhost:3443/', true)
-
-    expect(browserManager.getBrowserPageLoadError('offscreen-page')).toEqual({
-      code: -202,
-      description: 'Certificate authority invalid',
-      validatedUrl: 'https://localhost:3443/'
-    })
-    expect(stateChanged).toHaveBeenCalledWith('remote-worktree')
   })
 
   it('falls back to opening popup URLs externally before a guest is registered', () => {

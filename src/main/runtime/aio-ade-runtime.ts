@@ -1403,7 +1403,7 @@ type RuntimePtyTitleTrackerEntry = {
   // sequence, then bell). Timer-fired facts emit immediately between chunks.
   pendingFacts: TerminalSideEffectFact[]
   // Why: Command Code lacks hooks, so its working/done state is scraped from
-  // TUI output. Null when no side-effect consumer exists (headless serve) —
+  // TUI output. Null when no side-effect consumer exists (renderer-less host) —
   // the scrape produces facts only.
   commandCodeDetector: { observe: (data: string) => boolean } | null
 }
@@ -6556,7 +6556,7 @@ export class AioAdeRuntimeService {
     return { moved: true }
   }
 
-  // Move a tab into an existing group on a headless serve (non-split drop).
+  // Move a tab into an existing group on a renderer-less host (non-split drop).
   private moveHeadlessMobileSessionTabToGroup(
     worktreeId: string,
     snapshot: RuntimeMobileSessionTabsSnapshot,
@@ -8037,7 +8037,7 @@ export class AioAdeRuntimeService {
       chunkTouchedSessionTabs: false,
       pendingFacts: [],
       // Why: command-code facts exist only for the pty:sideEffect channel —
-      // headless serve skips the per-chunk scrape entirely. The detector
+      // a renderer-less host skips the per-chunk scrape entirely. The detector
       // self-arms on the Command Code banner; the spawn command (when main
       // saw one) mirrors the renderer detector's startupCommand fast-arm.
       commandCodeDetector: this.terminalSideEffectConsumerAvailable
@@ -26453,8 +26453,8 @@ export class AioAdeRuntimeService {
   ): { agentStatus: AgentStatusEntry } | Record<string, never> {
     const paneKey = this.getMobileTerminalPaneKey(tab)
     // Why: neither the OSC-retained row nor a title-derived status can carry a
-    // provider session — only the hook payload does, and headless serve has no
-    // renderer to publish `tab.agentStatus`. Without it mobile native chat has no
+    // provider session — only the hook payload does, and a renderer-less host has
+    // no renderer to publish `tab.agentStatus`. Without it mobile native chat has no
     // transcript to address and sits on the empty state forever.
     const hookRow = this.getHookAgentRowForPane(getHookRowsForPane(paneKey))
     // Why: the hook row is evidence in its own right. Returning early on a missing
@@ -26485,7 +26485,7 @@ export class AioAdeRuntimeService {
       const hasLiveHookSignal =
         retained?.payload.interactivePrompt != null ||
         retained?.payload.toolName != null ||
-        // Why: headless serve has no renderer to retain an OSC row, so a fresh hook
+        // Why: a renderer-less host has no renderer to retain an OSC row, so a fresh hook
         // agentType is the only live signal a hook-only pane can offer — and an agent
         // that reports over HTTP need never set a title this gate would recognize.
         // Scoped to panes with no PTY status at all, so it cannot revive a spinner:
@@ -26576,7 +26576,7 @@ export class AioAdeRuntimeService {
     const agentTypeFreshAfter = Date.now() - AGENT_STATUS_STALE_AFTER_MS
     // Why pane key only: the sibling `terminalHandle` arm this used to carry never
     // matched. `toAgentStatusIpcPayload` does not emit the field on the hook path
-    // (only the renderer's own store stamps it, and headless serve has no renderer),
+    // (only the renderer's own store stamps it, and a renderer-less host has no renderer),
     // and because it is optional TypeScript could not flag the dead comparison.
     for (const entry of rows) {
       if (entry.providerSession && (!session || entry.receivedAt > session.receivedAt)) {

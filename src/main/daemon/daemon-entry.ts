@@ -25,7 +25,7 @@ export type ParsedDaemonArgs = {
   tokenPath: string
   pidPath?: string
   launchNonce?: string
-  /** GUI-spawned daemons only — headless serve/SSH daemons must survive session loss. */
+  /** GUI-spawned daemons only — non-GUI/SSH daemons must survive session loss. */
   loginSessionWatch?: boolean
   /** Optional — absent for adopted old daemons and tests, which log nothing. */
   logFilePath?: string

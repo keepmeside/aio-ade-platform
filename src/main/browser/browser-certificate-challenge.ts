@@ -9,7 +9,6 @@ export type ManagedBrowserGuestContext = {
   browserPageId: string | null
   worktreeId: string | null
   sessionProfileId: string | null
-  owner: 'desktop-webview' | 'offscreen'
 }
 
 export type BrowserCertificateTrustControllerDependencies = {

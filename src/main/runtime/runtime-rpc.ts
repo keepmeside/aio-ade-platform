@@ -556,7 +556,7 @@ export class AioAdeRuntimeRpcServer {
     return updated
   }
 
-  // Why: only the desktop shell can surface UI; headless serve leaves this unset.
+  // Why: only the desktop shell can surface UI; a renderer-less host leaves this unset.
   setOnUnpairedDeviceAuthFailure(callback: (() => void) | null): void {
     this.onUnpairedDeviceAuthFailure = callback
   }

@@ -240,7 +240,7 @@ describe('aiVault.listSessions handler + shared cache', () => {
     expect(runtimeResponse.result.issues[0]?.executionHostId).toBe('runtime:remote-server')
   })
 
-  it('injects codex-home dirs sourced from the runtime (serve-mode reachable)', async () => {
+  it('injects codex-home dirs sourced from the runtime', async () => {
     configureAiVaultSessionSources({
       getAdditionalCodexHomePaths: () => ['/runtime/codex/home']
     })
@@ -248,7 +248,7 @@ describe('aiVault.listSessions handler + shared cache', () => {
     await dispatcher.dispatch(makeRequest('aiVault.listSessions', {}))
     const options = scanAiVaultSessions.mock.calls[0]?.[0] as AiVaultScanOptions
     // Why: the codex-home is sourced from the runtime, not the window-only
-    // registerCoreHandlers path, so it survives in serve mode.
+    // registerCoreHandlers path, so remote callers still see it.
     expect(options.additionalCodexSessionsDirs).toContain('/runtime/codex/home/sessions')
     expect(options.wslHomeDirs).toEqual([])
   })

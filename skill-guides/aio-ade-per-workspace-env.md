@@ -35,14 +35,13 @@ them in order:
 
 Then the **per-workspace contract** (create/suspend/resume/destroy) runs fast (§8).
 
-**The one branch that shapes everything — connection mode:** **AIO-ADE-server** (`create` runs `aio-ade serve`
-in the env and emits a `pairingCode`; §7c/§7f) vs **SSH** (`create` runs no server and emits a
-`connection.type:"ssh"` block AIO-ADE dials into; §7g/§7h). Settle this first — it changes the `create`
-output shape and half the templates.
+**Connection is always SSH:** AIO-ADE dials into the environment over its SSH relay, brings up the git +
+filesystem providers, and imports the repo. `create` runs no server in the env — it makes the host/VM ready
+and prints a `connection.type:"ssh"` block (§7c, §7f/§7g).
 
-**Quick-start (happy path):** interview the user (connection mode AIO-ADE-server vs SSH, provider, agent CLI,
-git auth — §1.2) + read the provider's CLI docs → scaffold `scripts/aio-ade-vm/` from §7 → run the
-base-snapshot script, then the auth script (you invoke these by hand; not via `aio-ade.yaml`) → wire
+**Quick-start (happy path):** interview the user (provider, SSH reachability — host/port/user/identity or
+proxy, agent CLI, git auth — §1.2) + read the provider's CLI docs → scaffold `scripts/aio-ade-vm/` from §7 →
+run the base-snapshot script, then the auth script (you invoke these by hand; not via `aio-ade.yaml`) → wire
 `environmentRecipes` in `aio-ade.yaml` → `aio-ade vm recipe doctor <id> --json` (free) → then the `--provision`
 self-test loop (§9) until it passes.
 
@@ -57,23 +56,20 @@ a long time, or need the user at the keyboard. Never create an AIO-ADE workspace
    notes. If a working recipe exists, jump to Doctor (§9) instead of rebuilding.
 2. **Interview the user up front** — gather these choices and confirm them back before scaffolding
    anything. Don't pick for them (§11); don't guess.
-   - **Connection mode:** how AIO-ADE attaches to the environment — an **AIO-ADE server** (the VM runs
-     `aio-ade serve` and AIO-ADE pairs over its pairing URL; worked example §7f) or **SSH** (AIO-ADE connects to
-     the host over SSH; §7g). This decides the recipe's connection shape, so settle it first.
-   - **Provider:** Vercel Sandbox, Fly, Modal, an existing SSH host, … For non-obvious providers, also
-     ask scope/project/region and plan limits (§2). Then **read that provider's CLI/SDK docs** (or
-     `<cli> --help`) before scaffolding — you need its exact create/exec/snapshot/remove verbs.
-     If a provider advertises `ssh`, verify whether it exposes a real dialable SSH target
-     (host/port/user/key or proxy command) or only a provider-mediated interactive shell; AIO-ADE SSH mode
-     needs the former.
+   - **Provider + SSH reachability:** Vercel Sandbox, Fly, Modal, an existing SSH host, … AIO-ADE connects
+     over SSH (worked examples §7f/§7g), so the provider must expose a real dialable SSH target
+     (host/port/user/key or proxy command) — a provider-mediated interactive shell is not enough. For
+     non-obvious providers, also ask scope/project/region and plan limits (§2). Then **read that
+     provider's CLI/SDK docs** (or `<cli> --help`) before scaffolding — you need its exact
+     create/exec/snapshot/remove verbs.
    - **Coding-agent CLI + account:** which agent runs in the VM (`codex`, `claude`, …) and that the user
      has an account for it — it gets logged in during the Phase-3 auth snapshot (§4).
    - **Git auth:** the token source for cloning a private repo (`GH_TOKEN`/`GITHUB_TOKEN` or `gh auth
      token`; §5).
 3. **Check prerequisites (§2)** — detect the provider CLI + auth and confirm the items above are in
    place before any paid step.
-4. **Scaffold scripts + state file** from §7 (worked Vercel example: §7f; SSH host: §7g; Docker SSH:
-   §7h; Windows: §7i), filling in the provider's real commands. Make them executable.
+4. **Scaffold scripts + state file** from §7 (worked examples: cloud VM §7f, existing SSH host §7g; Docker
+   SSH: §7h; Windows: §7i), filling in the provider's real commands. Make them executable.
 5. **[CHECKPOINT] Build the base snapshot (§3)** — paid, slow.
 6. **[CHECKPOINT] Authenticate the agent (§4)** — interactive; the user follows a URL/code. **You cannot
    drive this step** — you run commands non-interactively, so there's no TTY for `docker exec -it` /
@@ -104,7 +100,8 @@ a long time, or need the user at the keyboard. Never create an AIO-ADE workspace
 The user's responsibility; verify what's verifiable, ask for the rest, invent nothing. State which
 items you verified vs. which the user asserted.
 
-- **Connection mode** (AIO-ADE server vs SSH) confirmed with the user — see §1 step 2; it shapes the recipe.
+- **SSH target confirmed** — the env must expose a dialable SSH endpoint (host/port/username/identity or a
+  proxy command) that AIO-ADE's relay can reach; see §1 step 2 and §7g.
 - **Cloud account + plan** that allows sandboxes/VMs. Ask.
 - **Provider CLI installed + authenticated** — detect (`command -v <cli>`), check auth (e.g.
   `vercel whoami`). If missing, point at the provider's docs; don't log them in.
@@ -195,7 +192,7 @@ per-workspace `create` boots from `snapshotId`.
   "authSourceSnapshotId": "snap_base_image_id",
   "scope": "<provider-scope>",
   "project": "<provider-project>",
-  "port": 7331,
+  "port": 22,
   "repoUrl": "https://host/org/repo.git",
   "repoRef": "main",
   "projectRoot": "/abs/path/on/remote/repo"
@@ -226,7 +223,8 @@ reserve stdout for the final JSON and log progress to stderr. Include a shared `
 set -euo pipefail
 # resolve base_name/repo_url/repo_ref/project_root/port/scope/project/timeout (env→state→fallback)
 # resolve gh token: GH_TOKEN | GITHUB_TOKEN | `gh auth token`
-# 1. provision a sandbox (timeout/vcpus/published port/snapshot retention); trap: remove on error
+# 1. provision a sandbox (timeout/vcpus/snapshot retention — published port only if the provider reaches
+#    sshd that way, §7f); trap: remove on error
 # 2. remote exec (long timeout): install pkgs + gh + corepack/pnpm + agent CLI;
 #    clone with GIT_ASKPASS(token); write headless main-only build config;
 #    dev setup; pnpm install; build CLI; build headless electron main; smoke-check tools
@@ -264,46 +262,21 @@ set -euo pipefail
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
-# read authenticated snapshotId/scope/project/port/repo*/project_root (env→state→fallback)
+# read authenticated snapshotId/scope/project/ssh_*/repo*/project_root (env→state→fallback)
 # fail clearly if snapshotId is missing (point back to Phases 2–3)
 # name = aio-ade-${AIO_ADE_VM_RECIPE_ID}-${AIO_ADE_VM_INSTANCE_ID} (sanitized, length-capped)
-# 1. boot sandbox from snapshotId with a published port; capture the public URL → pairing address
-#    (an externally reachable wss:// URL); trap: remove sandbox on error
-# 2. remote exec: ensure repo at desired commit; rebuild only if commit changed (cache marker)
-# 3. remote exec: start aio-ade serve in the background and read the recipe JSON it writes (see below)
-# 4. print serve's JSON to stdout, optionally enriched with userData:
-#    { schemaVersion:1, pairingCode, projectRoot, userData:{ provider, resourceId:name, snapshotId } }
+# 1. boot sandbox from snapshotId; resolve its dialable SSH endpoint (host/port/username/identity or a
+#    proxy command — provider-dependent); trap: remove sandbox on error
+# 2. over SSH: ensure repo at desired commit; rebuild only if commit changed (cache marker)
+# 3. print the SSH connection block to stdout, enriched with userData:
+#    { schemaVersion:1, connection:{ type:"ssh", projectRoot, target:{ label, host, port, username, … } },
+#      userData:{ provider, resourceId:name, snapshotId } }
 ```
 
-**The exact `aio-ade serve` invocation and its output (verified — do not improvise the flags).** Inside the
-VM, run:
-
-```bash
-aio-ade serve \
-  --port "$PORT" \
-  --project-root "$ABS_REPO_PATH_ON_REMOTE" \
-  --pairing-address "$EXTERNAL_WSS_URL" \
-  --recipe-json
-```
-
-**Binary name:** in a VM built from source (the Phase-2 flow), run it as `pnpm exec aio-ade-dev serve …`
-from the repo root — `aio-ade-dev` is the in-repo entrypoint and is what the §7f example uses. Plain
-`aio-ade serve …` is the same command when the built CLI is installed on the VM's PATH. The flags/output
-are identical either way.
-
-There is **no `--host` flag**. `--project-root` must be an absolute directory on the remote. With
-`--recipe-json` the server **stays running** and prints exactly this single object to **stdout**, then
-keeps serving:
-
-```json
-{ "schemaVersion": 1, "pairingCode": "<aio-ade pairing URL>", "projectRoot": "<the --project-root you passed>" }
-```
-
-`pairingCode` is the pairing URL, already pointing at whatever you passed as `--pairing-address` — so set
-`--pairing-address` to the externally reachable address and **pass `pairingCode` through unchanged; never
-hand-rewrite it**. Because serve runs in the foreground and doesn't exit, redirect its stdout to a file
-and poll until that file parses as JSON (and bail if the process dies — dump its stderr log). Your
-`create` script then prints that JSON (optionally merging `userData`). Concrete pattern: §7f.
+**The result is the `connection` block, not a server URL.** AIO-ADE dials `target` over its own SSH
+relay — there is no in-env daemon for the script to start or read (the in-env server + pairing-URL
+output channel was removed when `aio-ade`'s serve command was deleted). Required/optional `target`
+fields and a complete script: §7g; Docker variant: §7h.
 
 ### 7d. Suspend / resume / destroy — per workspace
 
@@ -314,23 +287,27 @@ payload="$(cat)"                       # AIO-ADE passes lifecycle JSON on stdin
 resource_id="$(node -e 'const d=JSON.parse(process.argv[1]); process.stdout.write(d.recipeResult?.userData?.resourceId ?? "")' "$payload")"
 [ -n "$resource_id" ] || { echo "No resource id in lifecycle payload" >&2; exit 1; }
 # suspend: provider suspend "$resource_id"
-# resume:  provider resume "$resource_id"; then RE-EMIT fresh recipe JSON (pairing may change)
+# resume:  provider resume "$resource_id"; then RE-EMIT fresh recipe JSON (the SSH target may change)
 # destroy: provider remove "$resource_id"   (or set destroy: none in aio-ade.yaml)
 ```
 
 ### 7e. State file — scaffold with scope/project/repo filled in and snapshot ids empty (§6).
 
-### 7f. Worked example — Vercel Sandbox (all three phases)
+### 7f. Worked example — cloud snapshot VM (Vercel Sandbox, all three phases)
 
 A real, working shape (the Vercel surface is a CLI: `vercel sandbox create|exec|snapshot|remove`). Adapt
 names; verify flags against `vercel sandbox --help` for the user's CLI version before relying on them.
-These ground §7a (base snapshot) and §7b (auth), which are otherwise generic skeletons.
+These ground §7a (base snapshot) and §7b (auth), which are otherwise generic skeletons. Per-workspace
+`create` connects over SSH: it must resolve the sandbox's dialable SSH endpoint and emit a
+`connection.type:"ssh"` block (shape + field rules: §7g).
 
 **Phase 2 — base snapshot (§7a):** provision → install tools + clone + headless build → snapshot.
 
 ```bash
 # provision a fresh build sandbox (retain a couple of snapshots); trap-remove on error
-vercel sandbox create --name "$base" --runtime node24 --timeout 30m --vcpus 4 --publish-port "$port" \
+# publish a port only if the provider maps a published port to the sandbox's sshd (most don't — check
+# the provider's SSH reachability docs; §1 step 2)
+vercel sandbox create --name "$base" --runtime node24 --timeout 30m --vcpus 4 \
   --snapshot-expiration 30d --keep-last-snapshots 2 "${vercel_args[@]}" >&2
 # remote build (long timeout): install pkgs+gh+pnpm+agent CLI, clone with GIT_ASKPASS (write the helper
 # with LITERAL \$1/\$GH_TOKEN so they resolve at git-runtime, not write-time — see §5/§7f create — then
@@ -347,7 +324,7 @@ snapshot_id="$(printf '%s\n' "$out" | sed -nE 's/.*(snap_[A-Za-z0-9]+).*/\1/p' |
 (`codex` below is an example — substitute the user's chosen agent's login/status verbs, e.g. `claude`.)
 
 ```bash
-vercel sandbox create --name "$auth" --snapshot "$snapshot_id" --timeout 30m --publish-port "$port" "${vercel_args[@]}" >&2
+vercel sandbox create --name "$auth" --snapshot "$snapshot_id" --timeout 30m "${vercel_args[@]}" >&2
 # INTERACTIVE — the USER runs this in their own terminal (you have no interactive TTY) and completes the
 # URL/code on the HOST. --device-auth is MANDATORY on a headless VM: plain `codex login` binds a loopback
 # callback port the host browser can't reach and hangs. Ask the user to report back when login finishes.
@@ -365,7 +342,9 @@ new_id="$(printf '%s\n' "$out" | sed -nE 's/.*(snap_[A-Za-z0-9]+).*/\1/p' | tail
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
-# resolve from env→state→fallback: snapshot_id, scope, project, port, repo_url, repo_ref, project_root
+# resolve from env→state→fallback: snapshot_id, scope, project, ssh_user, ssh_port, identity_file,
+#   repo_url, repo_ref, project_root  (default unset optionals to "")
+: "${identity_file:=}"
 vercel_args=(); [ -n "$scope" ] && vercel_args+=(--scope "$scope"); [ -n "$project" ] && vercel_args+=(--project "$project")
 [ -n "$snapshot_id" ] || { echo "snapshotId missing — run Phases 2–3 first" >&2; exit 1; }
 gh_token="${GH_TOKEN:-${GITHUB_TOKEN:-$(command -v gh >/dev/null 2>&1 && gh auth token 2>/dev/null || true)}}"
@@ -375,64 +354,53 @@ name="aio-ade-${AIO_ADE_VM_RECIPE_ID:-vercel-sandbox}-${AIO_ADE_VM_INSTANCE_ID:-
 cleanup_on_error() { [ "$?" -ne 0 ] && vercel sandbox remove "$name" "${vercel_args[@]}" >/dev/null 2>&1 || true; }
 trap cleanup_on_error EXIT
 
-# 1. boot from the authenticated snapshot, publish the serve port
-create_output="$(vercel sandbox create --name "$name" --snapshot "$snapshot_id" \
-  --timeout 30m --publish-port "$port" "${vercel_args[@]}" 2>&1)"; printf '%s\n' "$create_output" >&2
-# Vercel prints the published https URL; derive the external wss:// pairing address from it
-public_url="$(printf '%s\n' "$create_output" | sed -nE 's#.*(https://[^[:space:]]+\.vercel\.run).*#\1#p' | head -1)"
-[ -n "$public_url" ] || { echo "no published URL in create output" >&2; exit 1; }
-pairing_ws="${public_url/https:\/\//wss://}"
+# 1. boot from the authenticated snapshot
+vercel sandbox create --name "$name" --snapshot "$snapshot_id" --timeout 30m "${vercel_args[@]}" >&2
+# resolve the sandbox's dialable SSH endpoint into ssh_host/ssh_port/… here — the mechanism is
+# provider-specific (an sshd baked into the base image behind a published port, a provider ssh command
+# usable as proxyCommand, a tunnel, …); see the provider's docs. ssh_keyscan it into known_hosts so a
+# first-connect prompt can't hang AIO-ADE's non-interactive dial.
 
-# 2. (remote) ensure the repo is at the right commit; rebuild only if the commit changed (cache marker)
-vercel sandbox exec "$name" "${vercel_args[@]}" --timeout 20m \
-  --env "GH_TOKEN=$gh_token" --env "AIO_ADE_PROJECT_ROOT=$project_root" \
-  --env "AIO_ADE_REPO_URL=$repo_url" --env "AIO_ADE_REPO_REF=$repo_ref" \
-  -- bash -lc 'set -euo pipefail; cd "$AIO_ADE_PROJECT_ROOT"; \
-    # Re-establish git auth for the private-repo fetch (why + full rationale: §5); else it hangs on a prompt.
-    # Load-bearing escaping: \$1 and \$GH_TOKEN must land LITERALLY and resolve at git-runtime. Test after
-    # any edit here — reformatting the nested printf/node quoting silently breaks the fetch or leaks the token.
-    if [ -n "${GH_TOKEN:-}" ]; then \
-      printf "%s\n" "#!/usr/bin/env bash" "case \"\$1\" in *Username*) echo x-access-token;; *Password*) echo \"\$GH_TOKEN\";; esac" > /tmp/askpass.sh; \
-      chmod 700 /tmp/askpass.sh; export GIT_ASKPASS=/tmp/askpass.sh GIT_TERMINAL_PROMPT=0; fi; \
-    git fetch origin "$AIO_ADE_REPO_REF"; \
-    git checkout -B "$AIO_ADE_REPO_REF" FETCH_HEAD; \
-    rm -f /tmp/askpass.sh; \
-    c="$(git rev-parse HEAD)"; [ -f .aio-ade-built ] && [ "$(cat .aio-ade-built)" = "$c" ] || { \
-      pnpm install --prefer-offline && pnpm run build:cli && \
-      node config/scripts/run-electron-vite-build.mjs --config config/electron-vite.vm-serve.config.ts && \
-      printf "%s" "$c" > .aio-ade-built; }' >&2
+# 2. (SSH) ensure the repo is at the right commit; rebuild only if the commit changed (cache marker).
+#    Re-establish git auth for the private-repo fetch (why + full rationale: §5); else it hangs on a prompt.
+#    The GIT_ASKPASS helper's escaping is load-bearing: \$1 and \$GH_TOKEN must land LITERALLY and resolve
+#    at git-runtime. Test after any edit — reformatting the nested quoting silently breaks the fetch or
+#    leaks the token.
+ssh -p "$ssh_port" ${identity_file:+-i "$identity_file"} "$ssh_user@$ssh_host" \
+  "GH_TOKEN='$gh_token' GIT_TERMINAL_PROMPT=0 bash -lc '
+     set -euo pipefail
+     cd \"$project_root\"
+     if [ -n \"\${GH_TOKEN:-}\" ]; then
+       printf \"%s\n\" \"#!/usr/bin/env bash\" \"case \\\"\$1\\\" in *Username*) echo x-access-token;; *Password*) echo \\\"\$GH_TOKEN\\\";; esac\" > /tmp/askpass.sh
+       chmod 700 /tmp/askpass.sh; export GIT_ASKPASS=/tmp/askpass.sh GIT_TERMINAL_PROMPT=0
+     fi
+     git fetch origin \"$repo_ref\" && git checkout -B \"$repo_ref\" FETCH_HEAD
+     rm -f /tmp/askpass.sh
+     c=\$(git rev-parse HEAD)
+     [ -f .aio-ade-built ] && [ \"\$(cat .aio-ade-built)\" = \"\$c\" ] || {
+       pnpm install --prefer-offline && pnpm run build:cli && printf \"%s\" \"\$c\" > .aio-ade-built; }
+   '" >&2
 
-# 3. (remote) start aio-ade serve in the background, writing recipe JSON to a file; poll until it parses
-recipe_json="$(vercel sandbox exec "$name" "${vercel_args[@]}" --timeout 60s \
-  --env "AIO_ADE_PORT=$port" --env "AIO_ADE_PROJECT_ROOT=$project_root" --env "AIO_ADE_PAIRING_ADDRESS=$pairing_ws" \
-  -- bash -lc 'set -euo pipefail; cd "$AIO_ADE_PROJECT_ROOT"; rm -f /tmp/aio-ade-recipe.json /tmp/aio-ade-serve.log; \
-    nohup pnpm exec aio-ade-dev serve --port "$AIO_ADE_PORT" --project-root "$AIO_ADE_PROJECT_ROOT" \
-      --pairing-address "$AIO_ADE_PAIRING_ADDRESS" --recipe-json >/tmp/aio-ade-recipe.json 2>/tmp/aio-ade-serve.log </dev/null & \
-    pid=$!; for _ in $(seq 1 80); do \
-      node -e "JSON.parse(require(\"node:fs\").readFileSync(\"/tmp/aio-ade-recipe.json\",\"utf8\"))" >/dev/null 2>&1 && { cat /tmp/aio-ade-recipe.json; exit 0; }; \
-      kill -0 "$pid" 2>/dev/null || { cat /tmp/aio-ade-serve.log >&2; exit 1; }; sleep 0.25; \
-    done; cat /tmp/aio-ade-serve.log >&2; echo "serve recipe JSON timed out" >&2; exit 1')"
-
-# 4. print serve's JSON enriched with userData (single object on stdout)
-node -e 'const p=JSON.parse(process.argv[1]); console.log(JSON.stringify({...p, schemaVersion:1,
-  userData:{...p.userData, provider:"vercel-sandbox", resourceId:process.argv[2], snapshotId:process.argv[3]}}))' \
-  "$recipe_json" "$name" "$snapshot_id"
+# 3. print the SSH connection block enriched with userData (single object on stdout; §7g for fields)
+node -e 'const [host,port,user,idf,name,snap,root]=process.argv.slice(1);
+  const target={ label:name, host, port:Number(port), username:user };
+  if(idf) target.identityFile=idf;  // or target.proxyCommand=… / target.jumpHost=… per how you dial
+  console.log(JSON.stringify({ schemaVersion:1,
+    connection:{ type:"ssh", projectRoot:root, target },
+    userData:{ provider:"vercel-sandbox", resourceId:name, snapshotId:snap } }))' \
+  "$ssh_host" "$ssh_port" "$ssh_user" "$identity_file" "$name" "$snapshot_id" "$project_root"
 trap - EXIT
 ```
 
 `suspend`/`resume`/`destroy` use `vercel sandbox stop|...|remove "$resource_id"` reading
-`userData.resourceId` from stdin (§7d). This is the **AIO-ADE-server** connection mode (the recipe emits a
-pairing URL). If the user chose **SSH** in the §1 interview, use §7g instead.
+`userData.resourceId` from stdin (§7d) — so `create` must emit `userData.resourceId`.
 
-### 7g. Worked example — existing SSH host (SSH connection mode)
+### 7g. Worked example — existing SSH host
 
-SSH mode is **fundamentally different from §7c/§7f**, not a relabeling of them:
-
-- **`create` does NOT run `aio-ade serve` and does NOT emit a `pairingCode`.** AIO-ADE itself connects to the
-  host over its SSH relay, brings up the git + filesystem providers, and imports the repo. The script's
-  only job is to make the host ready and **print SSH connection details** AIO-ADE will dial.
-- The result uses a `connection` block with `type: "ssh"` and a `target`, **not** the flat
-  `pairingCode`/`projectRoot` shape. Exact shape (AIO-ADE rejects anything else):
+`create`'s whole job on a persistent host is: make the repo ready, then **print SSH connection details**
+AIO-ADE will dial. AIO-ADE itself connects to the host over its SSH relay, brings up the git + filesystem
+providers, and imports the repo. The result is a `connection` block with `type: "ssh"` and a `target` —
+exact shape (AIO-ADE rejects anything else):
 
 ```json
 {
@@ -457,8 +425,7 @@ SSH mode is **fundamentally different from §7c/§7f**, not a relabeling of them
 
 `label`, `host`, `port`, `username` are required; the rest are optional — omit any you don't need.
 
-**Networking → which `target` fields to set** (how *your desktop* reaches the box — there is no
-`aio-ade serve` URL in SSH mode):
+**Networking → which `target` fields to set** (how *your desktop* reaches the box):
 
 - Public IP / DNS, or a Tailscale/VPN address → `host`; SSH port → `port` (usually 22).
 - Key auth → `identityFile` (add `identitiesOnly: true` if the agent has many keys).
@@ -487,7 +454,7 @@ ssh_opts=(-p "$ssh_port"); [ -n "$identity_file" ] && ssh_opts+=(-i "$identity_f
 # non-interactive create. Pre-add the key (or set the option) so it can't block.
 ssh-keyscan -p "$ssh_port" "$host" >> "$HOME/.ssh/known_hosts" 2>/dev/null || true
 
-# 1. ensure the repo is present and at the right commit on the host (NO aio-ade serve here)
+# 1. ensure the repo is present and at the right commit on the host
 ssh "${ssh_opts[@]}" "$ssh_target" \
   "GH_TOKEN='$gh_token' GIT_TERMINAL_PROMPT=0 bash -lc '
      set -euo pipefail
@@ -495,7 +462,7 @@ ssh "${ssh_opts[@]}" "$ssh_target" \
      cd \"$project_root\" && git fetch origin \"$repo_ref\" && git checkout -B \"$repo_ref\" FETCH_HEAD
    '" >&2
 
-# 2. print the SSH connection block (NO pairingCode, NO aio-ade serve). host/port/username tell AIO-ADE's
+# 2. print the SSH connection block. host/port/username tell AIO-ADE's
 #    relay how to dial in; identityFile/jumpHost/proxyCommand/portForwards are emitted when set.
 node -e 'const [host,port,user,idf,jh,pc,root]=process.argv.slice(1);
   const target={ label:"per-workspace-host", host, port:Number(port), username:user };
@@ -510,10 +477,10 @@ node -e 'const [host,port,user,idf,jh,pc,root]=process.argv.slice(1);
 sleep/wake/delete — that's separate from these scripts.)
 
 If the SSH host is instead an **ephemeral/snapshot-capable VM** (your hypervisor, or a cloud VM with
-image support), keep the §7f Phase-2/3 base-image model for provisioning, but still emit the
-`connection.type:"ssh"` block above instead of starting `aio-ade serve`.
+image support), keep the §7f Phase-2/3 base-image model for provisioning — per-workspace `create` still
+emits the `connection.type:"ssh"` block above (worked in §7f).
 
-### 7h. Worked example — local Docker SSH (SSH connection mode)
+### 7h. Worked example — local Docker SSH
 
 Local Docker can model an ephemeral SSH VM without cloud cost: build a base image with `sshd`, tools,
 repo prerequisites, and the agent CLI; run an **interactive auth container** once; then `docker commit`
@@ -566,10 +533,9 @@ launcher), or scaffold PowerShell equivalents. Minimal PowerShell shape:
 #requires -Version 5
 $ErrorActionPreference = 'Stop'
 # resolve env→state→fallback; run the provider CLI / ssh the same way;
-# capture provider output; build the result object for the chosen mode and write ONE line of JSON to stdout.
-# AIO-ADE-server mode: @{ schemaVersion=1; pairingCode=$pairingCode; projectRoot=$projectRoot; userData=@{...} }
-# SSH mode:        @{ schemaVersion=1; connection=@{ type="ssh"; projectRoot=$projectRoot;
-#                     target=@{ label=$label; host=$host; port=$port; username=$user } } }  (see §7g/§7h)
+# capture provider output; build the SSH result object and write ONE line of JSON to stdout.
+# @{ schemaVersion=1; connection=@{ type="ssh"; projectRoot=$projectRoot;
+#    target=@{ label=$label; host=$host; port=$port; username=$user } } }  (see §7g/§7h)
 ($result | ConvertTo-Json -Compress -Depth 6)
 # progress/errors → Write-Error / the error stream, never stdout.
 ```
@@ -593,37 +559,17 @@ environmentRecipes:
     destroy: ./scripts/aio-ade-vm/cloud-sandbox-destroy.sh
 ```
 
-`create` runs **locally from the repo root** and prints **one** JSON object to stdout. Its shape depends
-on the connection mode chosen in §1:
-
-**AIO-ADE-server mode** — boot the env, start `aio-ade serve` in it, and print serve's result:
-
-```json
-{
-  "schemaVersion": 1,
-  "pairingCode": "aio-ade-pairing-code-or-url",
-  "projectRoot": "/absolute/path/to/repo/on/remote",
-  "userData": { "provider": "example", "resourceId": "provider-resource-id" }
-}
-```
-
-Here `pairingCode` (from `aio-ade serve --recipe-json`) and `projectRoot` are required; `schemaVersion` (`1`)
-and `userData` are optional.
-
-**SSH mode** — do **not** run `aio-ade serve`; print the `connection.type:"ssh"` block instead (full shape +
-worked script in §7g). `pairingCode` is **not** used in SSH mode.
+`create` runs **locally from the repo root** and prints **one** JSON object to stdout — the
+`connection.type:"ssh"` block (full shape + worked scripts in §7c/§7g/§7h). `schemaVersion` (`1`) and
+`userData` are optional; `connection.projectRoot` and `connection.target` are required.
 
 Lifecycle hooks (all run locally):
 
 - `create`: required. Prints recipe result JSON.
 - `suspend`: optional. Sleep; reads lifecycle payload on stdin.
-- `resume`: optional. Wake; reads payload on stdin and **prints fresh recipe JSON** (pairing may change).
+- `resume`: optional. Wake; reads payload on stdin and **prints fresh recipe JSON** (the SSH target may
+  change).
 - `destroy`: optional unless `destroy: none`. Delete/cleanup; reads payload on stdin.
-
-Start AIO-ADE remotely with `aio-ade serve --port "$PORT" --project-root "$ABS_ROOT" --pairing-address
-"$EXTERNAL_WSS_URL" --recipe-json` (exact flags + output in §7c). Set `--pairing-address` to the
-externally reachable address so the emitted `pairingCode` is reachable; tunneling/port mapping is the
-script's job.
 
 Backward compatibility: `command`→`create`, `cleanup`→`destroy`, `cleanup: none`→`destroy: none`.
 Prefer the lifecycle names.

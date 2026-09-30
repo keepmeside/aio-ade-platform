@@ -70,7 +70,7 @@ describe('createWslCliReconciliationStartupBarrier', () => {
       })
       const barrier = createWslCliReconciliationStartupBarrier(reconciliation)
       let rpcReady = false
-      const serveRpcReadiness = barrier.then(() => {
+      const hostRpcReadiness = barrier.then(() => {
         rpcReady = true
       })
 
@@ -79,7 +79,7 @@ describe('createWslCliReconciliationStartupBarrier', () => {
       expect(reconciliationCompleted).toBe(false)
 
       await vi.advanceTimersByTimeAsync(1)
-      await expect(serveRpcReadiness).resolves.toBeUndefined()
+      await expect(hostRpcReadiness).resolves.toBeUndefined()
       expect(rpcReady).toBe(true)
       expect(reconciliationCompleted).toBe(false)
 
