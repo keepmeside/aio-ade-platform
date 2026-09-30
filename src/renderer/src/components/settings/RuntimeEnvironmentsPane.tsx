@@ -846,16 +846,9 @@ export function RuntimeEnvironmentsPane({
                   className="h-8 min-w-0 font-mono text-xs"
                 />
                 <p id="runtime-server-pairing-code-help" className="text-xs text-muted-foreground">
-                  {translate('auto.components.settings.RuntimeEnvironmentsPane.163671f7b5', 'Run')}{' '}
-                  <span className="font-mono">
-                    {translate(
-                      'auto.components.settings.RuntimeEnvironmentsPane.960e901ae4',
-                      'aio-ade serve --pairing-address <host>'
-                    )}
-                  </span>{' '}
                   {translate(
-                    'auto.components.settings.RuntimeEnvironmentsPane.55fcc964cd',
-                    'on the server and paste the printed pairing URL.'
+                    'auto.components.settings.RuntimeEnvironmentsPane.163671f7b5',
+                    'On the remote computer, open AIO-ADE Settings → Runtime environments → New Link, then paste the copied pairing URL here.'
                   )}
                 </p>
               </div>

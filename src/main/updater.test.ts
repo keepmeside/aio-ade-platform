@@ -1643,7 +1643,7 @@ describe('updater', () => {
 
     await vi.advanceTimersByTimeAsync(1)
     expect(autoUpdaterMock.quitAndInstall).toHaveBeenCalledTimes(1)
-    expect(autoUpdaterMock.quitAndInstall).toHaveBeenCalledWith(false, true)
+    expect(autoUpdaterMock.quitAndInstall).toHaveBeenCalledWith()
   })
 
   it('runs pre-quit cleanup before local PTY cleanup during update install', async () => {

@@ -6,11 +6,11 @@ Status: implemented single-PR v1 design for issues #8878 and #9352; deterministi
 
 - **Invariant (`agent-session.remote-host-authority`):** one provider-session identity has at most one live PTY owner and canonical host surface on every claim-capable route; exact exit retires that incarnation durably.
 - **Failure source:** issues #8878 and #9352, including concurrent remote clients, ambiguous replies, exit-before-publication, and stale client snapshots.
-- **Oracle:** the focused ownership/lifecycle matrix and `pnpm test:repro:remote-agent-session` prove one physical spawn, canonical retry adoption, exact exit retirement, stale-publication rejection, and no restart resurrection.
+- **Oracle:** the focused ownership/lifecycle matrix proves one physical spawn, canonical retry adoption, exact exit retirement, stale-publication rejection, and no restart resurrection. The standalone headless repro harness was removed with `aio-ade serve`.
 - **Gate:** the experimental `agent-session.remote-host-authority` entry in `config/reliability-gates.jsonc`.
 - **Coverage:** deterministic macOS local/daemon/remote-runtime evidence plus SSH/relay fault-injection; Linux, Windows, WSL, and live SSH remain explicit gaps.
 - **Performance budget:** no polling or terminal-output work; admission-only provider reconciliation is inflight-deduped, and operation state is capped and expiring.
-- **Diagnostics:** structured RPC error codes, PTY incarnation IDs, owner generations, operation dispositions, and the repro artifact distinguish fallback, adoption, conflict, and retirement failures.
+- **Diagnostics:** structured RPC error codes, PTY incarnation IDs, owner generations, and operation dispositions distinguish fallback, adoption, conflict, and retirement failures.
 - **Residual gaps:** durable fresh-operation journaling, automatic sleep checkpoints, verified nested-SSH namespaces, and multi-process profile coordination are documented under Future extensions.
 
 ## Summary
@@ -382,32 +382,16 @@ This contract is monotonic: upgrading any subset never removes a workflow that
 worked before. The bug fix activates only where every authority layer required
 for that specific path can prove support.
 
-## Deterministic reproduction harness
+## Reproduction harness (removed)
 
-Run:
-
-```sh
-pnpm test:repro:remote-agent-session
-```
-
-The harness builds AIO-ADE, starts a real headless Electron `aio-ade serve` process on
-an ephemeral port, and connects independent Node client processes over the
-normal encrypted WebSocket pairing path. It creates and registers a real Git
-repository in an isolated profile and uses the real daemon claim registry with
-a controlled agent subprocess. No installed agent, external service, fixed
-port, timing race, or Docker daemon is needed.
-
-It asserts:
-
-- two clients race the same structured resume;
-- exactly one daemon subprocess is spawned;
-- both clients receive the same canonical handle, tab, pane, and PTY;
-- a retry that may have lost its earlier response adopts that owner;
-- a real `terminal.close` produces PTY exit and both `terminal.list` and
-  `session.tabs.list` omit the surface;
-- a stale layout publication cannot recreate the retired surface;
-- restarting the serve process with the same profile cannot resurrect the
-  terminal or tab.
+The standalone headless repro (`pnpm test:repro:remote-agent-session`, backed by
+`config/scripts/remote-agent-session-authority-repro.mjs` and an isolated
+`aio-ade serve` process) was removed with the `serve` command in phase 09. The
+coverage it carried — concurrent fresh/resume races, retry adoption, exact exit
+retirement, stale-publication rejection — is retained by the deterministic
+vitest matrix listed in the `agent-session.remote-host-authority` gate and by
+the headed desktop-host e2e journey
+(`tests/e2e/remote-agent-session-focus-authority.spec.ts`).
 
 Lower-level tests separately cover daemon attach races, controller recovery,
 provider disconnects, conflicting listings, old SSH relays, malformed SSH

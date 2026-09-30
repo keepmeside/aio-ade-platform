@@ -11,7 +11,6 @@ Usage: aio-ade <command> [options]
 
 Startup:
   open                      Launch AIO-ADE and wait for the runtime to be reachable
-  serve                     Start a headless AIO-ADE runtime server
   status                    Show app/runtime/graph readiness
 
 Diagnostics:
@@ -147,7 +146,6 @@ Mobile Emulator (iOS Simulator):
 
 Common Commands:
   aio-ade open [--json]
-  aio-ade serve [--port <port>] [--pairing-address <host>] [--mobile-pairing] [--no-pairing] [--project-root <path>] [--recipe-json] [--json]
   aio-ade status [--json]
   aio-ade diagnostics memory [--json]
   aio-ade agent-context [--json]

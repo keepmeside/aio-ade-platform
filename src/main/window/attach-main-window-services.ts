@@ -40,8 +40,7 @@ import {
   quitAndInstall,
   setupAutoUpdater,
   dismissAvailableUpdate,
-  dismissNudge,
-  type UpdateInstallMode
+  dismissNudge
 } from '../updater'
 import { scheduleHistoryGc } from '../terminal-history'
 import { hydrateLocalPtyRegistryAtBoot } from '../memory/hydrate-local-pty-registry'
@@ -95,7 +94,6 @@ export function attachMainWindowServices(
     // Why: lets the PTY orphan sweep skip the one crash-recovery reload (#5787).
     isRecoveryReloadInFlight?: (webContentsId: number) => boolean
     onBeforeUpdateQuit?: () => void | Promise<void>
-    updateInstallMode?: UpdateInstallMode
     onWorktreeLifecycle?: (event: RuntimeWorktreeLifecycleEvent) => void
   }
 ): void {
@@ -176,8 +174,7 @@ export function attachMainWindowServices(
       },
       setDismissedUpdateNudgeId: (id) => {
         store.updateUI({ dismissedUpdateNudgeId: id })
-      },
-      installMode: options?.updateInstallMode
+      }
     })
     logStartupMilestone('updater-setup-done')
   }

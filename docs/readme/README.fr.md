@@ -218,7 +218,6 @@ Fonctionne avec **n'importe quel agent CLI** — s'il tourne dans un terminal, i
 - **[Télécharger depuis onAioAde.dev](https://aio-ade.keepmeside.dev/download)**
 - Ou récupérez un build directement : [macOS Apple Silicon](https://github.com/keepmeside/aio-ade-platform/releases/latest/download/aio-ade-macos-arm64.dmg) · [macOS Intel](https://github.com/keepmeside/aio-ade-platform/releases/latest/download/aio-ade-macos-x64.dmg) · [Windows (.exe)](https://github.com/keepmeside/aio-ade-platform/releases/download/v1.4.147-rc.3/aio-ade-windows-setup.exe) · [Linux AppImage](https://github.com/keepmeside/aio-ade-platform/releases/latest/download/aio-ade-linux.AppImage) · [Tous les builds](https://github.com/keepmeside/aio-ade-platform/releases/latest)
 - **Sous Windows :** utilisez la [dernière RC (`v1.4.147-rc.3`)](https://github.com/keepmeside/aio-ade-platform/releases#release-v1.4.147-rc.3) — elle inclut des correctifs Windows absents de la stable.
-- Vous lancez `aio-ade serve` sur un serveur Linux headless ? Consultez le [guide serveur Linux headless](../reference/headless-linux-server.md).
 
 _Ou via un gestionnaire de paquets :_
 

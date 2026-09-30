@@ -69,7 +69,7 @@ on `ubuntu-latest`, where `applySecurePathRestriction` short-circuits to
 `chmodSync` and never reaches the PowerShell path. The ACL storm therefore cannot
 be reproduced in the cross-platform e2e harness; verify it manually on Windows.
 
-Pre-req: a Windows client paired to a remote `aio-ade serve` runtime.
+Pre-req: a Windows client paired to a remote AIO-ADE server.
 
 Watcher (PowerShell, run before launching AIO-ADE):
 

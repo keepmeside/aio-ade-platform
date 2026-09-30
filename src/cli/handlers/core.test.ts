@@ -7,7 +7,7 @@ const { spawnMock } = vi.hoisted(() => ({ spawnMock: vi.fn() }))
 vi.mock('node:child_process', () => ({ spawn: spawnMock }))
 
 // Keep the socket runtime client out of the import graph; only the error type
-// and serveAioAdeApp binding are referenced by the module under test.
+// is referenced by the module under test.
 vi.mock('../runtime-client', () => ({
   RuntimeClientError: class RuntimeClientError extends Error {
     readonly code: string
@@ -15,8 +15,7 @@ vi.mock('../runtime-client', () => ({
       super(message)
       this.code = code
     }
-  },
-  serveAioAdeApp: vi.fn()
+  }
 }))
 
 import { CORE_HANDLERS } from './core'

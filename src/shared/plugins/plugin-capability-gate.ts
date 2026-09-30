@@ -3,7 +3,7 @@ import type { PluginCapabilityKind } from './plugin-capabilities'
 
 /**
  * The capability gate — pure, electron-free, shared by the Electron main
- * host, the headless serve RPC path, and the relay so a security decision
+ * host and the relay so a security decision
  * cannot land on desktop while drifting on the remote path. Deny-by-default:
  * an empty capability set grants nothing. A conformance test runs identical
  * cases against the desktop and relay enforcement surfaces.

@@ -58,7 +58,6 @@ vi.mock('./runtime-client', () => {
     RuntimeClient,
     RuntimeClientError,
     RuntimeRpcFailureError,
-    serveAioAdeApp: vi.fn(),
     getDefaultUserDataPath: vi.fn(() => '/tmp/aio-ade-user-data')
   }
 })

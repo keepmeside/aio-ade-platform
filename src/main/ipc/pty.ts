@@ -5693,34 +5693,6 @@ export function registerPtyHandlers(
   )
 }
 
-export function registerHeadlessPtyRuntime(
-  runtime: AioAdeRuntimeService,
-  getSelectedCodexHomePath?: GetSelectedCodexHomePath,
-  getSettings?: () => GlobalSettings,
-  prepareClaudeAuth?: PrepareClaudeAuth,
-  store?: Store,
-  prepareCodexSessionResume?: PrepareCodexSessionResume
-): void {
-  // Why: headless `aio-ade serve` has no renderer window but still needs the same PTY handlers so remote clients can drive terminals.
-  const headlessWindow = {
-    isDestroyed: () => true,
-    webContents: {
-      send: () => {},
-      on: () => {},
-      removeListener: () => {}
-    }
-  } as unknown as BrowserWindow
-  registerPtyHandlers(
-    headlessWindow,
-    runtime,
-    getSelectedCodexHomePath,
-    getSettings,
-    prepareClaudeAuth,
-    store,
-    { prepareCodexSessionResume }
-  )
-}
-
 /**
  * Kill in-process local PTYs. Daemon-backed PTYs are preserved by daemon disconnect.
  */

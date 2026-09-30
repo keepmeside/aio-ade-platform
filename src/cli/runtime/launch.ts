@@ -1,24 +1,7 @@
 import { spawn as spawnProcess, type SpawnOptions } from 'node:child_process'
 import { resolve } from 'node:path'
-import { StringDecoder } from 'node:string_decoder'
-import {
-  SERVE_UPDATE_HANDOFF_PATH_ENV,
-  getServeUpdateHandoffPath
-} from '../../shared/serve-update-handoff'
-import {
-  getEphemeralVmRecipeResultConnection,
-  parseEphemeralVmRecipeResult
-} from '../../shared/ephemeral-vm-recipes'
-import { getDefaultUserDataPath } from './metadata'
 import { getMacAppBundlePath } from './mac-app-update-bundle'
-import {
-  readServeUpdateHandoffSync,
-  resumeInterruptedServeUpdate,
-  superviseForegroundServe
-} from './serve-update-supervisor'
 import { RuntimeClientError } from './types'
-
-const IGNORED_NON_RECIPE_STDOUT = '[serve] ignored non-recipe stdout'
 
 export function launchAioAdeApp(): void {
   const overrideCommand = process.env.AIO_ADE_OPEN_COMMAND
@@ -74,188 +57,6 @@ function spawnDetached(command: string, args: string[], options: SpawnOptions): 
   child.unref()
 }
 
-export function serveAioAdeApp(
-  args: {
-    json?: boolean
-    port?: string | null
-    pairingAddress?: string | null
-    noPairing?: boolean
-    mobilePairing?: boolean
-    recipeJson?: boolean
-    projectRoot?: string | null
-  } = {}
-): Promise<number> {
-  const executable = resolveForegroundAioAdeExecutable()
-  const childArgs = [...getExecutableAppArgs()]
-  if (process.env.AIO_ADE_APPIMAGE_NO_SANDBOX === '1') {
-    childArgs.push('--no-sandbox')
-  }
-  childArgs.push('--serve')
-  if (args.json) {
-    childArgs.push('--serve-json')
-  }
-  if (args.port) {
-    childArgs.push('--serve-port', args.port)
-  }
-  if (args.pairingAddress) {
-    childArgs.push('--serve-pairing-address', args.pairingAddress)
-  }
-  if (args.noPairing) {
-    childArgs.push('--serve-no-pairing')
-  }
-  if (args.mobilePairing) {
-    childArgs.push('--serve-mobile-pairing')
-  }
-  if (args.recipeJson) {
-    if (!args.projectRoot) {
-      throw new RuntimeClientError(
-        'invalid_argument',
-        'Recipe JSON output requires --project-root.'
-      )
-    }
-    childArgs.push('--serve-recipe-json', '--serve-project-root', args.projectRoot)
-  }
-
-  const handoffPath =
-    args.recipeJson !== true && getMacAppBundlePath(executable)
-      ? getServeUpdateHandoffPath(getDefaultUserDataPath())
-      : null
-  const childEnv = stripElectronRunAsNode(process.env)
-  delete childEnv.AIO_ADE_APPIMAGE_NO_SANDBOX
-  if (handoffPath) {
-    childEnv[SERVE_UPDATE_HANDOFF_PATH_ENV] = handoffPath
-  }
-  const spawnOptions: SpawnOptions = {
-    detached: args.recipeJson === true,
-    cwd: resolveAppRoot(),
-    stdio:
-      args.recipeJson === true
-        ? ['ignore', 'pipe', 'inherit']
-        : handoffPath
-          ? ['inherit', 'inherit', 'inherit', 'ipc']
-          : 'inherit',
-    ...getExecutableSpawnOptions(executable),
-    env: childEnv
-  }
-  const interruptedHandoff = handoffPath ? readServeUpdateHandoffSync(handoffPath) : null
-  if (interruptedHandoff?.phase === 'install-requested') {
-    // Why: the node-mode CLI is not an NSRunningApplication, so it can retain launchd ownership while ShipIt swaps the app.
-    return resumeInterruptedServeUpdate({
-      executable,
-      childArgs,
-      spawnOptions,
-      spawnChild: spawnProcess,
-      handoffPath: handoffPath!,
-      handoff: interruptedHandoff
-    })
-  }
-  const child = spawnProcess(executable, childArgs, spawnOptions)
-
-  if (args.recipeJson) {
-    return waitForRecipeJson(child)
-  }
-  return superviseForegroundServe({
-    executable,
-    childArgs,
-    spawnOptions,
-    spawnChild: spawnProcess,
-    child,
-    handoffPath,
-    expectedHandoff: null
-  })
-}
-
-function waitForRecipeJson(child: ReturnType<typeof spawnProcess>): Promise<number> {
-  return new Promise((resolve, reject) => {
-    let output = ''
-    let settled = false
-    const timeout = setTimeout(() => {
-      finish(new RuntimeClientError('runtime_serve_failed', 'Timed out waiting for recipe JSON.'))
-      child.kill('SIGTERM')
-    }, 60000)
-    const finish = (error?: Error): void => {
-      if (settled) {
-        return
-      }
-      settled = true
-      clearTimeout(timeout)
-      child.stdout?.off('data', onData)
-      child.off('error', onError)
-      child.off('close', onClose)
-      if (error) {
-        reject(error)
-        return
-      }
-      child.stdout?.destroy?.()
-      child.unref()
-      resolve(0)
-    }
-    const writeIgnoredRecipeStdout = (): void => {
-      // Why: non-readiness child stdout is untrusted and cannot be safely
-      // redacted, including schema-valid results with arbitrary user data.
-      process.stderr.write(`${IGNORED_NON_RECIPE_STDOUT}\n`)
-    }
-    const processRecipeOutputLine = (line: string): void => {
-      const normalizedLine = line.endsWith('\r') ? line.slice(0, -1) : line
-      if (!normalizedLine.trim()) {
-        return
-      }
-      const parsed = parseEphemeralVmRecipeResult(normalizedLine)
-      if (!parsed.ok) {
-        writeIgnoredRecipeStdout()
-        return
-      }
-      if (getEphemeralVmRecipeResultConnection(parsed.result).type !== 'aio-ade-server') {
-        writeIgnoredRecipeStdout()
-        return
-      }
-      process.stdout.write(`${normalizedLine.trim()}\n`)
-      finish()
-    }
-    const stdoutDecoder = new StringDecoder('utf8')
-    const onData = (chunk: Buffer | string): void => {
-      output += typeof chunk === 'string' ? chunk : stdoutDecoder.write(chunk)
-      while (!settled) {
-        const newlineIndex = output.indexOf('\n')
-        if (newlineIndex === -1) {
-          return
-        }
-        const line = output.slice(0, newlineIndex)
-        output = output.slice(newlineIndex + 1)
-        processRecipeOutputLine(line)
-      }
-    }
-    const onError = (error: Error): void => {
-      finish(error)
-    }
-    const onClose = (code: number | null, signal: NodeJS.Signals | null): void => {
-      if (settled) {
-        return
-      }
-      output += stdoutDecoder.end()
-      if (output.trim()) {
-        processRecipeOutputLine(output)
-      }
-      if (settled) {
-        return
-      }
-      finish(
-        new RuntimeClientError(
-          'runtime_serve_failed',
-          typeof code === 'number'
-            ? `AIO-ADE serve exited before printing valid recipe JSON with code ${code}.`
-            : `AIO-ADE serve exited before printing valid recipe JSON via ${signal}.`
-        )
-      )
-    }
-    child.stdout?.on('data', onData)
-    child.once('error', onError)
-    // Why: `exit` can precede the final piped stdout data. `close` waits until
-    // stdio closes so a last recipe chunk is not mistaken for missing output.
-    child.once('close', onClose)
-  })
-}
-
 function getExecutableAppArgs(): string[] {
   return process.env.AIO_ADE_APP_EXECUTABLE_NEEDS_APP_ROOT === '1' ? [resolveAppRoot()] : []
 }
@@ -266,23 +67,9 @@ function getExecutableSpawnOptions(executable: string): Pick<SpawnOptions, 'shel
 
 function resolveAppRoot(): string {
   // Why: dev-mode resource resolution in the Electron child may consult
-  // process.cwd(). Pin it to the app root so `aio-ade serve` behaves the same
-  // regardless of the shell directory it was launched from.
+  // process.cwd(). Pin it to the app root so a launched app resolves resources
+  // the same regardless of the shell directory the CLI was invoked from.
   return resolve(__dirname, '../../..')
-}
-
-function resolveForegroundAioAdeExecutable(): string {
-  const overrideExecutable = process.env.AIO_ADE_APP_EXECUTABLE
-  if (typeof overrideExecutable === 'string' && overrideExecutable.trim().length > 0) {
-    return overrideExecutable
-  }
-  if (process.env.ELECTRON_RUN_AS_NODE === '1') {
-    return process.execPath
-  }
-  throw new RuntimeClientError(
-    'runtime_serve_failed',
-    'Could not determine how to start AIO-ADE server. Set AIO_ADE_APP_EXECUTABLE to the AIO-ADE executable.'
-  )
 }
 
 export function stripElectronRunAsNode(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {

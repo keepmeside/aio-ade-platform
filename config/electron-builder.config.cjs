@@ -421,9 +421,8 @@ module.exports = {
   deb: {
     packageName: 'aio-ade',
     artifactName: 'aio-ade_${version}_${arch}.${ext}',
-    // Why: xvfb lets the bundled `aio-ade serve` CLI run browser panes on a headless
-    // Linux host — Chromium needs a display server even for offscreen rendering,
-    // and serve starts Xvfb itself when present (see ensure-virtual-display.ts).
+    // Why: xvfb and the x11 helpers let the app run on minimal/headless-adjacent
+    // Linux hosts that still need the display-related bits available.
     depends: [
       'python3',
       'python3-gi',
@@ -433,10 +432,8 @@ module.exports = {
       'xclip',
       'xvfb'
     ],
-    // Why: symlink the bundled CLI onto PATH at install time so `aio-ade serve`
-    // works on a headless host. The in-app CLI registration (CliInstaller) is
-    // GUI-triggered and can never run on a server, so without this the CLI is
-    // unreachable from the shell on exactly the hosts that need it.
+    // Why: symlink the bundled CLI onto PATH at install time so `aio-ade` is
+    // reachable from a shell without any in-app install step.
     afterInstall: 'resources/linux/packaging/after-install.sh',
     afterRemove: 'resources/linux/packaging/after-remove.sh'
   },
@@ -453,7 +450,7 @@ module.exports = {
       'xclip',
       'xorg-x11-server-Xvfb'
     ],
-    // Why: same headless CLI-on-PATH registration as deb; rpm runs these via fpm.
+    // Why: same CLI-on-PATH registration as deb; rpm runs these via fpm.
     afterInstall: 'resources/linux/packaging/after-install.sh',
     afterRemove: 'resources/linux/packaging/after-remove.sh'
   },

@@ -4,7 +4,7 @@ import { z } from 'zod'
  * Plugin capability model v0. The manifest declares capabilities, the user
  * consents against a fingerprint covering capabilities and worker trust, and the
  * host enforces at every plugin-callable boundary (panel bridge + worker host
- * API). Electron-free: shared by desktop main, headless serve, the relay
+ * API). Electron-free: shared by desktop main, the relay
  * conformance path, and tests.
  *
  * v0 is a closed set of unscoped kinds so a typo (or a capability from a newer

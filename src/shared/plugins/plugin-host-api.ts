@@ -11,7 +11,7 @@ import type { PluginCapabilityKind } from './plugin-capabilities'
  *
  * This table is the single source of truth for the capability gate, the panel
  * bridge action set, and the worker SDK. Electron-free by design: desktop
- * main, headless serve, the relay conformance path, and tests all import it.
+ * main, the relay conformance path, and tests all import it.
  *
  * EXPERIMENTAL: additive-only within pluginApi major 1 once frozen; no
  * stability promises before then.

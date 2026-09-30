@@ -25,8 +25,8 @@ import { validatePluginManifestContributions } from './plugin-manifest-contribut
  * `contributes` key names deliberately mirror common Electron-ecosystem
  * manifest conventions so future adapters stay cheap.
  *
- * Lives in `shared` so the desktop app, the headless `aio-ade serve` runtime,
- * the relay, and the CLI validate manifests identically (SSH/remote parity).
+ * Lives in `shared` so the desktop app, the relay, and the CLI validate
+ * manifests identically (SSH/remote parity).
  *
  * Everything here is EXPERIMENTAL: no compatibility promises until pluginApi
  * v1 freezes (see the plugin roadmap).

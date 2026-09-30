@@ -13,7 +13,7 @@ import { PANEL_PING_TYPE, PANEL_PONG_TYPE } from './plugin-panel-bridge'
  * tokens defined here are visible to plugin CSS as ordinary custom
  * properties.
  *
- * Electron-free string builder: desktop main and headless serve both wrap
+ * Electron-free string builder: desktop main and the relay both wrap
  * panel HTML through this one function.
  */
 

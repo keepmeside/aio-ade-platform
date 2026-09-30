@@ -3018,9 +3018,10 @@ export class AioAdeRuntimeService {
       getAgentProviderSessionSnapshot?: () => AgentStatusIpcPayload[]
       getAgentProviderSessionRowsForPane?: (paneKey: string) => AgentStatusIpcPayload[]
       // Why: codex-home paths for the Agent Session History scan must be sourced
-      // here, not via the window-only registerCoreHandlers path — that path never
-      // runs under `aio-ade serve`, so remote/SSH hosts would silently drop
-      // managed-Codex sessions. The runtime ctor runs in BOTH window and serve.
+      // here, not via the window-only registerCoreHandlers path — that path does
+      // not run on remote hosts reached over runtime RPC, so remote/SSH hosts
+      // would silently drop managed-Codex sessions. The runtime ctor runs in
+      // both window and headless paths.
       getAdditionalAiVaultCodexHomePaths?: () => readonly string[]
       prepareAiVaultSessionResume?: (
         args: AiVaultPrepareSessionResumeArgs
@@ -3049,9 +3050,9 @@ export class AioAdeRuntimeService {
     this.getAgentProviderSessionSnapshotFn =
       deps?.getAgentProviderSessionSnapshot ?? deps?.getAgentStatusSnapshot ?? null
     this.getAgentProviderSessionRowsForPaneFn = deps?.getAgentProviderSessionRowsForPane ?? null
-    // Why: configure the shared AiVault scan cache from a serve-mode-reachable
+    // Why: configure the shared AiVault scan cache from a runtime-reachable
     // seam so the aiVault.listSessions RPC includes managed-Codex + WSL sessions
-    // even on headless `aio-ade serve` hosts where registerCoreHandlers never runs.
+    // even on hosts where registerCoreHandlers never runs.
     if (deps?.getAdditionalAiVaultCodexHomePaths) {
       configureAiVaultSessionSources({
         getAdditionalCodexHomePaths: deps.getAdditionalAiVaultCodexHomePaths
@@ -3709,7 +3710,7 @@ export class AioAdeRuntimeService {
       liveLeafCount: this.leaves.size,
       runtimeProtocolVersion: RUNTIME_PROTOCOL_VERSION,
       minCompatibleRuntimeClientVersion: MIN_COMPATIBLE_RUNTIME_CLIENT_VERSION,
-      // Why: headless aio-ade serve cannot create/stream BrowserViews, so clients
+      // Why: remote headless hosts cannot create/stream BrowserViews, so clients
       // must not treat browser panes as supported just because runtime RPC is up.
       capabilities,
       hostPlatform: process.platform,
@@ -15783,7 +15784,7 @@ export class AioAdeRuntimeService {
     }
     if (!isAbsolute(path)) {
       // Why: remote clients may run in a different cwd than the server. Require
-      // server-side repo paths to be explicit so `aio-ade serve` cwd is irrelevant.
+      // server-side repo paths to be explicit so the server cwd is irrelevant.
       throw new Error('Project path must be an absolute path')
     }
     if (kind === 'git' && !isGitRepo(path)) {
@@ -18087,7 +18088,7 @@ export class AioAdeRuntimeService {
     worktreeId: string
     activated: boolean
     /** Mobile-scoped slept-agent wake outcome. `unsupported-headless` means no
-     *  renderer holds the sleeping records (headless `aio-ade serve`), so nothing
+     *  renderer holds the sleeping records on that host, so nothing
      *  woke — clients must not present the worktree's agents as resumed. */
     sleepingAgentWake: 'requested' | 'unsupported-headless' | 'not-applicable'
   }> {
@@ -22196,9 +22197,9 @@ export class AioAdeRuntimeService {
       worktreeSelector !== undefined &&
       (Boolean(opts.agentSessionClaim) ||
         (!requiresRendererFocus && opts.rendererBacked !== true) ||
-        // Why: `aio-ade serve` exposes the local runtime without a renderer
+        // Why: a runtime reachable over remote RPC may have no renderer
         // window. Renderer-backed Codex terminals are preferred for the app,
-        // but headless CLI users still need a usable terminal handle.
+        // but headless clients still need a usable terminal handle.
         (opts.rendererBacked === true && rendererWindow === null))
 
     if (shouldCreateInBackground) {

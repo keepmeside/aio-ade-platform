@@ -22,7 +22,6 @@ const COMMAND_PATHS = COMMAND_SPECS.flatMap((spec) => specPaths(spec))
 function shouldIgnoreRemoteSelection(commandPath: string[]): boolean {
   return (
     commandPath[0] === 'environment' ||
-    commandPath[0] === 'serve' ||
     commandPath[0] === 'agent' ||
     commandPath[0] === 'vm' ||
     commandPath[0] === 'agent-context'
@@ -90,7 +89,7 @@ export async function main(
     // Why: pass `null` (not `undefined`) when remote selection is suppressed
     // so the RuntimeClient default parameter does not re-activate the
     // AIO_ADE_PAIRING_CODE / AIO_ADE_ENVIRONMENT env-var fallback for commands
-    // that must run locally (environment / serve).
+    // that must run locally (environment).
     let client: RuntimeClient | undefined
     await dispatch(parsed.commandPath, {
       flags: parsed.flags,

@@ -118,7 +118,7 @@ export function createTerminalTitleTracker(
     onMode2031Unsubscribe
   } = callbacks
   const bellDetector = onBell ? createBellDetector() : null
-  // Why: created only when a consumer exists so headless serve never pays the per-chunk 133/URL scans.
+  // Why: created only when a consumer exists so a renderer-less host never pays the per-chunk 133/URL scans.
   const commandFinishedScanner = onCommandFinished
     ? createOsc133CommandFinishedScanner(onCommandFinished)
     : null

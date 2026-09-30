@@ -1084,7 +1084,8 @@ export class BrowserManager {
     this.annotationViewportBridgeOpsByTabId.delete(browserTabId)
   }
 
-  // Why: headless aio-ade serve has no <webview> window; back pages with offscreen WebContents and skip the webview-only setup.
+  // Why: a host with no <webview> window backs pages with offscreen WebContents
+  // and skips the webview-only setup.
   registerOffscreenGuest({
     browserPageId,
     worktreeId,

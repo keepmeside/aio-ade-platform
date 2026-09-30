@@ -56,8 +56,6 @@ type AioAdeRuntimeRpcServerOptions = {
   platform?: NodeJS.Platform
   enableWebSocket?: boolean
   wsPort?: number
-  // Why: true when the caller pinned a port (`aio-ade serve --port`) so bind order prefers it over a stale STA-1511 fallback (#8535).
-  preferPinnedWsPort?: boolean
   webClientRoot?: string
   // Why: test-only overrides for the two constants below; production must not pass these (defaults set by §3.1).
   keepaliveIntervalMs?: number
@@ -452,7 +450,6 @@ export class AioAdeRuntimeRpcServer {
   private readonly platform: NodeJS.Platform
   private readonly enableWebSocket: boolean
   private readonly wsPort: number
-  private readonly preferPinnedWsPort: boolean
   private readonly webClientRoot: string | undefined
   private readonly authToken = randomBytes(24).toString('hex')
   private readonly keepaliveIntervalMs: number
@@ -491,7 +488,6 @@ export class AioAdeRuntimeRpcServer {
     platform = process.platform,
     enableWebSocket = false,
     wsPort = DEFAULT_WS_PORT,
-    preferPinnedWsPort = false,
     webClientRoot,
     keepaliveIntervalMs = KEEPALIVE_INTERVAL_MS,
     longPollCap = LONG_POLL_CAP,
@@ -504,7 +500,6 @@ export class AioAdeRuntimeRpcServer {
     this.platform = platform
     this.enableWebSocket = enableWebSocket
     this.wsPort = wsPort
-    this.preferPinnedWsPort = preferPinnedWsPort
     this.webClientRoot = webClientRoot
     this.keepaliveIntervalMs = keepaliveIntervalMs
     this.longPollCap = longPollCap
@@ -930,8 +925,7 @@ export class AioAdeRuntimeRpcServer {
             port: this.wsPort,
             staticRoot: this.webClientRoot,
             // Why: stable fallback port across restarts keeps paired devices' endpoints valid (STA-1511); wsPort 0 = random (E2E).
-            ...(this.wsPort !== 0 ? { fallbackPort: readWsFallbackPort(this.userDataPath) } : {}),
-            ...(this.preferPinnedWsPort ? { preferPinnedPort: true } : {})
+            ...(this.wsPort !== 0 ? { fallbackPort: readWsFallbackPort(this.userDataPath) } : {})
           })
           // Why: session-scoped (recreated per start) so each desktop launch may notify once.
           this.unpairedDeviceAuthThrottle = new UnpairedDeviceAuthThrottle({

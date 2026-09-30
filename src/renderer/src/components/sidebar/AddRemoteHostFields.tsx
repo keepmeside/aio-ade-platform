@@ -172,16 +172,9 @@ export function RemoteServerFields({
           className="font-mono"
         />
         <p className="text-xs text-muted-foreground">
-          {translate('auto.components.sidebar.AddRemoteHostDialog.pairingHelpPrefix', 'Run')}{' '}
-          <span className="font-mono">
-            {translate(
-              'auto.components.sidebar.AddRemoteHostDialog.pairingCommand',
-              'aio-ade serve --pairing-address <host>'
-            )}
-          </span>{' '}
           {translate(
-            'auto.components.sidebar.AddRemoteHostDialog.pairingHelpSuffix',
-            'on the server and paste the printed pairing URL.'
+            'auto.components.sidebar.AddRemoteHostDialog.pairingHelpPrefix',
+            'On the remote computer, open AIO-ADE Settings → Runtime environments → New Link, then paste the copied pairing URL here.'
           )}
         </p>
       </div>

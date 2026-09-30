@@ -37,8 +37,6 @@ export type {
 // caller's TTY (or a local tmux pane), which a buffered one-shot relay bridge
 // cannot host. Everything else routes through the full host CLI.
 const HOST_INTERACTIVE_COMMANDS: Record<string, string> = {
-  serve:
-    'aio-ade serve starts a foreground headless AIO-ADE server and cannot run through the SSH relay bridge. Run it directly on the machine that should host AIO-ADE.',
   'claude-teams':
     'aio-ade claude-teams starts an interactive Claude Code session and cannot run through the SSH relay bridge. Run it in a terminal on the AIO-ADE host machine.',
   'agent-teams-tmux':

@@ -75,7 +75,7 @@ function subscribeViaResolvePoll(
       },
       Math.min(delay, untilFallbackResolve)
     )
-    // Why: never hold the event loop open (headless `aio-ade serve` shutdown) for
+    // Why: never hold the event loop open (a host shutting down) for
     // a session that may genuinely never resolve.
     pollTimer.unref?.()
     // Only back off in production; a test-supplied interval stays fixed so

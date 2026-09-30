@@ -98,7 +98,6 @@ describe('RuntimeClient module-graph deferral', () => {
   const SUPPRESSED_GROUPS: [name: string, argv: string[], constructs: number][] = [
     ['agent', ['agent', 'hooks', 'off'], 1],
     ['environment', ['environment', 'list'], 0],
-    ['serve', ['serve'], 0],
     ['vm', ['vm', 'recipe', 'doctor'], 0],
     ['agent-context', ['agent-context'], 0]
   ]

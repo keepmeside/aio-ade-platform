@@ -48,8 +48,9 @@ export type RuntimeGraphStatus = 'ready' | 'reloading' | 'unavailable'
 
 export type RuntimeDesktopWindowStatus = 'available' | 'openable' | 'initializing' | 'blocked'
 
-// Why: headless serve still owns one runtime graph, but zero can never collide
-// with Electron BrowserWindow ids and can be transferred safely on promotion.
+// Why: a host without a renderer still owns one runtime graph, but zero can
+// never collide with Electron BrowserWindow ids and can be transferred safely
+// on promotion.
 export const HEADLESS_RUNTIME_WINDOW_ID = 0
 
 // Why: the access scope a paired device token grants. Lives in shared so

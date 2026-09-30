@@ -1,8 +1,7 @@
 #!/bin/bash
-# Why: register the bundled `aio-ade` CLI on PATH at package-install time.
-# The in-app "Install CLI" action (CliInstaller) can never run on a headless
-# server, so without this symlink `aio-ade serve` is unreachable from the shell on
-# the exact hosts that need it most. deb/rpm both run this after unpacking.
+# Why: register the bundled `aio-ade` CLI on PATH at package-install time so the
+# command is reachable from a shell without any in-app install step. deb/rpm both
+# run this after unpacking.
 #
 # The shim resolves the real app by walking up from its own location, so a
 # symlink works. We discover the install dir instead of hardcoding /opt/AIO-ADE

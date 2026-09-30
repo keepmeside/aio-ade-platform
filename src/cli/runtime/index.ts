@@ -1,5 +1,4 @@
 export { RuntimeClient } from './client'
-export { serveAioAdeApp } from './launch'
 export { getDefaultUserDataPath } from './metadata'
 export {
   RuntimeClientError,

@@ -1,8 +1,7 @@
 import { spawn } from 'node:child_process'
 import type { CommandHandler } from '../dispatch'
 import { formatCliStatus, formatStatus, printResult } from '../format'
-import { RuntimeClientError, serveAioAdeApp } from '../runtime-client'
-import { SERVE_DISABLED_MESSAGE, isServeEnabled } from '../serve-feature-flag'
+import { RuntimeClientError } from '../runtime-client'
 import { stripElectronRunAsNode } from '../runtime/launch'
 
 function envRecord(): Record<string, string> {
@@ -43,21 +42,6 @@ async function runClaudeAgentTeams(env: Record<string, string>, args: string[]):
   })
 }
 
-function getOptionalServePort(flags: Map<string, string | boolean>): string | null {
-  if (!flags.has('port')) {
-    return null
-  }
-  const rawPort = flags.get('port')
-  if (typeof rawPort !== 'string' || rawPort.length === 0) {
-    throw new RuntimeClientError('invalid_argument', 'Missing value for --port.')
-  }
-  const port = Number(rawPort)
-  if (!Number.isInteger(port) || port < 0 || port > 65535) {
-    throw new RuntimeClientError('invalid_argument', `Invalid --port value: ${rawPort}`)
-  }
-  return rawPort
-}
-
 export const CORE_HANDLERS: Record<string, CommandHandler> = {
   'claude-teams': async ({ client, rawArgs }) => {
     if (process.platform === 'win32') {
@@ -91,52 +75,6 @@ export const CORE_HANDLERS: Record<string, CommandHandler> = {
   open: async ({ client, json }) => {
     const result = await client.openAioAde()
     printResult(result, json, formatCliStatus)
-  },
-  serve: async ({ flags, json }) => {
-    // Why: decision 2026-08-21 ships serve OFF; phase 09 decides whether to delete it outright.
-    if (!isServeEnabled()) {
-      throw new RuntimeClientError('invalid_argument', SERVE_DISABLED_MESSAGE)
-    }
-    if (flags.get('no-pairing') === true && flags.get('mobile-pairing') === true) {
-      throw new RuntimeClientError(
-        'invalid_argument',
-        'Use either --mobile-pairing or --no-pairing, not both.'
-      )
-    }
-    if (flags.get('recipe-json') === true && flags.get('no-pairing') === true) {
-      throw new RuntimeClientError(
-        'invalid_argument',
-        'Recipe JSON output requires runtime pairing; remove --no-pairing.'
-      )
-    }
-    if (flags.get('recipe-json') === true && flags.get('mobile-pairing') === true) {
-      throw new RuntimeClientError(
-        'invalid_argument',
-        'Recipe JSON output requires runtime pairing; remove --mobile-pairing.'
-      )
-    }
-    const projectRoot =
-      typeof flags.get('project-root') === 'string' ? (flags.get('project-root') as string) : null
-    if (flags.get('recipe-json') === true && !projectRoot) {
-      throw new RuntimeClientError(
-        'invalid_argument',
-        'Recipe JSON output requires --project-root.'
-      )
-    }
-    const port = getOptionalServePort(flags)
-    const exitCode = await serveAioAdeApp({
-      json,
-      port,
-      pairingAddress:
-        typeof flags.get('pairing-address') === 'string'
-          ? (flags.get('pairing-address') as string)
-          : null,
-      noPairing: flags.get('no-pairing') === true,
-      mobilePairing: flags.get('mobile-pairing') === true,
-      recipeJson: flags.get('recipe-json') === true,
-      projectRoot
-    })
-    process.exitCode = exitCode
   },
   status: async ({ client, json }) => {
     const result = await client.getCliStatus()

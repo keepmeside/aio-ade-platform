@@ -1,6 +1,5 @@
 import type { CommandSpec } from '../args'
 import { GLOBAL_FLAGS } from '../args'
-import { SERVE_COMMAND_SPECS } from './serve'
 
 export const CORE_COMMAND_SPECS: CommandSpec[] = [
   {
@@ -10,7 +9,6 @@ export const CORE_COMMAND_SPECS: CommandSpec[] = [
     allowedFlags: [...GLOBAL_FLAGS],
     examples: ['aio-ade open', 'aio-ade open --json']
   },
-  ...SERVE_COMMAND_SPECS,
   {
     path: ['status'],
     summary: 'Show app/runtime/graph readiness',

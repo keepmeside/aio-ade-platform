@@ -105,7 +105,7 @@ describe('createTerminalTitleTracker pr-link facts', () => {
   })
 
   it('skips the 133/URL scans entirely when no consumer is registered', () => {
-    // Mirrors headless serve: no pty:sideEffect consumer means no callbacks,
+    // Mirrors a renderer-less host: no pty:sideEffect consumer means no callbacks,
     // so the scanners must not be created (no carry state, no scan cost).
     const titles: string[] = []
     const tracker = createTerminalTitleTracker({

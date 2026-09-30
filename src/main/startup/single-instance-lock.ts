@@ -37,26 +37,19 @@ export function acquireSingleInstanceLock(app: App, onSecondInstance: () => void
 export function shouldBypassSingleInstanceLock(options: {
   env?: NodeJS.ProcessEnv
   isDev: boolean
-  isServeMode: boolean
   platform?: NodeJS.Platform
 }): boolean {
   const env = options.env ?? process.env
   const platform = options.platform ?? process.platform
-  return (
-    platform === 'darwin' &&
-    !options.isDev &&
-    !options.isServeMode &&
-    env[SINGLE_INSTANCE_LOCK_BYPASS_ENV] === '1'
-  )
+  return platform === 'darwin' && !options.isDev && env[SINGLE_INSTANCE_LOCK_BYPASS_ENV] === '1'
 }
 
 export function shouldSkipSingleInstanceLock(options: {
   env?: NodeJS.ProcessEnv
   isDev: boolean
-  isServeMode: boolean
 }): boolean {
   const env = options.env ?? process.env
-  return options.isDev && !options.isServeMode && env[SINGLE_INSTANCE_LOCK_E2E_ENFORCE_ENV] !== '1'
+  return options.isDev && env[SINGLE_INSTANCE_LOCK_E2E_ENFORCE_ENV] !== '1'
 }
 
 export function logSingleInstanceLockFailure(write?: StartupDiagnosticSink): void {

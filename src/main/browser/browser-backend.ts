@@ -1,10 +1,10 @@
 // Why: browser pages can be backed two ways. A desktop renderer mounts an
-// Electron <webview> (renderer backend). A headless aio-ade serve has no renderer
-// window, so it backs pages with main-process offscreen WebContents (offscreen
-// backend). Both register the page's WebContents into BrowserManager, so every
-// downstream command (agent-browser automation, screencast, input) resolves a
-// WebContents uniformly regardless of how the page was created. This interface
-// isolates the only step that actually differs: tab creation and teardown.
+// Electron <webview> (renderer backend). A host without a renderer window backs
+// pages with main-process offscreen WebContents (offscreen backend). Both
+// register the page's WebContents into BrowserManager, so every downstream
+// command (agent-browser automation, screencast, input) resolves a WebContents
+// uniformly regardless of how the page was created. This interface isolates the
+// only step that actually differs: tab creation and teardown.
 
 export type BrowserBackendCreateTab = {
   url: string
