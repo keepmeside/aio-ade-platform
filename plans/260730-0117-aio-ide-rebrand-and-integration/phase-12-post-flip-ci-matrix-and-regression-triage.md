@@ -55,7 +55,7 @@ Phase này chỉ cần re-run 3 leg CI trên matrix để có evidence trên run
 
 ## Implementation Steps
 
-1. Sửa runner label + token owner (2 workflow, 3 chỗ) trước khi chạy matrix — nếu không, phần lớn matrix sẽ skip im lặng và cho cảm giác xanh giả. Re-verify lại 3 repo guard bằng `grep -r` để chắc phase 05 không bị revert.
+1. ~~Sửa runner label + token owner (2 workflow, 3 chỗ) trước khi chạy matrix~~ **ĐÃ LÀM 2026-09-30 (trước flip, là prep local-verifiable):** `release-mac-build.yml` `blacksmith-6vcpu-macos-15` → `macos-15` (cùng image GitHub-hosted mà `release-cut.yml:824/899` + `computer-e2e.yml:145` đã dùng; comment SignPath lỗi thời sửa luôn vì `decisions.md` đã loại SignPath). `track-community-prs.yaml` `owner:` + `PROJECT_OWNER` → `keepmeside`. Repo guard 3 chỗ re-verify bằng `grep -r`: vẫn `keepmeside/aio-ade-platform`, không revert. **Lưu ý:** workflow `track-community-prs` còn cần infra của owner để thực sự chạy — bufo-bot app `2590194` + secret `BUFO_BOT_PRIVATE_KEY` + team `stably-eng` + project `13` đều là của org upstream; owner phải provision lại dưới `keepmeside` hoặc job sẽ fail (không skip im lặng). Đã fix reference; infra provisioning là của owner. Matrix run thật vẫn chờ flip.
 2. Chạy full CI matrix trên `main` sau flip. Ghi lại mọi failure.
 3. Triage theo 3 nhóm (a)/(b)/(c). Nhóm (c) đối chiếu upstream history để xác nhận không phải do fork.
 4. Fix nhóm (b) trong phase này. Fix nhóm (a) theo commit gắn với phase gốc.
@@ -64,7 +64,7 @@ Phase này chỉ cần re-run 3 leg CI trên matrix để có evidence trên run
 
 ## Success Criteria
 
-- [ ] Mọi chỗ còn chặn fork đã sửa hoặc disable có chủ đích, ghi rõ lựa chọn: Blacksmith runner label, `track-community-prs.yaml` `owner:` + `PROJECT_OWNER`; và 3 repo guard của phase 05 vẫn đúng.
+- [x] Mọi chỗ còn chặn fork đã sửa hoặc disable có chủ đích, ghi rõ lựa chọn: Blacksmith runner label → `macos-15`, `track-community-prs.yaml` `owner:` + `PROJECT_OWNER` → `keepmeside`; 3 repo guard của phase 05 re-verify bằng `grep -r` vẫn đúng. *(Sửa 2026-09-30 trước flip. `track-community-prs` cần owner provision bufo-bot app + secret + team + project dưới `keepmeside` mới chạy được — reference đúng, infra là của owner.)*
 - [ ] Full CI matrix chạy trên 3 OS, không có job skip im lặng vì guard sai.
 - [ ] Mọi failure được phân loại (a)/(b)/(c) trong triage report.
 - [ ] Tiêu chí 3-OS defer từ phase 03/05 có verdict thật kèm link CI run, không còn tick dựa trên local-only.
