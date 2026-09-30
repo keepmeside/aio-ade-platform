@@ -46,9 +46,9 @@ Cleanup theo pipeline evidence-first: inventory (knip/depcheck/ts-prune hoặc c
 ## Success Criteria
 
 - [x] Inventory tool đã chọn + pin (hoặc quyết định không dùng tool được ghi rõ) trước bất kỳ lần xoá nào. **Chọn option (b)**: không thêm devDep, dùng `tsc --noEmit` (3 project) + `grep -r` reverse-import. Lý do ghi trong [cleanup manifest](reports/cleanup-manifest.md).
-- [ ] Inventory evidence + reverse-import evidence tồn tại cho mọi file bị xoá. *(3 file đã xoá — 2 ở nhóm 1, 1 ở nhóm 3 — cả 3 đều có evidence trong [cleanup manifest](reports/cleanup-manifest.md). Nhóm 2/4/5 chưa xoá gì.)*
+- [x] Inventory evidence + reverse-import evidence tồn tại cho mọi file bị xoá. *(Nhóm 1/3/5 + `asarUnpack` prune đều có evidence trong [cleanup manifest](reports/cleanup-manifest.md). Nhóm 2 audit sạch — không file nào xoá.)*
 - [x] Không còn workflow/script/gate ref tới path không tồn tại (gồm gate ids `mobile-*` orphan). **Verify 2026-09-13, static, không cần CI:** `pnpm lint` → `Reliability gate manifest check passed for 51 gate(s)` (script validate path từng gate); 26 path script mà `.github/workflows/` ref qua `node|bash|sh|python3|npx` → tồn tại hết; 57 path trong `package.json` scripts → tồn tại hết; 3 composite action `uses: ./…` → tồn tại hết; 0 shell-source ref; 0 ref tới file đã xoá ngoài `plans/`. **Premise về gate `mobile-*` sai** (xem đính chính trong manifest): không gate id `mobile-ui.*` nào tồn tại, và `mobile-relay.endpoint-recovery` không orphan. Orphan thật duy nhất tìm được (`verify-agent-hook-stdin-lifecycle.mjs`) đã xoá ở nhóm 3.
-- [ ] `package.json` không còn dependency unused theo tool đã chọn (nếu chọn không dùng tool, tiêu chí này thay bằng: mọi dep còn lại có ít nhất một import/script reference chứng minh được). *(Chờ phase 12 + sau khi 06/07/10 merge, theo contention note ở step 3.)*
+- [ ] `package.json` không còn dependency unused theo tool đã chọn (nếu chọn không dùng tool, tiêu chí này thay bằng: mọi dep còn lại có ít nhất một import/script reference chứng minh được). *(Vẫn chờ phase 12 + sau khi 06/07/10 merge, theo contention note ở step 3. Đây là item nhóm 4 duy nhất còn mở cùng quyết định `out/` clean-step.)*
 - [x] `max-lines` baseline chỉ shrink (`--prune`), không reset. **Verify 2026-09-13:** chưa từng chạy `--init`. `check-max-lines-ratchet.mjs` **return 1 khi có stale entry**, và `pnpm lint` exit 0 với `max-lines ratchet OK — 327 grandfathered suppression(s), no new bypasses` → **0 entry stale**, tức các file đã xoá không để lại entry mồ côi. Không có gì để `--prune`.
 - [x] Compat-window và reserved-seam items của phase 04/05/06/07/10 còn nguyên và test của chúng xanh. **Verify nhóm 1:** passive title detection (`HERMES_AGENT_NAME_RE`, `terminal-title-*`, `agent-title-*`), historical `AgentType` enum, `openclaude` native-chat layer, `aio-ide-plan-pages.yml`, exclusion `tools/` — tất cả còn nguyên; full suite 3.734 file xanh. **Verify nhóm 3 (2026-09-13):** passive-detection map `Pi: 'pi'` / `OMP: 'omp'` còn nguyên sau khi sửa comment; owner-threading seam (35 call site / 8 file) **giữ nguyên có quyết định**, không xoá; 642 test blast radius xanh. Re-verify lại sau mỗi nhóm sau.
 - [x] Quyết định `serve`: **xoá** — user chọn xoá thật, không giữ flag. Đã xoá command + spec + handler + launcher + supervisor + handoff + argv branch + readiness pair + activation gate + virtual-display + headless PTY registration + headless automation dispatcher + pairing repro harness + headless Linux guide + gate `runtime.headless-desktop-promotion-continuity` + mọi test/doc/config của nó + **offscreen browser backend** (`browser-backend.ts` interface, `setBrowserGuestStateChangedListener`/`registerOffscreenGuest` seam, `owner` field) + serve-start dispatcher installer + `aio-ade serve` nhánh trong `per-workspace-env` skill guide (giờ SSH-only). Dependency riêng (`serve-update-supervisor`, `serve-update-handoff`, `serve-signal-exit-diagnostic`, `OffscreenBrowserBackend`, `headless-dispatch`/`headless-workspace-create`, pairing-repro script + docker harness, `preferPinnedWsPort`, `AIO_ADE_APPIMAGE_NO_SANDBOX`, `registerHeadlessPtyRuntime`, `UpdateInstallMode` union, `HOST_INTERACTIVE_COMMANDS['serve']`) đi cùng. **Giữ compat-window:** `RemoteServerUpdateInstallMode` headless tokens (wire — peer cũ report), `BROWSER_HEADLESS_RUNTIME_CAPABILITY` + `HEADLESS_RUNTIME_WINDOW_ID` + `browserPageId` (peer cũ publish), `buildBareAioAdeCliScript` (managed-terminal shim còn dùng), `'serve'` trong `APPIMAGE_CLI_COMMAND_NAMES` (routing allowlist). Evidence + lý do: [cleanup manifest](reports/cleanup-manifest.md).
@@ -176,6 +176,24 @@ không chạy được.
    hướng sửa (clean step / script `clean` riêng / guard phát hiện orphan) đều có
    trade-off cần quyết định. Chi tiết + bảng so sánh dirty-vs-clean trong
    [cleanup manifest](reports/cleanup-manifest.md).
+
+**Nhóm 2 + phần nhóm 4 local-verifiable: đóng 2026-09-30** (theo quyết định user
+"do local-verifiable parts now"):
+
+- **`asarUnpack` prune:** xoá 7 glob chết trỏ tới `src/main/<dir>` đã bị
+  `631b3b0e7` xoá (`antigravity`, `copilot`, `cursor`, `droid`, `gemini`, `grok`,
+  `hermes`) — chết trên cả 3 OS vì không platform nào emit ra `out/main/<dir>`
+  khi không còn source. Giữ `claude` (src còn, bundle vào `index.js` — cần
+  quyết định riêng) và `win32-utils.js` (platform-conditional). Repackage
+  byte-identical (`app.asar.unpacked` không đổi), packaged smoke pass.
+- **Nhóm 2 (assets/locale):** audit chạy, **không có gì xoá**. Locale:
+  12 audit candidate đều allowlisted hợp lệ (CJK/`Idioma`/`Ghostty` keywords,
+  1 test fixture) — không dead key, giữ allowlist. Assets: `resources/` 82
+  file reverse-grep → 0 orphan (pet/claude.webp, ghostty, gwindows, minimax
+  đều là icon detection/UI cho external tool, không phải launch roster).
+- **Nhóm 4 còn lại (vẫn chờ 12):** deps-purge (`package.json` — contention
+  với phase 06/07/10) và quyết định `out/` clean-step. `max-lines --prune`
+  đã verify 0 stale entry; gate id `mobile-*` đã đính chính là không có việc.
 
 
 
