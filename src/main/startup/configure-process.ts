@@ -4,6 +4,7 @@ import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { getVersionManagerBinPaths } from '../codex-cli/command'
 import { getMainE2EConfig } from '../e2e-config'
+import { DEV_PARENT_DECOUPLED_ENV } from '../../shared/dev-parent-lifecycle'
 
 const DEV_PARENT_SHUTDOWN_GRACE_MS = 3000
 const HTTP1_COMPATIBILITY_ENV_VAR = 'AIO_ADE_DISABLE_HTTP2'
@@ -88,6 +89,17 @@ export function isDevParentShutdownRequested(): boolean {
 
 export function resetDevParentShutdownRequestForTests(): void {
   devParentShutdownRequested = false
+}
+
+export function shouldCoupleToDevParentLifetime(options: {
+  env?: NodeJS.ProcessEnv
+  isDev: boolean
+}): boolean {
+  const env = options.env ?? process.env
+  // Why: a CLI-launched app outlives its transient parent by design (on Windows
+  // that parent is the short-lived CLI process itself), so only electron-vite
+  // dev runs keep the parent-coupled shutdown behavior.
+  return options.isDev && env[DEV_PARENT_DECOUPLED_ENV] !== '1'
 }
 
 export function patchPackagedProcessPath(): void {

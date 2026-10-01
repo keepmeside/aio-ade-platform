@@ -13,6 +13,37 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
+describe('shouldCoupleToDevParentLifetime', () => {
+  it('couples dev runs to their parent when no decouple mark is present', async () => {
+    const { shouldCoupleToDevParentLifetime } = await import('./configure-process')
+
+    expect(shouldCoupleToDevParentLifetime({ isDev: true, env: {} })).toBe(true)
+  })
+
+  it('decouples a dev app the CLI launched detached', async () => {
+    const { shouldCoupleToDevParentLifetime } = await import('./configure-process')
+
+    expect(
+      shouldCoupleToDevParentLifetime({
+        isDev: true,
+        env: { AIO_ADE_DEV_PARENT_DECOUPLED: '1' }
+      })
+    ).toBe(false)
+  })
+
+  it('never couples packaged apps regardless of the mark', async () => {
+    const { shouldCoupleToDevParentLifetime } = await import('./configure-process')
+
+    expect(shouldCoupleToDevParentLifetime({ isDev: false, env: {} })).toBe(false)
+    expect(
+      shouldCoupleToDevParentLifetime({
+        isDev: false,
+        env: { AIO_ADE_DEV_PARENT_DECOUPLED: '1' }
+      })
+    ).toBe(false)
+  })
+})
+
 describe('installDevParentDisconnectQuit', () => {
   it('quits the dev app when the supervising IPC channel disconnects', async () => {
     const { app } = await import('electron')

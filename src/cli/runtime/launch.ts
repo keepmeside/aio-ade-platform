@@ -1,5 +1,6 @@
 import { spawn as spawnProcess, type SpawnOptions } from 'node:child_process'
 import { resolve } from 'node:path'
+import { DEV_PARENT_DECOUPLED_ENV } from '../../shared/dev-parent-lifecycle'
 import { getMacAppBundlePath } from './mac-app-update-bundle'
 import { RuntimeClientError } from './types'
 
@@ -49,12 +50,20 @@ function spawnDetached(command: string, args: string[], options: SpawnOptions): 
   const child = spawnProcess(command, args, {
     detached: true,
     stdio: 'ignore',
-    ...options
+    ...options,
+    env: markDetachedCliLaunchEnv(options.env ?? process.env)
   })
   // Why: detached launch errors are reported asynchronously after this function
   // returns; openAioAde already reports the user-facing timeout if startup fails.
   child.once('error', () => {})
   child.unref()
+}
+
+// Why: the app must outlive this CLI process (on Windows it is the app's direct
+// parent); the mark keeps the app's dev-parent watchdog from quitting it as an
+// orphan right after `open` returns.
+function markDetachedCliLaunchEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  return { ...env, [DEV_PARENT_DECOUPLED_ENV]: '1' }
 }
 
 function getExecutableAppArgs(): string[] {

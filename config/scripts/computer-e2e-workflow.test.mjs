@@ -274,13 +274,14 @@ describe('computer-use e2e workflow', () => {
     )
   })
 
-  it('pins the scheduled Windows computer-use leg to the proven windows-2022 image', () => {
+  it('pins the scheduled Windows computer-use leg to the windows-2022 image', () => {
     const workflow = parse(
       readFileSync(join(projectDir, '.github/workflows/computer-e2e.yml'), 'utf8')
     )
-    // Why: windows-latest (Server 2025) let the headed runtime exit right after
-    // the ready handshake (issue #3) while every other Windows workflow pins
-    // windows-2022; the pin must not silently drift back to windows-latest.
+    // Why: every other Windows workflow pins windows-2022; the scheduled leg
+    // must not silently drift to a different image. (The runtime-exit failures
+    // that first motivated this pin traced to the dev-parent watchdog, not the
+    // runner image.)
     expect(workflow.jobs.windows['runs-on']).toBe('windows-2022')
   })
 })

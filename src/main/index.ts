@@ -96,6 +96,7 @@ import {
   installDevParentWatchdog,
   isDevParentShutdownRequested,
   patchPackagedProcessPath,
+  shouldCoupleToDevParentLifetime,
   shouldInstallManagedHooks
 } from './startup/configure-process'
 import {
@@ -646,7 +647,7 @@ if (!hasSingleInstanceLock) {
 if (hasSingleInstanceLock) {
   // Why: couple to dev-parent only for electron-vite desktop runs, so a CLI shim or background shell
   // that happens to be the parent cannot dictate the app's lifetime.
-  const shouldCoupleToDevParent = is.dev
+  const shouldCoupleToDevParent = shouldCoupleToDevParentLifetime({ isDev: is.dev })
   installDevParentDisconnectQuit(shouldCoupleToDevParent)
   installDevParentWatchdog(shouldCoupleToDevParent)
   installDevParentSignalQuit(shouldCoupleToDevParent)
