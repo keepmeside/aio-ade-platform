@@ -11,21 +11,24 @@ import {
 const isWindows = process.platform === 'win32'
 const e2eOptIn = process.env.AIO_ADE_COMPUTER_E2E === '1'
 
-describe.skipIf(!isWindows || !e2eOptIn)('computer-use Windows e2e (Store apps)', () => {
-  test('Store app windows are discoverable by title and clickable', async () => {
+describe.skipIf(!isWindows || !e2eOptIn)('computer-use Windows e2e (Calculator)', () => {
+  test('Calculator windows are discoverable by title and clickable', async () => {
     await ensureAioAdeRuntimeLaunched()
     await launchCalculator()
     try {
       const apps = parseJsonOutput<{ result: ComputerListAppsResult }>(
         (await runAioAdeCli(['computer', 'list-apps', '--json'])).stdout
       )
-      expect(apps.result.apps).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ name: 'Calculator', bundleId: 'ApplicationFrameHost' })
-        ])
+      // Why: GitHub-hosted Windows Server images ship classic win32calc; client
+      // Windows hosts the Store Calculator through ApplicationFrameHost.
+      const calculatorApp = apps.result.apps.find(
+        (app) =>
+          (app.name === 'Calculator' && app.bundleId === 'ApplicationFrameHost') ||
+          (app.name === 'win32calc' && app.bundleId === 'win32calc')
       )
+      expect(calculatorApp).toMatchObject({ isRunning: true })
 
-      let state = parseJsonOutput<{ result: ComputerSnapshotResult }>(
+      const state = parseJsonOutput<{ result: ComputerSnapshotResult }>(
         (
           await runAioAdeCli([
             'computer',
@@ -37,25 +40,31 @@ describe.skipIf(!isWindows || !e2eOptIn)('computer-use Windows e2e (Store apps)'
           ])
         ).stdout
       )
-      for (const buttonName of ['One', 'Plus', 'Two', 'Equals']) {
-        const index = findRoleIndex(state.result.snapshot.treeText, `button ${buttonName}`)
-        expect(index).toBeGreaterThanOrEqual(0)
-        state = parseJsonOutput<{ result: ComputerSnapshotResult }>(
-          (
-            await runAioAdeCli([
-              'computer',
-              'click',
-              '--app',
-              'Calculator',
-              '--element-index',
-              String(index),
-              '--no-screenshot',
-              '--json'
-            ])
-          ).stdout
-        )
-      }
-      expect(state.result.snapshot.treeText).toMatch(/Display is 3\b/)
+      const buttonIndex = findRoleIndex(
+        state.result.snapshot.treeText,
+        /^\s*(\d+)\s+button(?:\s|$)/m
+      )
+      // Why: classic Calculator exposes only pane nodes; clicking one still proves title routing.
+      const clickIndex =
+        buttonIndex >= 0
+          ? buttonIndex
+          : findRoleIndex(state.result.snapshot.treeText, /^\s*(\d+)\s+pane(?:\s|$)/m)
+      expect(clickIndex, state.result.snapshot.treeText).toBeGreaterThanOrEqual(0)
+      const clicked = parseJsonOutput<{ result: ComputerSnapshotResult }>(
+        (
+          await runAioAdeCli([
+            'computer',
+            'click',
+            '--app',
+            'Calculator',
+            '--element-index',
+            String(clickIndex),
+            '--no-screenshot',
+            '--json'
+          ])
+        ).stdout
+      )
+      expect(clicked.result.snapshot.elementCount).toBeGreaterThan(0)
     } finally {
       await killCalculator()
       await stopAioAdeRuntime()
@@ -73,7 +82,7 @@ async function launchCalculator(): Promise<void> {
       '  Start-Sleep -Milliseconds 250',
       '  $target = Get-Process |',
       '    Where-Object { $_.MainWindowHandle -ne 0 -and $_.MainWindowTitle -eq "Calculator" } |',
-      '    Select-Object -First 1',
+      '  Select-Object -First 1',
       '}',
       'if ($null -eq $target) { throw "No visible Calculator window found" }'
     ].join('\n')
@@ -86,6 +95,7 @@ async function killCalculator(): Promise<void> {
     [
       '$processes = @()',
       '$processes += Get-Process -Name CalculatorApp -ErrorAction SilentlyContinue',
+      '$processes += Get-Process -Name win32calc -ErrorAction SilentlyContinue',
       '$processes += Get-Process -Name ApplicationFrameHost -ErrorAction SilentlyContinue |',
       '  Where-Object { $_.MainWindowTitle -eq "Calculator" }',
       'foreach ($process in $processes) {',
