@@ -7,6 +7,12 @@ on:
       - synchronize
       - reopened
       - ready_for_review
+  # Why: this is the only unit-test + lint matrix in the repo, and it only fired
+  # on pull_request — after the public flip there is no way to run it against
+  # main for the phase-12 CI gate without opening a throwaway PR. Manual
+  # dispatch keeps PR behavior identical and lets the matrix be exercised on any
+  # ref (base.sha defaults to the dispatched ref's parent for the changed-* gates).
+  workflow_dispatch:
 
 concurrency:
   group: pr-checks-${{ github.event.pull_request.number }}
@@ -39,10 +45,10 @@ jobs:
         run: pnpm run audit:code-quality:type-aware
 
       - name: Enforce changed-code quality
-        run: pnpm run check:code-quality:changed -- "${{ github.event.pull_request.base.sha }}"
+        run: pnpm run check:code-quality:changed -- "${{ github.event.pull_request.base.sha || format('{0}~1', github.sha) }}"
 
       - name: Enforce React Doctor on changed lines
-        run: pnpm run check:react-doctor:changed -- "${{ github.event.pull_request.base.sha }}"
+        run: pnpm run check:react-doctor:changed -- "${{ github.event.pull_request.base.sha || format('{0}~1', github.sha) }}"
 
       - name: Check Zustand selector fan-out budget
         run: pnpm run check:zustand-selector-fanout
@@ -271,7 +277,7 @@ jobs:
   e2e-paths:
     name: detect e2e path changes
     runs-on: ubuntu-latest
-    if: github.event.pull_request.draft != true
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft != true
     # Why: detector only needs to read the checkout; do not inherit repo defaults.
     permissions:
       contents: read
