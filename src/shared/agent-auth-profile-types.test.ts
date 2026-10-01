@@ -242,12 +242,47 @@ describe('agent auth profile store envelope', () => {
     })
     const parsed = AgentAuthProfileStoreSchema.parse({
       version: AGENT_AUTH_PROFILE_STORE_VERSION,
+      defaultProfileIdByProvider: { claude: 'profile-work-glm', codex: 'profile-codex-alt' },
       profiles: [first, second]
     })
     expect(parsed.profiles.map((profile) => profile.id)).toEqual([
       'profile-work-glm',
       'profile-codex-alt'
     ])
+    expect(parsed.defaultProfileIdByProvider).toEqual({
+      claude: 'profile-work-glm',
+      codex: 'profile-codex-alt'
+    })
+  })
+
+  it('rejects defaults that reference a missing profile', () => {
+    expect(() =>
+      AgentAuthProfileStoreSchema.parse({
+        version: AGENT_AUTH_PROFILE_STORE_VERSION,
+        defaultProfileIdByProvider: { claude: 'profile-gone', codex: null },
+        profiles: [validProfile()]
+      })
+    ).toThrow(/does not exist/)
+  })
+
+  it('rejects defaults that reference the other provider', () => {
+    expect(() =>
+      AgentAuthProfileStoreSchema.parse({
+        version: AGENT_AUTH_PROFILE_STORE_VERSION,
+        defaultProfileIdByProvider: { claude: 'profile-codex-alt', codex: null },
+        profiles: [
+          validProfile(),
+          validProfile({
+            id: 'profile-codex-alt',
+            provider: 'codex',
+            apiKeySecretRef: null,
+            apiKeyKind: null,
+            headers: [],
+            proxy: null
+          })
+        ]
+      })
+    ).toThrow(/must have provider/)
   })
 
   it('pins the store version to the literal current version', () => {
@@ -264,6 +299,7 @@ describe('agent auth profile store envelope', () => {
   it('parseAgentAuthProfileStore returns the discriminated union without throwing', () => {
     const ok = parseAgentAuthProfileStore({
       version: AGENT_AUTH_PROFILE_STORE_VERSION,
+      defaultProfileIdByProvider: { claude: null, codex: null },
       profiles: [validProfile()]
     })
     expect(ok.ok).toBe(true)

@@ -2,7 +2,12 @@ export const CLAUDE_AUTH_ENV_VARS = [
   'ANTHROPIC_API_KEY',
   'ANTHROPIC_AUTH_TOKEN',
   'CLAUDE_CODE_OAUTH_TOKEN',
-  'AWS_BEARER_TOKEN_BEDROCK'
+  'AWS_BEARER_TOKEN_BEDROCK',
+  // Why: base URL redirects where the CLI sends its credentials, so an
+  // inherited value would silently point managed-auth traffic at another
+  // endpoint. ANTHROPIC_MODEL is deliberately absent: a profile patch
+  // overwrites it and a null model means inherit.
+  'ANTHROPIC_BASE_URL'
 ] as const
 
 export type ClaudeEnvPatch = {

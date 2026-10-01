@@ -240,7 +240,13 @@ export type AgentAuthProfile = z.infer<typeof AgentAuthProfileSchema>
 export const AgentAuthProfileStoreSchema = z
   .strictObject({
     version: z.literal(AGENT_AUTH_PROFILE_STORE_VERSION),
-    profiles: z.array(AgentAuthProfileSchema)
+    profiles: z.array(AgentAuthProfileSchema),
+    // The provider-default precedence level's durable home: deleting a profile
+    // must clear its default in the same write, never leave a dangling ref.
+    defaultProfileIdByProvider: z.strictObject({
+      claude: z.string().nullable(),
+      codex: z.string().nullable()
+    })
   })
   .superRefine((store, ctx) => {
     const seen = new Set<string>()
@@ -253,6 +259,26 @@ export const AgentAuthProfileStoreSchema = z
         })
       }
       seen.add(profile.id)
+    }
+    for (const provider of ['claude', 'codex'] as const) {
+      const defaultProfileId = store.defaultProfileIdByProvider[provider]
+      if (defaultProfileId === null) {
+        continue
+      }
+      const target = store.profiles.find((profile) => profile.id === defaultProfileId)
+      if (target === undefined) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['defaultProfileIdByProvider', provider],
+          message: `Default ${provider} profile "${defaultProfileId}" does not exist.`
+        })
+      } else if (target.provider !== provider) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['defaultProfileIdByProvider', provider],
+          message: `Default ${provider} profile must have provider "${provider}".`
+        })
+      }
     }
   })
 export type AgentAuthProfileStore = z.infer<typeof AgentAuthProfileStoreSchema>
