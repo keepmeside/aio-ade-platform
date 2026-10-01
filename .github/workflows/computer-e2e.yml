@@ -40,6 +40,7 @@ on:
       - 'tests/e2e/computer-windows.e2e.ts'
       - 'tests/e2e/computer-windows-store.e2e.ts'
       - 'tests/e2e/helpers/computer-cli-driver.ts'
+      - 'tests/e2e/helpers/computer-cli-driver.unit.test.ts'
       - 'tests/e2e/helpers/computer-driver.ts'
       - 'tests/e2e/vitest.config.ts'
   workflow_dispatch:
@@ -189,7 +190,11 @@ jobs:
 
   windows:
     if: github.event_name != 'pull_request'
-    runs-on: windows-latest
+    # Why: the headed computer-use runtime is proven green on the windows-2022
+    # image (same image every other Windows workflow pins); windows-latest
+    # (Server 2025) let the launched runtime exit right after the ready
+    # handshake (issue #3).
+    runs-on: windows-2022
     env:
       AIO_ADE_COMPUTER_E2E: '1'
     steps:
