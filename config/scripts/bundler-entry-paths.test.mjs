@@ -16,10 +16,15 @@ import { describe, expect, it } from 'vitest'
 const PROJECT_ROOT = resolve(import.meta.dirname, '../..')
 const CONFIG_FILES = ['electron.vite.config.ts', 'vite.web.config.ts']
 
-/** Every `resolve('…')` argument in a config, with multi-line calls folded onto one line. */
+/** Every `resolve('…')` argument in a config, with multi-line calls folded onto one line.
+ *  `out/` paths are build outputs (e.g. `outDir`), not inputs the bundler reads — they are
+ *  gitignored and absent on a fresh checkout before any build, so requiring them would be a
+ *  false-positive rather than a missing entry. */
 function resolvedPaths(configPath) {
   const source = readFileSync(join(PROJECT_ROOT, configPath), 'utf8').replace(/\s+/gu, ' ')
-  return [...source.matchAll(/resolve\(\s*'([^']+)'/gu)].map((match) => match[1])
+  return [...source.matchAll(/resolve\(\s*'([^']+)'/gu)]
+    .map((match) => match[1])
+    .filter((candidate) => !candidate.startsWith('out/'))
 }
 
 describe('bundler entry paths', () => {

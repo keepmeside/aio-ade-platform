@@ -44,11 +44,22 @@ jobs:
       - name: Enforce type-aware code-quality baseline
         run: pnpm run audit:code-quality:type-aware
 
+      - name: Resolve diff base for changed-file gates
+        id: diff-base
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          # Why: react-doctor validates its diff-base as a ref NAME and rejects a
+          # `sha~1` revision expression, so on workflow_dispatch (no PR base) we
+          # resolve the parent to a concrete sha instead of passing `sha~1`.
+          base="${BASE:-$(git rev-parse --verify HEAD~1 2>/dev/null || git rev-parse --verify HEAD)}"
+          echo "sha=$base" >> "$GITHUB_OUTPUT"
+
       - name: Enforce changed-code quality
-        run: pnpm run check:code-quality:changed -- "${{ github.event.pull_request.base.sha || format('{0}~1', github.sha) }}"
+        run: pnpm run check:code-quality:changed -- "${{ steps.diff-base.outputs.sha }}"
 
       - name: Enforce React Doctor on changed lines
-        run: pnpm run check:react-doctor:changed -- "${{ github.event.pull_request.base.sha || format('{0}~1', github.sha) }}"
+        run: pnpm run check:react-doctor:changed -- "${{ steps.diff-base.outputs.sha }}"
 
       - name: Check Zustand selector fan-out budget
         run: pnpm run check:zustand-selector-fanout

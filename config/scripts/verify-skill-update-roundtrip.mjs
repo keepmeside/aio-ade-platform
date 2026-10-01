@@ -75,9 +75,9 @@ function historicalRelease(name) {
 
 async function materializePackage(name, treeSha, destination) {
   // Why: the skill may have lived under a different directory name at the
-  // historical tag (e.g. skills/orca-cli before the rebrand). Read the pinned
-  // gitTreeSha the snapshot recorded — a tree object is path-independent, so a
-  // rename can never make a released snapshot unresolvable by directory name.
+  // historical tag (it was renamed in the rebrand). Read the pinned gitTreeSha
+  // the snapshot recorded — a tree object is path-independent, so a rename can
+  // never make a released snapshot unresolvable by directory name.
   const entries = execFileSync('git', ['ls-tree', '-r', '-z', treeSha])
     .toString('utf8')
     .split('\0')
