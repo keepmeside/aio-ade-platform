@@ -31,9 +31,18 @@ describe('computer-use e2e workflow', () => {
     expect(cliDriver).toContain('Could not read AIO-ADE runtime metadata')
     expect(cliDriver).toContain("['open', '--json']")
 
-    expect(windowsStoreE2e).toMatch(
-      /for \(const buttonName of \['One', 'Plus', 'Two', 'Equals'\]\) \{[\s\S]*findRoleIndex\(state\.result\.snapshot\.treeText, `button \$\{buttonName\}`\)[\s\S]*state = parseJsonOutput/
+    // Why: GitHub-hosted Windows Server images ship classic win32calc, not the
+    // Store Calculator; the spec must accept both calculator flavors or the
+    // scheduled windows leg can never pass on hosted runners.
+    expect(windowsStoreE2e).toContain(
+      "(app.name === 'Calculator' && app.bundleId === 'ApplicationFrameHost') ||"
     )
+    expect(windowsStoreE2e).toContain("(app.name === 'win32calc' && app.bundleId === 'win32calc')")
+    expect(windowsStoreE2e).toContain('toMatchObject({ isRunning: true })')
+    // Why: classic Calculator exposes only pane nodes, so the click proof needs
+    // a button-or-pane fallback instead of calculator-specific button names.
+    expect(windowsStoreE2e).toContain('/^\\s*(\\d+)\\s+button(?:\\s|$)/m')
+    expect(windowsStoreE2e).toContain('/^\\s*(\\d+)\\s+pane(?:\\s|$)/m')
     expect(windowsStoreE2e).not.toMatch(/const one = findRoleIndex/)
     expect(windowsStoreE2e).not.toMatch(/for \(const index of \[one, plus, two, equals\]\)/)
   })
