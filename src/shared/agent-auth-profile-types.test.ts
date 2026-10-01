@@ -6,6 +6,8 @@ import {
   AgentAuthProfileSchema,
   AgentAuthProfileStoreSchema,
   buildAgentAuthProfileSecretRef,
+  isValidAgentAuthProfileId,
+  isValidAgentAuthProfileSecretName,
   normalizeAgentAuthProfileBaseUrl,
   parseAgentAuthProfileSecretRef,
   parseAgentAuthProfileStore
@@ -61,6 +63,16 @@ describe('agent auth profile secret refs', () => {
   it('rejects unknown secret-name vocabulary at build time', () => {
     expect(() => buildAgentAuthProfileSecretRef('profile', 'anything-else')).toThrow()
     expect(() => buildAgentAuthProfileSecretRef('BAD ID', 'api-key')).toThrow()
+  })
+
+  it('exposes the id and secret-name validators for vault key checks', () => {
+    expect(isValidAgentAuthProfileId('profile-work-glm')).toBe(true)
+    expect(isValidAgentAuthProfileId('BAD_ID')).toBe(false)
+    expect(isValidAgentAuthProfileId('')).toBe(false)
+    expect(isValidAgentAuthProfileSecretName('api-key')).toBe(true)
+    expect(isValidAgentAuthProfileSecretName('header:x-title')).toBe(true)
+    expect(isValidAgentAuthProfileSecretName('header:X-Title')).toBe(false)
+    expect(isValidAgentAuthProfileSecretName('anything-else')).toBe(false)
   })
 })
 

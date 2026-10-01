@@ -36,6 +36,14 @@ const AGENT_AUTH_PROFILE_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9.-]*$/
 const AGENT_AUTH_PROFILE_SECRET_NAME_PATTERN = /^(api-key|proxy-auth|header:[a-z0-9-]+)$/
 const AGENT_AUTH_PROFILE_SECRET_REF_PREFIX = 'vault:v1:'
 
+export function isValidAgentAuthProfileId(value: string): boolean {
+  return AGENT_AUTH_PROFILE_ID_PATTERN.test(value)
+}
+
+export function isValidAgentAuthProfileSecretName(value: string): boolean {
+  return AGENT_AUTH_PROFILE_SECRET_NAME_PATTERN.test(value)
+}
+
 export type AgentAuthProfileSecretRefParts = {
   profileId: string
   secretName: string
