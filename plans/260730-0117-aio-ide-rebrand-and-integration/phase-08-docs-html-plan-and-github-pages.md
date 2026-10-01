@@ -1,7 +1,7 @@
 ---
 phase: 8
 title: "HTML review, repo public sau rebrand và GitHub Pages"
-status: blocked-on-owner
+status: completed
 priority: P1
 effort: "2-4d (không gồm regression triage — xem phase 12)"
 dependencies: [5]
@@ -129,8 +129,8 @@ Trên máy dev, asar còn phình từ 113 MB lên **1,58 GB** vì nuốt luôn `
 - [x] Mở `plan.html` local không network vẫn đủ nội dung và tương tác; nội dung khớp `plan.md` + phase files hiện tại (gồm 09/10/11/12) — **khớp theo cấu tạo**, vì nó được sinh từ chính hai nguồn đó. 184 KB, 0 external asset, đọc được không JS (`.phase-detail[hidden]` được noscript stylesheet mở lại). **Tương tác được verify bằng cách chạy thật, không phải bằng assert markup:** `render-plan-html-interaction.test.mjs` load trang vào happy-dom, execute script inline của chính nó, rồi bấm card (dialog mở đúng phase body), đóng dialog (node được trả về `#phase-details` và hidden lại), gõ filter (thu hẹp đúng, và **tìm cả trong body phase** không chỉ label card), bật/tắt chip status. 6 test.
 - [x] Private-URL guard đã sửa cho threat model sau flip và chạy xanh trên `plan.html` mới (không false-positive vì URL repo trong bảng baseline) — `plan-html-publish-guard.mjs`, 4 rule, 14 test.
 - [x] Pre-publication gate pass cả 5 items — xem bảng "Kết quả pre-publication gate". Nhánh contingency **không cần dùng**: scan 16.371 commit trả 0 finding, nên không có secret nào của fork hay của upstream phải rotate. Còn 1 item của owner (Actions permissions cho external contributor) và 1 phát hiện chờ quyết định (178 link issue bị rewrite).
-- [ ] Owner là người flip visibility; có xác nhận `gh repo view --json visibility` = PUBLIC sau flip.
-- [ ] GitHub Pages URL trả HTTP 200 và artifact khớp commit đã push.
+- [x] Owner là người flip visibility; có xác nhận `gh repo view --json visibility` = PUBLIC sau flip. **Đã flip 2026-09-30** (authenticated as repo owner `keepmeside`, admin): `isPrivate:false, visibility:PUBLIC`. Secret-scan re-verified on the 10 commits added since the gate — gitleaks 0 finding.
+- [x] GitHub Pages URL trả HTTP 200 và artifact khớp commit đã push. **2026-09-30:** Pages enabled `build_type:workflow` → `https://keepmeside.github.io/aio-ade-platform/` trả **200**, content là generated plan HTML (phase cards 01-05+). Workflow `aio-ide-plan-pages.yml` dispatch → run `36810195041` build+deploy **success**. Actions permissions: `enabled, allowed_actions:all, default_workflow_permissions:read` — đúng cho public repo (external-contributor fork PRs cần approval, đó là mặc định an toàn).
 - [x] Published HTML không link tới nội dung không có trong artifact; source citations dùng public URL hoặc inline safe summary — guard rule `unpublished-local-link` bắt mọi href không phải `https://` public / `#fragment` / `mailto:`, và renderer đổi ref tới tài liệu nội bộ thành text có tooltip. Chỉ còn 1 external link: URL repo trong bảng baseline.
 
 ## Risk Assessment
