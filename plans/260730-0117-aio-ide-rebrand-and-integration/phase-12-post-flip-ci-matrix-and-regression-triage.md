@@ -65,10 +65,10 @@ Phase này chỉ cần re-run 3 leg CI trên matrix để có evidence trên run
 ## Success Criteria
 
 - [x] Mọi chỗ còn chặn fork đã sửa hoặc disable có chủ đích, ghi rõ lựa chọn: Blacksmith runner label → `macos-15`, `track-community-prs.yaml` `owner:` + `PROJECT_OWNER` → `keepmeside`; 3 repo guard của phase 05 re-verify bằng `grep -r` vẫn đúng. *(Sửa 2026-09-30 trước flip. `track-community-prs` cần owner provision bufo-bot app + secret + team + project dưới `keepmeside` mới chạy được — reference đúng, infra là của owner.)*
-- [ ] Full CI matrix chạy trên 3 OS, không có job skip im lặng vì guard sai.
-- [ ] Mọi failure được phân loại (a)/(b)/(c) trong triage report.
-- [ ] Tiêu chí 3-OS defer từ phase 03/05 có verdict thật kèm link CI run, không còn tick dựa trên local-only.
-- [ ] Regression chưa sửa được có issue và ghi trong `decisions.md`; không tiêu chí nào tick sai.
+- [~] Full CI matrix chạy trên 3 OS, không có job skip im lặng vì guard sai. **2026-09-30:** E2E `refs/heads/main` push-run xanh (build + ssh-docker + 10 shard, Ubuntu); `golden-e2e-experiment` (ubuntu+macos-15) xanh; `windows-terminal-restart-e2e` xanh; `skill-update-roundtrip` xanh cả 3 OS sau fix; `computer-e2e` **windows leg đỏ** (runtime_unavailable — xem issue #3), mac+linux xanh. Không job nào skip vì guard sai. **Còn:** `pr.yml` (unit-test shard matrix) chỉ trigger `pull_request` — cần PR hoặc trigger khác để chạy trên code này.
+- [x] Mọi failure được phân loại (a)/(b)/(c) trong triage report — **bảng triage trong `decisions.md`**: skill-update-roundtrip (b) → fixed `5acf4a0a5`; computer-e2e windows (a)/(b) → issue #3; E2E `36777643063` + Terminal Perf `36734180482` → (c) flake/stale run (log hết hạn, cùng branch run sau xanh).
+- [ ] Tiêu chí 3-OS defer từ phase 03/05 có verdict thật kèm link CI run, không còn tick dựa trên local-only. *(Ubuntu packaged smoke + e2e đã có link CI; macOS/Windows 3-OS deferred criteria chờ các workflow còn lại hoàn tất + pr.yml unit matrix.)*
+- [x] Regression chưa sửa được có issue và ghi trong `decisions.md`; không tiêu chí nào tick sai — **issue #3** mở cho computer-e2e Windows.
 
 ## Risk Assessment
 
