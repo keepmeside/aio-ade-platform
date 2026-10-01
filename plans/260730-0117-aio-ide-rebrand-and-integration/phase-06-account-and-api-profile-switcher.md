@@ -1,7 +1,7 @@
 ---
 phase: 6
 title: "Account và API profile switcher"
-status: pending
+status: in-progress
 priority: P1
 effort: "5-6w"
 dependencies: [4, 5, 12]
@@ -33,8 +33,8 @@ Mở rộng subsystem Claude/Codex hiện có thành hai khái niệm rõ ràng:
 
 ## Implementation Steps
 
-1. Read and lock existing service seams before coding; document env injection vs file mutation contract.
-2. Define versioned schema: `accounts` and `profiles` separate, target compatibility, base URL normalization, model/header allowlist và provider-specific materialization contract. **Đã chốt 2026-08-21: một schema `AgentAuthProfile` chung cho Claude và Codex** (cùng shape: id, provider, api key ref, base URL, model, headers, proxy); phần khác nhau nằm hoàn toàn ở runtime resolver per-provider, không fork schema theo provider.
+1. Read and lock existing service seams before coding; document env injection vs file mutation contract. **Done 2026-10-01:** seam map 9 dimension trong `research/phase-06-service-seams.md` (internal, gitignored) + raw JSON; 3 mâu thuẫn (vault placement, locking scope, decrypt-failure policy) có proposed resolution chờ user veto.
+2. Define versioned schema: `accounts` and `profiles` separate, target compatibility, base URL normalization, model/header allowlist và provider-specific materialization contract. **Đã chốt 2026-08-21: một schema `AgentAuthProfile` chung cho Claude và Codex** (cùng shape: id, provider, api key ref, base URL, model, headers, proxy); phần khác nhau nằm hoàn toàn ở runtime resolver per-provider, không fork schema theo provider. **Done 2026-10-01:** `src/shared/agent-auth-profile-types.ts` — strict secret-free schema (chỉ `vault:v1` refs, không có inline value field), `apiKeyKind` phân biệt `ANTHROPIC_API_KEY` vs `ANTHROPIC_AUTH_TOKEN`, base URL normalization (http/https, không userinfo/query, strip trailing slash), header allowlist, per-profile secret-ref self-containment; 26 test xanh, oxlint + `typecheck:node` sạch.
 3. Implement secret vault using Electron `safeStorage` **sau một storage-backend interface hẹp** (encrypt/decrypt/availability) để verdict GO của phase 11 chỉ phải thay backend (keychain FFI) chứ không viết lại vault; define fail-closed hoặc explicit-consent encrypted fallback khi OS storage unavailable. ACL/0600 chỉ harden file ciphertext, không phải permission cho plaintext. Store only opaque `secretRef` trong general state, reject symlinks, enforce app-owned roots.
 4. Resolve precedence `session > worktree > workspace/folder workspace > provider default > legacy account`; strip inherited conflicting auth env. Persist provenance only, never secret-bearing snapshot.
 5. Extend Claude env patch và Codex runtime-owned TOML/provider sections idempotently; preserve comments, unknown tables, trust và CRLF.
