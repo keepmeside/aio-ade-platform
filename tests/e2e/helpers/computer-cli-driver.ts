@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process'
-import { access, mkdtemp } from 'node:fs/promises'
+import { access, mkdtemp, readdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
@@ -7,6 +7,8 @@ import { createElectronHomeIsolation } from './electron-home-isolation'
 
 const execFileAsync = promisify(execFile)
 const RUNTIME_METADATA_FILE = 'aio-ade-runtime.json'
+const RUNTIME_STABILITY_PROBE_DEFAULT_MS = 2000
+const RUNTIME_STABILITY_PROBE_INTERVAL_MS = 250
 let aioAdeDevUserDataPath: string | null = null
 
 export type CliResult = {
@@ -31,6 +33,7 @@ export async function runAioAdeCli(
     ) {
       // Why: Windows CI can let the dev runtime exit while launching the
       // fixture app; reopen once so the desktop action gets a live runtime.
+      await logRuntimeUnavailablePostMortem(args)
       await ensureAioAdeRuntimeLaunched()
       return await runAioAdeCliOnce(args)
     }
@@ -63,6 +66,7 @@ async function runAioAdeCliOnce(args: string[]): Promise<CliResult> {
 export async function ensureAioAdeRuntimeLaunched(): Promise<void> {
   await runAioAdeCli(['open', '--json'], { retryMissingRuntimeMetadata: false })
   await waitForAioAdeRuntimeReady()
+  await probeRuntimeStabilityAfterReady()
 }
 
 export async function stopAioAdeRuntime(): Promise<void> {
@@ -134,6 +138,99 @@ async function createComputerE2ERuntimeEnv(): Promise<NodeJS.ProcessEnv> {
     // Why: the Node CLI and the Electron child must resolve the same runtime
     // metadata while the E2E boundary owns their home and Codex paths.
     AIO_ADE_DEV_USER_DATA_PATH: userDataDir
+  }
+}
+
+async function logRuntimeUnavailablePostMortem(args: string[]): Promise<void> {
+  if (process.env.AIO_ADE_COMPUTER_E2E !== '1') {
+    return
+  }
+  // Why: the launched runtime can pass the ready handshake and still exit
+  // before the next desktop action (issue #3); record whether the app process
+  // died or only its metadata vanished so CI failure logs carry the
+  // difference instead of just the runtime_unavailable envelope.
+  const userDataPath = await getComputerE2eAioAdeDevUserDataPath()
+  const [metadataExists, userDataEntries, electronProcessCount] = await Promise.all([
+    pathExistsQuietly(join(userDataPath, RUNTIME_METADATA_FILE)),
+    readDirEntriesQuietly(userDataPath),
+    countElectronProcessesQuietly()
+  ])
+  console.error(
+    `[aio-ade-e2e] runtime unavailable before ${args.join(' ')}: ` +
+      `metadataExists=${metadataExists} userDataEntries=${JSON.stringify(userDataEntries)} ` +
+      `electronProcessCount=${electronProcessCount ?? 'unknown'}`
+  )
+}
+
+async function pathExistsQuietly(path: string): Promise<boolean> {
+  try {
+    await access(path)
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function readDirEntriesQuietly(path: string): Promise<string[]> {
+  try {
+    return await readdir(path)
+  } catch {
+    return []
+  }
+}
+
+async function countElectronProcessesQuietly(): Promise<number | null> {
+  if (process.platform !== 'win32') {
+    return null
+  }
+  try {
+    const result = await execFileAsync('tasklist.exe', [
+      '/FI',
+      'IMAGENAME eq electron.exe',
+      '/FO',
+      'CSV'
+    ])
+    return result.stdout
+      .split(/\r?\n/)
+      .filter((line) => line.toLowerCase().startsWith('"electron.exe"')).length
+  } catch {
+    return null
+  }
+}
+
+async function probeRuntimeStabilityAfterReady(): Promise<void> {
+  if (process.env.AIO_ADE_COMPUTER_E2E !== '1') {
+    return
+  }
+  const requestedMs = Number.parseInt(process.env.AIO_ADE_COMPUTER_E2E_STABILITY_PROBE_MS ?? '', 10)
+  const durationMs = Number.isFinite(requestedMs)
+    ? Math.max(requestedMs, 0)
+    : RUNTIME_STABILITY_PROBE_DEFAULT_MS
+  if (durationMs === 0) {
+    return
+  }
+  // Why: observe-only polling so a runtime that dies right after the ready
+  // handshake leaves a timestamped death in the CI log instead of hiding
+  // behind the relaunch retry. Never throws and never relaunches on its own.
+  const startedAt = Date.now()
+  while (Date.now() - startedAt < durationMs) {
+    const elapsedMs = Date.now() - startedAt
+    try {
+      const status = parseJsonOutput<{ result: { runtime: { reachable: boolean } } }>(
+        (await runAioAdeCli(['status', '--json'], { retryMissingRuntimeMetadata: false })).stdout
+      )
+      if (!status.result.runtime.reachable) {
+        console.error(`[aio-ade-e2e] runtime stability probe t+${elapsedMs}ms: reachable=false`)
+        return
+      }
+    } catch (error) {
+      const firstLine = error instanceof Error ? error.message.split('\n')[0] : String(error)
+      console.error(
+        `[aio-ade-e2e] runtime stability probe t+${elapsedMs}ms: runtime gone: ${firstLine}`
+      )
+      return
+    }
+    await delay(RUNTIME_STABILITY_PROBE_INTERVAL_MS)
   }
 }
 
