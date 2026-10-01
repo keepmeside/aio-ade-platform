@@ -123,7 +123,11 @@ async function createMarketplaceFixture(): Promise<MarketplaceFixture> {
     gitEnvironment
   )
 
-  const marketplaceRepository = join(repositories, 'aio-ade-plugins.git')
+  // Why: the app's official source clones
+  // https://github.com/keepmeside/aio-ade-platform-plugins.git, and the fixture's
+  // insteadOf rewrite maps github.com/keepmeside/* to this local dir — so the repo
+  // dir must be named after the OFFICIAL_MARKETPLACE_REPOSITORY it stands in for.
+  const marketplaceRepository = join(repositories, 'aio-ade-platform-plugins.git')
   await mkdir(marketplaceRepository, { recursive: true })
   await writeFile(
     join(marketplaceRepository, 'aio-ade-marketplace.json'),
@@ -180,7 +184,10 @@ async function installMarketplacePluginThroughUi(
   await expect(listing).toBeVisible()
   await listing.getByRole('button', { name: 'Install' }).click()
   const preview = page.getByRole('dialog', { name: pluginName })
-  await expect(preview).toContainText('Official · keepmeside')
+  // Why: the provenance suffix is the plugin's own `publisher` field, which is
+  // `stablyai` — a persisted compat identity (LEGACY_OFFICIAL_PLUGIN_PUBLISHER),
+  // not the marketplace owner `keepmeside` that the badge comes from.
+  await expect(preview).toContainText('Official · stablyai')
   await preview.getByRole('button', { name: 'Install plugin' }).click()
   const consent = page.getByRole('dialog', { name: consentDialogName })
   await expect(consent).toBeVisible()
