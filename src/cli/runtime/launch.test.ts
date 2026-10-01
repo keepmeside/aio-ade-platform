@@ -57,6 +57,9 @@ describe('launchAioAdeApp', () => {
     expect(args).toEqual([])
     expect(options.shell).toBe(true)
     expect(options.detached).toBe(true)
+    // Why: the CLI parent exits right after `open`; the mark keeps the app's
+    // dev-parent watchdog from quitting it as an orphan.
+    expect(options.env.AIO_ADE_DEV_PARENT_DECOUPLED).toBe('1')
   })
 
   it('launches AIO_ADE_APP_EXECUTABLE with no app-root argument by default', () => {
@@ -69,6 +72,7 @@ describe('launchAioAdeApp', () => {
     expect(command).toBe('/opt/AIO-ADE')
     expect(args).toEqual([])
     expect(options.detached).toBe(true)
+    expect(options.env.AIO_ADE_DEV_PARENT_DECOUPLED).toBe('1')
   })
 
   it('passes the app root first when the executable needs it', () => {
@@ -78,9 +82,10 @@ describe('launchAioAdeApp', () => {
 
     launchAioAdeApp()
 
-    const [, args] = spawnMock.mock.calls[0]
+    const [, args, options] = spawnMock.mock.calls[0]
     expect(args).toHaveLength(1)
     expect(resolve(args[0])).toBe(args[0])
+    expect(options.env.AIO_ADE_DEV_PARENT_DECOUPLED).toBe('1')
   })
 
   it('uses a shell for a Windows npm command shim', () => {
@@ -93,6 +98,7 @@ describe('launchAioAdeApp', () => {
       launchAioAdeApp()
 
       expect(spawnMock.mock.calls[0][2].shell).toBe(true)
+      expect(spawnMock.mock.calls[0][2].env.AIO_ADE_DEV_PARENT_DECOUPLED).toBe('1')
     } finally {
       Object.defineProperty(process, 'platform', platform ?? { value: process.platform })
     }
@@ -108,6 +114,7 @@ describe('launchAioAdeApp', () => {
     expect(command).toBe(process.execPath)
     // Why: the child must come up as Electron, not inherit the CLI's node mode.
     expect(options.env.ELECTRON_RUN_AS_NODE).toBeUndefined()
+    expect(options.env.AIO_ADE_DEV_PARENT_DECOUPLED).toBe('1')
   })
 
   it('falls back to the executable on macOS when no .app bundle is resolvable', () => {
@@ -120,6 +127,7 @@ describe('launchAioAdeApp', () => {
       launchAioAdeApp()
 
       expect(spawnMock.mock.calls[0][0]).toBe(process.execPath)
+      expect(spawnMock.mock.calls[0][2].env.AIO_ADE_DEV_PARENT_DECOUPLED).toBe('1')
     } finally {
       Object.defineProperty(process, 'platform', platform ?? { value: process.platform })
     }

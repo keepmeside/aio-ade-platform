@@ -190,10 +190,9 @@ jobs:
 
   windows:
     if: github.event_name != 'pull_request'
-    # Why: the headed computer-use runtime is proven green on the windows-2022
-    # image (same image every other Windows workflow pins); windows-latest
-    # (Server 2025) let the launched runtime exit right after the ready
-    # handshake (issue #3).
+    # Why: same windows-2022 image every other Windows workflow pins. The
+    # runtime-exit failures that first motivated this pin traced to the
+    # dev-parent watchdog quitting CLI-launched apps, not the runner image.
     runs-on: windows-2022
     env:
       AIO_ADE_COMPUTER_E2E: '1'
