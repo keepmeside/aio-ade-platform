@@ -252,6 +252,26 @@ describe('agent auth profile resolution fall-through', () => {
     })
     expect(resolution).toEqual({ level: 'none', staleRefs: [] })
   })
+
+  it('ignores Object.prototype members reached through prototype-named session ids', () => {
+    // Why: session ids arrive as untrusted IPC strings; a plain Record lookup
+    // on 'toString' would surface the inherited function as a phantom binding.
+    for (const sessionId of ['toString', 'constructor', '__proto__', 'hasOwnProperty']) {
+      const bindings = makeBindings({
+        byWorkspace: { [worktreeWorkspaceKey('wt-1')]: 'profile-work' }
+      })
+      const resolution = resolveAgentAuthProfile({
+        provider: 'claude',
+        sessionId,
+        worktreeId: 'wt-1',
+        profiles: [claudeWork],
+        bindings,
+        legacyAccountId: null
+      })
+      expect(resolution.level).toBe('worktree')
+      expect(resolution.staleRefs).toEqual([])
+    }
+  })
 })
 
 describe('agent auth profile launch provenance', () => {

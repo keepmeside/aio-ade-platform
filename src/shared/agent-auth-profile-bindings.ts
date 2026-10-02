@@ -1,4 +1,5 @@
 import type { AgentAuthProfile, AgentAuthProfileProvider } from './agent-auth-profile-types'
+import type { WorkspaceKey } from './types'
 import { folderWorkspaceKey, worktreeWorkspaceKey } from './workspace-scope'
 
 // Precedence contract for agent auth profile resolution:
@@ -26,7 +27,7 @@ export type AgentAuthProfileBindings = {
   /** PTY session id -> profile id. */
   bySession: Record<string, string>
   /** WorkspaceKey ('worktree:<id>' | 'folder:<id>') -> profile id. */
-  byWorkspace: Record<string, string>
+  byWorkspace: Record<WorkspaceKey, string>
   /** Provider -> profile id; the versioned profile store owns this level. */
   defaultByProvider: Record<AgentAuthProfileProvider, string | null>
 }
@@ -58,7 +59,11 @@ export function resolveAgentAuthProfile(
   const candidates: { level: AgentAuthProfileBindingLevel; profileId: string }[] = []
 
   if (input.sessionId) {
-    const profileId = input.bindings.bySession[input.sessionId]
+    // Why: session ids are untrusted strings; an own-key check keeps
+    // prototype-named ids ('toString') from surfacing inherited members.
+    const profileId = Object.hasOwn(input.bindings.bySession, input.sessionId)
+      ? input.bindings.bySession[input.sessionId]
+      : undefined
     if (profileId !== undefined) {
       candidates.push({ level: 'session', profileId })
     }
