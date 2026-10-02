@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { CLAUDE_AUTH_ENV_VARS, applyClaudeEnvPatch, hasClaudeAuthEnvConflict } from './environment'
+import {
+  CLAUDE_AUTH_ENV_VARS,
+  applyClaudeEnvPatch,
+  claudeAuthEnvConflictKeys,
+  hasClaudeAuthEnvConflict
+} from './environment'
 
 describe('claude auth env strip list', () => {
   it('covers the credential vars and the credential-flow base URL', () => {
@@ -74,6 +79,20 @@ describe('claude auth env strip list', () => {
     expect(hasClaudeAuthEnvConflict({})).toBe(false)
     expect(hasClaudeAuthEnvConflict({ ANTHROPIC_MODEL: 'glm-4.6' })).toBe(false)
     expect(hasClaudeAuthEnvConflict({ ANTHROPIC_CUSTOM_HEADERS: 'x-title: my-app' })).toBe(false)
+  })
+
+  it('claudeAuthEnvConflictKeys names the offending keys without their values', () => {
+    expect(
+      claudeAuthEnvConflictKeys({ ANTHROPIC_BASE_URL: 'https://gw.corp.example.test' })
+    ).toEqual(['ANTHROPIC_BASE_URL'])
+    expect(
+      claudeAuthEnvConflictKeys({
+        ANTHROPIC_API_KEY: 'k',
+        ANTHROPIC_CUSTOM_HEADERS: 'Authorization: Bearer x'
+      })
+    ).toEqual(['ANTHROPIC_API_KEY', 'ANTHROPIC_CUSTOM_HEADERS'])
+    expect(claudeAuthEnvConflictKeys({ ANTHROPIC_MODEL: 'glm-4.6' })).toEqual([])
+    expect(claudeAuthEnvConflictKeys(undefined)).toEqual([])
   })
 })
 

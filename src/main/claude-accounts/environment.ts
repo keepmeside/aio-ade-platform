@@ -65,6 +65,19 @@ export function hasClaudeAuthEnvConflict(env: Record<string, string> | undefined
   )
 }
 
+// Key names only — never values — so a refusal message can say what to remove
+// without echoing secret material into logs or dialogs.
+export function claudeAuthEnvConflictKeys(env: Record<string, string> | undefined): string[] {
+  if (!env) {
+    return []
+  }
+  const keys: string[] = CLAUDE_AUTH_ENV_VARS.filter((key) => Boolean(env[key]))
+  if (isAuthLikeCustomHeaders(env.ANTHROPIC_CUSTOM_HEADERS)) {
+    keys.push('ANTHROPIC_CUSTOM_HEADERS')
+  }
+  return keys
+}
+
 function isAuthLikeCustomHeaders(value: string | undefined): boolean {
   if (!value) {
     return false

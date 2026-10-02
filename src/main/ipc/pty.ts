@@ -79,7 +79,11 @@ import { addNodePtyRecoveryHint } from '../daemon/node-pty-error-hints'
 import { recordDaemonStreamBacklogEvent } from '../daemon/daemon-stream-backlog-probe'
 import type { ClaudeRuntimeAuthPreparation } from '../claude-accounts/runtime-auth-service'
 import type { ClaudeAccountSelectionTarget } from '../claude-accounts/runtime-selection'
-import { CLAUDE_AUTH_ENV_VARS, hasClaudeAuthEnvConflict } from '../claude-accounts/environment'
+import {
+  CLAUDE_AUTH_ENV_VARS,
+  claudeAuthEnvConflictKeys,
+  hasClaudeAuthEnvConflict
+} from '../claude-accounts/environment'
 import {
   isClaudeAuthSwitchInProgress,
   markClaudePtyExited,
@@ -3138,8 +3142,11 @@ export function registerPtyHandlers(
         throw new Error('A Claude account switch is in progress. Try again after it finishes.')
       }
       if (claudeAuth?.stripAuthEnv && hasClaudeAuthEnvConflict(args.env)) {
+        // Key names only — never values — so the refusal stays secret-free.
         throw new Error(
-          'This Claude launch defines explicit Anthropic auth environment variables. Remove those overrides before using a managed Claude account.'
+          `This Claude launch defines explicit Anthropic auth environment variables (${claudeAuthEnvConflictKeys(
+            args.env
+          ).join(', ')}). Remove those overrides before using a managed Claude account.`
         )
       }
 
@@ -4212,8 +4219,11 @@ export function registerPtyHandlers(
         throw new Error('A Claude account switch is in progress. Try again after it finishes.')
       }
       if (claudeAuth?.stripAuthEnv && hasClaudeAuthEnvConflict(args.env)) {
+        // Key names only — never values — so the refusal stays secret-free.
         throw new Error(
-          'This Claude launch defines explicit Anthropic auth environment variables. Remove those overrides before using a managed Claude account.'
+          `This Claude launch defines explicit Anthropic auth environment variables (${claudeAuthEnvConflictKeys(
+            args.env
+          ).join(', ')}). Remove those overrides before using a managed Claude account.`
         )
       }
       // Why: the daemon-backed provider skips LocalPtyProvider's buildSpawnEnv, so assemble the same host-local env here for parity.
