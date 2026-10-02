@@ -60,6 +60,7 @@ import {
   getProviderUsageStatusLabel
 } from './tooltip'
 import { ClaudeIcon, OpenAIIcon } from './icons'
+import { AgentAuthProfileMenuSection } from './agent-auth-profile-menu-section'
 import { UsageRosterPanel, getTightestUsageSection } from './UsageRosterPanel'
 import { getUsageProviderAccountsSectionId } from './usage-provider-settings-target'
 import { formatRateLimitWindowChipLabel } from '@/lib/window-label-formatter'
@@ -942,6 +943,7 @@ export function ClaudeSwitcherMenu({
           </div>
         </div>
       ) : null}
+      <AgentAuthProfileMenuSection provider="claude" />
       <DropdownMenuSeparator />
       <DropdownMenuItem
         onSelect={() => {
@@ -1811,6 +1813,7 @@ export function CodexSwitcherMenu({
         </div>
       ) : null}
       {open ? <CodexRestartStatusPrompt /> : null}
+      <AgentAuthProfileMenuSection provider="codex" />
       <DropdownMenuSeparator />
       <DropdownMenuItem
         onSelect={() => {

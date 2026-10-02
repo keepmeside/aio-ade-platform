@@ -3387,6 +3387,14 @@
                 "rssDescription": "Summed resident set size (RSS). Shared or aliased pages can appear in more than one process."
               }
             }
+          },
+          "AgentAuthProfileMenuSection": {
+            "profile_label": "API Profile",
+            "load_failed": "Failed to load API profiles",
+            "loading": "Loading API profiles…",
+            "account_only": "Account / CLI default (no profile)",
+            "active": "Active",
+            "manage_profiles": "Manage API Profiles…"
           }
         }
       },

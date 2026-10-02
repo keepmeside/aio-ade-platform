@@ -3364,6 +3364,14 @@
             "stoppingLabel": "Stopping update",
             "stoppingTooltip": "Stopping the skill update…",
             "stoppingAria": "Stopping the skill update. Click to open details."
+          },
+          "AgentAuthProfileMenuSection": {
+            "profile_label": "API Profile",
+            "load_failed": "Failed to load API profiles",
+            "loading": "Loading API profiles…",
+            "account_only": "Account / CLI default (no profile)",
+            "active": "Active",
+            "manage_profiles": "Manage API Profiles…"
           }
         }
       },
