@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { writeFileAtomically } from '../codex-accounts/fs-utils'
 import { assertOwnedHostCodexManagedHomePath } from '../codex-accounts/host-codex-managed-home-ownership'
@@ -103,6 +103,53 @@ export function ensureCodexProfileManagedHome({
     }
 
     return { ok: true, homePath: ownedHomePath }
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : String(error) }
+  }
+}
+
+export type RemoveCodexProfileManagedHomeInput = {
+  profileId: string
+  userDataPath: string
+  systemCodexHomePath: string
+}
+
+export type RemoveCodexProfileManagedHomeResult =
+  | { ok: true; removed: boolean }
+  | { ok: false; error: string }
+
+/**
+ * Deletes a profile's managed CODEX_HOME — auth.json is a second durable copy
+ * of the profile's key, so profile deletion must clean it. Ownership is proven
+ * first (marker + profile-id match + containment inside the profile-homes
+ * root, away from the system home); an unowned directory is left untouched.
+ * A missing home is a no-op success.
+ */
+export function removeCodexProfileManagedHome({
+  profileId,
+  userDataPath,
+  systemCodexHomePath
+}: RemoveCodexProfileManagedHomeInput): RemoveCodexProfileManagedHomeResult {
+  const root = codexProfileHomesRoot(userDataPath)
+  const homePath = codexProfileManagedHomePath(userDataPath, profileId)
+  if (!existsSync(homePath)) {
+    return { ok: true, removed: false }
+  }
+  try {
+    const ownedHomePath = assertOwnedHostCodexManagedHomePath({
+      candidatePath: homePath,
+      managedAccountsRoot: root,
+      systemCodexHomePath,
+      expectedAccountId: profileId
+    })
+    rmSync(ownedHomePath, { recursive: true, force: true })
+    const wrapperPath = join(root, profileId)
+    // Why: drop the now-empty per-profile wrapper; a non-empty one keeps
+    // unexpected siblings instead of deleting content we never wrote.
+    if (existsSync(wrapperPath) && readdirSync(wrapperPath).length === 0) {
+      rmSync(wrapperPath, { recursive: true, force: true })
+    }
+    return { ok: true, removed: true }
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : String(error) }
   }

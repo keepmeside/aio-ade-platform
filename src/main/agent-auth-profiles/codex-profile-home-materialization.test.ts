@@ -19,7 +19,8 @@ import {
   codexProfileHomesRoot,
   codexProfileManagedHomePath,
   codexProfileProviderId,
-  ensureCodexProfileManagedHome
+  ensureCodexProfileManagedHome,
+  removeCodexProfileManagedHome
 } from './codex-profile-home-materialization'
 
 function makeProfile(id: string, overrides: Partial<AgentAuthProfile> = {}): AgentAuthProfile {
@@ -240,5 +241,73 @@ describe('codex profile managed home materialization', () => {
       }),
       /not a Codex profile/
     )
+  })
+
+  it('removes an owned home and its profile wrapper directory', () => {
+    writeSystemConfig('# seeded-user-preference\n')
+    const homePath = expectOk(
+      ensureCodexProfileManagedHome({
+        profile: makeProfile('profile-work'),
+        apiKey: 'profile-key-1',
+        userDataPath,
+        systemCodexHomePath
+      })
+    )
+    expect(existsSync(join(homePath, 'auth.json'))).toBe(true)
+
+    const result = removeCodexProfileManagedHome({
+      profileId: 'profile-work',
+      userDataPath,
+      systemCodexHomePath
+    })
+
+    expect(result).toEqual({ ok: true, removed: true })
+    expect(existsSync(homePath)).toBe(false)
+    expect(existsSync(join(codexProfileHomesRoot(userDataPath), 'profile-work'))).toBe(false)
+    expect(existsSync(codexProfileHomesRoot(userDataPath))).toBe(true)
+  })
+
+  it('treats a never-materialized home as already removed', () => {
+    const result = removeCodexProfileManagedHome({
+      profileId: 'profile-work',
+      userDataPath,
+      systemCodexHomePath
+    })
+
+    expect(result).toEqual({ ok: true, removed: false })
+  })
+
+  it('refuses to remove a home missing the ownership marker', () => {
+    const homePath = homePathFor('profile-work')
+    mkdirSync(homePath, { recursive: true })
+    writeFileSync(join(homePath, 'auth.json'), 'unowned\n', 'utf-8')
+
+    const result = removeCodexProfileManagedHome({
+      profileId: 'profile-work',
+      userDataPath,
+      systemCodexHomePath
+    })
+
+    expect(result.ok).toBe(false)
+    if (result.ok) {
+      throw new Error('expected refused result')
+    }
+    expect(result.error).toMatch(/marker|ownership/)
+    expect(existsSync(join(homePath, 'auth.json'))).toBe(true)
+  })
+
+  it('refuses to remove a home whose marker names another owner', () => {
+    const homePath = homePathFor('profile-work')
+    mkdirSync(homePath, { recursive: true })
+    writeFileSync(join(homePath, '.aio-ade-managed-home'), 'other-profile\n', 'utf-8')
+
+    const result = removeCodexProfileManagedHome({
+      profileId: 'profile-work',
+      userDataPath,
+      systemCodexHomePath
+    })
+
+    expect(result.ok).toBe(false)
+    expect(existsSync(homePath)).toBe(true)
   })
 })
