@@ -3,6 +3,7 @@ import type { AgentAuthProfileLaunchProvenance } from '../../shared/agent-auth-p
 import {
   clearAgentAuthProfileLaunchRegistryForTests,
   forgetAgentAuthProfileLaunch,
+  listAgentAuthProfileLaunches,
   lookupAgentAuthProfileLaunch,
   recordAgentAuthProfileLaunch,
   sessionIdsForAgentAuthProfileLaunch
@@ -57,5 +58,17 @@ describe('agent auth profile launch records', () => {
     recordAgentAuthProfileLaunch(makeProvenance('sess-3', 'profile-other'))
 
     expect(sessionIdsForAgentAuthProfileLaunch('profile-work')).toEqual(['sess-1', 'sess-2'])
+  })
+
+  it('snapshots every live launch attribution', () => {
+    recordAgentAuthProfileLaunch(makeProvenance('sess-1', 'profile-work'))
+    recordAgentAuthProfileLaunch(
+      makeProvenance('sess-2', 'profile-other', { provider: 'codex', level: 'worktree' })
+    )
+
+    expect(listAgentAuthProfileLaunches()).toEqual([
+      makeProvenance('sess-1', 'profile-work'),
+      makeProvenance('sess-2', 'profile-other', { provider: 'codex', level: 'worktree' })
+    ])
   })
 })

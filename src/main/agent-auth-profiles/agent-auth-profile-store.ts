@@ -3,7 +3,8 @@ import { writeFileAtomically } from '../codex-accounts/fs-utils'
 import { isWorkspaceKey } from '../../shared/workspace-scope'
 import {
   AGENT_AUTH_PROFILE_STORE_VERSION,
-  parseAgentAuthProfileStore,
+  AgentAuthProfileStoreSchema,
+  parseErrorToResult,
   type AgentAuthProfile,
   type AgentAuthProfileProvider,
   type AgentAuthProfileStore
@@ -12,6 +13,18 @@ import {
 export type AgentAuthProfileStoreResult =
   | { ok: true; store: AgentAuthProfileStore }
   | { ok: false; error: string }
+
+export type ParsedAgentAuthProfileStore =
+  | { ok: true; value: AgentAuthProfileStore }
+  | { ok: false; error: string }
+
+export function parseAgentAuthProfileStore(raw: unknown): ParsedAgentAuthProfileStore {
+  const result = AgentAuthProfileStoreSchema.safeParse(raw)
+  if (result.success) {
+    return { ok: true, value: result.data }
+  }
+  return parseErrorToResult(result.error)
+}
 
 export function emptyAgentAuthProfileStore(): AgentAuthProfileStore {
   return {

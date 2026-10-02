@@ -33,7 +33,7 @@ export const AGENT_AUTH_PROFILE_ENV_KEYS = {
   }
 } as const
 
-const AGENT_AUTH_PROFILE_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9.-]*$/
+export const AGENT_AUTH_PROFILE_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9.-]*$/
 const AGENT_AUTH_PROFILE_SECRET_NAME_PATTERN = /^(api-key|proxy-auth|header:[a-z0-9-]+)$/
 const AGENT_AUTH_PROFILE_SECRET_REF_PREFIX = 'vault:v1:'
 
@@ -107,7 +107,7 @@ export function normalizeAgentAuthProfileBaseUrl(input: string): string {
   return trimmed.replace(/\/+$/, '')
 }
 
-const AgentAuthProfileBaseUrlSchema = z
+export const AgentAuthProfileBaseUrlSchema = z
   .string()
   .refine(
     (value) => {
@@ -293,19 +293,11 @@ export const AgentAuthProfileStoreSchema = z
   })
 export type AgentAuthProfileStore = z.infer<typeof AgentAuthProfileStoreSchema>
 
-export type ParsedAgentAuthProfileStore =
-  | { ok: true; value: AgentAuthProfileStore }
-  | { ok: false; error: string }
-
-export function parseAgentAuthProfileStore(raw: unknown): ParsedAgentAuthProfileStore {
-  const result = AgentAuthProfileStoreSchema.safeParse(raw)
-  if (result.success) {
-    return { ok: true, value: result.data }
-  }
-  const firstIssue = result.error.issues[0]
+export function parseErrorToResult(error: z.ZodError): { ok: false; error: string } {
+  const firstIssue = error.issues[0]
   const issuePath = firstIssue?.path?.length ? ` at ${firstIssue.path.map(String).join('.')}` : ''
   return {
     ok: false,
-    error: `${firstIssue?.message ?? 'Invalid agent auth profile store.'}${issuePath}`
+    error: `${firstIssue?.message ?? 'Invalid agent auth profile input.'}${issuePath}`
   }
 }

@@ -9,8 +9,7 @@ import {
   isValidAgentAuthProfileId,
   isValidAgentAuthProfileSecretName,
   normalizeAgentAuthProfileBaseUrl,
-  parseAgentAuthProfileSecretRef,
-  parseAgentAuthProfileStore
+  parseAgentAuthProfileSecretRef
 } from './agent-auth-profile-types'
 
 function validProfile(overrides: Record<string, unknown> = {}) {
@@ -336,32 +335,6 @@ describe('agent auth profile store envelope', () => {
     ).toThrow()
     expect(() => AgentAuthProfileStoreSchema.parse({ version: '1', profiles: [] })).toThrow()
     expect(() => AgentAuthProfileStoreSchema.parse({ profiles: [] })).toThrow()
-  })
-
-  it('parseAgentAuthProfileStore returns the discriminated union without throwing', () => {
-    const ok = parseAgentAuthProfileStore({
-      version: AGENT_AUTH_PROFILE_STORE_VERSION,
-      defaultProfileIdByProvider: { claude: null, codex: null },
-      workspaceBindings: {},
-      profiles: [validProfile()]
-    })
-    expect(ok.ok).toBe(true)
-
-    for (const bad of [
-      null,
-      'x',
-      7,
-      { version: 2, profiles: [] },
-      { version: 1, profiles: 'nope' },
-      { version: 1 }
-    ]) {
-      const result = parseAgentAuthProfileStore(bad)
-      expect(result.ok).toBe(false)
-      if (!result.ok) {
-        expect(typeof result.error).toBe('string')
-        expect(result.error.length).toBeGreaterThan(0)
-      }
-    }
   })
 })
 

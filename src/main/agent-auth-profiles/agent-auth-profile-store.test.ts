@@ -4,9 +4,13 @@ import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   buildAgentAuthProfileSecretRef,
+  AGENT_AUTH_PROFILE_STORE_VERSION,
   type AgentAuthProfile
 } from '../../shared/agent-auth-profile-types'
-import { AgentAuthProfileStoreService } from './agent-auth-profile-store'
+import {
+  AgentAuthProfileStoreService,
+  parseAgentAuthProfileStore
+} from './agent-auth-profile-store'
 
 function makeProfile(id: string, overrides: Partial<AgentAuthProfile> = {}): AgentAuthProfile {
   return {
@@ -175,5 +179,31 @@ describe('agent auth profile store service', () => {
     expect(cleared.ok).toBe(true)
     const loaded = service.load()
     expect(loaded.ok && loaded.store.defaultProfileIdByProvider.claude).toBeNull()
+  })
+
+  it('parses into a discriminated union without throwing', () => {
+    const ok = parseAgentAuthProfileStore({
+      version: AGENT_AUTH_PROFILE_STORE_VERSION,
+      defaultProfileIdByProvider: { claude: null, codex: null },
+      workspaceBindings: {},
+      profiles: [makeProfile('profile-work')]
+    })
+    expect(ok.ok).toBe(true)
+
+    for (const bad of [
+      null,
+      'x',
+      7,
+      { version: 2, profiles: [] },
+      { version: 1, profiles: 'nope' },
+      { version: 1 }
+    ]) {
+      const result = parseAgentAuthProfileStore(bad)
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(typeof result.error).toBe('string')
+        expect(result.error.length).toBeGreaterThan(0)
+      }
+    }
   })
 })

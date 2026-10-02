@@ -36,6 +36,11 @@ export function sessionIdsForAgentAuthProfileLaunch(profileId: string): string[]
   return sessionIds
 }
 
+// Snapshot for the profiles UI: every live session's launch attribution.
+export function listAgentAuthProfileLaunches(): AgentAuthProfileLaunchProvenance[] {
+  return [...launchesBySessionId.values()]
+}
+
 export function clearAgentAuthProfileLaunchRegistryForTests(): void {
   launchesBySessionId.clear()
 }
