@@ -56,6 +56,7 @@ import { AgentsPane } from './AgentsPane'
 import { OrchestrationPane } from './OrchestrationPane'
 import { LinearAgentSkillPane } from './LinearAgentSkillPane'
 import { AccountsPane } from './AccountsPane'
+import { AgentAuthProfilesPane } from './AgentAuthProfilesPane'
 import { StatsPane } from '../stats/StatsPane'
 import { IntegrationsPane } from './IntegrationsPane'
 import { TasksPane } from './TasksPane'
@@ -1248,6 +1249,23 @@ function Settings(): React.JSX.Element {
                     />
                   ) : null}
                 </SettingsSection>
+
+                {showDesktopOnlySettings ? (
+                  <SettingsSection
+                    id="agent-auth-profiles"
+                    title={translate(
+                      'auto.components.settings.Settings.agentAuthProfilesTitle',
+                      'Agent API Profiles'
+                    )}
+                    description={translate(
+                      'auto.components.settings.Settings.agentAuthProfilesDescription',
+                      'Named credential profiles for Claude and Codex agent sessions with optional endpoint, header, and proxy overrides.'
+                    )}
+                    searchEntries={getSectionSearchEntries('agent-auth-profiles')}
+                  >
+                    {isSectionMounted('agent-auth-profiles') ? <AgentAuthProfilesPane /> : null}
+                  </SettingsSection>
+                ) : null}
 
                 <SettingsSection
                   id="orchestration"

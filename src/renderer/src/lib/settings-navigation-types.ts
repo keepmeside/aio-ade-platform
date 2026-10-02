@@ -15,6 +15,7 @@ export type SettingsNavTarget =
   | 'general'
   | 'integrations'
   | 'accounts'
+  | 'agent-auth-profiles'
   | 'browser'
   | 'git'
   | 'tasks'

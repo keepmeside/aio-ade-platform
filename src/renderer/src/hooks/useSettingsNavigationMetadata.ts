@@ -15,6 +15,7 @@ import {
   GitBranch,
   Globe,
   Keyboard,
+  KeyRound,
   ListChecks,
   Lock,
   Mic,
@@ -43,6 +44,7 @@ import type { SettingsNavSection } from '@/lib/settings-navigation-types'
 import { getGeneralPaneSearchEntries } from '@/components/settings/general-search'
 import { getAgentsPaneSearchEntries } from '@/components/settings/agents-search'
 import { getAccountsPaneSearchEntries } from '@/components/settings/accounts-search'
+import { getAgentAuthProfilesPaneSearchEntries } from '@/components/settings/agent-auth-profiles-search'
 import { getIntegrationsPaneSearchEntries } from '@/components/settings/integrations-search'
 import { getGitPaneSearchEntries } from '@/components/settings/git-search'
 import { getGitProviderApiBudgetSearchEntries } from '@/components/settings/git-provider-api-budget-search'
@@ -177,6 +179,26 @@ export function buildSettingsNavigationMetadata({
       group: 'capabilities',
       badge: translate('auto.hooks.useSettingsNavigationMetadata.7c79d3b7bf', 'Optional')
     },
+    // Why: profiles live in the desktop main's encrypted vault and configure
+    // local PTY launches, so the web client must not see this pane.
+    ...(showDesktopOnlySettings
+      ? [
+          {
+            id: 'agent-auth-profiles',
+            title: translate(
+              'auto.hooks.useSettingsNavigationMetadata.agentAuthProfilesTitle',
+              'Agent API Profiles'
+            ),
+            description: translate(
+              'auto.hooks.useSettingsNavigationMetadata.agentAuthProfilesDescription',
+              'Named credential profiles for Claude and Codex agent sessions with optional endpoint, header, and proxy overrides.'
+            ),
+            icon: KeyRound,
+            searchEntries: getAgentAuthProfilesPaneSearchEntries(),
+            group: 'capabilities'
+          }
+        ]
+      : []),
     {
       id: 'orchestration',
       title: translate('auto.hooks.useSettingsNavigationMetadata.58a868e8e4', 'Orchestration'),

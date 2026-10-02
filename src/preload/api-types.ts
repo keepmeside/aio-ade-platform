@@ -2350,10 +2350,10 @@ export type PreloadApi = {
     }) => Promise<ClaudeRateLimitAccountsState>
   }
   agentAuthProfiles: {
-    list: () => Promise<AgentAuthProfileListSnapshot>
-    create: (
-      args: AgentAuthProfileUpsertInput
-    ) => Promise<AgentAuthProfileServiceResult<AgentAuthProfile>>
+    list: () => Promise<AgentAuthProfileServiceResult<AgentAuthProfileListSnapshot>>
+    create: (args: {
+      input: AgentAuthProfileUpsertInput
+    }) => Promise<AgentAuthProfileServiceResult<AgentAuthProfile>>
     update: (args: {
       profileId: string
       input: AgentAuthProfileUpsertInput

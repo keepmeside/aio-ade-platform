@@ -33,9 +33,10 @@ function ids(
 
 describe('settings navigation metadata', () => {
   it('puts AI capability panes at the top on desktop', () => {
-    expect(ids().slice(0, 10)).toEqual([
+    expect(ids().slice(0, 11)).toEqual([
       'agents',
       'accounts',
+      'agent-auth-profiles',
       'orchestration',
       'computer-use',
       'voice',
@@ -100,6 +101,7 @@ describe('settings navigation metadata', () => {
     expect(webIds).not.toContain('computer-use')
     expect(webIds).not.toContain('voice')
     expect(webIds).not.toContain('advanced')
+    expect(webIds).not.toContain('agent-auth-profiles')
     expect(webIds).toContain('servers')
     expect(webIds).toContain('repo-repo-1')
   })
