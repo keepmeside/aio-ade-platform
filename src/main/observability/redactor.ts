@@ -59,7 +59,11 @@ const CLIENT_ATTR_BLOCKLIST = new Set([
   'access_token',
   'refresh_token',
   'proxy-authorization',
-  'headers.authorization'
+  'headers.authorization',
+  // Profile-baked custom-header env/config keys: their values are `Header: secret`
+  // pairs whose labels match no rule family, so the key itself must drop.
+  'anthropic_custom_headers',
+  'anthropic-custom-headers'
 ])
 
 // Identity keys: valid in telemetry but stripped from bundles to prevent re-identifying PostHog history (see telemetry-error-tracking.md).

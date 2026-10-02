@@ -163,6 +163,16 @@ describe('redactor — attribute-key blocklist', () => {
     const out = redactAttributes({ 'headers.authorization': 'Bearer x' })
     expect(out).not.toHaveProperty('headers.authorization')
   })
+  it('drops anthropic custom-header keys in both spellings', () => {
+    const out = redactAttributes({
+      ANTHROPIC_CUSTOM_HEADERS: 'X-Org-Id: plain-header-secret',
+      'anthropic-custom-headers': 'X-Org-Id: plain-header-secret',
+      keep: 'ok'
+    })
+    expect(out).not.toHaveProperty('ANTHROPIC_CUSTOM_HEADERS')
+    expect(out).not.toHaveProperty('anthropic-custom-headers')
+    expect(out.keep).toBe('ok')
+  })
   it('drops structured secret-bearing keys with plain values', () => {
     const out = redactAttributes({
       token: 'plain-token',
