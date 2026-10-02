@@ -1,5 +1,6 @@
 import type { AgentAuthProfile } from '../../shared/agent-auth-profile-types'
 import type { AgentAuthProfileUpsertInput } from '../../shared/agent-auth-profile-upsert-input'
+import type { AgentAuthProfileHealthTestResult } from '../../shared/agent-auth-profile-service-results'
 import type { AgentAuthSecretRead } from './agent-auth-secret-vault'
 
 // Connectivity/validity probe for a stored profile: one GET against the
@@ -8,20 +9,6 @@ import type { AgentAuthSecretRead } from './agent-auth-secret-vault'
 // exception. The profile's own proxy setting is deliberately not applied here
 // (undecided contract); the caller applies the environment proxy before
 // handing us its fetch.
-
-export type AgentAuthProfileHealthTestKind =
-  | 'missing-secret'
-  | 'decrypt-failed'
-  | 'timeout'
-  | 'network'
-  | 'rejected'
-  | 'server-error'
-  | 'profile-missing'
-  | 'invalid-input'
-
-export type AgentAuthProfileHealthTestResult =
-  | { ok: true; status: number }
-  | { ok: false; kind: AgentAuthProfileHealthTestKind; error: string }
 
 export type AgentAuthProfileHealthTestFetch = (
   url: string,

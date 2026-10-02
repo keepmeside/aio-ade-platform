@@ -58,6 +58,7 @@ import { registerSpeechHandlers } from './speech'
 import { registerTerminalRenderDesyncEvidenceHandler } from './terminal-render-desync-evidence'
 import { registerAioAdeProfileHandlers } from './aio-ade-profiles'
 import { registerCodexAccountHandlers } from './codex-accounts'
+import { registerAgentAuthProfileHandlers } from './agent-auth-profiles'
 import { registerAgentHookHandlers } from './agent-hooks'
 import { registerCodexConfigSyncHandlers } from './codex-config-sync'
 import { getPtyIdForPaneKey } from './pty'
@@ -73,6 +74,7 @@ import type { CodexUsageStore } from '../codex-usage/store'
 import type { RateLimitService } from '../rate-limits/service'
 import type { CodexAccountService } from '../codex-accounts/service'
 import type { ClaudeAccountService } from '../claude-accounts/service'
+import type { AgentAuthProfileService } from '../agent-auth-profiles/agent-auth-profile-service'
 import type { AutomationService } from '../automations/service'
 import type { AgentAwakeService } from '../agent-awake-service'
 import type { CrashReportStore } from '../crash-reporting/crash-report-store'
@@ -118,7 +120,8 @@ export function registerCoreHandlers(
   keybindings?: KeybindingService,
   lifecycleOptions: CoreHandlerLifecycleOptions = {},
   pluginService?: PluginService,
-  marketplaceServices?: PluginMarketplaceHandlerServices
+  marketplaceServices?: PluginMarketplaceHandlerServices,
+  agentAuthProfiles?: AgentAuthProfileService
 ): void {
   // Why: on macOS the app can stay alive after all windows close, then
   // openMainWindow() is called again on 'activate'. ipcMain.handle() throws
@@ -144,6 +147,9 @@ export function registerCoreHandlers(
   registerAgentTrustHandlers()
   registerClaudeAccountHandlers(claudeAccounts)
   registerRateLimitHandlers(rateLimits, codexAccounts)
+  if (agentAuthProfiles) {
+    registerAgentAuthProfileHandlers(agentAuthProfiles)
+  }
   registerGitHubHandlers(store, stats)
   registerGitLabHandlers(store)
   registerHostedReviewHandlers(store, stats)

@@ -390,6 +390,13 @@ import type {
   ReactErrorBoundaryReportResult
 } from '../shared/crash-reporting'
 import type { RendererHeapStatistics } from '../shared/renderer-heap-statistics'
+import type { AgentAuthProfile, AgentAuthProfileProvider } from '../shared/agent-auth-profile-types'
+import type { AgentAuthProfileUpsertInput } from '../shared/agent-auth-profile-upsert-input'
+import type {
+  AgentAuthProfileHealthTestResult,
+  AgentAuthProfileListSnapshot,
+  AgentAuthProfileServiceResult
+} from '../shared/agent-auth-profile-service-results'
 
 export type {
   ShellOpenExternalEditorRequest,
@@ -2341,6 +2348,43 @@ export type PreloadApi = {
       runtime?: 'host' | 'wsl'
       wslDistro?: string | null
     }) => Promise<ClaudeRateLimitAccountsState>
+  }
+  agentAuthProfiles: {
+    list: () => Promise<AgentAuthProfileListSnapshot>
+    create: (
+      args: AgentAuthProfileUpsertInput
+    ) => Promise<AgentAuthProfileServiceResult<AgentAuthProfile>>
+    update: (args: {
+      profileId: string
+      input: AgentAuthProfileUpsertInput
+    }) => Promise<AgentAuthProfileServiceResult<AgentAuthProfile>>
+    duplicate: (args: {
+      profileId: string
+      label?: string
+    }) => Promise<AgentAuthProfileServiceResult<AgentAuthProfile>>
+    /** Warnings carry best-effort cleanup leftovers (secrets, bindings, managed home), not failures. */
+    delete: (args: {
+      profileId: string
+    }) => Promise<AgentAuthProfileServiceResult<{ warnings: string[] }>>
+    /** Probes a stored profile by id or an unsaved draft by input; omit both to get an invalid-input result. */
+    testConnection: (args?: {
+      profileId?: string
+      input?: AgentAuthProfileUpsertInput
+    }) => Promise<AgentAuthProfileHealthTestResult>
+    setProviderDefault: (args: {
+      provider: AgentAuthProfileProvider
+      profileId: string | null
+    }) => Promise<
+      AgentAuthProfileServiceResult<AgentAuthProfileListSnapshot['defaultProfileIdByProvider']>
+    >
+    setSessionBinding: (args: {
+      sessionId: string
+      profileId: string | null
+    }) => Promise<AgentAuthProfileServiceResult<true>>
+    setWorkspaceBinding: (args: {
+      key: string
+      profileId: string | null
+    }) => Promise<AgentAuthProfileServiceResult<true>>
   }
   cli: {
     getInstallStatus: () => Promise<CliInstallStatus>

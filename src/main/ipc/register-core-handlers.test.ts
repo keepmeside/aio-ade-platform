@@ -33,6 +33,7 @@ const {
   registerAiVaultHandlersMock,
   registerAioAdeProfileHandlersMock,
   registerCodexAccountHandlersMock,
+  registerAgentAuthProfileHandlersMock,
   registerAgentHookHandlersMock,
   registerAgentTrustHandlersMock,
   registerClaudeAccountHandlersMock,
@@ -95,6 +96,7 @@ const {
   registerAiVaultHandlersMock: vi.fn(),
   registerAioAdeProfileHandlersMock: vi.fn(),
   registerCodexAccountHandlersMock: vi.fn(),
+  registerAgentAuthProfileHandlersMock: vi.fn(),
   registerAgentHookHandlersMock: vi.fn(),
   registerAgentTrustHandlersMock: vi.fn(),
   registerClaudeAccountHandlersMock: vi.fn(),
@@ -305,6 +307,10 @@ vi.mock('./codex-accounts', () => ({
   registerCodexAccountHandlers: registerCodexAccountHandlersMock
 }))
 
+vi.mock('./agent-auth-profiles', () => ({
+  registerAgentAuthProfileHandlers: registerAgentAuthProfileHandlersMock
+}))
+
 vi.mock('./agent-hooks', () => ({
   registerAgentHookHandlers: registerAgentHookHandlersMock
 }))
@@ -398,6 +404,7 @@ describe('registerCoreHandlers', () => {
     registerAiVaultHandlersMock.mockReset()
     registerAioAdeProfileHandlersMock.mockReset()
     registerCodexAccountHandlersMock.mockReset()
+    registerAgentAuthProfileHandlersMock.mockReset()
     registerAgentHookHandlersMock.mockReset()
     registerAgentTrustHandlersMock.mockReset()
     registerClaudeAccountHandlersMock.mockReset()
@@ -437,6 +444,7 @@ describe('registerCoreHandlers', () => {
     const claudeAccounts = { marker: 'claudeAccounts' }
     const rateLimits = { marker: 'rateLimits' }
     const agentAwakeService = { marker: 'agentAwakeService' }
+    const agentAuthProfiles = { marker: 'agentAuthProfiles' }
     const onBeforeRelaunch = vi.fn()
     const getAdditionalAiVaultCodexHomePaths = vi.fn(() => ['/runtime/codex/home'])
 
@@ -455,7 +463,10 @@ describe('registerCoreHandlers', () => {
       agentAwakeService as never,
       undefined,
       undefined,
-      { getAdditionalAiVaultCodexHomePaths, onBeforeRelaunch }
+      { getAdditionalAiVaultCodexHomePaths, onBeforeRelaunch },
+      undefined,
+      undefined,
+      agentAuthProfiles as never
     )
 
     const aiVaultOptions = registerAiVaultHandlersMock.mock.calls[0]?.[0]
@@ -482,6 +493,7 @@ describe('registerCoreHandlers', () => {
     expect(registerPetHandlersMock).toHaveBeenCalled()
     expect(registerClaudeAccountHandlersMock).toHaveBeenCalledWith(claudeAccounts)
     expect(registerRateLimitHandlersMock).toHaveBeenCalledWith(rateLimits, codexAccounts)
+    expect(registerAgentAuthProfileHandlersMock).toHaveBeenCalledWith(agentAuthProfiles)
     expect(registerGitHubHandlersMock).toHaveBeenCalledWith(store, stats)
     expect(registerLinearHandlersMock).toHaveBeenCalled()
     expect(registerJiraHandlersMock).toHaveBeenCalled()

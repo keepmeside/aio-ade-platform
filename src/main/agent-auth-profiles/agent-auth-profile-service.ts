@@ -4,11 +4,14 @@ import type {
   AgentAuthProfileStore
 } from '../../shared/agent-auth-profile-types'
 import type { AgentAuthProfileUpsertInput } from '../../shared/agent-auth-profile-upsert-input'
-import type { AgentAuthProfileLaunchProvenance } from '../../shared/agent-auth-profile-bindings'
+import type { AgentAuthProfileHealthTestFetch } from './agent-auth-profile-health-test'
 import type {
-  AgentAuthProfileHealthTestFetch,
-  AgentAuthProfileHealthTestResult
-} from './agent-auth-profile-health-test'
+  AgentAuthProfileHealthTestResult,
+  AgentAuthProfileListEntry,
+  AgentAuthProfileListSnapshot,
+  AgentAuthProfileServiceError,
+  AgentAuthProfileServiceResult
+} from '../../shared/agent-auth-profile-service-results'
 import {
   resolveAgentAuthProfileHealthTest,
   testAgentAuthProfileHealth
@@ -27,22 +30,6 @@ import type { AgentAuthProfileSessionBindings } from './agent-auth-profile-sessi
 import type { AgentAuthProfileStoreService } from './agent-auth-profile-store'
 import type { AgentAuthSecretVault } from './agent-auth-secret-vault'
 import { removeCodexProfileManagedHome } from './codex-profile-home-materialization'
-
-export type AgentAuthProfileServiceError = { ok: false; error: string; liveSessionIds?: string[] }
-
-export type AgentAuthProfileServiceResult<T> = { ok: true; value: T } | AgentAuthProfileServiceError
-
-export type AgentAuthProfileListEntry = AgentAuthProfile & {
-  liveSessionCount: number
-  hasApiKey: boolean
-}
-
-export type AgentAuthProfileListSnapshot = {
-  profiles: AgentAuthProfileListEntry[]
-  defaultProfileIdByProvider: AgentAuthProfileStore['defaultProfileIdByProvider']
-  workspaceBindings: AgentAuthProfileStore['workspaceBindings']
-  liveLaunches: AgentAuthProfileLaunchProvenance[]
-}
 
 export type AgentAuthProfileServiceDeps = {
   store: AgentAuthProfileStoreService

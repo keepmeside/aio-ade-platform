@@ -1,5 +1,6 @@
 /* eslint-disable max-lines -- main-process entry point; owns app lifecycle, service wiring, window creation, and hook/daemon startup with no cleaner split seam. */
 import { existsSync } from 'node:fs'
+import { randomUUID } from 'node:crypto'
 import { join } from 'node:path'
 import os from 'node:os'
 import { app, BrowserWindow, dialog, ipcMain, nativeTheme, type Tray } from 'electron'
@@ -188,6 +189,8 @@ import {
   createCodexProfileLaunchAuthResolver,
   type ResolveCodexProfileLaunchAuth
 } from './agent-auth-profiles/codex-profile-launch-auth'
+import { AgentAuthProfileService } from './agent-auth-profiles/agent-auth-profile-service'
+import { agentAuthProfileElectronHealthFetch } from './agent-auth-profiles/agent-auth-profile-electron-health-fetch'
 import type { PrepareClaudeAuth } from './ipc/pty'
 import { codexHookService, setSystemCodexHomeHookSweepSuppressed } from './codex/hook-service'
 import {
@@ -300,6 +303,7 @@ let claudeRuntimeAuth: ClaudeRuntimeAuthService | null = null
 // built during main init, consumed by window attach and later profile IPC.
 let agentAuthProfileStoreService: AgentAuthProfileStoreService | null = null
 let agentAuthProfileSessionBindings: AgentAuthProfileSessionBindings | null = null
+let agentAuthProfileService: AgentAuthProfileService | null = null
 let prepareClaudeAuthForLaunch: PrepareClaudeAuth | null = null
 let resolveCodexProfileLaunchAuthForPty: ResolveCodexProfileLaunchAuth | null = null
 let runtime: AioAdeRuntimeService | null = null
@@ -1209,7 +1213,8 @@ function openMainWindow(): BrowserWindow {
     pluginService ?? undefined,
     pluginMarketplaceService && pluginMarketplaceInstaller
       ? { marketplace: pluginMarketplaceService, installer: pluginMarketplaceInstaller }
-      : undefined
+      : undefined,
+    agentAuthProfileService ?? undefined
   )
   automations.setWebContents(window.webContents)
   automations.start()
@@ -1937,6 +1942,16 @@ void app.whenReady().then(async () => {
   )
   agentAuthProfileSessionBindings = new AgentAuthProfileSessionBindings()
   const agentAuthSecretVault = createDefaultAgentAuthSecretVault()
+  agentAuthProfileService = new AgentAuthProfileService({
+    store: agentAuthProfileStoreService,
+    vault: agentAuthSecretVault,
+    sessionBindings: agentAuthProfileSessionBindings,
+    mintProfileId: () => randomUUID(),
+    now: () => Date.now(),
+    healthFetch: agentAuthProfileElectronHealthFetch,
+    userDataPath: app.getPath('userData'),
+    systemCodexHomePath: getSystemCodexHomePath()
+  })
   prepareClaudeAuthForLaunch = createProfileAwarePrepareClaudeAuth(
     (target) => claudeRuntimeAuth!.prepareForClaudeLaunch(target),
     {

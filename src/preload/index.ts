@@ -2041,6 +2041,18 @@ const api = {
     }): Promise<unknown> => ipcRenderer.invoke('claudeAccounts:select', args)
   },
 
+  agentAuthProfiles: {
+    list: () => ipcRenderer.invoke('agentAuthProfiles:list'),
+    create: (args) => ipcRenderer.invoke('agentAuthProfiles:create', args),
+    update: (args) => ipcRenderer.invoke('agentAuthProfiles:update', args),
+    duplicate: (args) => ipcRenderer.invoke('agentAuthProfiles:duplicate', args),
+    delete: (args) => ipcRenderer.invoke('agentAuthProfiles:delete', args),
+    testConnection: (args) => ipcRenderer.invoke('agentAuthProfiles:testConnection', args),
+    setProviderDefault: (args) => ipcRenderer.invoke('agentAuthProfiles:setProviderDefault', args),
+    setSessionBinding: (args) => ipcRenderer.invoke('agentAuthProfiles:setSessionBinding', args),
+    setWorkspaceBinding: (args) => ipcRenderer.invoke('agentAuthProfiles:setWorkspaceBinding', args)
+  } satisfies PreloadApi['agentAuthProfiles'],
+
   cli: {
     getInstallStatus: (): Promise<CliInstallStatus> => ipcRenderer.invoke('cli:getInstallStatus'),
     install: (): Promise<CliInstallStatus> => ipcRenderer.invoke('cli:install'),
