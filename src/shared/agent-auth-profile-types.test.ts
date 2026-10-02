@@ -243,6 +243,7 @@ describe('agent auth profile store envelope', () => {
     const parsed = AgentAuthProfileStoreSchema.parse({
       version: AGENT_AUTH_PROFILE_STORE_VERSION,
       defaultProfileIdByProvider: { claude: 'profile-work-glm', codex: 'profile-codex-alt' },
+      workspaceBindings: {},
       profiles: [first, second]
     })
     expect(parsed.profiles.map((profile) => profile.id)).toEqual([
@@ -255,11 +256,51 @@ describe('agent auth profile store envelope', () => {
     })
   })
 
+  it('parses workspace bindings keyed by WorkspaceKey', () => {
+    const parsed = AgentAuthProfileStoreSchema.parse({
+      version: AGENT_AUTH_PROFILE_STORE_VERSION,
+      defaultProfileIdByProvider: { claude: null, codex: null },
+      workspaceBindings: {
+        'worktree:repo-1::/repo/path': 'profile-work-glm',
+        'folder:folder-1': 'profile-work-glm'
+      },
+      profiles: [validProfile()]
+    })
+    expect(parsed.workspaceBindings).toEqual({
+      'worktree:repo-1::/repo/path': 'profile-work-glm',
+      'folder:folder-1': 'profile-work-glm'
+    })
+  })
+
+  it('rejects workspace binding keys that are not workspace keys', () => {
+    expect(() =>
+      AgentAuthProfileStoreSchema.parse({
+        version: AGENT_AUTH_PROFILE_STORE_VERSION,
+        defaultProfileIdByProvider: { claude: null, codex: null },
+        workspaceBindings: { 'bogus-key': 'profile-work-glm' },
+        profiles: [validProfile()]
+      })
+    ).toThrow()
+  })
+
+  it('allows workspace bindings to a missing profile — stale refs fall through loudly', () => {
+    // Why: the resolver reports stale bindings via staleRefs instead of masking
+    // lower levels, so the store must not reject them at the parse boundary.
+    const parsed = AgentAuthProfileStoreSchema.parse({
+      version: AGENT_AUTH_PROFILE_STORE_VERSION,
+      defaultProfileIdByProvider: { claude: null, codex: null },
+      workspaceBindings: { 'worktree:repo-1::/repo/path': 'profile-gone' },
+      profiles: []
+    })
+    expect(parsed.workspaceBindings['worktree:repo-1::/repo/path']).toBe('profile-gone')
+  })
+
   it('rejects defaults that reference a missing profile', () => {
     expect(() =>
       AgentAuthProfileStoreSchema.parse({
         version: AGENT_AUTH_PROFILE_STORE_VERSION,
         defaultProfileIdByProvider: { claude: 'profile-gone', codex: null },
+        workspaceBindings: {},
         profiles: [validProfile()]
       })
     ).toThrow(/does not exist/)
@@ -270,6 +311,7 @@ describe('agent auth profile store envelope', () => {
       AgentAuthProfileStoreSchema.parse({
         version: AGENT_AUTH_PROFILE_STORE_VERSION,
         defaultProfileIdByProvider: { claude: 'profile-codex-alt', codex: null },
+        workspaceBindings: {},
         profiles: [
           validProfile(),
           validProfile({
@@ -300,6 +342,7 @@ describe('agent auth profile store envelope', () => {
     const ok = parseAgentAuthProfileStore({
       version: AGENT_AUTH_PROFILE_STORE_VERSION,
       defaultProfileIdByProvider: { claude: null, codex: null },
+      workspaceBindings: {},
       profiles: [validProfile()]
     })
     expect(ok.ok).toBe(true)

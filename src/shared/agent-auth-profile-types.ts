@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { isWorkspaceKey } from './workspace-scope'
 
 // Versioned, secret-free schema for agent auth profiles. The serialized store
 // may only hold opaque vault refs (`vault:v1:<profileId>:<secretName>`); raw
@@ -246,7 +247,16 @@ export const AgentAuthProfileStoreSchema = z
     defaultProfileIdByProvider: z.strictObject({
       claude: z.string().nullable(),
       codex: z.string().nullable()
-    })
+    }),
+    // Durable home for worktree/folder-workspace bindings. Key shape is
+    // validated here; target existence is NOT — stale bindings are the
+    // resolver's loud fall-through contract, not a parse error.
+    workspaceBindings: z.record(
+      z.string().refine(isWorkspaceKey, {
+        message: 'Workspace binding keys must be "worktree:<id>" or "folder:<id>".'
+      }),
+      z.string()
+    )
   })
   .superRefine((store, ctx) => {
     const seen = new Set<string>()
