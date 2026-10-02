@@ -39,6 +39,17 @@ describe('agent auth profile session bindings', () => {
     expect(bindings.resolve('session-2')).toBe('profile-alt')
   })
 
+  it('snapshots the live bindings as a plain record', () => {
+    const bindings = new AgentAuthProfileSessionBindings()
+    bindings.set('session-1', 'profile-work')
+    bindings.set('session-2', 'profile-alt')
+
+    expect(bindings.toRecord()).toEqual({
+      'session-1': 'profile-work',
+      'session-2': 'profile-alt'
+    })
+  })
+
   it('sweeps bindings for sessions that are no longer live', () => {
     const bindings = new AgentAuthProfileSessionBindings()
     bindings.set('session-1', 'profile-work')

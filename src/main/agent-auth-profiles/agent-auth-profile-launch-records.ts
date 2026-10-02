@@ -1,0 +1,35 @@
+import type { AgentAuthProfileLaunchProvenance } from '../../shared/agent-auth-profile-bindings'
+
+// Ephemeral per-session records of which agent auth profile a live PTY
+// launched with — the profile-side counterpart of the live-pty gate. Keyed by
+// session id and cleared on PTY teardown; nothing here survives a restart.
+const launchesBySessionId = new Map<string, AgentAuthProfileLaunchProvenance>()
+
+export function recordAgentAuthProfileLaunch(provenance: AgentAuthProfileLaunchProvenance): void {
+  launchesBySessionId.set(provenance.sessionId, provenance)
+}
+
+export function forgetAgentAuthProfileLaunch(sessionId: string): void {
+  launchesBySessionId.delete(sessionId)
+}
+
+export function lookupAgentAuthProfileLaunch(
+  sessionId: string
+): AgentAuthProfileLaunchProvenance | null {
+  return launchesBySessionId.get(sessionId) ?? null
+}
+
+// Reverse lookup for edit/delete gating: which live sessions still run a profile.
+export function sessionIdsForAgentAuthProfileLaunch(profileId: string): string[] {
+  const sessionIds: string[] = []
+  for (const provenance of launchesBySessionId.values()) {
+    if (provenance.profileId === profileId) {
+      sessionIds.push(provenance.sessionId)
+    }
+  }
+  return sessionIds
+}
+
+export function clearAgentAuthProfileLaunchRegistryForTests(): void {
+  launchesBySessionId.clear()
+}

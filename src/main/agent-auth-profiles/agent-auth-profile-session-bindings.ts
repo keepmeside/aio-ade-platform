@@ -19,6 +19,11 @@ export class AgentAuthProfileSessionBindings {
     return this.bySessionId.get(sessionId) ?? null
   }
 
+  // Snapshot for the launch resolver, which takes plain data.
+  toRecord(): Record<string, string> {
+    return Object.fromEntries(this.bySessionId)
+  }
+
   // Returns the session ids whose pins referenced the deleted profile so the
   // caller can surface the change; the pins themselves are gone.
   deleteProfile(profileId: string): string[] {

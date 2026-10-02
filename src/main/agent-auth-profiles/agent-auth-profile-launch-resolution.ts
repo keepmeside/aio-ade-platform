@@ -9,6 +9,7 @@ import {
   type AgentAuthProfileStaleRef
 } from '../../shared/agent-auth-profile-bindings'
 import { isWorkspaceKey } from '../../shared/workspace-scope'
+import { parseWorkspaceKey } from '../../shared/workspace-scope'
 import type { WorkspaceKey } from '../../shared/types'
 import type { AgentAuthProfile, AgentAuthProfileStore } from '../../shared/agent-auth-profile-types'
 import {
@@ -52,6 +53,36 @@ export type AgentAuthProfileLaunchResolution<T> =
       provenance: AgentAuthProfileLaunchProvenance | null
     }
   | { status: 'error'; error: string }
+
+// Provider-neutral launch identity: which session and which workspace the
+// spawn belongs to. Always an object for a real agent launch — even a bare
+// spawn with no ids still resolves the provider-default level.
+export type AgentAuthProfileLaunchContext = {
+  sessionId: string | null
+  worktreeId: string | null
+  folderWorkspaceId: string | null
+}
+
+// PTY spawn args carry a single workspace id that is either a plain worktree
+// id or a "worktree:"/"folder:" workspace key — normalize it into the
+// resolver's two workspace levels.
+export function agentAuthProfileLaunchContextFromWorkspaceId(
+  sessionId: string | null | undefined,
+  workspaceId: string | undefined
+): AgentAuthProfileLaunchContext {
+  const scope = typeof workspaceId === 'string' ? parseWorkspaceKey(workspaceId) : null
+  if (scope?.type === 'folder') {
+    return {
+      sessionId: sessionId ?? null,
+      worktreeId: null,
+      folderWorkspaceId: scope.folderWorkspaceId
+    }
+  }
+  if (scope?.type === 'worktree') {
+    return { sessionId: sessionId ?? null, worktreeId: scope.worktreeId, folderWorkspaceId: null }
+  }
+  return { sessionId: sessionId ?? null, worktreeId: workspaceId ?? null, folderWorkspaceId: null }
+}
 
 type LaunchResolutionArgs = {
   sessionId: string | null

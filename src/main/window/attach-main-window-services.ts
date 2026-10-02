@@ -22,6 +22,7 @@ import {
   getLocalPtyProvider,
   registerPtyHandlers,
   type GetSelectedCodexHomePath,
+  type PrepareClaudeAuth,
   type PrepareCodexSessionResume
 } from '../ipc/pty'
 import { registerDaemonManagementHandlers } from '../ipc/pty-management'
@@ -44,7 +45,6 @@ import {
 } from '../updater'
 import { scheduleHistoryGc } from '../terminal-history'
 import { hydrateLocalPtyRegistryAtBoot } from '../memory/hydrate-local-pty-registry'
-import type { ClaudeRuntimeAuthPreparation } from '../claude-accounts/runtime-auth-service'
 import { getKnownWorktreeIdsForHistoryGc } from './history-gc-worktree-ids'
 import type {
   RuntimeMarkdownReadTabResult,
@@ -54,7 +54,6 @@ import type { RuntimeMobileSessionTabMove } from '../../shared/runtime-types'
 import { isNativeFileDropPayload, type NativeFileDropPayload } from '../../shared/native-file-drop'
 import { requestMobileMarkdownFromRenderer } from './mobile-markdown-request-relay'
 import { requestTerminalTabCloseFromRenderer } from './terminal-tab-close-request-relay'
-import type { ClaudeAccountSelectionTarget } from '../claude-accounts/runtime-selection'
 import { runWorktreeChangeInvalidators } from '../ipc/worktree-change-invalidators'
 import {
   scheduleWorktreeBaseDirectoryWatcherSync,
@@ -83,9 +82,7 @@ export function attachMainWindowServices(
   store: Store,
   runtime: AioAdeRuntimeService,
   getSelectedCodexHomePath?: GetSelectedCodexHomePath,
-  prepareClaudeAuth?: (
-    target?: ClaudeAccountSelectionTarget
-  ) => Promise<ClaudeRuntimeAuthPreparation>,
+  prepareClaudeAuth?: PrepareClaudeAuth,
   options?: {
     prepareCodexSessionResume?: PrepareCodexSessionResume
     awaitLocalPtyStartup?: () => Promise<void>

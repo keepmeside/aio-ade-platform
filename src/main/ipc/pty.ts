@@ -77,7 +77,6 @@ import {
 import { resolveWslSessionContext } from '../daemon/wsl-session-context'
 import { addNodePtyRecoveryHint } from '../daemon/node-pty-error-hints'
 import { recordDaemonStreamBacklogEvent } from '../daemon/daemon-stream-backlog-probe'
-import type { ClaudeRuntimeAuthPreparation } from '../claude-accounts/runtime-auth-service'
 import type { ClaudeAccountSelectionTarget } from '../claude-accounts/runtime-selection'
 import {
   CLAUDE_AUTH_ENV_VARS,
@@ -89,6 +88,15 @@ import {
   markClaudePtyExited,
   markClaudePtySpawned
 } from '../claude-accounts/live-pty-gate'
+import {
+  agentAuthProfileLaunchContextFromWorkspaceId,
+  type AgentAuthProfileLaunchContext
+} from '../agent-auth-profiles/agent-auth-profile-launch-resolution'
+import type { ProfileAwareClaudeAuthPreparation } from '../agent-auth-profiles/claude-profile-launch-preparation'
+import {
+  forgetAgentAuthProfileLaunch,
+  recordAgentAuthProfileLaunch
+} from '../agent-auth-profiles/agent-auth-profile-launch-records'
 import {
   applyTerminalAttributionEnv,
   resolveAttributionShellFamily
@@ -808,9 +816,10 @@ export type PrepareCodexSessionResume = (args: {
   launchEnv?: NodeJS.ProcessEnv
   workspacePath?: string
 }) => Promise<CodexSessionResumePreparation | null>
-type PrepareClaudeAuth = (
-  target?: ClaudeAccountSelectionTarget
-) => Promise<ClaudeRuntimeAuthPreparation>
+export type PrepareClaudeAuth = (
+  target?: ClaudeAccountSelectionTarget,
+  launchContext?: AgentAuthProfileLaunchContext
+) => Promise<ProfileAwareClaudeAuthPreparation>
 
 function getCodexSelectionTargetForPty(
   shellPath: string | undefined,
@@ -1122,6 +1131,8 @@ export function clearProviderPtyState(
   // new teardown path forgets to remove one provider's overlay/hook state.
   // Why: SSH exit/teardown paths bypass pty.ts's local onExit but still must release Claude account-switch guards.
   markClaudePtyExited(id)
+  // Why: same teardown choke point drops the profile launch record.
+  forgetAgentAuthProfileLaunch(id)
   ptySizes.delete(id)
   ptyIncarnationById.delete(id)
   lastInputAtByPty.delete(id)
@@ -3136,19 +3147,6 @@ export function registerPtyHandlers(
       // Why: the drop still applies here, but this controller's result has no field for
       // notifyResumeUnavailable — runtime/relay panes start fresh without the notice.
       const launchCommand = codexResumeLaunch.command
-      const claudeAuth =
-        isClaudeLaunch && prepareClaudeAuth ? await prepareClaudeAuth(codexSelectionTarget) : null
-      if (isClaudeLaunch && isClaudeAuthSwitchInProgress()) {
-        throw new Error('A Claude account switch is in progress. Try again after it finishes.')
-      }
-      if (claudeAuth?.stripAuthEnv && hasClaudeAuthEnvConflict(args.env)) {
-        // Key names only — never values — so the refusal stays secret-free.
-        throw new Error(
-          `This Claude launch defines explicit Anthropic auth environment variables (${claudeAuthEnvConflictKeys(
-            args.env
-          ).join(', ')}). Remove those overrides before using a managed Claude account.`
-        )
-      }
 
       const isDaemonHostSpawn =
         !args.connectionId &&
@@ -3162,6 +3160,26 @@ export function registerPtyHandlers(
           : undefined)
       const sessionId =
         requestedSessionId ?? (isDaemonHostSpawn ? mintPtySessionId(args.worktreeId) : undefined)
+      // Why: profile resolution needs the final session id, so the claude auth
+      // preparation runs after it — nothing above depends on claudeAuth.
+      const claudeAuth =
+        isClaudeLaunch && prepareClaudeAuth
+          ? await prepareClaudeAuth(
+              codexSelectionTarget,
+              agentAuthProfileLaunchContextFromWorkspaceId(sessionId, args.worktreeId)
+            )
+          : null
+      if (isClaudeLaunch && isClaudeAuthSwitchInProgress()) {
+        throw new Error('A Claude account switch is in progress. Try again after it finishes.')
+      }
+      if (claudeAuth?.stripAuthEnv && hasClaudeAuthEnvConflict(args.env)) {
+        // Key names only — never values — so the refusal stays secret-free.
+        throw new Error(
+          `This Claude launch defines explicit Anthropic auth environment variables (${claudeAuthEnvConflictKeys(
+            args.env
+          ).join(', ')}). Remove those overrides before using managed Claude authentication.`
+        )
+      }
       const effectiveSessionRelayId =
         sessionId !== undefined ? getRelayPtyId(args.connectionId, sessionId) : undefined
       const effectiveSessionAppId =
@@ -3257,8 +3275,13 @@ export function registerPtyHandlers(
         promoteAgentTeamsShimPath(env, requestedAgentTeamsPath)
       }
 
+      // Why: envPatch spreads over the env AFTER this strip runs, but the strip
+      // must still exclude keys the patch itself sets or it deletes the
+      // profile's own credentials.
       const authEnvToDelete = claudeAuth?.stripAuthEnv
-        ? [...CLAUDE_AUTH_ENV_VARS, 'ANTHROPIC_CUSTOM_HEADERS']
+        ? [...CLAUDE_AUTH_ENV_VARS, 'ANTHROPIC_CUSTOM_HEADERS'].filter(
+            (key) => !Object.hasOwn(claudeAuth.envPatch, key)
+          )
         : undefined
       const spawnOptions: PtySpawnOptions = {
         cols: args.cols,
@@ -3716,6 +3739,11 @@ export function registerPtyHandlers(
         runtime?.noteTerminalSpawnCommand?.(result.id, launchCommand ?? null)
         if (isClaudeLaunch) {
           markClaudePtySpawned(result.id)
+          // Why: record which profile's credentials this live PTY runs under;
+          // clearProviderPtyState forgets it on teardown.
+          if (claudeAuth?.agentProfileProvenance) {
+            recordAgentAuthProfileLaunch(claudeAuth.agentProfileProvenance)
+          }
         }
         if (args.telemetry) {
           const agentKindParse = agentKindSchema.safeParse(args.telemetry.agent_kind)
@@ -4212,20 +4240,6 @@ export function registerPtyHandlers(
         cwd,
         terminalRuntimeOptions.terminalWindowsWslDistro ?? null
       )
-      const claudeAuth =
-        isClaudeLaunch && prepareClaudeAuth ? await prepareClaudeAuth(initialSelectionTarget) : null
-      spawnTiming.mark('auth')
-      if (isClaudeLaunch && isClaudeAuthSwitchInProgress()) {
-        throw new Error('A Claude account switch is in progress. Try again after it finishes.')
-      }
-      if (claudeAuth?.stripAuthEnv && hasClaudeAuthEnvConflict(args.env)) {
-        // Key names only — never values — so the refusal stays secret-free.
-        throw new Error(
-          `This Claude launch defines explicit Anthropic auth environment variables (${claudeAuthEnvConflictKeys(
-            args.env
-          ).join(', ')}). Remove those overrides before using a managed Claude account.`
-        )
-      }
       // Why: the daemon-backed provider skips LocalPtyProvider's buildSpawnEnv, so assemble the same host-local env here for parity.
       // Safety: skip entirely for SSH — every injection is a loopback secret or a local path that leaks or misleads on the remote host.
       const isDaemonHostSpawn =
@@ -4238,6 +4252,27 @@ export function registerPtyHandlers(
       const isMintedSessionId = args.sessionId === undefined && isDaemonHostSpawn
       const effectiveSessionId =
         args.sessionId ?? (isDaemonHostSpawn ? mintPtySessionId(args.worktreeId) : undefined)
+      // Why: profile resolution needs the final session id, so the claude auth
+      // preparation runs after it — nothing above depends on claudeAuth.
+      const claudeAuth =
+        isClaudeLaunch && prepareClaudeAuth
+          ? await prepareClaudeAuth(
+              initialSelectionTarget,
+              agentAuthProfileLaunchContextFromWorkspaceId(effectiveSessionId, args.worktreeId)
+            )
+          : null
+      spawnTiming.mark('auth')
+      if (isClaudeLaunch && isClaudeAuthSwitchInProgress()) {
+        throw new Error('A Claude account switch is in progress. Try again after it finishes.')
+      }
+      if (claudeAuth?.stripAuthEnv && hasClaudeAuthEnvConflict(args.env)) {
+        // Key names only — never values — so the refusal stays secret-free.
+        throw new Error(
+          `This Claude launch defines explicit Anthropic auth environment variables (${claudeAuthEnvConflictKeys(
+            args.env
+          ).join(', ')}). Remove those overrides before using managed Claude authentication.`
+        )
+      }
       const effectiveSessionAppId =
         effectiveSessionId !== undefined
           ? getAppPtyId(args.connectionId, effectiveSessionId)
@@ -4451,8 +4486,13 @@ export function registerPtyHandlers(
       const spawnEnv = preAllocatedHandle
         ? { ...env, AIO_ADE_TERMINAL_HANDLE: preAllocatedHandle }
         : env
+      // Why: envPatch spreads over the env AFTER this strip runs, but the strip
+      // must still exclude keys the patch itself sets or it deletes the
+      // profile's own credentials.
       const envToDelete = claudeAuth?.stripAuthEnv
-        ? [...CLAUDE_AUTH_ENV_VARS, 'ANTHROPIC_CUSTOM_HEADERS']
+        ? [...CLAUDE_AUTH_ENV_VARS, 'ANTHROPIC_CUSTOM_HEADERS'].filter(
+            (key) => !Object.hasOwn(claudeAuth.envPatch, key)
+          )
         : undefined
       let combinedEnvToDelete = mergePtyEnvDeletions(
         envToDelete,
@@ -4874,6 +4914,11 @@ export function registerPtyHandlers(
         )
         if (isClaudeLaunch) {
           markClaudePtySpawned(result.id)
+          // Why: record which profile's credentials this live PTY runs under;
+          // clearProviderPtyState forgets it on teardown.
+          if (claudeAuth?.agentProfileProvenance) {
+            recordAgentAuthProfileLaunch(claudeAuth.agentProfileProvenance)
+          }
         }
         // Why: record the paneKey mapping so clearProviderPtyState can clear the agent-hooks server's per-paneKey caches on exit.
         // Why: args.env is untrusted IPC JSON (type unenforced); bound the paneKey so malformed/oversized values can't pollute ptyPaneKey or clearPaneState.

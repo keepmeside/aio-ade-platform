@@ -174,7 +174,16 @@ import {
   normalizeCodexRuntimeSelection,
   type CodexAccountSelectionTarget
 } from './codex-accounts/runtime-selection'
-import { normalizeClaudeRuntimeSelection } from './claude-accounts/runtime-selection'
+import {
+  getSelectedClaudeAccountIdForTarget,
+  normalizeClaudeRuntimeSelection
+} from './claude-accounts/runtime-selection'
+import { AgentAuthProfileSessionBindings } from './agent-auth-profiles/agent-auth-profile-session-bindings'
+import { AgentAuthProfileStoreService } from './agent-auth-profiles/agent-auth-profile-store'
+import { getAgentAuthProfileStorePath } from './agent-auth-profiles/agent-auth-profile-storage-paths'
+import { createDefaultAgentAuthSecretVault } from './agent-auth-profiles/agent-auth-secret-storage-backend'
+import { createProfileAwarePrepareClaudeAuth } from './agent-auth-profiles/claude-profile-launch-preparation'
+import type { PrepareClaudeAuth } from './ipc/pty'
 import { codexHookService, setSystemCodexHomeHookSweepSuppressed } from './codex/hook-service'
 import {
   ensureRealHomeCodexHookState,
@@ -282,6 +291,11 @@ let codexAccounts: CodexAccountService | null = null
 let codexRuntimeHome: CodexRuntimeHomeService | null = null
 let claudeAccounts: ClaudeAccountService | null = null
 let claudeRuntimeAuth: ClaudeRuntimeAuthService | null = null
+// Why: profile-aware auth singletons mirror claudeRuntimeAuth's lifecycle —
+// built during main init, consumed by window attach and later profile IPC.
+let agentAuthProfileStoreService: AgentAuthProfileStoreService | null = null
+let agentAuthProfileSessionBindings: AgentAuthProfileSessionBindings | null = null
+let prepareClaudeAuthForLaunch: PrepareClaudeAuth | null = null
 let runtime: AioAdeRuntimeService | null = null
 let rateLimits: RateLimitService | null = null
 let runtimeRpc: AioAdeRuntimeRpcServer | null = null
@@ -1189,7 +1203,7 @@ function openMainWindow(): BrowserWindow {
     store,
     runtime,
     prepareCodexRuntimeHomeForLaunch,
-    (target) => claudeRuntimeAuth!.prepareForClaudeLaunch(target),
+    prepareClaudeAuthForLaunch!,
     {
       prepareCodexSessionResume: prepareCodexSessionResumeForLaunch,
       awaitLocalPtyStartup: () => localPtyStartupReady,
@@ -1902,6 +1916,21 @@ void app.whenReady().then(async () => {
   // sessions tree walk.
   codexSessionMigration.scheduleInitialRun()
   claudeRuntimeAuth = new ClaudeRuntimeAuthService(store)
+  agentAuthProfileStoreService = new AgentAuthProfileStoreService(
+    getAgentAuthProfileStorePath(app.getPath('userData'))
+  )
+  agentAuthProfileSessionBindings = new AgentAuthProfileSessionBindings()
+  const agentAuthSecretVault = createDefaultAgentAuthSecretVault()
+  prepareClaudeAuthForLaunch = createProfileAwarePrepareClaudeAuth(
+    (target) => claudeRuntimeAuth!.prepareForClaudeLaunch(target),
+    {
+      loadStore: () => agentAuthProfileStoreService!.load(),
+      sessionBindings: agentAuthProfileSessionBindings,
+      readSecret: (profileId, secretName) => agentAuthSecretVault.get(profileId, secretName),
+      getLegacyAccountId: (target) =>
+        getSelectedClaudeAccountIdForTarget(store!.getSettings(), target)
+    }
+  )
   claudeAccounts = new ClaudeAccountService(store, rateLimits, claudeRuntimeAuth)
   rateLimits.setCodexHomePathResolver((target) =>
     codexRuntimeHome!.prepareForRateLimitFetch(target)
