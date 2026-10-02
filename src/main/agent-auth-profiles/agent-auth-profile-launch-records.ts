@@ -5,8 +5,14 @@ import type { AgentAuthProfileLaunchProvenance } from '../../shared/agent-auth-p
 // session id and cleared on PTY teardown; nothing here survives a restart.
 const launchesBySessionId = new Map<string, AgentAuthProfileLaunchProvenance>()
 
+// Records are write-once per session id: a reattach re-resolves with current
+// bindings, but the session keeps the provenance of the launch that actually
+// spawned it. An absent record (fresh spawn, or reattach after a restart
+// cleared the in-memory registry) records the current resolution.
 export function recordAgentAuthProfileLaunch(provenance: AgentAuthProfileLaunchProvenance): void {
-  launchesBySessionId.set(provenance.sessionId, provenance)
+  if (!launchesBySessionId.has(provenance.sessionId)) {
+    launchesBySessionId.set(provenance.sessionId, provenance)
+  }
 }
 
 export function forgetAgentAuthProfileLaunch(sessionId: string): void {

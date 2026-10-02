@@ -720,6 +720,67 @@ describe('registerPtyHandlers', () => {
     expect(provider.spawn).not.toHaveBeenCalled()
   })
 
+  it('keeps the original provenance when the controller respawns a live session id', async () => {
+    clearAgentAuthProfileLaunchRegistryForTests()
+    let launchCount = 0
+    const prepareClaudeAuth = vi.fn(async (): Promise<ProfileAwareClaudeAuthPreparation> => {
+      launchCount += 1
+      return {
+        configDir: '/tmp/claude',
+        envPatch: {},
+        stripAuthEnv: false,
+        provenance: 'profile:profile-first',
+        agentProfileProvenance: {
+          sessionId: 'sess-controller-reattach',
+          provider: 'claude',
+          level: 'session',
+          profileId: launchCount === 1 ? 'profile-first' : 'profile-second',
+          accountId: null,
+          resolvedAt: 5_000
+        }
+      }
+    })
+    const physicalSpawn = vi.fn(async () => ({
+      id: 'sess-controller-reattach',
+      isReattach: launchCount > 1
+    }))
+    const provider = createAgentClaimProvider({ spawn: physicalSpawn })
+    setLocalPtyProvider(provider as never)
+    let controller: { spawn(args: Record<string, unknown>): Promise<unknown> } | undefined
+    const runtime = {
+      setPtyController: vi.fn((next) => {
+        controller = next
+      }),
+      registerPreAllocatedHandleForPty: vi.fn(),
+      registerPty: vi.fn()
+    }
+    registerPtyHandlers(
+      mainWindow as never,
+      runtime as never,
+      undefined,
+      undefined,
+      prepareClaudeAuth
+    )
+
+    const request = {
+      cols: 80,
+      rows: 24,
+      cwd: '/tmp/worktree',
+      command: 'claude',
+      sessionId: 'sess-controller-reattach'
+    }
+    await controller!.spawn(request)
+    // Why: a reattach re-resolves with current bindings — the session keeps
+    // the provenance of the launch that actually spawned it.
+    await controller!.spawn(request)
+
+    expect(lookupAgentAuthProfileLaunch('sess-controller-reattach')?.profileId).toBe(
+      'profile-first'
+    )
+    clearProviderPtyState('sess-controller-reattach')
+    expect(lookupAgentAuthProfileLaunch('sess-controller-reattach')).toBeNull()
+  })
+
   it('rejects a canonical daemon owner that exited before its spawn reply', async () => {
     const claim = {
       ...recoveredAgentClaim,
@@ -1696,6 +1757,66 @@ describe('registerPtyHandlers', () => {
       expect(lookupAgentAuthProfileLaunch('sess-profile-1')).toBeNull()
     })
 
+    it('keeps the original provenance when a Claude session reattaches', async () => {
+      clearAgentAuthProfileLaunchRegistryForTests()
+      let launchCount = 0
+      const prepareClaudeAuth = vi.fn(async (): Promise<ProfileAwareClaudeAuthPreparation> => {
+        launchCount += 1
+        return {
+          configDir: '/tmp/claude',
+          envPatch: {},
+          stripAuthEnv: false,
+          provenance: 'profile:profile-first',
+          agentProfileProvenance: {
+            sessionId: 'sess-reattach-claude',
+            provider: 'claude',
+            level: 'session',
+            profileId: launchCount === 1 ? 'profile-first' : 'profile-second',
+            accountId: null,
+            resolvedAt: 5_000
+          }
+        }
+      })
+      handlers.clear()
+      registerPtyHandlers(mainWindow as never, undefined, undefined, undefined, prepareClaudeAuth)
+
+      // Why: pty:kill waits for the physical exit, so the mock must fire it.
+      let exitCb: ((info: { exitCode: number }) => void) | undefined
+      const makeSpawnResult = (isReattach: boolean) => ({
+        id: 'sess-reattach-claude',
+        isReattach,
+        onData: vi.fn(() => makeDisposable()),
+        onExit: vi.fn((cb: (info: { exitCode: number }) => void) => {
+          exitCb = cb
+          return makeDisposable()
+        }),
+        write: vi.fn(),
+        resize: vi.fn(),
+        kill: vi.fn(() => exitCb?.({ exitCode: -1 })),
+        process: 'zsh',
+        pid: 12345
+      })
+      spawnMock
+        .mockReturnValueOnce(makeSpawnResult(false))
+        .mockReturnValueOnce(makeSpawnResult(true))
+
+      const spawnArgs = {
+        cols: 80,
+        rows: 24,
+        command: 'claude',
+        sessionId: 'sess-reattach-claude'
+      }
+      await handlers.get('pty:spawn')!(null, spawnArgs)
+      // Why: a reattach re-resolves with current bindings — the session keeps
+      // the provenance of the launch that actually spawned it.
+      await handlers.get('pty:spawn')!(null, spawnArgs)
+
+      expect(lookupAgentAuthProfileLaunch('sess-reattach-claude')?.profileId).toBe('profile-first')
+
+      await handlers.get('pty:kill')!(null, { id: 'sess-reattach-claude' })
+      expect(lookupAgentAuthProfileLaunch('sess-reattach-claude')).toBeNull()
+    })
+
     it('refuses a Claude launch whose renderer env fights the profile strip', async () => {
       const prepareClaudeAuth = vi.fn(
         async (): Promise<ProfileAwareClaudeAuthPreparation> => ({
@@ -1810,6 +1931,73 @@ describe('registerPtyHandlers', () => {
       // the PTY so later tests don't inherit this launch's state.
       await handlers.get('pty:kill')!(null, { id: spawnResult.id })
       expect(lookupAgentAuthProfileLaunch('sess-profile-1')).toBeNull()
+    })
+
+    it('keeps the original provenance when a Codex session reattaches', async () => {
+      clearAgentAuthProfileLaunchRegistryForTests()
+      let launchCount = 0
+      const resolveCodexProfileLaunchAuth = vi.fn((): CodexProfileLaunchAuth => {
+        launchCount += 1
+        return {
+          codexHomePath: '/managed/profile-home',
+          envPatch: {},
+          agentProfileProvenance: {
+            sessionId: 'sess-reattach-codex',
+            provider: 'codex',
+            level: 'session',
+            profileId: launchCount === 1 ? 'profile-first' : 'profile-second',
+            accountId: null,
+            resolvedAt: 5_000
+          }
+        }
+      })
+      handlers.clear()
+      registerPtyHandlers(
+        mainWindow as never,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        resolveCodexProfileLaunchAuth
+      )
+
+      // Why: pty:kill waits for the physical exit, so the mock must fire it.
+      let exitCb: ((info: { exitCode: number }) => void) | undefined
+      const makeSpawnResult = (isReattach: boolean) => ({
+        id: 'sess-reattach-codex',
+        isReattach,
+        onData: vi.fn(() => makeDisposable()),
+        onExit: vi.fn((cb: (info: { exitCode: number }) => void) => {
+          exitCb = cb
+          return makeDisposable()
+        }),
+        write: vi.fn(),
+        resize: vi.fn(),
+        kill: vi.fn(() => exitCb?.({ exitCode: -1 })),
+        process: 'zsh',
+        pid: 12345
+      })
+      spawnMock
+        .mockReturnValueOnce(makeSpawnResult(false))
+        .mockReturnValueOnce(makeSpawnResult(true))
+
+      const spawnArgs = {
+        cols: 80,
+        rows: 24,
+        command: 'codex',
+        launchAgent: 'codex',
+        sessionId: 'sess-reattach-codex'
+      }
+      await handlers.get('pty:spawn')!(null, spawnArgs)
+      // Why: a reattach re-resolves with current bindings — the session keeps
+      // the provenance of the launch that actually spawned it.
+      await handlers.get('pty:spawn')!(null, spawnArgs)
+
+      expect(lookupAgentAuthProfileLaunch('sess-reattach-codex')?.profileId).toBe('profile-first')
+
+      await handlers.get('pty:kill')!(null, { id: 'sess-reattach-codex' })
+      expect(lookupAgentAuthProfileLaunch('sess-reattach-codex')).toBeNull()
     })
 
     it('refuses a Codex launch whose renderer env fights the profile overlay', async () => {

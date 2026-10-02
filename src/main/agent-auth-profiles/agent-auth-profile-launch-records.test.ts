@@ -36,11 +36,11 @@ describe('agent auth profile launch records', () => {
     expect(lookupAgentAuthProfileLaunch('sess-other')).toBeNull()
   })
 
-  it('replaces the record when a session id relaunches', () => {
-    recordAgentAuthProfileLaunch(makeProvenance('sess-1', 'profile-old'))
-    recordAgentAuthProfileLaunch(makeProvenance('sess-1', 'profile-new'))
+  it('keeps the first record for a session id', () => {
+    recordAgentAuthProfileLaunch(makeProvenance('sess-1', 'profile-first'))
+    recordAgentAuthProfileLaunch(makeProvenance('sess-1', 'profile-second'))
 
-    expect(lookupAgentAuthProfileLaunch('sess-1')?.profileId).toBe('profile-new')
+    expect(lookupAgentAuthProfileLaunch('sess-1')?.profileId).toBe('profile-first')
   })
 
   it('forgets a launch on PTY teardown', () => {
