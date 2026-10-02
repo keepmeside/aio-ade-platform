@@ -15,6 +15,7 @@ import type { AgentSessionOwnerBinding } from '../../shared/agent-session-host-a
 import { AGENT_SESSION_CLAIM_DIGEST_VERSION } from '../../shared/agent-session-host-authority'
 import { PtyWriteUnavailableError } from '../providers/pty-write-unavailable-error'
 import type { ProfileAwareClaudeAuthPreparation } from '../agent-auth-profiles/claude-profile-launch-preparation'
+import type { CodexProfileLaunchAuth } from '../agent-auth-profiles/codex-profile-launch-auth'
 import {
   clearAgentAuthProfileLaunchRegistryForTests,
   lookupAgentAuthProfileLaunch
@@ -1717,6 +1718,130 @@ describe('registerPtyHandlers', () => {
       ).rejects.toThrow(/ANTHROPIC_API_KEY/)
     })
 
+    it('launches codex on the profile home with its env overlay through the strip', async () => {
+      clearAgentAuthProfileLaunchRegistryForTests()
+      const resolveCodexProfileLaunchAuth = vi.fn(
+        (): CodexProfileLaunchAuth => ({
+          codexHomePath: '/managed/profile-home',
+          envPatch: { OPENAI_API_KEY: 'profile-key' },
+          agentProfileProvenance: {
+            sessionId: 'sess-profile-1',
+            provider: 'codex',
+            level: 'session',
+            profileId: 'profile-work',
+            accountId: null,
+            resolvedAt: 5_000
+          }
+        })
+      )
+      handlers.clear()
+      registerPtyHandlers(
+        mainWindow as never,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        resolveCodexProfileLaunchAuth
+      )
+
+      // Why: pty:kill waits for the physical exit, so the mock must fire it.
+      let exitCb: ((info: { exitCode: number }) => void) | undefined
+      spawnMock.mockReturnValue({
+        onData: vi.fn(() => makeDisposable()),
+        onExit: vi.fn((cb: (info: { exitCode: number }) => void) => {
+          exitCb = cb
+          return makeDisposable()
+        }),
+        write: vi.fn(),
+        resize: vi.fn(),
+        kill: vi.fn(() => exitCb?.({ exitCode: -1 })),
+        process: 'zsh',
+        pid: 12345
+      })
+
+      // Why: the strip targets host-inherited auth env, not renderer env (that
+      // refusal is locked separately) — so the keys must enter via process.env.
+      const savedApiKey = process.env.OPENAI_API_KEY
+      const savedBaseUrl = process.env.OPENAI_BASE_URL
+      process.env.OPENAI_API_KEY = 'inherited-key'
+      process.env.OPENAI_BASE_URL = 'inherited-base'
+      let spawnResult: { id: string }
+      try {
+        spawnResult = (await handlers.get('pty:spawn')!(null, {
+          cols: 80,
+          rows: 24,
+          command: 'codex',
+          launchAgent: 'codex',
+          sessionId: 'sess-profile-1'
+        })) as { id: string }
+      } finally {
+        if (savedApiKey === undefined) {
+          delete process.env.OPENAI_API_KEY
+        } else {
+          process.env.OPENAI_API_KEY = savedApiKey
+        }
+        if (savedBaseUrl === undefined) {
+          delete process.env.OPENAI_BASE_URL
+        } else {
+          process.env.OPENAI_BASE_URL = savedBaseUrl
+        }
+      }
+
+      const spawnOptions = spawnMock.mock.calls.at(-1)![2] as {
+        env: Record<string, string>
+      }
+      // Why: the patch key survives the strip; the non-patch auth key does not.
+      expect(spawnOptions.env.OPENAI_API_KEY).toBe('profile-key')
+      expect(spawnOptions.env.OPENAI_BASE_URL).toBeUndefined()
+      expect(spawnOptions.env.CODEX_HOME).toBe('/managed/profile-home')
+      expect(resolveCodexProfileLaunchAuth).toHaveBeenCalledWith(
+        expect.objectContaining({
+          launchContext: {
+            sessionId: 'sess-profile-1',
+            worktreeId: null,
+            folderWorkspaceId: null
+          }
+        })
+      )
+      expect(lookupAgentAuthProfileLaunch('sess-profile-1')?.profileId).toBe('profile-work')
+
+      // Why: the live-pty gate and the launch registry are module-level — kill
+      // the PTY so later tests don't inherit this launch's state.
+      await handlers.get('pty:kill')!(null, { id: spawnResult.id })
+      expect(lookupAgentAuthProfileLaunch('sess-profile-1')).toBeNull()
+    })
+
+    it('refuses a Codex launch whose renderer env fights the profile overlay', async () => {
+      const resolveCodexProfileLaunchAuth = vi.fn(
+        (): CodexProfileLaunchAuth => ({
+          codexHomePath: '/managed/profile-home',
+          envPatch: { OPENAI_API_KEY: 'profile-key' },
+          agentProfileProvenance: null
+        })
+      )
+      handlers.clear()
+      registerPtyHandlers(
+        mainWindow as never,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        resolveCodexProfileLaunchAuth
+      )
+
+      await expect(
+        handlers.get('pty:spawn')!(null, {
+          cols: 80,
+          rows: 24,
+          command: 'codex',
+          launchAgent: 'codex',
+          env: { OPENAI_API_KEY: 'renderer-key' }
+        })
+      ).rejects.toThrow(/OPENAI_API_KEY/)
+    })
+
     it('clears Claude live-PTY tracking from shared provider teardown', () => {
       markClaudePtySpawned('ssh-claude-pty')
       expect(hasLiveClaudePtys()).toBe(true)
@@ -1826,6 +1951,7 @@ describe('registerPtyHandlers', () => {
         undefined,
         undefined,
         undefined,
+        undefined,
         { prepareCodexSessionResume: prepareResume }
       )
 
@@ -1860,6 +1986,7 @@ describe('registerPtyHandlers', () => {
         mainWindow as never,
         undefined,
         selectedHome,
+        undefined,
         undefined,
         undefined,
         undefined,
@@ -1898,6 +2025,7 @@ describe('registerPtyHandlers', () => {
         mainWindow as never,
         undefined,
         selectedHome,
+        undefined,
         undefined,
         undefined,
         undefined,
@@ -1958,6 +2086,7 @@ describe('registerPtyHandlers', () => {
           mainWindow as never,
           undefined,
           selectedHomeMock,
+          undefined,
           undefined,
           undefined,
           undefined,
@@ -2245,6 +2374,7 @@ describe('registerPtyHandlers', () => {
           mainWindow as never,
           runtime as never,
           vi.fn(() => OTHER_HOME),
+          undefined,
           undefined,
           undefined,
           undefined,
@@ -2685,6 +2815,7 @@ describe('registerPtyHandlers', () => {
           undefined,
           undefined,
           undefined,
+          undefined,
           {
             prepareCodexSessionResume: async () => ({
               outcome: 'resume' as const,
@@ -2744,6 +2875,7 @@ describe('registerPtyHandlers', () => {
         registerPtyHandlers(
           mainWindow as never,
           runtime as never,
+          undefined,
           undefined,
           undefined,
           undefined,
@@ -2839,6 +2971,75 @@ describe('registerPtyHandlers', () => {
           worktreeId: 'repo-1::/repo/path',
           folderWorkspaceId: null
         })
+      })
+
+      it('keeps profile-provided Codex auth env through the managed strip on the controller path', async () => {
+        const daemonSpawn = setupDaemonAdapter()
+        const resolveCodexProfileLaunchAuth = vi.fn(
+          (): CodexProfileLaunchAuth => ({
+            codexHomePath: '/managed/profile-home',
+            envPatch: { OPENAI_API_KEY: 'profile-key' },
+            agentProfileProvenance: null
+          })
+        )
+        const runtime = {
+          setPtyController: vi.fn(),
+          registerPty: vi.fn(),
+          noteTerminalSpawnCommand: vi.fn(),
+          onPtySpawned: vi.fn(),
+          onPtyExit: vi.fn(),
+          onPtyData: vi.fn()
+        }
+        handlers.clear()
+        registerPtyHandlers(
+          mainWindow as never,
+          runtime as never,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          resolveCodexProfileLaunchAuth
+        )
+        const controller = runtime.setPtyController.mock.calls[0]?.[0] as {
+          spawn: (args: {
+            cols: number
+            rows: number
+            command: string
+            launchAgent?: string
+            sessionId?: string
+            worktreeId?: string
+            env?: Record<string, string>
+          }) => Promise<{ id: string }>
+        }
+
+        await controller.spawn({
+          cols: 80,
+          rows: 24,
+          command: 'codex',
+          launchAgent: 'codex',
+          sessionId: 'sess-profile-1',
+          worktreeId: 'repo-1::/repo/path'
+        })
+
+        const spawnOptions = daemonSpawn.mock.calls.at(-1)![0] as {
+          env: Record<string, string>
+          envToDelete?: string[]
+        }
+        expect(spawnOptions.env.OPENAI_API_KEY).toBe('profile-key')
+        expect(spawnOptions.env.CODEX_HOME).toBe('/managed/profile-home')
+        // Why: the daemon strips envToDelete from its own inherited env, so the
+        // exclusion here is the contract — patch keys must never join the strip.
+        expect(spawnOptions.envToDelete ?? []).not.toContain('OPENAI_API_KEY')
+        expect(spawnOptions.envToDelete ?? []).toContain('OPENAI_BASE_URL')
+        expect(resolveCodexProfileLaunchAuth).toHaveBeenCalledWith(
+          expect.objectContaining({
+            launchContext: {
+              sessionId: 'sess-profile-1',
+              worktreeId: 'repo-1::/repo/path',
+              folderWorkspaceId: null
+            }
+          })
+        )
       })
 
       it('prepares Codex project trust before a daemon-backed interactive launch', async () => {
@@ -5220,6 +5421,7 @@ describe('registerPtyHandlers', () => {
       undefined,
       undefined,
       undefined,
+      undefined,
       {
         awaitLocalPtyStartup: () => barrier.promise
       }
@@ -5250,6 +5452,7 @@ describe('registerPtyHandlers', () => {
     const fallbackShutdown = vi.spyOn(getLocalPtyProvider(), 'shutdown')
     registerPtyHandlers(
       mainWindow as never,
+      undefined,
       undefined,
       undefined,
       undefined,
@@ -5292,6 +5495,7 @@ describe('registerPtyHandlers', () => {
       undefined,
       undefined,
       undefined,
+      undefined,
       {
         awaitLocalPtyProviderStartup
       }
@@ -5322,6 +5526,7 @@ describe('registerPtyHandlers', () => {
     registerPtyHandlers(
       mainWindow as never,
       runtime as never,
+      undefined,
       undefined,
       undefined,
       undefined,
@@ -5368,6 +5573,7 @@ describe('registerPtyHandlers', () => {
       registerPtyHandlers(
         mainWindow as never,
         runtime as never,
+        undefined,
         undefined,
         undefined,
         undefined,
@@ -5437,6 +5643,7 @@ describe('registerPtyHandlers', () => {
         undefined,
         undefined,
         undefined,
+        undefined,
         { awaitLocalPtyStartup: () => Promise.resolve() }
       )
       const pendingSpawn = handlers.get('pty:spawn')!(null, {
@@ -5477,6 +5684,7 @@ describe('registerPtyHandlers', () => {
     registerPtyHandlers(
       mainWindow as never,
       runtime as never,
+      undefined,
       undefined,
       undefined,
       undefined,
@@ -5534,6 +5742,7 @@ describe('registerPtyHandlers', () => {
     } as never)
     registerPtyHandlers(
       mainWindow as never,
+      undefined,
       undefined,
       undefined,
       undefined,
@@ -13754,6 +13963,7 @@ describe('registerPtyHandlers', () => {
       getSettings as never,
       undefined,
       undefined,
+      undefined,
       {
         prepareCodexSessionResume: async () => ({
           outcome: 'resume' as const,
@@ -13803,6 +14013,7 @@ describe('registerPtyHandlers', () => {
       undefined,
       vi.fn(() => '/managed/current/home'),
       getSettings as never,
+      undefined,
       undefined,
       undefined,
       {
@@ -13872,6 +14083,7 @@ describe('registerPtyHandlers', () => {
       getSettings as never,
       undefined,
       undefined,
+      undefined,
       {
         prepareCodexSessionResume: async () => ({
           outcome: 'resume' as const,
@@ -13933,6 +14145,7 @@ describe('registerPtyHandlers', () => {
       runtime as never,
       vi.fn(() => '/managed/current/home'),
       getSettings as never,
+      undefined,
       undefined,
       undefined,
       {
@@ -14484,6 +14697,7 @@ describe('registerPtyHandlers', () => {
       undefined,
       undefined,
       undefined,
+      undefined,
       { isRecoveryReloadInFlight }
     )
     // Fire both did-finish-load listeners as a real reload does, else the suppression assertion passes vacuously without reaching the sweep.
@@ -14546,6 +14760,7 @@ describe('registerPtyHandlers', () => {
       undefined,
       undefined,
       undefined,
+      undefined,
       { isRecoveryReloadInFlight }
     )
     // Fire both did-finish-load listeners (gate reset + orphan sweep) as a real reload does.
@@ -14586,6 +14801,7 @@ describe('registerPtyHandlers', () => {
     registerPtyHandlers(
       mainWindow as never,
       runtime as never,
+      undefined,
       undefined,
       undefined,
       undefined,

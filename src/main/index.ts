@@ -169,8 +169,9 @@ import { focusExistingMainWindow } from './window/focus-existing-window'
 import { notifyMainWindowBecameVisible } from './window/main-window-visibility'
 import { CodexAccountService } from './codex-accounts/service'
 import { CodexRuntimeHomeService } from './codex-accounts/runtime-home-service'
-import { markCodexProjectTrusted } from './agent-trust-presets'
+import { markCodexProjectTrusted, markCodexProjectTrustedInHome } from './agent-trust-presets'
 import {
+  getSelectedCodexAccountIdForTarget,
   normalizeCodexRuntimeSelection,
   type CodexAccountSelectionTarget
 } from './codex-accounts/runtime-selection'
@@ -183,6 +184,10 @@ import { AgentAuthProfileStoreService } from './agent-auth-profiles/agent-auth-p
 import { getAgentAuthProfileStorePath } from './agent-auth-profiles/agent-auth-profile-storage-paths'
 import { createDefaultAgentAuthSecretVault } from './agent-auth-profiles/agent-auth-secret-storage-backend'
 import { createProfileAwarePrepareClaudeAuth } from './agent-auth-profiles/claude-profile-launch-preparation'
+import {
+  createCodexProfileLaunchAuthResolver,
+  type ResolveCodexProfileLaunchAuth
+} from './agent-auth-profiles/codex-profile-launch-auth'
 import type { PrepareClaudeAuth } from './ipc/pty'
 import { codexHookService, setSystemCodexHomeHookSweepSuppressed } from './codex/hook-service'
 import {
@@ -296,6 +301,7 @@ let claudeRuntimeAuth: ClaudeRuntimeAuthService | null = null
 let agentAuthProfileStoreService: AgentAuthProfileStoreService | null = null
 let agentAuthProfileSessionBindings: AgentAuthProfileSessionBindings | null = null
 let prepareClaudeAuthForLaunch: PrepareClaudeAuth | null = null
+let resolveCodexProfileLaunchAuthForPty: ResolveCodexProfileLaunchAuth | null = null
 let runtime: AioAdeRuntimeService | null = null
 let rateLimits: RateLimitService | null = null
 let runtimeRpc: AioAdeRuntimeRpcServer | null = null
@@ -818,6 +824,16 @@ function prepareCodexRuntimeHomeForLaunch(
     // install below would target a home Codex never reads on this lane.
     return null
   }
+  installCodexRuntimeHomeHooksForLaunch(runtimeHomePath, target)
+  return runtimeHomePath
+}
+
+// Why: shared by the account-home launch path and profile-home launch prep so
+// both lanes get identical hook treatment for the same runtime home.
+function installCodexRuntimeHomeHooksForLaunch(
+  runtimeHomePath: string | null,
+  target?: CodexAccountSelectionTarget
+): void {
   const hookTarget =
     target?.runtime === 'wsl'
       ? {
@@ -852,7 +868,6 @@ function prepareCodexRuntimeHomeForLaunch(
       error
     )
   }
-  return runtimeHomePath
 }
 
 async function prepareCodexSessionResumeForLaunch(args: {
@@ -1204,6 +1219,7 @@ function openMainWindow(): BrowserWindow {
     runtime,
     prepareCodexRuntimeHomeForLaunch,
     prepareClaudeAuthForLaunch!,
+    resolveCodexProfileLaunchAuthForPty ?? undefined,
     {
       prepareCodexSessionResume: prepareCodexSessionResumeForLaunch,
       awaitLocalPtyStartup: () => localPtyStartupReady,
@@ -1931,6 +1947,30 @@ void app.whenReady().then(async () => {
         getSelectedClaudeAccountIdForTarget(store!.getSettings(), target)
     }
   )
+  resolveCodexProfileLaunchAuthForPty = createCodexProfileLaunchAuthResolver({
+    loadStore: () => agentAuthProfileStoreService!.load(),
+    sessionBindings: agentAuthProfileSessionBindings,
+    readSecret: (profileId, secretName) => agentAuthSecretVault.get(profileId, secretName),
+    getLegacyAccountId: (target) =>
+      getSelectedCodexAccountIdForTarget(store!.getSettings(), target),
+    getUserDataPath: () => app.getPath('userData'),
+    getSystemCodexHomePath: () => getSystemCodexHomePath(),
+    prepareLaunchHome: (homePath, target, workspacePath) => {
+      if (!workspacePath) {
+        installCodexRuntimeHomeHooksForLaunch(homePath, target)
+        return
+      }
+      try {
+        // Why: parity with account launches — the pre-mark keeps the codex trust menu from swallowing the launch paste.
+        markCodexProjectTrusted(workspacePath)
+        // Why: profile homes never re-mirror the system config, so trust is upserted into the home's own config on every launch.
+        markCodexProjectTrustedInHome(homePath, workspacePath)
+      } catch (error) {
+        console.warn('[codex-project-trust] failed to pre-mark profile launch workspace:', error)
+      }
+      installCodexRuntimeHomeHooksForLaunch(homePath, target)
+    }
+  })
   claudeAccounts = new ClaudeAccountService(store, rateLimits, claudeRuntimeAuth)
   rateLimits.setCodexHomePathResolver((target) =>
     codexRuntimeHome!.prepareForRateLimitFetch(target)

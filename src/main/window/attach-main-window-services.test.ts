@@ -234,6 +234,7 @@ describe('attachMainWindowServices', () => {
       createRuntime() as never,
       undefined,
       undefined,
+      undefined,
       { onBeforeRendererReload }
     )
 
@@ -260,6 +261,7 @@ describe('attachMainWindowServices', () => {
       createRuntime() as never,
       undefined,
       undefined,
+      undefined,
       { awaitLocalPtyStartup: () => localStartup.promise }
     )
 
@@ -283,6 +285,7 @@ describe('attachMainWindowServices', () => {
       mainWindow as never,
       store,
       createRuntime() as never,
+      undefined,
       undefined,
       undefined,
       { onBeforeUpdateQuit }
@@ -456,6 +459,7 @@ describe('attachMainWindowServices', () => {
       createRuntime() as never,
       undefined,
       undefined,
+      undefined,
       { onBeforeRendererReload }
     )
 
@@ -475,6 +479,7 @@ describe('attachMainWindowServices', () => {
       mainWindow as never,
       createStore(),
       createRuntime() as never,
+      undefined,
       undefined,
       undefined,
       { onBeforeRendererReload }
@@ -502,6 +507,7 @@ describe('attachMainWindowServices', () => {
       mainWindow as never,
       createStore(),
       createRuntime() as never,
+      undefined,
       undefined,
       undefined,
       { onBeforeRendererReload }

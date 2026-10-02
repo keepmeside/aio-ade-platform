@@ -88,11 +88,13 @@ import {
   markClaudePtyExited,
   markClaudePtySpawned
 } from '../claude-accounts/live-pty-gate'
+import { CODEX_AUTH_ENV_VARS, hasCodexAuthEnvConflict } from '../codex-accounts/environment'
 import {
   agentAuthProfileLaunchContextFromWorkspaceId,
   type AgentAuthProfileLaunchContext
 } from '../agent-auth-profiles/agent-auth-profile-launch-resolution'
 import type { ProfileAwareClaudeAuthPreparation } from '../agent-auth-profiles/claude-profile-launch-preparation'
+import type { ResolveCodexProfileLaunchAuth } from '../agent-auth-profiles/codex-profile-launch-auth'
 import {
   forgetAgentAuthProfileLaunch,
   recordAgentAuthProfileLaunch
@@ -860,10 +862,19 @@ function recordCodexPaneAccountForSpawn(args: {
   isDaemonHostSpawn: boolean
   isReattach: boolean
   pinnedByResume: boolean
+  launchedByProfile?: boolean
   launchCodexHomePath: string | null
   target: CodexAccountSelectionTarget
   settings: GlobalSettings | undefined
 }): void {
+  if (args.launchedByProfile) {
+    // Why: a profile home belongs to no managed account; naming the selected
+    // account would misreport the pane. Profile provenance is recorded separately.
+    if (args.ptyId) {
+      forgetCodexPaneAccount(args.ptyId)
+    }
+    return
+  }
   if (!args.ptyId || !args.isDaemonHostSpawn || args.isReattach) {
     return
   }
@@ -1435,6 +1446,8 @@ export function registerPtyHandlers(
   getSettings?: () => GlobalSettings,
   prepareClaudeAuth?: PrepareClaudeAuth,
   store?: Store,
+  // Why: appended after store so existing positional callers stay aligned.
+  resolveCodexProfileLaunchAuth?: ResolveCodexProfileLaunchAuth,
   options?: {
     prepareCodexSessionResume?: PrepareCodexSessionResume
     awaitLocalPtyStartup?: () => Promise<void>
@@ -3180,6 +3193,29 @@ export function registerPtyHandlers(
           ).join(', ')}). Remove those overrides before using managed Claude authentication.`
         )
       }
+      // Why: resume pins the home the session ran with, so profile resolution
+      // only runs for fresh codex launches; SSH spawns run remote and read no
+      // local vault.
+      const codexProfileAuth =
+        !args.connectionId &&
+        !codexResumeHome &&
+        isTuiAgent(args.launchAgent) &&
+        args.launchAgent === 'codex'
+          ? (resolveCodexProfileLaunchAuth?.({
+              target: codexSelectionTarget,
+              launchContext: agentAuthProfileLaunchContextFromWorkspaceId(
+                sessionId,
+                args.worktreeId
+              ),
+              workspacePath: cwd
+            }) ?? null)
+          : null
+      if (codexProfileAuth && hasCodexAuthEnvConflict(args.env)) {
+        // Key names only — never values — so the refusal stays secret-free.
+        throw new Error(
+          `This Codex launch defines explicit OpenAI auth environment variables (${CODEX_AUTH_ENV_VARS.filter((key) => Boolean(args.env?.[key])).join(', ')}). Remove those overrides before using managed Codex authentication.`
+        )
+      }
       const effectiveSessionRelayId =
         sessionId !== undefined ? getRelayPtyId(args.connectionId, sessionId) : undefined
       const effectiveSessionAppId =
@@ -3234,10 +3270,12 @@ export function registerPtyHandlers(
             codexSelectionTarget,
             codexResumeHome
               ? codexResumeHome.codexHomePath
-              : (getSelectedCodexHomePath?.(codexSelectionTarget, env, {
-                  workspacePath: cwd,
-                  launchAgent: isTuiAgent(args.launchAgent) ? args.launchAgent : undefined
-                }) ?? null)
+              : codexProfileAuth
+                ? codexProfileAuth.codexHomePath
+                : (getSelectedCodexHomePath?.(codexSelectionTarget, env, {
+                    workspacePath: cwd,
+                    launchAgent: isTuiAgent(args.launchAgent) ? args.launchAgent : undefined
+                  }) ?? null)
           )
         : null
       const skipCodexHomeEnv =
@@ -3274,6 +3312,11 @@ export function registerPtyHandlers(
         })
         promoteAgentTeamsShimPath(env, requestedAgentTeamsPath)
       }
+      if (codexProfileAuth) {
+        // Why: custom providers read their key from env_key, so the profile
+        // overlay rides the spawn env next to the CODEX_HOME injection.
+        env = { ...env, ...codexProfileAuth.envPatch }
+      }
 
       // Why: envPatch spreads over the env AFTER this strip runs, but the strip
       // must still exclude keys the patch itself sets or it deletes the
@@ -3283,6 +3326,9 @@ export function registerPtyHandlers(
             (key) => !Object.hasOwn(claudeAuth.envPatch, key)
           )
         : undefined
+      const codexAuthEnvToDelete = codexProfileAuth
+        ? CODEX_AUTH_ENV_VARS.filter((key) => !Object.hasOwn(codexProfileAuth.envPatch, key))
+        : undefined
       const spawnOptions: PtySpawnOptions = {
         cols: args.cols,
         rows: args.rows,
@@ -3290,8 +3336,11 @@ export function registerPtyHandlers(
         env,
         ...(isMintedSessionId ? { isNewSession: true } : {})
       }
-      if (!isDaemonHostSpawn && codexResumeHome) {
-        spawnOptions.codexHomePathOverride = { value: codexResumeHome.codexHomePath }
+      if (!isDaemonHostSpawn) {
+        const codexOverrideHome = codexResumeHome?.codexHomePath ?? codexProfileAuth?.codexHomePath
+        if (codexOverrideHome) {
+          spawnOptions.codexHomePathOverride = { value: codexOverrideHome }
+        }
       }
       const startupTerminalColorQueryReplyColors = getStartupTerminalColorQueryReplyColors(args)
       if (startupTerminalColorQueryReplyColors) {
@@ -3310,6 +3359,7 @@ export function registerPtyHandlers(
       }
       spawnOptions.envToDelete = mergePtyEnvDeletions(
         authEnvToDelete,
+        codexAuthEnvToDelete ?? [],
         args.envToDelete ?? [],
         isDaemonHostSpawn ? getInheritedAgentHookEnvKeysToDelete(env) : [],
         // Why: ungated, unlike the agent-hook keys — the local provider and the relay host also spread their own process.env into every spawn.
@@ -3669,6 +3719,7 @@ export function registerPtyHandlers(
           isDaemonHostSpawn,
           isReattach: result.isReattach === true,
           pinnedByResume: Boolean(codexResumeHome),
+          launchedByProfile: Boolean(codexProfileAuth),
           launchCodexHomePath: selectedCodexHomePath,
           target: codexSelectionTarget,
           settings: getSettings?.()
@@ -3744,6 +3795,11 @@ export function registerPtyHandlers(
           if (claudeAuth?.agentProfileProvenance) {
             recordAgentAuthProfileLaunch(claudeAuth.agentProfileProvenance)
           }
+        }
+        if (codexProfileAuth?.agentProfileProvenance) {
+          // Why: record which profile's credentials this live PTY runs under;
+          // clearProviderPtyState forgets it on teardown.
+          recordAgentAuthProfileLaunch(codexProfileAuth.agentProfileProvenance)
         }
         if (args.telemetry) {
           const agentKindParse = agentKindSchema.safeParse(args.telemetry.agent_kind)
@@ -4419,15 +4475,40 @@ export function registerPtyHandlers(
       // Why: declared after the strip so a local-provider spawn cannot capture the
       // pre-strip env — only the daemon branch below re-derives this from baseEnv.
       let env: Record<string, string> | undefined = baseEnv
+      // Why: resume pins the home the session ran with, so profile resolution
+      // only runs for fresh codex launches; SSH spawns run remote and read no
+      // local vault.
+      const codexProfileAuth =
+        !args.connectionId &&
+        !codexResumeHome &&
+        isTuiAgent(args.launchAgent) &&
+        args.launchAgent === 'codex'
+          ? (resolveCodexProfileLaunchAuth?.({
+              target: codexSelectionTarget,
+              launchContext: agentAuthProfileLaunchContextFromWorkspaceId(
+                effectiveSessionId,
+                args.worktreeId
+              ),
+              workspacePath: cwd
+            }) ?? null)
+          : null
+      if (codexProfileAuth && hasCodexAuthEnvConflict(args.env)) {
+        // Key names only — never values — so the refusal stays secret-free.
+        throw new Error(
+          `This Codex launch defines explicit OpenAI auth environment variables (${CODEX_AUTH_ENV_VARS.filter((key) => Boolean(args.env?.[key])).join(', ')}). Remove those overrides before using managed Codex authentication.`
+        )
+      }
       const selectedCodexHomePath = isDaemonHostSpawn
         ? getCompatibleSelectedCodexHomePath(
             codexSelectionTarget,
             codexResumeHome
               ? codexResumeHome.codexHomePath
-              : (getSelectedCodexHomePath?.(codexSelectionTarget, baseEnv, {
-                  workspacePath: cwd,
-                  launchAgent: isTuiAgent(args.launchAgent) ? args.launchAgent : undefined
-                }) ?? null)
+              : codexProfileAuth
+                ? codexProfileAuth.codexHomePath
+                : (getSelectedCodexHomePath?.(codexSelectionTarget, baseEnv, {
+                    workspacePath: cwd,
+                    launchAgent: isTuiAgent(args.launchAgent) ? args.launchAgent : undefined
+                  }) ?? null)
           )
         : null
       const skipCodexHomeEnv =
@@ -4482,6 +4563,11 @@ export function registerPtyHandlers(
           throw err
         }
       }
+      if (codexProfileAuth) {
+        // Why: custom providers read their key from env_key, so the profile
+        // overlay rides the spawn env next to the CODEX_HOME injection.
+        env = { ...env, ...codexProfileAuth.envPatch }
+      }
       spawnTiming.mark('host_env')
       const spawnEnv = preAllocatedHandle
         ? { ...env, AIO_ADE_TERMINAL_HANDLE: preAllocatedHandle }
@@ -4494,8 +4580,12 @@ export function registerPtyHandlers(
             (key) => !Object.hasOwn(claudeAuth.envPatch, key)
           )
         : undefined
+      const codexAuthEnvToDelete = codexProfileAuth
+        ? CODEX_AUTH_ENV_VARS.filter((key) => !Object.hasOwn(codexProfileAuth.envPatch, key))
+        : undefined
       let combinedEnvToDelete = mergePtyEnvDeletions(
         envToDelete,
+        codexAuthEnvToDelete ?? [],
         args.envToDelete ?? [],
         agentTeamsEnvToDelete ?? [],
         isDaemonHostSpawn ? getInheritedAgentHookEnvKeysToDelete(spawnEnv) : [],
@@ -4517,8 +4607,11 @@ export function registerPtyHandlers(
         env: spawnEnv,
         ...(isMintedSessionId ? { isNewSession: true } : {})
       }
-      if (!isDaemonHostSpawn && codexResumeHome) {
-        spawnOptions.codexHomePathOverride = { value: codexResumeHome.codexHomePath }
+      if (!isDaemonHostSpawn) {
+        const codexOverrideHome = codexResumeHome?.codexHomePath ?? codexProfileAuth?.codexHomePath
+        if (codexOverrideHome) {
+          spawnOptions.codexHomePathOverride = { value: codexOverrideHome }
+        }
       }
       if (combinedEnvToDelete) {
         spawnOptions.envToDelete = combinedEnvToDelete
@@ -4737,6 +4830,7 @@ export function registerPtyHandlers(
           isDaemonHostSpawn,
           isReattach: result.isReattach === true,
           pinnedByResume: Boolean(codexResumeHome),
+          launchedByProfile: Boolean(codexProfileAuth),
           launchCodexHomePath: selectedCodexHomePath,
           target: codexSelectionTarget,
           settings: getSettings?.()
@@ -4919,6 +5013,11 @@ export function registerPtyHandlers(
           if (claudeAuth?.agentProfileProvenance) {
             recordAgentAuthProfileLaunch(claudeAuth.agentProfileProvenance)
           }
+        }
+        if (codexProfileAuth?.agentProfileProvenance) {
+          // Why: record which profile's credentials this live PTY runs under;
+          // clearProviderPtyState forgets it on teardown.
+          recordAgentAuthProfileLaunch(codexProfileAuth.agentProfileProvenance)
         }
         // Why: record the paneKey mapping so clearProviderPtyState can clear the agent-hooks server's per-paneKey caches on exit.
         // Why: args.env is untrusted IPC JSON (type unenforced); bound the paneKey so malformed/oversized values can't pollute ptyPaneKey or clearPaneState.

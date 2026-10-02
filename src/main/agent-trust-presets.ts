@@ -117,6 +117,17 @@ export function markCodexProjectTrusted(workspacePath: string): void {
   upsertProjectTrustLevel(join(getAioAdeManagedCodexHomePath(), 'config.toml'), absPath, 'trusted')
 }
 
+/**
+ * Trust variant for a caller-supplied CODEX_HOME (profile-managed homes).
+ * Why: profile homes never re-mirror the system config — a mirror sync would
+ * wipe their provider pins — so trust must be upserted directly into the
+ * home's own config.toml on every launch.
+ */
+export function markCodexProjectTrustedInHome(codexHomePath: string, workspacePath: string): void {
+  const absPath = resolveCodexProjectTrustRoot(workspacePath)
+  upsertProjectTrustLevel(join(codexHomePath, 'config.toml'), absPath, 'trusted')
+}
+
 function resolveCodexProjectTrustRoot(workspacePath: string): string {
   const absPath = canonicalize(workspacePath)
   try {

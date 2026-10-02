@@ -25,6 +25,7 @@ import {
   type PrepareClaudeAuth,
   type PrepareCodexSessionResume
 } from '../ipc/pty'
+import type { ResolveCodexProfileLaunchAuth } from '../agent-auth-profiles/codex-profile-launch-auth'
 import { registerDaemonManagementHandlers } from '../ipc/pty-management'
 import { registerSshHandlers } from '../ipc/ssh'
 import { registerRemoteWorkspaceHandlers } from '../ipc/remote-workspace'
@@ -83,6 +84,7 @@ export function attachMainWindowServices(
   runtime: AioAdeRuntimeService,
   getSelectedCodexHomePath?: GetSelectedCodexHomePath,
   prepareClaudeAuth?: PrepareClaudeAuth,
+  resolveCodexProfileLaunchAuth?: ResolveCodexProfileLaunchAuth,
   options?: {
     prepareCodexSessionResume?: PrepareCodexSessionResume
     awaitLocalPtyStartup?: () => Promise<void>
@@ -110,6 +112,7 @@ export function attachMainWindowServices(
     () => store.getSettings(),
     prepareClaudeAuth,
     store,
+    resolveCodexProfileLaunchAuth,
     {
       prepareCodexSessionResume: options?.prepareCodexSessionResume,
       awaitLocalPtyStartup: options?.awaitLocalPtyStartup,

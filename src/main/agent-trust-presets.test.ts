@@ -38,8 +38,12 @@ vi.mock('node:os', async () => {
   }
 })
 
-const { markCodexProjectTrusted, markCopilotFolderTrusted, markCursorWorkspaceTrusted } =
-  await import('./agent-trust-presets')
+const {
+  markCodexProjectTrusted,
+  markCodexProjectTrustedInHome,
+  markCopilotFolderTrusted,
+  markCursorWorkspaceTrusted
+} = await import('./agent-trust-presets')
 
 beforeEach(() => {
   testState.fakeHomeDir = mkdtempSync(join(tmpdir(), 'aio-ade-trust-presets-'))
@@ -274,6 +278,51 @@ describe('markCodexProjectTrusted', () => {
       expect(runtimeWritten).not.toContain('trust_level = "untrusted"')
     } finally {
       rmSync(workspace, { recursive: true, force: true })
+    }
+  })
+})
+
+describe('markCodexProjectTrustedInHome', () => {
+  it('writes trust into the supplied home config only', () => {
+    const workspace = mkdtempSync(join(tmpdir(), 'aio-ade-codex-inhome-ws-'))
+    const profileHome = join(testState.userDataDir, 'codex-homes', 'profile-work', 'home')
+    try {
+      const realpath = realpathSync.native(workspace)
+      markCodexProjectTrustedInHome(profileHome, workspace)
+
+      const written = readFileSync(join(profileHome, 'config.toml'), 'utf-8')
+      expect(written).toContain(`[projects."${escapeTomlBasicString(realpath)}"]`)
+      expect(written).toContain('trust_level = "trusted"')
+      // Why: the profile variant must not touch the system or account homes —
+      // those belong to other lanes' launch prep.
+      expect(existsSync(join(testState.fakeHomeDir, '.codex', 'config.toml'))).toBe(false)
+      expect(
+        existsSync(join(testState.userDataDir, 'codex-runtime-home', 'home', 'config.toml'))
+      ).toBe(false)
+    } finally {
+      rmSync(workspace, { recursive: true, force: true })
+    }
+  })
+
+  it('trusts the main repository root for a linked worktree', () => {
+    const fixtureRoot = mkdtempSync(join(tmpdir(), 'aio-ade-codex-inhome-linked-'))
+    const repository = join(fixtureRoot, 'repo')
+    const workspace = join(fixtureRoot, 'worktrees', 'feature')
+    const worktreeGitDir = join(repository, '.git', 'worktrees', 'feature')
+    const profileHome = join(testState.userDataDir, 'codex-homes', 'profile-work', 'home')
+    try {
+      mkdirSync(worktreeGitDir, { recursive: true })
+      mkdirSync(workspace, { recursive: true })
+      writeFileSync(join(workspace, '.git'), `gitdir: ${worktreeGitDir}\n`, 'utf-8')
+      writeFileSync(join(worktreeGitDir, 'gitdir'), join(workspace, '.git'), 'utf-8')
+
+      markCodexProjectTrustedInHome(profileHome, workspace)
+
+      const repositoryRoot = realpathSync.native(repository)
+      const written = readFileSync(join(profileHome, 'config.toml'), 'utf-8')
+      expect(written).toContain(`[projects."${escapeTomlBasicString(repositoryRoot)}"]`)
+    } finally {
+      rmSync(fixtureRoot, { recursive: true, force: true })
     }
   })
 })
