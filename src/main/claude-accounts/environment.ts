@@ -13,6 +13,10 @@ export const CLAUDE_AUTH_ENV_VARS = [
 export type ClaudeEnvPatch = {
   CLAUDE_CONFIG_DIR?: string
   ANTHROPIC_CUSTOM_HEADERS?: string
+  ANTHROPIC_API_KEY?: string
+  ANTHROPIC_AUTH_TOKEN?: string
+  ANTHROPIC_BASE_URL?: string
+  ANTHROPIC_MODEL?: string
 }
 
 export function applyClaudeEnvPatch(
@@ -34,6 +38,18 @@ export function applyClaudeEnvPatch(
   }
   if (patch.ANTHROPIC_CUSTOM_HEADERS !== undefined) {
     baseEnv.ANTHROPIC_CUSTOM_HEADERS = patch.ANTHROPIC_CUSTOM_HEADERS
+  }
+  if (patch.ANTHROPIC_API_KEY !== undefined) {
+    baseEnv.ANTHROPIC_API_KEY = patch.ANTHROPIC_API_KEY
+  }
+  if (patch.ANTHROPIC_AUTH_TOKEN !== undefined) {
+    baseEnv.ANTHROPIC_AUTH_TOKEN = patch.ANTHROPIC_AUTH_TOKEN
+  }
+  if (patch.ANTHROPIC_BASE_URL !== undefined) {
+    baseEnv.ANTHROPIC_BASE_URL = patch.ANTHROPIC_BASE_URL
+  }
+  if (patch.ANTHROPIC_MODEL !== undefined) {
+    baseEnv.ANTHROPIC_MODEL = patch.ANTHROPIC_MODEL
   }
 
   return baseEnv

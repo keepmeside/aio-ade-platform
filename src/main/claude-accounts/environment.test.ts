@@ -76,3 +76,47 @@ describe('claude auth env strip list', () => {
     expect(hasClaudeAuthEnvConflict({ ANTHROPIC_CUSTOM_HEADERS: 'x-title: my-app' })).toBe(false)
   })
 })
+
+describe('claude profile env patch fields', () => {
+  it('applies profile auth fields after the strip — delete-then-set wins', () => {
+    const patched = applyClaudeEnvPatch(
+      {
+        ANTHROPIC_API_KEY: 'inherited-key',
+        ANTHROPIC_BASE_URL: 'https://inherited.example.test',
+        ANTHROPIC_MODEL: 'inherited-model'
+      },
+      {
+        ANTHROPIC_API_KEY: 'profile-key',
+        ANTHROPIC_BASE_URL: 'https://profile.example.test',
+        ANTHROPIC_MODEL: 'glm-4.6'
+      },
+      { stripAuthEnv: true }
+    )
+    expect(patched.ANTHROPIC_API_KEY).toBe('profile-key')
+    expect(patched.ANTHROPIC_BASE_URL).toBe('https://profile.example.test')
+    expect(patched.ANTHROPIC_MODEL).toBe('glm-4.6')
+  })
+
+  it('applies auth token and custom headers alongside the profile fields', () => {
+    const patched = applyClaudeEnvPatch(
+      {},
+      {
+        ANTHROPIC_AUTH_TOKEN: 'profile-token',
+        ANTHROPIC_CUSTOM_HEADERS: 'x-title: my-app'
+      },
+      { stripAuthEnv: true }
+    )
+    expect(patched.ANTHROPIC_AUTH_TOKEN).toBe('profile-token')
+    expect(patched.ANTHROPIC_CUSTOM_HEADERS).toBe('x-title: my-app')
+  })
+
+  it('leaves inherited model and base URL untouched when the patch omits them', () => {
+    const patched = applyClaudeEnvPatch(
+      { ANTHROPIC_MODEL: 'user-model', ANTHROPIC_BASE_URL: 'https://user.example.test' },
+      { ANTHROPIC_API_KEY: 'profile-key' }
+    )
+    expect(patched.ANTHROPIC_MODEL).toBe('user-model')
+    expect(patched.ANTHROPIC_BASE_URL).toBe('https://user.example.test')
+    expect(patched.ANTHROPIC_API_KEY).toBe('profile-key')
+  })
+})
